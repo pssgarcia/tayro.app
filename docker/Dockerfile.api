@@ -1,0 +1,50 @@
+# ─── Stage 1: Builder ─────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files for layer caching
+COPY package*.json ./
+COPY apps/api/package*.json ./apps/api/
+COPY packages/shared-types/package*.json ./packages/shared-types/
+
+# Install all dependencies (including devDeps needed for build)
+RUN npm ci --workspace=apps/api --workspace=packages/shared-types --include-workspace-root
+
+# Copy source files
+COPY apps/api ./apps/api
+COPY packages/shared-types ./packages/shared-types
+
+# Generate Prisma client
+RUN npm run prisma:generate --workspace=apps/api
+
+# Compile TypeScript
+RUN npm run build --workspace=apps/api
+
+# ─── Stage 2: Runner ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy package files
+COPY package*.json ./
+COPY apps/api/package*.json ./apps/api/
+COPY packages/shared-types/package*.json ./packages/shared-types/
+
+# Install production dependencies only
+RUN npm ci --workspace=apps/api --workspace=packages/shared-types --include-workspace-root --omit=dev
+
+# Copy built output from builder
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+
+# Generate Prisma client in production stage
+RUN npm run prisma:generate --workspace=apps/api
+
+WORKDIR /app/apps/api
+
+EXPOSE 3001
+
+CMD ["node", "dist/main"]

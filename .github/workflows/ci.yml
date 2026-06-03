@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (API)
+        run: npm run lint --workspace=apps/api
+
+      - name: Lint (Web)
+        run: npm run lint --workspace=apps/web
+
+      - name: Typecheck (API)
+        run: npm run typecheck --workspace=apps/api
+
+      - name: Typecheck (Web)
+        run: npm run typecheck --workspace=apps/web
+
+      - name: Typecheck (shared-types)
+        run: npm run typecheck --workspace=packages/shared-types
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ugc_test
+          POSTGRES_PASSWORD: ugc_test
+          POSTGRES_DB: ugc_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://ugc_test:ugc_test@localhost:5432/ugc_test
+      JWT_SECRET: ci-test-secret-not-used-in-production
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate --workspace=apps/api
+
+      - name: Run database migrations
+        run: npm run prisma:deploy --workspace=apps/api
+
+      - name: Run tests (API)
+        run: npm run test --workspace=apps/api
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (API)
+        run: npm run build --workspace=apps/api
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+
+      - name: Build (Web)
+        run: npm run build --workspace=apps/web
