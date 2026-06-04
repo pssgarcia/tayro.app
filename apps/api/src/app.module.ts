@@ -1,16 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AuthModule } from './modules/auth/presentation/auth.module';
+import { CampaignsModule } from './modules/campaigns/presentation/campaigns.module';
+import { ApplicationsModule } from './modules/applications/presentation/applications.module';
+import { ContentModule } from './modules/content/presentation/content.module';
+import { RewardsModule } from './modules/rewards/presentation/rewards.module';
 
 @Module({
   imports: [
-    // Environment variables — loaded globally before any module
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
 
-    // Rate limiting — 60 requests per minute per IP by default
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -18,9 +21,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
       },
     ]),
 
-    // Feature modules (added incrementally as we build)
-    // AuthModule,
-    // UsersModule,
+    AuthModule,
+    CampaignsModule,
+    ApplicationsModule,
+    ContentModule,
+    RewardsModule,
     // BrandsModule,
     // InfluencersModule,
     // CampaignsModule,
