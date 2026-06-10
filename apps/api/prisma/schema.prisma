@@ -22,10 +22,17 @@ enum CampaignStatus {
   COMPLETED
 }
 
+// DEPRECATED — usado apenas por Reward.type. Não usar em novos campos de Campaign.
 enum RewardType {
   MONETARY
   PRODUCT
   DISCOUNT
+}
+
+// Tipo da oferta exibida à creator antes de candidatar
+enum OfferType {
+  CASH
+  PRODUCT
 }
 
 enum ApplicationStatus {
@@ -55,34 +62,41 @@ enum RewardStatus {
   DELIVERED
 }
 
+enum IgFetchStatus {
+  OK
+  PENDING
+  FAILED
+}
+
 // ─── Core Entities ────────────────────────────────────────────────────────────
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  password     String
-  role         UserRole
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  role          UserRole
+  isActive          Boolean        @default(true)
+  refreshTokenHash  String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  brand        Brand?
-  influencer   Influencer?
+  brand         Brand?
+  influencer    Influencer?
   notifications Notification[]
 
   @@map("users")
 }
 
 model Brand {
-  id        String   @id @default(uuid())
-  userId    String   @unique
+  id        String     @id @default(uuid())
+  userId    String     @unique
   name      String
   logoUrl   String?
   niches    String[]
   website   String?
   bio       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   campaigns Campaign[]
@@ -91,18 +105,25 @@ model Brand {
 }
 
 model Influencer {
-  id               String   @id @default(uuid())
-  userId           String   @unique
+  id               String         @id @default(uuid())
+  userId           String         @unique
   name             String
   avatarUrl        String?
   bio              String?
-  instagramHandle  String?  @unique
+  instagramHandle  String?        @unique
   tiktokHandle     String?
   followersCount   Int?
   niches           String[]
   city             String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  // Cache do Instagram — atualizado assincronamente pelo InstagramProvider
+  igEngagementRate    Float?
+  igRecentPosts       Json?          // [{ url, thumbnail, likes, comments }]
+  igFetchedAt         DateTime?
+  igFetchStatus       IgFetchStatus?
+  // Opt-in LGPD — perfil público só é exibido quando true
+  publicProfileEnabled Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt        DateTime       @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications Application[]
@@ -120,11 +141,21 @@ model Campaign {
   status      CampaignStatus @default(DRAFT)
   niches      String[]
   maxSpots    Int
-  rewardType  RewardType
-  rewardValue String
   deadline    DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+
+  // DEPRECATED — não escrever nem expor em DTOs de oferta. Remoção em migration futura.
+  rewardType  RewardType
+  // DEPRECATED — não escrever nem expor em DTOs de oferta. Remoção em migration futura.
+  rewardValue String
+
+  // Termos da oferta — fonte de verdade exibida à creator antes de candidatar
+  offerType         OfferType? // CASH | PRODUCT
+  offerAmount       Int?       // em centavos (ex: 30000 = R$300,00); nulo quando PRODUCT
+  offerDeadlineDays Int?       // dias corridos após aprovação de conteúdo para pagamento/envio
+  offerDescription  String?    // descrição livre (ex: "Kit Whey 900g + coqueteleira")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   brand        Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
   applications Application[]
@@ -144,9 +175,10 @@ model Application {
   appliedAt    DateTime          @default(now())
   reviewedAt   DateTime?
 
-  campaign     Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  influencer   Influencer          @relation(fields: [influencerId], references: [id], onDelete: Cascade)
-  submissions  ContentSubmission[]
+  campaign    Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  influencer  Influencer          @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  submissions ContentSubmission[]
+  result      PartnershipResult?
 
   @@unique([campaignId, influencerId])
   @@index([campaignId, status])
@@ -186,6 +218,21 @@ model Reward {
   campaign   Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("rewards")
+}
+
+model PartnershipResult {
+  id               String      @id @default(uuid())
+  applicationId    String      @unique
+  reach            Int?
+  impressions      Int?
+  couponsUsed      Int?
+  note             String?
+  visibleToCreator Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("partnership_results")
 }
 
 model Notification {
