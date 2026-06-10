@@ -2,6 +2,7 @@ import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { RegisterBrandDto } from './dtos/register-brand.dto';
@@ -73,10 +74,21 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async refreshTokens(userId: string) {
+  async refreshTokens(userId: string, incomingToken: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.isActive) throw new UnauthorizedException();
+    if (!user || !user.isActive || !user.refreshTokenHash) throw new UnauthorizedException();
+
+    const incomingHash = crypto.createHash('sha256').update(incomingToken).digest('hex');
+    if (incomingHash !== user.refreshTokenHash) throw new UnauthorizedException();
+
     return this.buildAuthResponse(user);
+  }
+
+  async revokeRefreshToken(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: null },
+    });
   }
 
   private async assertEmailAvailable(email: string) {
@@ -84,7 +96,7 @@ export class AuthService {
     if (exists) throw new ConflictException('Email already in use');
   }
 
-  private buildAuthResponse(user: AuthUser) {
+  private async buildAuthResponse(user: AuthUser) {
     const accessToken = this.jwt.sign(
       { sub: user.id, email: user.email, role: user.role },
       {
@@ -100,6 +112,12 @@ export class AuthService {
         expiresIn: this.config.getOrThrow<string>('JWT_REFRESH_EXPIRES_IN') as any,
       },
     );
+
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshTokenHash: tokenHash },
+    });
 
     return {
       accessToken,

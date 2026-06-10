@@ -12,10 +12,12 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
         (req: Request) => req?.cookies?.['refresh_token'] ?? null,
       ]),
       secretOrKey: config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      passReqToCallback: true,
     });
   }
 
-  validate(payload: { sub: string }) {
-    return { id: payload.sub };
+  validate(req: Request, payload: { sub: string }) {
+    const refreshToken: string = req.cookies?.['refresh_token'] ?? '';
+    return { id: payload.sub, refreshToken };
   }
 }
