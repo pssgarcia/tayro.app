@@ -1,4 +1,5 @@
 import { IsEmail, IsString, MinLength, IsOptional, IsArray } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterInfluencerDto {
@@ -15,9 +16,12 @@ export class RegisterInfluencerDto {
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: '@anasilva' })
+  @ApiPropertyOptional({ example: 'anasilva' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) =>
+    value ? (value as string).replace(/^@+/, '').toLowerCase().trim() : value,
+  )
   instagramHandle?: string;
 
   @ApiPropertyOptional({ example: ['fitness', 'lifestyle'] })
