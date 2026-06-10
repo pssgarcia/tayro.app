@@ -10,6 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { ApplicationsService } from '../application/applications.service';
 import { CreateApplicationDto } from '../application/dtos/create-application.dto';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -74,5 +75,14 @@ export class ApplicationsController {
   @ApiOperation({ summary: 'Retirar candidatura (Influencer)' })
   withdraw(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.applicationsService.withdraw(id, user.id);
+  }
+
+  @Patch(':id/refresh-ig')
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Roles('BRAND')
+  @Throttle({ default: { limit: 3, ttl: 300_000 } }) // 3 chamadas por 5 min por IP
+  @ApiOperation({ summary: 'Atualizar dados de IG da creator — sujeito a cooldown (Brand)' })
+  refreshIg(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.applicationsService.refreshInfluencerIg(id, user.id);
   }
 }

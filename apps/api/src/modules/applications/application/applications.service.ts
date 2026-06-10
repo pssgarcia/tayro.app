@@ -4,14 +4,35 @@ import {
   ForbiddenException,
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApplicationStatus, CampaignStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
+import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { CreateApplicationDto } from './dtos/create-application.dto';
+
+// Campos de IG incluídos em todas as respostas de application que expõem o influencer
+const influencerSelect = {
+  name: true,
+  avatarUrl: true,
+  instagramHandle: true,
+  niches: true,
+  city: true,
+  followersCount: true,
+  igEngagementRate: true,
+  igRecentPosts: true,
+  igFetchStatus: true,
+} as const;
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly instagramSync: InstagramSyncService,
+  ) {}
 
   async create(userId: string, dto: CreateApplicationDto) {
     const influencer = await this.findInfluencerOrFail(userId);
@@ -42,7 +63,6 @@ export class ApplicationsService {
         },
       });
     } catch (err) {
-      // Unique constraint: [campaignId, influencerId] — influencer já aplicou
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new ConflictException('Already applied to this campaign');
       }
@@ -62,6 +82,10 @@ export class ApplicationsService {
             title: true,
             rewardType: true,
             rewardValue: true,
+            offerType: true,
+            offerAmount: true,
+            offerDeadlineDays: true,
+            offerDescription: true,
             status: true,
             deadline: true,
             brand: { select: { name: true, logoUrl: true } },
@@ -84,15 +108,7 @@ export class ApplicationsService {
       where: { campaignId },
       orderBy: { appliedAt: 'desc' },
       include: {
-        influencer: {
-          select: {
-            name: true,
-            avatarUrl: true,
-            instagramHandle: true,
-            niches: true,
-            followersCount: true,
-          },
-        },
+        influencer: { select: influencerSelect },
         _count: { select: { submissions: true } },
       },
     });
@@ -106,7 +122,6 @@ export class ApplicationsService {
       throw new BadRequestException('Application is not pending');
     }
 
-    // Re-verifica vagas no momento da aprovação
     const approvedCount = await this.prisma.application.count({
       where: { campaignId: application.campaignId, status: ApplicationStatus.APPROVED },
     });
@@ -147,6 +162,51 @@ export class ApplicationsService {
     return this.prisma.application.update({
       where: { id },
       data: { status: ApplicationStatus.WITHDRAWN },
+    });
+  }
+
+  /**
+   * Dispara refresh manual dos dados de IG da creator.
+   * Requer: brand dona da campanha.
+   * Cooldown: rejeita se houve tentativa nos últimos IG_REFRESH_COOLDOWN_MINUTES
+   * (independente de FAILED/OK — cada chamada pode custar na RapidAPI).
+   */
+  async refreshInfluencerIg(applicationId: string, userId: string) {
+    const application = await this.findWithCampaignOrFail(applicationId);
+
+    if (application.campaign.brand.userId !== userId) {
+      throw new ForbiddenException('Not your campaign');
+    }
+
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { id: application.influencerId },
+      select: { id: true, igFetchedAt: true },
+    });
+
+    if (!influencer) throw new NotFoundException('Influencer not found');
+
+    const cooldownMs =
+      parseInt(this.config.get<string>('IG_REFRESH_COOLDOWN_MINUTES', '15'), 10) * 60_000;
+    const lastAttempt = influencer.igFetchedAt as Date | null;
+
+    if (lastAttempt && Date.now() - lastAttempt.getTime() < cooldownMs) {
+      const waitMin = Math.ceil(
+        (cooldownMs - (Date.now() - lastAttempt.getTime())) / 60_000,
+      );
+      throw new HttpException(
+        {
+          message: `Aguarde ${waitMin} minuto(s) antes de tentar novamente`,
+          waitMinutes: waitMin,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    await this.instagramSync.refresh(influencer.id, { force: true });
+
+    return this.prisma.influencer.findUnique({
+      where: { id: influencer.id },
+      select: influencerSelect,
     });
   }
 
