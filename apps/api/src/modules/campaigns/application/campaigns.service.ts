@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { CampaignStatus } from '@prisma/client';
+import { ApplicationStatus, CampaignStatus } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { paginate, buildPaginatedResult } from '../../../shared/utils/pagination';
 import { CreateCampaignDto } from './dtos/create-campaign.dto';
@@ -26,9 +26,13 @@ export class CampaignsService {
         briefUrl: dto.briefUrl,
         niches: dto.niches,
         maxSpots: dto.maxSpots,
-        rewardType: dto.rewardType,
-        rewardValue: dto.rewardValue,
+        rewardType: dto.rewardType ?? 'MONETARY',
+        rewardValue: dto.rewardValue ?? '',
         deadline: dto.deadline ? new Date(dto.deadline) : undefined,
+        offerType: dto.offerType,
+        offerAmount: dto.offerAmount,
+        offerDeadlineDays: dto.offerDeadlineDays,
+        offerDescription: dto.offerDescription,
         status: CampaignStatus.DRAFT,
       },
     });
@@ -71,16 +75,30 @@ export class CampaignsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, viewerId?: string) {
     const campaign = await this.prisma.campaign.findUnique({
       where: { id },
       include: {
         brand: { select: { name: true, logoUrl: true, website: true } },
-        _count: { select: { applications: true } },
+        _count: {
+          select: {
+            applications: { where: { status: ApplicationStatus.APPROVED } },
+          },
+        },
       },
     });
 
     if (!campaign) throw new NotFoundException('Campaign not found');
+
+    if (campaign.status !== CampaignStatus.ACTIVE) {
+      // Non-ACTIVE campaigns visible only to their brand owner
+      const isOwner = viewerId
+        ? await this.prisma.brand.count({ where: { id: campaign.brandId, userId: viewerId } })
+        : 0;
+      // 404 em vez de 403 — não vaza que a campanha existe como DRAFT
+      if (!isOwner) throw new NotFoundException('Campaign not found');
+    }
+
     return campaign;
   }
 

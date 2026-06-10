@@ -6,6 +6,7 @@ import { CampaignsModule } from './modules/campaigns/presentation/campaigns.modu
 import { ApplicationsModule } from './modules/applications/presentation/applications.module';
 import { ContentModule } from './modules/content/presentation/content.module';
 import { RewardsModule } from './modules/rewards/presentation/rewards.module';
+import { CreatorsModule } from './modules/creators/presentation/creators.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RewardsModule } from './modules/rewards/presentation/rewards.module';
     ApplicationsModule,
     ContentModule,
     RewardsModule,
+    CreatorsModule,
     // BrandsModule,
     // InfluencersModule,
     // CampaignsModule,

@@ -17,6 +17,7 @@ import { CreateCampaignDto } from '../application/dtos/create-campaign.dto';
 import { UpdateCampaignDto } from '../application/dtos/update-campaign.dto';
 import { ListCampaignsDto } from '../application/dtos/list-campaigns.dto';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../../shared/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../../../shared/guards/roles.guard';
 import { Roles } from '../../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
@@ -52,9 +53,10 @@ export class CampaignsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Detalhes de uma campanha' })
-  findOne(@Param('id') id: string) {
-    return this.campaignsService.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({ summary: 'Detalhes de uma campanha (ACTIVE pública; outros status só para dono)' })
+  findOne(@Param('id') id: string, @CurrentUser() user?: { id: string }) {
+    return this.campaignsService.findOne(id, user?.id);
   }
 
   @Patch(':id')

@@ -1,6 +1,14 @@
-import { IsString, IsOptional, IsArray, IsInt, Min, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsInt,
+  Min,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { RewardType } from '@prisma/client';
+import { OfferType, RewardType } from '@prisma/client';
 
 export class CreateCampaignDto {
   @ApiProperty({ example: 'Campanha Verão Fitness 2026' })
@@ -26,16 +34,44 @@ export class CreateCampaignDto {
   @Min(1)
   maxSpots: number;
 
-  @ApiProperty({ enum: RewardType, example: RewardType.MONETARY })
-  @IsEnum(RewardType)
-  rewardType: RewardType;
-
-  @ApiProperty({ example: 'R$300 por post aprovado' })
-  @IsString()
-  rewardValue: string;
-
   @ApiPropertyOptional({ example: '2026-08-31' })
   @IsOptional()
   @IsDateString()
   deadline?: string;
+
+  // ─── Oferta (fonte de verdade) ─────────────────────────────────────────────
+
+  @ApiPropertyOptional({ enum: OfferType })
+  @IsOptional()
+  @IsEnum(OfferType)
+  offerType?: OfferType;
+
+  @ApiPropertyOptional({ example: 30000, description: 'Valor em centavos (30000 = R$300)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  offerAmount?: number;
+
+  @ApiPropertyOptional({ example: 15, description: 'Dias para pagamento/envio após aprovação' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  offerDeadlineDays?: number;
+
+  @ApiPropertyOptional({ example: 'Kit Whey 900g + coqueteleira' })
+  @IsOptional()
+  @IsString()
+  offerDescription?: string;
+
+  // ─── DEPRECATED — mantidos para não quebrar registros antigos ─────────────
+
+  @ApiPropertyOptional({ enum: RewardType })
+  @IsOptional()
+  @IsEnum(RewardType)
+  rewardType?: RewardType;
+
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  @IsString()
+  rewardValue?: string;
 }
