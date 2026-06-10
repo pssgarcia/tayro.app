@@ -1,0 +1,77 @@
+name: CD
+
+# Dispara somente quando o workflow CI termina na branch main
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  # ─── API → Railway ────────────────────────────────────────────────────────────
+  deploy-api:
+    name: Deploy API → Railway
+    runs-on: ubuntu-latest
+    # Só faz deploy se o CI passou
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Roda a migration no banco de produção ANTES de subir o novo código.
+      # Garante que o schema está atualizado quando o novo código entrar no ar.
+      # Requer secret DATABASE_URL configurado em Settings → Secrets do repo.
+      - name: Run DB migrations
+        run: npm run prisma:deploy --workspace=apps/api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Deploy via Railway CLI.
+      # Para configurar:
+      #   1. Crie um projeto no Railway (railway.app)
+      #   2. Gere um token em Account Settings → Tokens
+      #   3. Adicione RAILWAY_TOKEN em Settings → Secrets do repositório
+      - name: Deploy to Railway
+        run: npx @railway/cli@latest up --service tayro-api --detach
+        working-directory: apps/api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  # ─── Web → Vercel ─────────────────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy Web → Vercel
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Deploy via Vercel CLI.
+      # Para configurar:
+      #   1. Crie um projeto na Vercel (vercel.com)
+      #   2. Gere um token em Settings → Tokens
+      #   3. Pegue VERCEL_ORG_ID e VERCEL_PROJECT_ID rodando `vercel link` localmente
+      #   4. Adicione os 3 secrets em Settings → Secrets do repositório
+      - name: Deploy to Vercel
+        run: npx vercel@latest --prod --yes
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
