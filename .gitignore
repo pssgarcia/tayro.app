@@ -43,5 +43,8 @@ Thumbs.db
 *.swp
 *.swo
 
+# ─── Claude Code — instruções locais, não vão pro repo ────────────────────────
+CLAUDE.md
+
 # ─── Misc ──────────────────────────────────────────────────────────────────────
 *.tsbuildinfo

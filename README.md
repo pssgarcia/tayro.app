@@ -2,7 +2,7 @@
 
 Plataforma de marketing de influência para o nicho fitness. Criadores constroem carreira; marcas encontram o fit certo — sem planilha, sem DM no Instagram.
 
-[![CI](https://github.com/pedrosoares/tayro/actions/workflows/ci.yml/badge.svg)](https://github.com/pedrosoares/tayro/actions/workflows/ci.yml)
+[![CI](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml/badge.svg)](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml)
 
 ## Stack
 
