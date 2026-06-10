@@ -11,11 +11,17 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        // Hex literal para cor de marca — sem drift de conversão HSL
+        lime: '#C6FF33',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
         },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
@@ -40,6 +46,10 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+      },
+      fontFamily: {
+        display: ['Space Grotesk', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
     },
   },

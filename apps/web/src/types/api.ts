@@ -1,0 +1,64 @@
+// ─── Instagram ─────────────────────────────────────────────────────────────────
+
+export type IgFetchStatus = 'OK' | 'PENDING' | 'FAILED';
+
+export interface IgPost {
+  url: string;
+  thumbnail: string;
+  likes: number;
+  comments: number;
+}
+
+// ─── Influencer (shape devolvido nas applications) ────────────────────────────
+
+export interface ApplicationInfluencer {
+  name: string;
+  avatarUrl: string | null;
+  instagramHandle: string | null;
+  niches: string[];
+  city: string | null;
+  followersCount: number | null;
+  igEngagementRate: number | null;
+  igRecentPosts: IgPost[] | null;
+  igFetchStatus: IgFetchStatus | null;
+}
+
+// ─── Application ───────────────────────────────────────────────────────────────
+
+export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
+
+export interface Application {
+  id: string;
+  campaignId: string;
+  influencerId: string;
+  status: ApplicationStatus;
+  message: string | null;
+  appliedAt: string;
+  reviewedAt: string | null;
+  influencer: ApplicationInfluencer;
+  _count: { submissions: number };
+}
+
+// ─── Campaign ──────────────────────────────────────────────────────────────────
+
+export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
+export type OfferType = 'CASH' | 'PRODUCT';
+
+export interface Campaign {
+  id: string;
+  brandId: string;
+  title: string;
+  description: string;
+  briefUrl: string | null;
+  status: CampaignStatus;
+  niches: string[];
+  maxSpots: number;
+  offerType: OfferType | null;
+  offerAmount: number | null;      // centavos
+  offerDeadlineDays: number | null;
+  offerDescription: string | null;
+  deadline: string | null;
+  createdAt: string;
+  brand?: { name: string; logoUrl: string | null; website: string | null };
+  _count: { applications: number };
+}

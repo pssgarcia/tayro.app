@@ -15,6 +15,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        // Quando o backend não está rodando, envia 502 de volta ao browser
+        // para que o axios possa rejeitar a promessa e o app não fique travado.
+        configure: (proxy) => {
+          proxy.on('error', (_err, _req, res) => {
+            res.writeHead(502, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'API unavailable' }));
+          });
+        },
       },
     },
   },
