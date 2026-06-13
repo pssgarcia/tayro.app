@@ -1,92 +1,92 @@
 # tayro
 
-Plataforma de marketing de influência para o nicho fitness. Criadores constroem carreira; marcas encontram o fit certo — sem planilha, sem DM no Instagram.
+Influencer marketing platform for the fitness niche. Creators build a career; brands find the right fit — no spreadsheets, no Instagram DMs.
 
 [![CI](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml/badge.svg)](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml)
 
 ## Stack
 
-| Camada    | Tecnologias                                               |
+| Layer     | Technologies                                              |
 |-----------|-----------------------------------------------------------|
 | API       | NestJS · Prisma · PostgreSQL (Neon) · JWT                 |
 | Web       | React 19 · Vite · Tailwind CSS · shadcn/ui · React Query  |
 | Monorepo  | Turborepo · npm workspaces                                |
 | CI/CD     | GitHub Actions → Railway (API) + Vercel (Web)             |
-| Testes    | Jest (API) · Vitest + Testing Library (Web)               |
+| Testing   | Jest (API) · Vitest + Testing Library (Web)               |
 
-## Pré-requisitos
+## Prerequisites
 
 - Node ≥ 20
 - npm ≥ 10
 
-## Instalação
+## Installation
 
 ```bash
-git clone https://github.com/pedrosoares/tayro.git
-cd tayro
+git clone https://github.com/pssgarcia/tayro.app.git
+cd tayro.app
 npm install
 ```
 
-## Variáveis de ambiente
+## Environment variables
 
 ```bash
 cp apps/api/.env.example apps/api/.env
-# Preencha as variáveis abaixo:
+# Fill in the variables below:
 ```
 
-| Variável                | Descrição                                   |
-|-------------------------|---------------------------------------------|
-| `DATABASE_URL`          | Connection string PostgreSQL (Neon)         |
-| `JWT_ACCESS_SECRET`     | Segredo para assinar access tokens          |
-| `JWT_ACCESS_EXPIRES_IN` | Validade do access token (ex: `15m`)        |
-| `JWT_REFRESH_SECRET`    | Segredo para assinar refresh tokens         |
-| `JWT_REFRESH_EXPIRES_IN`| Validade do refresh token (ex: `7d`)        |
-| `ALLOWED_ORIGINS`       | Origins permitidos no CORS (ex: `http://localhost:5173`) |
-| `RAPIDAPI_KEY`          | Chave RapidAPI para dados de Instagram (opcional em dev) |
-| `INSTAGRAM_PROVIDER`    | `stub` (dev) ou `rapidapi` (prod)           |
+| Variable                | Description                                          |
+|-------------------------|------------------------------------------------------|
+| `DATABASE_URL`          | PostgreSQL connection string (Neon)                  |
+| `JWT_ACCESS_SECRET`     | Secret used to sign access tokens                    |
+| `JWT_ACCESS_EXPIRES_IN` | Access token expiry (e.g. `15m`)                     |
+| `JWT_REFRESH_SECRET`    | Secret used to sign refresh tokens                   |
+| `JWT_REFRESH_EXPIRES_IN`| Refresh token expiry (e.g. `7d`)                     |
+| `ALLOWED_ORIGINS`       | CORS allowed origins (e.g. `http://localhost:5173`)  |
+| `RAPIDAPI_KEY`          | RapidAPI key for Instagram data (optional in dev)    |
+| `INSTAGRAM_PROVIDER`    | `stub` (dev) or `rapidapi` (prod)                    |
 
-## Desenvolvimento
+## Development
 
 ```bash
-# API (porta 3001) + Web (porta 5173) em paralelo
+# API (port 3001) + Web (port 5173) in parallel
 npm run dev
 ```
 
 ```bash
-# Só a API
+# API only
 npm run dev --workspace=apps/api
 
-# Só o Web
+# Web only
 npm run dev --workspace=apps/web
 ```
 
-## Banco de dados
+## Database
 
 ```bash
 cd apps/api
 
-# Gerar Prisma Client após mudanças no schema
+# Generate Prisma Client after schema changes
 npx prisma generate
 
-# Criar nova migration (só o SQL, sem aplicar)
-npx prisma migrate dev --create-only --name nome_da_migration
+# Create a new migration (SQL only, does not apply)
+npx prisma migrate dev --create-only --name migration_name
 
-# Aplicar migrations no banco
+# Apply migrations to the database
 npx prisma migrate deploy
 ```
 
-> **Atenção:** Use sempre `migrate deploy` no Neon — nunca `migrate dev` diretamente no banco de produção.
+> **Important:** Always use `migrate deploy` on Neon — never run `migrate dev` directly against the production database.
 
-## Testes
+## Testing
 
 ```bash
-# Todos os testes (raiz)
+# All tests (from root)
 npm test
 
 # API — Jest
 npm test --workspace=apps/api
 
-# API — modo watch
+# API — watch mode
 npm run test:watch --workspace=apps/api
 
 # API — coverage
@@ -95,68 +95,68 @@ npm run test:cov --workspace=apps/api
 # Web — Vitest
 npm test --workspace=apps/web
 
-# Web — modo watch
+# Web — watch mode
 npm run test:watch --workspace=apps/web
 ```
 
 ## CI/CD
 
-### Integração Contínua (CI)
-Roda em **cada push e PR**:
+### Continuous Integration (CI)
+Runs on **every push and PR**:
 1. Lint (ESLint)
 2. Typecheck (tsc --noEmit)
-3. Testes unitários
-4. Build de produção
+3. Unit tests
+4. Production build
 
-### Entrega Contínua (CD)
-Roda **apenas quando o CI passa na branch main**:
-- API → Railway (migration automática antes do deploy)
+### Continuous Delivery (CD)
+Runs **only when CI passes on the main branch**:
+- API → Railway (automatic migration before deploy)
 - Web → Vercel
 
-#### Secrets necessários no GitHub
+#### Required GitHub Secrets
 
-| Secret               | Onde usar       |
-|----------------------|-----------------|
+| Secret               | Used by              |
+|----------------------|----------------------|
 | `DATABASE_URL`       | CI + CD (migrations) |
-| `RAILWAY_TOKEN`      | CD (deploy API) |
-| `VERCEL_TOKEN`       | CD (deploy Web) |
-| `VERCEL_ORG_ID`      | CD (deploy Web) |
-| `VERCEL_PROJECT_ID`  | CD (deploy Web) |
+| `RAILWAY_TOKEN`      | CD (API deploy)      |
+| `VERCEL_TOKEN`       | CD (Web deploy)      |
+| `VERCEL_ORG_ID`      | CD (Web deploy)      |
+| `VERCEL_PROJECT_ID`  | CD (Web deploy)      |
 
-## Arquitetura
+## Architecture
 
 ```
 tayro/
 ├── apps/
-│   ├── api/                    # NestJS — Clean Architecture
+│   ├── api/                    # NestJS — Clean Architecture per module
 │   │   └── src/
 │   │       ├── modules/
-│   │       │   ├── auth/       # JWT (access + refresh) com rotation
-│   │       │   ├── campaigns/  # CRUD de campanhas/programas
-│   │       │   ├── applications/ # Candidaturas + revisão de dados IG
-│   │       │   ├── creators/   # Perfil público + apply sem conta
+│   │       │   ├── auth/       # JWT (access + refresh) with rotation
+│   │       │   ├── campaigns/  # Campaign/program CRUD
+│   │       │   ├── applications/ # Applications + IG data review
+│   │       │   ├── creators/   # Public profile + apply without account
 │   │       │   └── instagram/  # Adapter (Stub dev / RapidAPI prod)
 │   │       └── shared/         # Guards, Prisma service, utils
 │   └── web/                    # React 19 + Vite
 │       └── src/
 │           ├── pages/
-│           │   ├── brand/      # Dashboard da marca (campanhas, candidaturas)
+│           │   ├── brand/      # Brand dashboard (campaigns, applications)
 │           │   ├── auth/       # Login
-│           │   └── public/     # Apply público (sem auth)
-│           ├── components/     # Design system (shadcn + primitivos)
+│           │   └── public/     # Public apply (no auth required)
+│           ├── components/     # Design system (shadcn + primitives)
 │           ├── stores/         # Zustand (auth)
-│           ├── hooks/          # React Query (campanhas, candidaturas)
-│           └── utils/          # Formatação (moeda, seguidores, engajamento)
+│           ├── hooks/          # React Query (campaigns, applications)
+│           └── utils/          # Formatting (currency, followers, engagement)
 └── .github/
     └── workflows/
         ├── ci.yml              # Lint · Typecheck · Test · Build
         └── cd.yml              # Deploy (Railway + Vercel)
 ```
 
-## Segurança
+## Security
 
-- Refresh token com **rotation** — hash SHA-256 no banco, token antigo invalidado a cada uso
-- Access token em **memória** (Zustand), nunca em localStorage
-- Handles de Instagram sanitizados nos dois lados (DTO + display)
-- Rate limiting em endpoints de auth
-- `publicProfileEnabled = false` por padrão (LGPD)
+- Refresh token **rotation** — SHA-256 hash stored in DB, old token invalidated on every use
+- Access token in **memory** (Zustand), never in localStorage
+- Instagram handles sanitized on both sides (DTO + display)
+- Rate limiting on auth endpoints
+- `publicProfileEnabled = false` by default (LGPD compliance)
