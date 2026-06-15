@@ -34,14 +34,13 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Deploy via Railway CLI.
-      # Para configurar:
-      #   1. Crie um projeto no Railway (railway.app)
-      #   2. Gere um token em Account Settings → Tokens
-      #   3. Adicione RAILWAY_TOKEN em Settings → Secrets do repositório
-      - name: Deploy to Railway
-        run: npx @railway/cli@latest up --service tayro-api --detach
-        working-directory: apps/api
+      # Dispara o redeploy no Railway — ele puxa o código do GitHub e rebuilda.
+      # "railway up" faria upload de arquivos (errado para monorepo).
+      # "railway redeploy" apenas aciona o build já configurado no painel do Railway.
+      # Requer: projeto criado em railway.app com root directory = apps/api,
+      #         serviço nomeado "tayro-api", e RAILWAY_TOKEN nos secrets do repo.
+      - name: Redeploy API on Railway
+        run: npx @railway/cli@latest redeploy --service tayro-api --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
