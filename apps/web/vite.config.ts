@@ -19,8 +19,10 @@ export default defineConfig({
         // para que o axios possa rejeitar a promessa e o app não fique travado.
         configure: (proxy) => {
           proxy.on('error', (_err, _req, res) => {
-            res.writeHead(502, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'API unavailable' }));
+            if ('writeHead' in res) {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ message: 'API unavailable' }));
+            }
           });
         },
       },

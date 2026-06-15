@@ -184,7 +184,6 @@ export default function NewCampaignPage() {
   });
 
   const offerType = watch('offerType');
-  const selectedNiches = watch('niches');
 
   async function onSubmit(values: FormValues) {
     const payload = {
