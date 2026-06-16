@@ -60,7 +60,10 @@ describe('AuthService', () => {
       prisma.user.findUnique.mockResolvedValue(user);
       prisma.user.update.mockResolvedValue(user);
 
-      const result = await service.login({ email: user.email, password: 'secret123' });
+      const result = await service.login({
+        email: user.email,
+        password: 'secret123',
+      });
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
@@ -71,23 +74,28 @@ describe('AuthService', () => {
       const hash = await bcrypt.hash('correct', 12);
       prisma.user.findUnique.mockResolvedValue(makeUser({ password: hash }));
 
-      await expect(service.login({ email: 'creator@example.com', password: 'wrong' }))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login({ email: 'creator@example.com', password: 'wrong' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException for unknown email', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.login({ email: 'ghost@example.com', password: 'any' }))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login({ email: 'ghost@example.com', password: 'any' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException for inactive account', async () => {
       const hash = await bcrypt.hash('pass', 12);
-      prisma.user.findUnique.mockResolvedValue(makeUser({ password: hash, isActive: false }));
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: hash, isActive: false }),
+      );
 
-      await expect(service.login({ email: 'creator@example.com', password: 'pass' }))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login({ email: 'creator@example.com', password: 'pass' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -109,7 +117,9 @@ describe('AuthService', () => {
       // Rotation: nova hash deve ser gravada no banco
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ refreshTokenHash: expect.any(String) }),
+          data: expect.objectContaining({
+            refreshTokenHash: expect.any(String),
+          }),
         }),
       );
     });
@@ -118,15 +128,19 @@ describe('AuthService', () => {
       const user = makeUser({ refreshTokenHash: 'some-stored-hash' });
       prisma.user.findUnique.mockResolvedValue(user);
 
-      await expect(service.refreshTokens(user.id, 'tampered-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens(user.id, 'tampered-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException when no hash stored (never logged in / logged out)', async () => {
-      prisma.user.findUnique.mockResolvedValue(makeUser({ refreshTokenHash: null }));
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ refreshTokenHash: null }),
+      );
 
-      await expect(service.refreshTokens('user-abc', 'any-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens('user-abc', 'any-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
