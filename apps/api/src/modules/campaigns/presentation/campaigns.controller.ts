@@ -54,7 +54,10 @@ export class CampaignsController {
 
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
-  @ApiOperation({ summary: 'Detalhes de uma campanha (ACTIVE pública; outros status só para dono)' })
+  @ApiOperation({
+    summary:
+      'Detalhes de uma campanha (ACTIVE pública; outros status só para dono)',
+  })
   findOne(@Param('id') id: string, @CurrentUser() user?: { id: string }) {
     return this.campaignsService.findOne(id, user?.id);
   }

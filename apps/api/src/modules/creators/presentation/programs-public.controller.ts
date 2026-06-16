@@ -21,11 +21,10 @@ export class ProgramsPublicController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Candidatura pública ao programa — sem login (Creator)' })
-  applyPublic(
-    @Param('id') campaignId: string,
-    @Body() dto: PublicApplyDto,
-  ) {
+  @ApiOperation({
+    summary: 'Candidatura pública ao programa — sem login (Creator)',
+  })
+  applyPublic(@Param('id') campaignId: string, @Body() dto: PublicApplyDto) {
     return this.creatorsService.applyPublic(campaignId, dto);
   }
 }

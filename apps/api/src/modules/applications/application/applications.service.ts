@@ -41,7 +41,9 @@ export class ApplicationsService {
       where: { id: dto.campaignId },
       include: {
         _count: {
-          select: { applications: { where: { status: ApplicationStatus.APPROVED } } },
+          select: {
+            applications: { where: { status: ApplicationStatus.APPROVED } },
+          },
         },
       },
     });
@@ -63,7 +65,10 @@ export class ApplicationsService {
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
         throw new ConflictException('Already applied to this campaign');
       }
       throw err;
@@ -102,7 +107,8 @@ export class ApplicationsService {
     });
 
     if (!campaign) throw new NotFoundException('Campaign not found');
-    if (campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
 
     return this.prisma.application.findMany({
       where: { campaignId },
@@ -117,13 +123,17 @@ export class ApplicationsService {
   async approve(id: string, userId: string) {
     const application = await this.findWithCampaignOrFail(id);
 
-    if (application.campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (application.campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
     if (application.status !== ApplicationStatus.PENDING) {
       throw new BadRequestException('Application is not pending');
     }
 
     const approvedCount = await this.prisma.application.count({
-      where: { campaignId: application.campaignId, status: ApplicationStatus.APPROVED },
+      where: {
+        campaignId: application.campaignId,
+        status: ApplicationStatus.APPROVED,
+      },
     });
     if (approvedCount >= application.campaign.maxSpots) {
       throw new BadRequestException('Campaign is full');
@@ -138,7 +148,8 @@ export class ApplicationsService {
   async reject(id: string, userId: string) {
     const application = await this.findWithCampaignOrFail(id);
 
-    if (application.campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (application.campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
     if (application.status !== ApplicationStatus.PENDING) {
       throw new BadRequestException('Application is not pending');
     }
@@ -151,12 +162,17 @@ export class ApplicationsService {
 
   async withdraw(id: string, userId: string) {
     const influencer = await this.findInfluencerOrFail(userId);
-    const application = await this.prisma.application.findUnique({ where: { id } });
+    const application = await this.prisma.application.findUnique({
+      where: { id },
+    });
 
     if (!application) throw new NotFoundException('Application not found');
-    if (application.influencerId !== influencer.id) throw new ForbiddenException('Not your application');
+    if (application.influencerId !== influencer.id)
+      throw new ForbiddenException('Not your application');
     if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Only pending applications can be withdrawn');
+      throw new BadRequestException(
+        'Only pending applications can be withdrawn',
+      );
     }
 
     return this.prisma.application.update({
@@ -186,8 +202,11 @@ export class ApplicationsService {
     if (!influencer) throw new NotFoundException('Influencer not found');
 
     const cooldownMs =
-      parseInt(this.config.get<string>('IG_REFRESH_COOLDOWN_MINUTES', '15'), 10) * 60_000;
-    const lastAttempt = influencer.igFetchedAt as Date | null;
+      parseInt(
+        this.config.get<string>('IG_REFRESH_COOLDOWN_MINUTES', '15'),
+        10,
+      ) * 60_000;
+    const lastAttempt = influencer.igFetchedAt;
 
     if (lastAttempt && Date.now() - lastAttempt.getTime() < cooldownMs) {
       const waitMin = Math.ceil(
@@ -213,8 +232,11 @@ export class ApplicationsService {
   // ─── Helpers privados ────────────────────────────────────────────────────────
 
   private async findInfluencerOrFail(userId: string) {
-    const influencer = await this.prisma.influencer.findUnique({ where: { userId } });
-    if (!influencer) throw new ForbiddenException('User does not have an influencer profile');
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+    });
+    if (!influencer)
+      throw new ForbiddenException('User does not have an influencer profile');
     return influencer;
   }
 
