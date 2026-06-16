@@ -8,11 +8,7 @@ import { JwtAccessStrategy } from '../infrastructure/strategies/jwt-access.strat
 import { JwtRefreshStrategy } from '../infrastructure/strategies/jwt-refresh.strategy';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    PassportModule,
-    JwtModule.register({}),
-  ],
+  imports: [DatabaseModule, PassportModule, JwtModule.register({})],
   providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
   controllers: [AuthController],
   exports: [AuthService],

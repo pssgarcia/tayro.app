@@ -29,7 +29,10 @@ export class ApplicationsController {
   @UseGuards(RolesGuard)
   @Roles('INFLUENCER')
   @ApiOperation({ summary: 'Influencer aplica para uma campanha' })
-  create(@CurrentUser() user: { id: string }, @Body() dto: CreateApplicationDto) {
+  create(
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateApplicationDto,
+  ) {
     return this.applicationsService.create(user.id, dto);
   }
 
@@ -81,7 +84,9 @@ export class ApplicationsController {
   @UseGuards(RolesGuard, ThrottlerGuard)
   @Roles('BRAND')
   @Throttle({ default: { limit: 3, ttl: 300_000 } }) // 3 chamadas por 5 min por IP
-  @ApiOperation({ summary: 'Atualizar dados de IG da creator — sujeito a cooldown (Brand)' })
+  @ApiOperation({
+    summary: 'Atualizar dados de IG da creator — sujeito a cooldown (Brand)',
+  })
   refreshIg(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.applicationsService.refreshInfluencerIg(id, user.id);
   }

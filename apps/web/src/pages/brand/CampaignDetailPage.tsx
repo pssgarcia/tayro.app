@@ -140,18 +140,27 @@ function ApplicationsTab({ campaignId }: { campaignId: string }) {
 
   const hasPending = applications.some((a) => a.influencer.igFetchStatus === 'PENDING');
 
-  // Inicia timer de 45s quando aparecem apps PENDING; para e reseta quando somem
+  // Quando não há mais apps PENDING, zera o timeout durante o render — padrão
+  // recomendado pelo React para ajustar estado quando um valor derivado muda
+  // (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
+  if (!hasPending && pollTimedOut) {
+    setPollTimedOut(false);
+  }
+
+  // Inicia timer de 45s quando aparecem apps PENDING; para quando somem
   useEffect(() => {
     if (!hasPending) {
       pollStartRef.current = null;
-      if (pollTimedOut) setPollTimedOut(false);
       return;
     }
     if (pollTimedOut) return;
 
     if (!pollStartRef.current) pollStartRef.current = Date.now();
     const remaining = POLL_TIMEOUT_MS - (Date.now() - pollStartRef.current);
-    if (remaining <= 0) { setPollTimedOut(true); return; }
+    if (remaining <= 0) {
+      setPollTimedOut(true);
+      return;
+    }
 
     const timer = setTimeout(() => setPollTimedOut(true), remaining);
     return () => clearTimeout(timer);

@@ -72,7 +72,10 @@ export class AuthController {
     @CurrentUser() user: { id: string; refreshToken: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.refreshTokens(user.id, user.refreshToken);
+    const result = await this.authService.refreshTokens(
+      user.id,
+      user.refreshToken,
+    );
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }

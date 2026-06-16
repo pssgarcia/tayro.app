@@ -15,7 +15,9 @@ export class CreateCampaignDto {
   @IsString()
   title: string;
 
-  @ApiProperty({ example: 'Preciso de conteúdo mostrando uso do produto no treino.' })
+  @ApiProperty({
+    example: 'Preciso de conteúdo mostrando uso do produto no treino.',
+  })
   @IsString()
   description: string;
 
@@ -46,13 +48,19 @@ export class CreateCampaignDto {
   @IsEnum(OfferType)
   offerType?: OfferType;
 
-  @ApiPropertyOptional({ example: 30000, description: 'Valor em centavos (30000 = R$300)' })
+  @ApiPropertyOptional({
+    example: 30000,
+    description: 'Valor em centavos (30000 = R$300)',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   offerAmount?: number;
 
-  @ApiPropertyOptional({ example: 15, description: 'Dias para pagamento/envio após aprovação' })
+  @ApiPropertyOptional({
+    example: 15,
+    description: 'Dias para pagamento/envio após aprovação',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

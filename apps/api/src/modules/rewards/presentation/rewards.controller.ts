@@ -52,7 +52,9 @@ export class RewardsController {
   @Patch(':id/issue')
   @UseGuards(RolesGuard)
   @Roles('BRAND')
-  @ApiOperation({ summary: 'Marcar recompensa como emitida — PENDING → ISSUED (Brand)' })
+  @ApiOperation({
+    summary: 'Marcar recompensa como emitida — PENDING → ISSUED (Brand)',
+  })
   markAsIssued(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.rewardsService.markAsIssued(id, user.id);
   }
@@ -60,8 +62,13 @@ export class RewardsController {
   @Patch(':id/deliver')
   @UseGuards(RolesGuard)
   @Roles('BRAND')
-  @ApiOperation({ summary: 'Marcar recompensa como entregue — ISSUED → DELIVERED (Brand)' })
-  markAsDelivered(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+  @ApiOperation({
+    summary: 'Marcar recompensa como entregue — ISSUED → DELIVERED (Brand)',
+  })
+  markAsDelivered(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+  ) {
     return this.rewardsService.markAsDelivered(id, user.id);
   }
 }

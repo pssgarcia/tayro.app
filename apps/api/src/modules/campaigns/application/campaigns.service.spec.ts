@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CampaignStatus } from '@prisma/client';
 import { CampaignsService } from './campaigns.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
@@ -73,7 +77,9 @@ describe('CampaignsService', () => {
     });
 
     it('returns DRAFT campaign to its brand owner', async () => {
-      prisma.campaign.findUnique.mockResolvedValue(makeCampaign({ status: CampaignStatus.DRAFT }));
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({ status: CampaignStatus.DRAFT }),
+      );
       prisma.brand.count.mockResolvedValue(1); // is owner
 
       const result = await service.findOne('camp-1', 'user-1');
@@ -82,33 +88,43 @@ describe('CampaignsService', () => {
     });
 
     it('throws 404 for DRAFT campaign to non-owner — does not leak existence', async () => {
-      prisma.campaign.findUnique.mockResolvedValue(makeCampaign({ status: CampaignStatus.DRAFT }));
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({ status: CampaignStatus.DRAFT }),
+      );
       prisma.brand.count.mockResolvedValue(0);
 
-      await expect(service.findOne('camp-1', 'other-user'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne('camp-1', 'other-user')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws 404 for DRAFT campaign to unauthenticated viewer', async () => {
-      prisma.campaign.findUnique.mockResolvedValue(makeCampaign({ status: CampaignStatus.DRAFT }));
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({ status: CampaignStatus.DRAFT }),
+      );
 
-      await expect(service.findOne('camp-1'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne('camp-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws 404 for CLOSED campaign to non-owner', async () => {
-      prisma.campaign.findUnique.mockResolvedValue(makeCampaign({ status: CampaignStatus.CLOSED }));
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({ status: CampaignStatus.CLOSED }),
+      );
       prisma.brand.count.mockResolvedValue(0);
 
-      await expect(service.findOne('camp-1', 'other-user'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne('camp-1', 'other-user')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('throws 404 when campaign does not exist', async () => {
       prisma.campaign.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -117,9 +133,14 @@ describe('CampaignsService', () => {
   describe('publish', () => {
     it('transitions DRAFT → ACTIVE', async () => {
       prisma.campaign.findUnique.mockResolvedValue(
-        makeCampaign({ status: CampaignStatus.DRAFT, brand: makeBrand({ userId: 'user-1' }) }),
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
       );
-      prisma.campaign.update.mockResolvedValue(makeCampaign({ status: CampaignStatus.ACTIVE }));
+      prisma.campaign.update.mockResolvedValue(
+        makeCampaign({ status: CampaignStatus.ACTIVE }),
+      );
 
       const result = await service.publish('camp-1', 'user-1');
 
@@ -131,20 +152,28 @@ describe('CampaignsService', () => {
 
     it('throws BadRequestException when campaign is already ACTIVE', async () => {
       prisma.campaign.findUnique.mockResolvedValue(
-        makeCampaign({ status: CampaignStatus.ACTIVE, brand: makeBrand({ userId: 'user-1' }) }),
+        makeCampaign({
+          status: CampaignStatus.ACTIVE,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
       );
 
-      await expect(service.publish('camp-1', 'user-1'))
-        .rejects.toThrow(BadRequestException);
+      await expect(service.publish('camp-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws ForbiddenException when user does not own the campaign', async () => {
       prisma.campaign.findUnique.mockResolvedValue(
-        makeCampaign({ status: CampaignStatus.DRAFT, brand: makeBrand({ userId: 'owner' }) }),
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'owner' }),
+        }),
       );
 
-      await expect(service.publish('camp-1', 'attacker'))
-        .rejects.toThrow(ForbiddenException);
+      await expect(service.publish('camp-1', 'attacker')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -153,7 +182,10 @@ describe('CampaignsService', () => {
   describe('findMine', () => {
     it('returns only campaigns owned by the brand', async () => {
       prisma.brand.findUnique.mockResolvedValue(makeBrand());
-      prisma.campaign.findMany.mockResolvedValue([makeCampaign(), makeCampaign({ id: 'camp-2' })]);
+      prisma.campaign.findMany.mockResolvedValue([
+        makeCampaign(),
+        makeCampaign({ id: 'camp-2' }),
+      ]);
 
       const result = await service.findMine('user-1');
 
@@ -166,8 +198,9 @@ describe('CampaignsService', () => {
     it('throws ForbiddenException when user has no brand profile', async () => {
       prisma.brand.findUnique.mockResolvedValue(null);
 
-      await expect(service.findMine('user-without-brand'))
-        .rejects.toThrow(ForbiddenException);
+      await expect(service.findMine('user-without-brand')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

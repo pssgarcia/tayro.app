@@ -24,7 +24,9 @@ async function bootstrap() {
   );
 
   // CORS — explicit origins only, never wildcard in production
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:5173'];
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? [
+    'http://localhost:5173',
+  ];
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,

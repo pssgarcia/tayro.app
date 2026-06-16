@@ -26,8 +26,13 @@ export class ContentController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles('INFLUENCER')
-  @ApiOperation({ summary: 'Enviar conteúdo para uma application aprovada (Influencer)' })
-  submit(@CurrentUser() user: { id: string }, @Body() dto: CreateSubmissionDto) {
+  @ApiOperation({
+    summary: 'Enviar conteúdo para uma application aprovada (Influencer)',
+  })
+  submit(
+    @CurrentUser() user: { id: string },
+    @Body() dto: CreateSubmissionDto,
+  ) {
     return this.contentService.submit(user.id, dto);
   }
 
@@ -40,7 +45,9 @@ export class ContentController {
   }
 
   @Get('application/:applicationId')
-  @ApiOperation({ summary: 'Conteúdos de uma application (Brand ou Influencer dono)' })
+  @ApiOperation({
+    summary: 'Conteúdos de uma application (Brand ou Influencer dono)',
+  })
   findByApplication(
     @Param('applicationId') applicationId: string,
     @CurrentUser() user: { id: string },

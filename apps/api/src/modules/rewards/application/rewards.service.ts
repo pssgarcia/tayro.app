@@ -20,7 +20,8 @@ export class RewardsService {
       where: { id: dto.campaignId },
     });
     if (!campaign) throw new NotFoundException('Campaign not found');
-    if (campaign.brandId !== brand.id) throw new ForbiddenException('Not your campaign');
+    if (campaign.brandId !== brand.id)
+      throw new ForbiddenException('Not your campaign');
 
     // Verifica que o influencer tem conteúdo aprovado nessa campanha
     const hasApprovedContent = await this.prisma.contentSubmission.findFirst({
@@ -34,7 +35,9 @@ export class RewardsService {
       },
     });
     if (!hasApprovedContent) {
-      throw new BadRequestException('Influencer has no approved content for this campaign');
+      throw new BadRequestException(
+        'Influencer has no approved content for this campaign',
+      );
     }
 
     return this.prisma.reward.create({
@@ -65,7 +68,9 @@ export class RewardsService {
     const reward = await this.findOwnedOrFail(id, userId);
 
     if (reward.status !== RewardStatus.ISSUED) {
-      throw new BadRequestException('Reward must be issued before marking as delivered');
+      throw new BadRequestException(
+        'Reward must be issued before marking as delivered',
+      );
     }
 
     return this.prisma.reward.update({
@@ -77,28 +82,38 @@ export class RewardsService {
   async findByCampaign(campaignId: string, userId: string) {
     const brand = await this.findBrandOrFail(userId);
 
-    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+    });
     if (!campaign) throw new NotFoundException('Campaign not found');
-    if (campaign.brandId !== brand.id) throw new ForbiddenException('Not your campaign');
+    if (campaign.brandId !== brand.id)
+      throw new ForbiddenException('Not your campaign');
 
     return this.prisma.reward.findMany({
       where: { campaignId },
       orderBy: { createdAt: 'desc' },
       include: {
-        influencer: { select: { name: true, avatarUrl: true, instagramHandle: true } },
+        influencer: {
+          select: { name: true, avatarUrl: true, instagramHandle: true },
+        },
       },
     });
   }
 
   async findMine(userId: string) {
-    const influencer = await this.prisma.influencer.findUnique({ where: { userId } });
-    if (!influencer) throw new ForbiddenException('User does not have an influencer profile');
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+    });
+    if (!influencer)
+      throw new ForbiddenException('User does not have an influencer profile');
 
     return this.prisma.reward.findMany({
       where: { influencerId: influencer.id },
       orderBy: { createdAt: 'desc' },
       include: {
-        campaign: { select: { title: true, brand: { select: { name: true } } } },
+        campaign: {
+          select: { title: true, brand: { select: { name: true } } },
+        },
       },
     });
   }
@@ -107,7 +122,8 @@ export class RewardsService {
 
   private async findBrandOrFail(userId: string) {
     const brand = await this.prisma.brand.findUnique({ where: { userId } });
-    if (!brand) throw new ForbiddenException('User does not have a brand profile');
+    if (!brand)
+      throw new ForbiddenException('User does not have a brand profile');
     return brand;
   }
 
@@ -118,7 +134,8 @@ export class RewardsService {
       include: { campaign: true },
     });
     if (!reward) throw new NotFoundException('Reward not found');
-    if (reward.campaign.brandId !== brand.id) throw new ForbiddenException('Not your campaign');
+    if (reward.campaign.brandId !== brand.id)
+      throw new ForbiddenException('Not your campaign');
     return reward;
   }
 }

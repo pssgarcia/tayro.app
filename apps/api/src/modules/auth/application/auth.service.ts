@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -64,10 +68,16 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
 
     // Mesmo erro para email errado e senha errada — não revela o que existe
-    if (!user || !user.isActive || !(await bcrypt.compare(dto.password, user.password))) {
+    if (
+      !user ||
+      !user.isActive ||
+      !(await bcrypt.compare(dto.password, user.password))
+    ) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -76,10 +86,15 @@ export class AuthService {
 
   async refreshTokens(userId: string, incomingToken: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.isActive || !user.refreshTokenHash) throw new UnauthorizedException();
+    if (!user || !user.isActive || !user.refreshTokenHash)
+      throw new UnauthorizedException();
 
-    const incomingHash = crypto.createHash('sha256').update(incomingToken).digest('hex');
-    if (incomingHash !== user.refreshTokenHash) throw new UnauthorizedException();
+    const incomingHash = crypto
+      .createHash('sha256')
+      .update(incomingToken)
+      .digest('hex');
+    if (incomingHash !== user.refreshTokenHash)
+      throw new UnauthorizedException();
 
     return this.buildAuthResponse(user);
   }
@@ -101,7 +116,9 @@ export class AuthService {
       { sub: user.id, email: user.email, role: user.role },
       {
         secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.config.getOrThrow<string>('JWT_ACCESS_EXPIRES_IN') as any,
+        expiresIn: this.config.getOrThrow<string>(
+          'JWT_ACCESS_EXPIRES_IN',
+        ) as any,
       },
     );
 
@@ -109,11 +126,16 @@ export class AuthService {
       { sub: user.id },
       {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.config.getOrThrow<string>('JWT_REFRESH_EXPIRES_IN') as any,
+        expiresIn: this.config.getOrThrow<string>(
+          'JWT_REFRESH_EXPIRES_IN',
+        ) as any,
       },
     );
 
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshTokenHash: tokenHash },

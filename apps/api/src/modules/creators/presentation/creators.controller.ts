@@ -8,7 +8,9 @@ export class CreatorsController {
   constructor(private readonly creatorsService: CreatorsService) {}
 
   @Get(':handle/public')
-  @ApiOperation({ summary: 'Perfil público da creator — sem auth (tayro.app/c/:handle)' })
+  @ApiOperation({
+    summary: 'Perfil público da creator — sem auth (tayro.app/c/:handle)',
+  })
   getPublicProfile(@Param('handle') handle: string) {
     return this.creatorsService.getPublicProfile(handle);
   }

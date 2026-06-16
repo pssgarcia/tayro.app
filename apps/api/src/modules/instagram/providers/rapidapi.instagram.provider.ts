@@ -1,6 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
-import type { InstagramProvider, InstagramProfile, IgPost } from '../instagram.types';
-import { calcEngagementRate } from '../engagement.utils';
+import type { InstagramProvider, InstagramProfile } from '../instagram.types';
 import { InstagramFetchError } from './instagram-fetch.error';
 
 // ---------------------------------------------------------------------------
@@ -42,17 +41,19 @@ export class RapidApiInstagramProvider implements InstagramProvider {
     this.apiKey = config.getOrThrow<string>('RAPIDAPI_KEY');
     this.apiHost = config.getOrThrow<string>('RAPIDAPI_HOST');
     this.baseUrl = config.getOrThrow<string>('RAPIDAPI_BASE_URL');
-    this.timeoutMs = parseInt(config.get<string>('IG_FETCH_TIMEOUT_MS', '10000'), 10);
+    this.timeoutMs = parseInt(
+      config.get<string>('IG_FETCH_TIMEOUT_MS', '10000'),
+      10,
+    );
   }
 
   async fetchProfile(handle: string): Promise<InstagramProfile> {
-    let lastError: unknown;
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const raw = await this.fetchRaw(handle);
         return this.rawToProfile(raw);
-      } catch (err) {
-        lastError = err;
+      } catch {
+        // continua para a próxima tentativa
       }
     }
     // Nunca vaza detalhes internos do provider para camadas acima

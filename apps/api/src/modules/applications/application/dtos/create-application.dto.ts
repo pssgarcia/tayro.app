@@ -6,7 +6,9 @@ export class CreateApplicationDto {
   @IsUUID()
   campaignId: string;
 
-  @ApiPropertyOptional({ example: 'Tenho experiência com conteúdo fitness e 10k seguidores.' })
+  @ApiPropertyOptional({
+    example: 'Tenho experiência com conteúdo fitness e 10k seguidores.',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(1000)
