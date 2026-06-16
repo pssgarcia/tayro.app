@@ -61,15 +61,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Deploy via Vercel CLI.
+      # Deploy via Vercel CLI a partir da RAIZ do repo.
+      # O projeto na Vercel já tem "Root Directory = apps/web" configurado,
+      # então a CLI aplica esse subdiretório uma única vez. Rodar de dentro de
+      # apps/web duplicaria o caminho (apps/web/apps/web) e quebraria o deploy.
       # Para configurar:
-      #   1. Crie um projeto na Vercel (vercel.com)
+      #   1. Crie um projeto na Vercel (vercel.com) com Root Directory = apps/web
       #   2. Gere um token em Settings → Tokens
       #   3. Pegue VERCEL_ORG_ID e VERCEL_PROJECT_ID rodando `vercel link` localmente
       #   4. Adicione os 3 secrets em Settings → Secrets do repositório
       - name: Deploy to Vercel
         run: npx vercel@latest --prod --yes
-        working-directory: apps/web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
