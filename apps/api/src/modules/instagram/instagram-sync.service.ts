@@ -24,7 +24,10 @@ export class InstagramSyncService {
    * Em caso de falha: persiste igFetchStatus=FAILED + igFetchedAt=now (para
    * que o cooldown do refresh manual funcione mesmo sem dados novos).
    */
-  async refresh(influencerId: string, { force = false }: { force?: boolean } = {}): Promise<void> {
+  async refresh(
+    influencerId: string,
+    { force = false }: { force?: boolean } = {},
+  ): Promise<void> {
     const influencer = await this.prisma.influencer.findUnique({
       where: { id: influencerId },
       select: { instagramHandle: true, igFetchStatus: true, igFetchedAt: true },
@@ -37,7 +40,7 @@ export class InstagramSyncService {
         this.config.get<string>('IG_FETCH_STALENESS_HOURS', '24'),
         10,
       );
-      const fetchedAt = influencer.igFetchedAt as Date | null;
+      const fetchedAt = influencer.igFetchedAt;
       const isFresh =
         influencer.igFetchStatus === IgFetchStatus.OK &&
         fetchedAt !== null &&
@@ -47,12 +50,19 @@ export class InstagramSyncService {
 
     await this.prisma.influencer.update({
       where: { id: influencerId },
-      data: { igFetchStatus: IgFetchStatus.PENDING } as Prisma.InfluencerUpdateInput,
+      data: {
+        igFetchStatus: IgFetchStatus.PENDING,
+      },
     });
 
     try {
-      const profile = await this.provider.fetchProfile(influencer.instagramHandle);
-      const igEngagementRate = calcEngagementRate(profile.recentPosts, profile.followers);
+      const profile = await this.provider.fetchProfile(
+        influencer.instagramHandle,
+      );
+      const igEngagementRate = calcEngagementRate(
+        profile.recentPosts,
+        profile.followers,
+      );
 
       await this.prisma.influencer.update({
         where: { id: influencerId },
@@ -62,7 +72,7 @@ export class InstagramSyncService {
           igRecentPosts: profile.recentPosts as unknown as Prisma.JsonArray,
           igFetchedAt: new Date(),
           igFetchStatus: IgFetchStatus.OK,
-        } as Prisma.InfluencerUpdateInput,
+        },
       });
     } catch {
       // Mantém valores anteriores; igFetchedAt=now para o cooldown do refresh manual
@@ -71,9 +81,11 @@ export class InstagramSyncService {
         data: {
           igFetchStatus: IgFetchStatus.FAILED,
           igFetchedAt: new Date(),
-        } as Prisma.InfluencerUpdateInput,
+        },
       });
-      this.logger.error(`Instagram fetch failed for influencer ${influencerId}`);
+      this.logger.error(
+        `Instagram fetch failed for influencer ${influencerId}`,
+      );
     }
   }
 }

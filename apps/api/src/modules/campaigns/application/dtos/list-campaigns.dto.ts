@@ -18,7 +18,10 @@ export class ListCampaignsDto {
   @Min(1)
   limit?: number = 20;
 
-  @ApiPropertyOptional({ example: 'fitness,wellness', description: 'Nichos separados por vírgula' })
+  @ApiPropertyOptional({
+    example: 'fitness,wellness',
+    description: 'Nichos separados por vírgula',
+  })
   @IsOptional()
   @IsString()
   niches?: string;

@@ -13,7 +13,10 @@ export interface PaginatedResult<T> {
   };
 }
 
-export function paginate(params: PaginationParams): { skip: number; take: number } {
+export function paginate(params: PaginationParams): {
+  skip: number;
+  take: number;
+} {
   const page = Math.max(1, params.page);
   const limit = Math.min(100, Math.max(1, params.limit));
   return {

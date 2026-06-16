@@ -1,4 +1,10 @@
-import { IsUUID, IsEnum, IsString, IsOptional, MaxLength } from 'class-validator';
+import {
+  IsUUID,
+  IsEnum,
+  IsString,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { RewardType } from '@prisma/client';
 

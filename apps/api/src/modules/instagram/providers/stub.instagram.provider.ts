@@ -3,7 +3,7 @@ import type { InstagramProvider, InstagramProfile } from '../instagram.types';
 import { calcEngagementRate } from '../engagement.utils';
 
 export class StubInstagramProvider implements InstagramProvider {
-  async fetchProfile(handle: string): Promise<InstagramProfile> {
+  fetchProfile(handle: string): Promise<InstagramProfile> {
     const seed = this.seedFromHandle(handle);
     const followers = 1000 + Math.floor(this.rand(seed, 0) * 499000);
     const postCount = 8 + Math.floor(this.rand(seed, 1) * 5); // [8, 12]
@@ -25,7 +25,7 @@ export class StubInstagramProvider implements InstagramProvider {
     // engagementRate calculado pela mesma função compartilhada
     void calcEngagementRate(safePosts, followers);
 
-    return { followers, recentPosts: safePosts };
+    return Promise.resolve({ followers, recentPosts: safePosts });
   }
 
   private seedFromHandle(handle: string): number {

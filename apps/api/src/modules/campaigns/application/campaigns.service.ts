@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { ApplicationStatus, CampaignStatus } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
-import { paginate, buildPaginatedResult } from '../../../shared/utils/pagination';
+import {
+  paginate,
+  buildPaginatedResult,
+} from '../../../shared/utils/pagination';
 import { CreateCampaignDto } from './dtos/create-campaign.dto';
 import { UpdateCampaignDto } from './dtos/update-campaign.dto';
 import { ListCampaignsDto } from './dtos/list-campaigns.dto';
@@ -93,7 +96,9 @@ export class CampaignsService {
     if (campaign.status !== CampaignStatus.ACTIVE) {
       // Non-ACTIVE campaigns visible only to their brand owner
       const isOwner = viewerId
-        ? await this.prisma.brand.count({ where: { id: campaign.brandId, userId: viewerId } })
+        ? await this.prisma.brand.count({
+            where: { id: campaign.brandId, userId: viewerId },
+          })
         : 0;
       // 404 em vez de 403 — não vaza que a campanha existe como DRAFT
       if (!isOwner) throw new NotFoundException('Campaign not found');
@@ -160,7 +165,8 @@ export class CampaignsService {
 
   private async findBrandOrFail(userId: string) {
     const brand = await this.prisma.brand.findUnique({ where: { userId } });
-    if (!brand) throw new ForbiddenException('User does not have a brand profile');
+    if (!brand)
+      throw new ForbiddenException('User does not have a brand profile');
     return brand;
   }
 
@@ -171,7 +177,8 @@ export class CampaignsService {
     });
 
     if (!campaign) throw new NotFoundException('Campaign not found');
-    if (campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
 
     return campaign;
   }

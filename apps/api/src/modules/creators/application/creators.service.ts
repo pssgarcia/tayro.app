@@ -31,10 +31,14 @@ export class CreatorsService {
   // ─── Candidatura pública ──────────────────────────────────────────────────────
 
   async applyPublic(campaignId: string, dto: PublicApplyDto) {
-    const campaign = await this.prisma.campaign.findUnique({ where: { id: campaignId } });
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+    });
     if (!campaign) throw new NotFoundException('Programa não encontrado');
     if (campaign.status !== CampaignStatus.ACTIVE) {
-      throw new BadRequestException('Este programa não está aceitando candidaturas');
+      throw new BadRequestException(
+        'Este programa não está aceitando candidaturas',
+      );
     }
 
     const influencer = await this.findOrCreateInfluencer(dto);
@@ -48,7 +52,10 @@ export class CreatorsService {
 
       return { applicationId: application.id, status: application.status };
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
         throw new ConflictException('Você já se candidatou a este programa');
       }
       throw err;
@@ -114,7 +121,9 @@ export class CreatorsService {
     setImmediate(() => {
       this.instagramSync
         .refresh(influencerId)
-        .catch((err: unknown) => this.logger.error('scheduleIgFetch failed', err));
+        .catch((err: unknown) =>
+          this.logger.error('scheduleIgFetch failed', err),
+        );
     });
   }
 
@@ -124,7 +133,9 @@ export class CreatorsService {
     });
     if (byHandle) return byHandle;
 
-    const userByEmail = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const userByEmail = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (userByEmail) {
       if (userByEmail.role !== UserRole.INFLUENCER) {
         throw new ConflictException('Este e-mail já está cadastrado');

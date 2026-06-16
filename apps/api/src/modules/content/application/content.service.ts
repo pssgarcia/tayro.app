@@ -22,9 +22,12 @@ export class ContentService {
     });
 
     if (!application) throw new NotFoundException('Application not found');
-    if (application.influencerId !== influencer.id) throw new ForbiddenException('Not your application');
+    if (application.influencerId !== influencer.id)
+      throw new ForbiddenException('Not your application');
     if (application.status !== ApplicationStatus.APPROVED) {
-      throw new BadRequestException('Your application must be approved before submitting content');
+      throw new BadRequestException(
+        'Your application must be approved before submitting content',
+      );
     }
 
     return this.prisma.contentSubmission.create({
@@ -46,7 +49,9 @@ export class ContentService {
       include: {
         application: {
           select: {
-            campaign: { select: { title: true, brand: { select: { name: true } } } },
+            campaign: {
+              select: { title: true, brand: { select: { name: true } } },
+            },
           },
         },
       },
@@ -65,7 +70,8 @@ export class ContentService {
     const isInfluencerOwner = application.influencer.userId === userId;
     const isCampaignBrand = application.campaign.brand.userId === userId;
 
-    if (!isInfluencerOwner && !isCampaignBrand) throw new ForbiddenException('Access denied');
+    if (!isInfluencerOwner && !isCampaignBrand)
+      throw new ForbiddenException('Access denied');
 
     return this.prisma.contentSubmission.findMany({
       where: { applicationId },
@@ -76,53 +82,73 @@ export class ContentService {
   async approve(id: string, userId: string, dto: ReviewSubmissionDto) {
     const submission = await this.findWithCampaignOrFail(id);
 
-    if (submission.application.campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (submission.application.campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
     if (submission.status !== ContentStatus.PENDING) {
       throw new BadRequestException('Submission is not pending');
     }
 
     return this.prisma.contentSubmission.update({
       where: { id },
-      data: { status: ContentStatus.APPROVED, feedback: dto.feedback, reviewedAt: new Date() },
+      data: {
+        status: ContentStatus.APPROVED,
+        feedback: dto.feedback,
+        reviewedAt: new Date(),
+      },
     });
   }
 
   async reject(id: string, userId: string, dto: ReviewSubmissionDto) {
     const submission = await this.findWithCampaignOrFail(id);
 
-    if (submission.application.campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (submission.application.campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
     if (submission.status !== ContentStatus.PENDING) {
       throw new BadRequestException('Submission is not pending');
     }
 
     return this.prisma.contentSubmission.update({
       where: { id },
-      data: { status: ContentStatus.REJECTED, feedback: dto.feedback, reviewedAt: new Date() },
+      data: {
+        status: ContentStatus.REJECTED,
+        feedback: dto.feedback,
+        reviewedAt: new Date(),
+      },
     });
   }
 
   async requestRevision(id: string, userId: string, dto: ReviewSubmissionDto) {
     const submission = await this.findWithCampaignOrFail(id);
 
-    if (submission.application.campaign.brand.userId !== userId) throw new ForbiddenException('Not your campaign');
+    if (submission.application.campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
     if (submission.status !== ContentStatus.PENDING) {
       throw new BadRequestException('Submission is not pending');
     }
     if (!dto.feedback?.trim()) {
-      throw new BadRequestException('Feedback is required when requesting revision');
+      throw new BadRequestException(
+        'Feedback is required when requesting revision',
+      );
     }
 
     return this.prisma.contentSubmission.update({
       where: { id },
-      data: { status: ContentStatus.REVISION_REQUESTED, feedback: dto.feedback, reviewedAt: new Date() },
+      data: {
+        status: ContentStatus.REVISION_REQUESTED,
+        feedback: dto.feedback,
+        reviewedAt: new Date(),
+      },
     });
   }
 
   // ─── Helpers privados ────────────────────────────────────────────────────────
 
   private async findInfluencerOrFail(userId: string) {
-    const influencer = await this.prisma.influencer.findUnique({ where: { userId } });
-    if (!influencer) throw new ForbiddenException('User does not have an influencer profile');
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+    });
+    if (!influencer)
+      throw new ForbiddenException('User does not have an influencer profile');
     return influencer;
   }
 
