@@ -37,10 +37,12 @@ jobs:
       # Dispara o redeploy no Railway — ele puxa o código do GitHub e rebuilda.
       # "railway up" faria upload de arquivos (errado para monorepo).
       # "railway redeploy" apenas aciona o build já configurado no painel do Railway.
-      # Requer: projeto criado em railway.app com root directory = apps/api,
-      #         serviço nomeado "tayro-api", e RAILWAY_TOKEN nos secrets do repo.
+      # Usamos o Service ID (não o nome) — imutável e sem ambiguidade de
+      # capitalização. ID não é segredo (aparece na URL do painel); o que protege
+      # o acesso é o RAILWAY_TOKEN (Project Token, em secrets).
+      # Requer: projeto em railway.app com root directory = apps/api.
       - name: Redeploy API on Railway
-        run: npx @railway/cli@latest redeploy --service tayro-api --yes
+        run: npx @railway/cli@latest redeploy --service f0afafae-1cd2-41e2-b462-8c413dd53209 --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
