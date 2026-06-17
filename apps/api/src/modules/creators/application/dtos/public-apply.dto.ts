@@ -23,15 +23,18 @@ export class PublicApplyDto {
 
   @ApiProperty({ example: 'ana@email.com' })
   @IsEmail({}, { message: 'E-mail inválido' })
+  @MaxLength(254)
   email: string;
 
   @ApiPropertyOptional({ example: 'Ana Fitness' })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   name?: string;
 
   @ApiPropertyOptional({ example: 'Já uso os produtos e adoraria colaborar!' })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   message?: string;
 }
