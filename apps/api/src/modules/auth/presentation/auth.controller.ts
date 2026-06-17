@@ -8,8 +8,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { AUTH_THROTTLE } from '../../../shared/throttle/auth-throttle';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../application/auth.service';
@@ -30,6 +32,7 @@ export class AuthController {
   ) {}
 
   @Post('register/brand')
+  @Throttle({ default: AUTH_THROTTLE })
   @ApiOperation({ summary: 'Cadastrar conta de marca' })
   async registerBrand(
     @Body() dto: RegisterBrandDto,
@@ -41,6 +44,7 @@ export class AuthController {
   }
 
   @Post('register/influencer')
+  @Throttle({ default: AUTH_THROTTLE })
   @ApiOperation({ summary: 'Cadastrar conta de influencer' })
   async registerInfluencer(
     @Body() dto: RegisterInfluencerDto,
@@ -52,6 +56,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: AUTH_THROTTLE })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login' })
   async login(
