@@ -138,7 +138,7 @@ describe('ApplicationsService — race conditions', () => {
     it('rejeita quando a campanha não está ativa', async () => {
       prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
       prisma.campaign.findUnique.mockResolvedValue(
-        makeCampaign({ status: CampaignStatus.PAUSED }),
+        makeCampaign({ status: CampaignStatus.CLOSED }),
       );
 
       await expect(

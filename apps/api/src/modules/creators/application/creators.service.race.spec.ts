@@ -236,7 +236,7 @@ describe('CreatorsService — race conditions', () => {
     it('lança BadRequestException quando a campanha não está ativa', async () => {
       prisma.campaign.findUnique.mockResolvedValue({
         id: 'camp-1',
-        status: CampaignStatus.PAUSED,
+        status: CampaignStatus.CLOSED,
       });
 
       await expect(service.applyPublic('camp-1', applyDto)).rejects.toThrow(
