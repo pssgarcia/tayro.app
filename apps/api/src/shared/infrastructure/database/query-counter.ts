@@ -27,10 +27,9 @@ export class QueryCounter {
         const original = modelObj[method];
         if (typeof original !== 'function') continue;
         const key = `${model}.${method}`;
-        const self = this;
-        modelObj[method] = jest.fn(function (...args: unknown[]) {
-          self.calls.set(key, (self.calls.get(key) ?? 0) + 1);
-          return original(...args);
+        modelObj[method] = jest.fn((...args: unknown[]) => {
+          this.calls.set(key, (this.calls.get(key) ?? 0) + 1);
+          return original(...args) as unknown;
         }) as jest.Mock;
       }
     }

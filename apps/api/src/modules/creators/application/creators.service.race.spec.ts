@@ -115,17 +115,16 @@ describe('CreatorsService — race conditions', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       let createCount = 0;
-      prisma.user.create.mockImplementation(async () => {
+      prisma.user.create.mockImplementation(() => {
         createCount++;
         if (createCount === 2) {
           // Simula o banco rejeitando a segunda criação por unique constraint
-          const err = new Prisma.PrismaClientKnownRequestError(
+          throw new Prisma.PrismaClientKnownRequestError(
             'Unique constraint failed',
             { code: 'P2002', clientVersion: '6.0.0', meta: {} },
           );
-          throw err;
         }
-        return makeUser();
+        return Promise.resolve(makeUser());
       });
 
       prisma.application.create.mockResolvedValue({
@@ -193,7 +192,7 @@ describe('CreatorsService — race conditions', () => {
       prisma.user.findUnique.mockResolvedValue(null); // email não existe (snapshot)
 
       let createAttempts = 0;
-      prisma.user.create.mockImplementation(async () => {
+      prisma.user.create.mockImplementation(() => {
         createAttempts++;
         if (createAttempts === 2) {
           throw new Prisma.PrismaClientKnownRequestError('Unique constraint', {
@@ -202,7 +201,7 @@ describe('CreatorsService — race conditions', () => {
             meta: {},
           });
         }
-        return makeUser();
+        return Promise.resolve(makeUser());
       });
 
       prisma.application.create.mockResolvedValue({
@@ -240,9 +239,9 @@ describe('CreatorsService — race conditions', () => {
         status: CampaignStatus.PAUSED,
       });
 
-      await expect(
-        service.applyPublic('camp-1', applyDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.applyPublic('camp-1', applyDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('lança ConflictException quando o email pertence a uma marca', async () => {
@@ -253,9 +252,9 @@ describe('CreatorsService — race conditions', () => {
         role: UserRole.BRAND,
       });
 
-      await expect(
-        service.applyPublic('camp-1', applyDto),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.applyPublic('camp-1', applyDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('lança ConflictException quando o influencer já se candidatou', async () => {
@@ -269,9 +268,9 @@ describe('CreatorsService — race conditions', () => {
         }),
       );
 
-      await expect(
-        service.applyPublic('camp-1', applyDto),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.applyPublic('camp-1', applyDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 

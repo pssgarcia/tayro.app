@@ -11,13 +11,9 @@
  *   Isso reproduz a janela de race condition sem precisar de DB real.
  */
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApplicationStatus, CampaignStatus, Prisma } from '@prisma/client';
+import { ApplicationStatus, CampaignStatus } from '@prisma/client';
 import { ApplicationsService } from './applications.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
@@ -35,7 +31,10 @@ const makeCampaign = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const makeApplication = (id: string, overrides: Record<string, unknown> = {}) => ({
+const makeApplication = (
+  id: string,
+  overrides: Record<string, unknown> = {},
+) => ({
   id,
   campaignId: 'camp-1',
   influencerId: 'inf-1',
@@ -100,9 +99,12 @@ describe('ApplicationsService — race conditions', () => {
       );
 
       let created = 0;
-      prisma.application.create.mockImplementation(async () => {
+      prisma.application.create.mockImplementation(() => {
         created++;
-        return { id: `app-${created}`, status: ApplicationStatus.PENDING };
+        return Promise.resolve({
+          id: `app-${created}`,
+          status: ApplicationStatus.PENDING,
+        });
       });
 
       const dto = { campaignId: 'camp-1', message: 'oi' };
@@ -182,9 +184,12 @@ describe('ApplicationsService — race conditions', () => {
       prisma.application.count.mockResolvedValue(0);
 
       let approved = 0;
-      prisma.application.update.mockImplementation(async () => {
+      prisma.application.update.mockImplementation(() => {
         approved++;
-        return { id: `app-${approved}`, status: ApplicationStatus.APPROVED };
+        return Promise.resolve({
+          id: `app-${approved}`,
+          status: ApplicationStatus.APPROVED,
+        });
       });
 
       const results = await Promise.allSettled([
@@ -203,9 +208,9 @@ describe('ApplicationsService — race conditions', () => {
       prisma.application.findUnique.mockResolvedValue(makeApplication('app-1'));
       prisma.application.count.mockResolvedValue(1); // maxSpots=1, já cheio
 
-      await expect(
-        service.approve('app-1', 'brand-user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.approve('app-1', 'brand-user-1')).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(prisma.application.update).not.toHaveBeenCalled();
     });
@@ -213,9 +218,9 @@ describe('ApplicationsService — race conditions', () => {
     it('rejeita quando não é dono da campanha', async () => {
       prisma.application.findUnique.mockResolvedValue(makeApplication('app-1'));
 
-      await expect(
-        service.approve('app-1', 'outro-user'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.approve('app-1', 'outro-user')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('rejeita quando a aplicação não está pendente', async () => {
@@ -224,9 +229,9 @@ describe('ApplicationsService — race conditions', () => {
       );
       prisma.application.count.mockResolvedValue(0);
 
-      await expect(
-        service.approve('app-1', 'brand-user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.approve('app-1', 'brand-user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('não emite mais de 3 queries para aprovar uma application (sem N+1)', async () => {
@@ -255,9 +260,9 @@ describe('ApplicationsService — race conditions', () => {
     it('rejeita quando não é dono da campanha', async () => {
       prisma.application.findUnique.mockResolvedValue(makeApplication('app-1'));
 
-      await expect(
-        service.reject('app-1', 'outro-user'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.reject('app-1', 'outro-user')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('rejeita quando a aplicação não está pendente', async () => {
@@ -265,9 +270,9 @@ describe('ApplicationsService — race conditions', () => {
         makeApplication('app-1', { status: ApplicationStatus.WITHDRAWN }),
       );
 
-      await expect(
-        service.reject('app-1', 'brand-user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.reject('app-1', 'brand-user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
