@@ -155,22 +155,51 @@ export class CreatorsService {
     }
 
     const randomPassword = await bcrypt.hash(randomUUID(), 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: randomPassword,
-        role: UserRole.INFLUENCER,
-        influencer: {
-          create: {
-            name: dto.name ?? dto.igHandle,
-            instagramHandle: dto.igHandle,
-            igFetchStatus: IgFetchStatus.PENDING,
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: randomPassword,
+          role: UserRole.INFLUENCER,
+          influencer: {
+            create: {
+              name: dto.name ?? dto.igHandle,
+              instagramHandle: dto.igHandle,
+              igFetchStatus: IgFetchStatus.PENDING,
+            },
           },
         },
-      },
+        include: { influencer: true },
+      });
+
+      return user.influencer!;
+    } catch (err) {
+      // Race condition: entre os findUnique acima e este create, outro request
+      // concorrente pode ter criado o mesmo igHandle/email (ambos @unique). O
+      // Postgres rejeita com P2002. Em vez de vazar 500, reusamos o registro
+      // que o request concorrente acabou de criar.
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        const existing = await this.findExistingInfluencer(dto);
+        if (existing) return existing;
+      }
+      throw err;
+    }
+  }
+
+  /** Rebusca o influencer por handle ou email após uma colisão P2002 concorrente. */
+  private async findExistingInfluencer(dto: PublicApplyDto) {
+    const byHandle = await this.prisma.influencer.findUnique({
+      where: { instagramHandle: dto.igHandle },
+    });
+    if (byHandle) return byHandle;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
       include: { influencer: true },
     });
-
-    return user.influencer!;
+    return user?.influencer ?? null;
   }
 }
