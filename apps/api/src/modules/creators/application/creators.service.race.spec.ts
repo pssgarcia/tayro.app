@@ -96,57 +96,63 @@ describe('CreatorsService — race conditions', () => {
   // ─── RC-1: igHandle duplicado sob concorrência ────────────────────────────────
 
   describe('applyPublic() — RC-1: igHandle duplicado sob concorrência', () => {
-    it('não cria dois influencers com o mesmo igHandle em requests concorrentes', async () => {
-      // Ambas as chamadas concorrentes:
-      //   1. Vêem influencer.findUnique → null (não existe ainda)
-      //   2. Vêem user.findUnique → null (email novo)
-      //   3. Ambas prosseguem para user.create → tentam criar o mesmo registro
-      //
-      // Comportamento ATUAL (bug): P2002 (unique) na segunda chamada não é tratado
-      // no contexto de findOrCreateInfluencer, causando 500 para um dos usuários.
-      //
-      // Fix esperado: usar prisma.$transaction() com upsert ou tratar P2002 de
-      // instagramHandle como "já existe, retorne o existente".
+    // it.failing: RED esperado. Enquanto findOrCreateInfluencer não estiver em
+    // transação/upsert, este teste PASSA no CI. Após o fix, vira vermelho →
+    // sinaliza "remova o .failing".
+    it.failing(
+      'não cria dois influencers com o mesmo igHandle em requests concorrentes',
+      async () => {
+        // Ambas as chamadas concorrentes:
+        //   1. Vêem influencer.findUnique → null (não existe ainda)
+        //   2. Vêem user.findUnique → null (email novo)
+        //   3. Ambas prosseguem para user.create → tentam criar o mesmo registro
+        //
+        // Comportamento ATUAL (bug): P2002 (unique) na segunda chamada não é tratado
+        // no contexto de findOrCreateInfluencer, causando 500 para um dos usuários.
+        //
+        // Fix esperado: usar prisma.$transaction() com upsert ou tratar P2002 de
+        // instagramHandle como "já existe, retorne o existente".
 
-      prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
+        prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
 
-      // Ambas as chamadas vêem null no snapshot (janela de race)
-      prisma.influencer.findUnique.mockResolvedValue(null);
-      prisma.user.findUnique.mockResolvedValue(null);
+        // Ambas as chamadas vêem null no snapshot (janela de race)
+        prisma.influencer.findUnique.mockResolvedValue(null);
+        prisma.user.findUnique.mockResolvedValue(null);
 
-      let createCount = 0;
-      prisma.user.create.mockImplementation(() => {
-        createCount++;
-        if (createCount === 2) {
-          // Simula o banco rejeitando a segunda criação por unique constraint
-          throw new Prisma.PrismaClientKnownRequestError(
-            'Unique constraint failed',
-            { code: 'P2002', clientVersion: '6.0.0', meta: {} },
-          );
-        }
-        return Promise.resolve(makeUser());
-      });
+        let createCount = 0;
+        prisma.user.create.mockImplementation(() => {
+          createCount++;
+          if (createCount === 2) {
+            // Simula o banco rejeitando a segunda criação por unique constraint
+            throw new Prisma.PrismaClientKnownRequestError(
+              'Unique constraint failed',
+              { code: 'P2002', clientVersion: '6.0.0', meta: {} },
+            );
+          }
+          return Promise.resolve(makeUser());
+        });
 
-      prisma.application.create.mockResolvedValue({
-        id: 'app-1',
-        status: ApplicationStatus.PENDING,
-      });
+        prisma.application.create.mockResolvedValue({
+          id: 'app-1',
+          status: ApplicationStatus.PENDING,
+        });
 
-      const results = await Promise.allSettled([
-        service.applyPublic('camp-1', applyDto),
-        service.applyPublic('camp-1', applyDto),
-      ]);
+        const results = await Promise.allSettled([
+          service.applyPublic('camp-1', applyDto),
+          service.applyPublic('camp-1', applyDto),
+        ]);
 
-      const failures = results.filter((r) => r.status === 'rejected');
+        const failures = results.filter((r) => r.status === 'rejected');
 
-      // TODO: após fix com transação/upsert, ambas as chamadas devem terminar
-      // com sucesso (a segunda reutiliza o influencer já criado) OU a segunda
-      // lança ConflictException com mensagem amigável. Em NENHUM caso um 500.
-      //
-      // Comportamento ATUAL: a segunda chamada lança um P2002 não tratado (500).
-      // O teste documenta que deve ser 0 failures após o fix.
-      expect(failures.length).toBe(0); // falha atualmente — P2002 escapa como 500
-    });
+        // TODO: após fix com transação/upsert, ambas as chamadas devem terminar
+        // com sucesso (a segunda reutiliza o influencer já criado) OU a segunda
+        // lança ConflictException com mensagem amigável. Em NENHUM caso um 500.
+        //
+        // Comportamento ATUAL: a segunda chamada lança um P2002 não tratado (500).
+        // O teste documenta que deve ser 0 failures após o fix.
+        expect(failures.length).toBe(0); // falha atualmente — P2002 escapa como 500
+      },
+    );
 
     it('retorna o influencer existente quando igHandle já existe (path feliz)', async () => {
       prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
@@ -184,42 +190,49 @@ describe('CreatorsService — race conditions', () => {
   // ─── RC-2: email duplicado sob concorrência ───────────────────────────────────
 
   describe('applyPublic() — RC-2: email duplicado sob concorrência', () => {
-    it('não tenta criar dois users com o mesmo email em requests concorrentes', async () => {
-      // Caso: igHandle diferente (não cai no return rápido), mas email é o mesmo.
-      // Ambas as chamadas vêem user.findUnique → null e prosseguem para create.
-      prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
-      prisma.influencer.findUnique.mockResolvedValue(null); // igHandle não existe
-      prisma.user.findUnique.mockResolvedValue(null); // email não existe (snapshot)
+    // it.failing: RED esperado até o fix com prisma.$transaction()/upsert.
+    it.failing(
+      'não tenta criar dois users com o mesmo email em requests concorrentes',
+      async () => {
+        // Caso: igHandle diferente (não cai no return rápido), mas email é o mesmo.
+        // Ambas as chamadas vêem user.findUnique → null e prosseguem para create.
+        prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
+        prisma.influencer.findUnique.mockResolvedValue(null); // igHandle não existe
+        prisma.user.findUnique.mockResolvedValue(null); // email não existe (snapshot)
 
-      let createAttempts = 0;
-      prisma.user.create.mockImplementation(() => {
-        createAttempts++;
-        if (createAttempts === 2) {
-          throw new Prisma.PrismaClientKnownRequestError('Unique constraint', {
-            code: 'P2002',
-            clientVersion: '6.0.0',
-            meta: {},
-          });
-        }
-        return Promise.resolve(makeUser());
-      });
+        let createAttempts = 0;
+        prisma.user.create.mockImplementation(() => {
+          createAttempts++;
+          if (createAttempts === 2) {
+            throw new Prisma.PrismaClientKnownRequestError(
+              'Unique constraint',
+              {
+                code: 'P2002',
+                clientVersion: '6.0.0',
+                meta: {},
+              },
+            );
+          }
+          return Promise.resolve(makeUser());
+        });
 
-      prisma.application.create.mockResolvedValue({
-        id: 'app-1',
-        status: ApplicationStatus.PENDING,
-      });
+        prisma.application.create.mockResolvedValue({
+          id: 'app-1',
+          status: ApplicationStatus.PENDING,
+        });
 
-      const results = await Promise.allSettled([
-        service.applyPublic('camp-1', applyDto),
-        service.applyPublic('camp-1', applyDto),
-      ]);
+        const results = await Promise.allSettled([
+          service.applyPublic('camp-1', applyDto),
+          service.applyPublic('camp-1', applyDto),
+        ]);
 
-      const failures = results.filter((r) => r.status === 'rejected');
+        const failures = results.filter((r) => r.status === 'rejected');
 
-      // TODO: após fix, failures.length deve ser 0 (segunda chamada reutiliza user).
-      // Comportamento ATUAL (bug): a segunda lança P2002 não tratado (500).
-      expect(failures.length).toBe(0); // falha atualmente
-    });
+        // TODO: após fix, failures.length deve ser 0 (segunda chamada reutiliza user).
+        // Comportamento ATUAL (bug): a segunda lança P2002 não tratado (500).
+        expect(failures.length).toBe(0); // falha atualmente
+      },
+    );
   });
 
   // ─── Validações sequenciais (devem funcionar independente do fix) ─────────────

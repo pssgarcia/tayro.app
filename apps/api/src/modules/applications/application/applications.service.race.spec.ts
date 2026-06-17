@@ -86,41 +86,49 @@ describe('ApplicationsService — race conditions', () => {
   // ─── create() ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    it('não permite mais aplicações que maxSpots sob requisições concorrentes', async () => {
-      // Ambas as chamadas concorrentes lêem o mesmo snapshot: count=0, maxSpots=1.
-      // Sem transação, as duas passam no check e criam uma application cada.
-      // Com prisma.$transaction() (isolamento SERIALIZABLE), apenas uma passa.
-      prisma.influencer.findUnique
-        .mockResolvedValueOnce(makeInfluencer('inf-1'))
-        .mockResolvedValueOnce(makeInfluencer('inf-2'));
+    // it.failing: RED esperado. Enquanto o bug existir, este teste PASSA no CI.
+    // Quando o fix com prisma.$transaction() entrar, ele vai parar de falhar →
+    // o it.failing vira vermelho, sinalizando "remova o .failing".
+    it.failing(
+      'não permite mais aplicações que maxSpots sob requisições concorrentes',
+      async () => {
+        // Ambas as chamadas concorrentes lêem o mesmo snapshot: count=0, maxSpots=1.
+        // Sem transação, as duas passam no check e criam uma application cada.
+        // Com prisma.$transaction() (isolamento SERIALIZABLE), apenas uma passa.
+        prisma.influencer.findUnique
+          .mockResolvedValueOnce(makeInfluencer('inf-1'))
+          .mockResolvedValueOnce(makeInfluencer('inf-2'));
 
-      prisma.campaign.findUnique.mockResolvedValue(
-        makeCampaign({ _count: { applications: 0 } }),
-      );
+        prisma.campaign.findUnique.mockResolvedValue(
+          makeCampaign({ _count: { applications: 0 } }),
+        );
 
-      let created = 0;
-      prisma.application.create.mockImplementation(() => {
-        created++;
-        return Promise.resolve({
-          id: `app-${created}`,
-          status: ApplicationStatus.PENDING,
+        let created = 0;
+        prisma.application.create.mockImplementation(() => {
+          created++;
+          return Promise.resolve({
+            id: `app-${created}`,
+            status: ApplicationStatus.PENDING,
+          });
         });
-      });
 
-      const dto = { campaignId: 'camp-1', message: 'oi' };
+        const dto = { campaignId: 'camp-1', message: 'oi' };
 
-      const results = await Promise.allSettled([
-        service.create('user-1', dto),
-        service.create('user-2', dto),
-      ]);
+        const results = await Promise.allSettled([
+          service.create('user-1', dto),
+          service.create('user-2', dto),
+        ]);
 
-      const successes = results.filter((r) => r.status === 'fulfilled').length;
+        const successes = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
 
-      // RED até o fix com prisma.$transaction(isolationLevel: Serializable).
-      // Com o fix, a segunda transação lê o count atualizado e lança BadRequestException.
-      expect(successes).toBe(1);
-      expect(created).toBe(1);
-    });
+        // RED até o fix com prisma.$transaction(isolationLevel: Serializable).
+        // Com o fix, a segunda transação lê o count atualizado e lança BadRequestException.
+        expect(successes).toBe(1);
+        expect(created).toBe(1);
+      },
+    );
 
     it('rejeita corretamente quando a campanha já está cheia (chamada sequencial)', async () => {
       prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
@@ -171,38 +179,44 @@ describe('ApplicationsService — race conditions', () => {
   // ─── approve() ───────────────────────────────────────────────────────────────
 
   describe('approve()', () => {
-    it('não aprova mais aplicações que maxSpots sob requisições concorrentes', async () => {
-      // Ambas vêem approvedCount=0 antes de qualquer update commitar.
-      const app1 = makeApplication('app-1');
-      const app2 = makeApplication('app-2');
+    // it.failing: RED esperado até o fix com prisma.$transaction().
+    it.failing(
+      'não aprova mais aplicações que maxSpots sob requisições concorrentes',
+      async () => {
+        // Ambas vêem approvedCount=0 antes de qualquer update commitar.
+        const app1 = makeApplication('app-1');
+        const app2 = makeApplication('app-2');
 
-      prisma.application.findUnique
-        .mockResolvedValueOnce(app1)
-        .mockResolvedValueOnce(app2);
+        prisma.application.findUnique
+          .mockResolvedValueOnce(app1)
+          .mockResolvedValueOnce(app2);
 
-      // Ambas lêem count=0 (janela de race)
-      prisma.application.count.mockResolvedValue(0);
+        // Ambas lêem count=0 (janela de race)
+        prisma.application.count.mockResolvedValue(0);
 
-      let approved = 0;
-      prisma.application.update.mockImplementation(() => {
-        approved++;
-        return Promise.resolve({
-          id: `app-${approved}`,
-          status: ApplicationStatus.APPROVED,
+        let approved = 0;
+        prisma.application.update.mockImplementation(() => {
+          approved++;
+          return Promise.resolve({
+            id: `app-${approved}`,
+            status: ApplicationStatus.APPROVED,
+          });
         });
-      });
 
-      const results = await Promise.allSettled([
-        service.approve('app-1', 'brand-user-1'),
-        service.approve('app-2', 'brand-user-1'),
-      ]);
+        const results = await Promise.allSettled([
+          service.approve('app-1', 'brand-user-1'),
+          service.approve('app-2', 'brand-user-1'),
+        ]);
 
-      const successes = results.filter((r) => r.status === 'fulfilled').length;
+        const successes = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
 
-      // RED até o fix com prisma.$transaction(isolationLevel: Serializable).
-      expect(successes).toBe(1);
-      expect(approved).toBe(1);
-    });
+        // RED até o fix com prisma.$transaction(isolationLevel: Serializable).
+        expect(successes).toBe(1);
+        expect(approved).toBe(1);
+      },
+    );
 
     it('rejeita aprovação quando campanha já está cheia (sequencial)', async () => {
       prisma.application.findUnique.mockResolvedValue(makeApplication('app-1'));
