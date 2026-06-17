@@ -17,3 +17,28 @@ export function formatCurrency(cents: number): string {
     currency: 'BRL',
   }).format(cents / 100);
 }
+
+/** ISO → "15 de jun. de 2026" | null → fallback */
+export function formatDate(iso: string | null, fallback = 'Sem prazo'): string {
+  if (!iso) return fallback;
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(iso));
+}
+
+/** Termos da oferta de uma campanha em texto curto. */
+export function formatOffer(offer: {
+  offerType: 'CASH' | 'PRODUCT' | null;
+  offerAmount: number | null;
+  offerDescription: string | null;
+}): string {
+  if (offer.offerType === 'CASH' && offer.offerAmount != null) {
+    return formatCurrency(offer.offerAmount);
+  }
+  if (offer.offerType === 'PRODUCT' && offer.offerDescription) {
+    return offer.offerDescription;
+  }
+  return '—';
+}
