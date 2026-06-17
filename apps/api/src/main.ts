@@ -38,8 +38,8 @@ async function bootstrap() {
   // Swagger (disabled in production)
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('UGC Platform API')
-      .setDescription('API para plataforma de micro influenciadoras UGC')
+      .setTitle('TAYRO API')
+      .setDescription('API do TAYRO — CRM de creators fitness')
       .setVersion('1.0')
       .addBearerAuth()
       .build();
