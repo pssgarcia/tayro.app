@@ -129,20 +129,44 @@ export class ApplicationsService {
       throw new BadRequestException('Application is not pending');
     }
 
-    const approvedCount = await this.prisma.application.count({
-      where: {
-        campaignId: application.campaignId,
-        status: ApplicationStatus.APPROVED,
-      },
-    });
-    if (approvedCount >= application.campaign.maxSpots) {
-      throw new BadRequestException('Campaign is full');
+    // Race condition: dois approves concorrentes podem ler approvedCount antes
+    // de qualquer um commitar e ambos estourar maxSpots. O check + update vão
+    // numa transação Serializable: o Postgres garante execução equivalente a
+    // serial — o segundo lê o count já atualizado e é rejeitado.
+    const maxSpots = application.campaign.maxSpots;
+    try {
+      return await this.prisma.$transaction(
+        async (tx) => {
+          const approvedCount = await tx.application.count({
+            where: {
+              campaignId: application.campaignId,
+              status: ApplicationStatus.APPROVED,
+            },
+          });
+          if (approvedCount >= maxSpots) {
+            throw new BadRequestException('Campaign is full');
+          }
+          return tx.application.update({
+            where: { id },
+            data: {
+              status: ApplicationStatus.APPROVED,
+              reviewedAt: new Date(),
+            },
+          });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (err) {
+      // P2034 = serialization failure / write conflict. Sob alta concorrência o
+      // Postgres aborta uma das transações em conflito — tratamos como "cheio".
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2034'
+      ) {
+        throw new BadRequestException('Campaign is full');
+      }
+      throw err;
     }
-
-    return this.prisma.application.update({
-      where: { id },
-      data: { status: ApplicationStatus.APPROVED, reviewedAt: new Date() },
-    });
   }
 
   async reject(id: string, userId: string) {
