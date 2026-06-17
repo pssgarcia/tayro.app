@@ -34,15 +34,22 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Dispara o redeploy no Railway — ele puxa o código do GitHub e rebuilda.
-      # "railway up" faria upload de arquivos (errado para monorepo).
-      # "railway redeploy" apenas aciona o build já configurado no painel do Railway.
-      # Usamos o Service ID (não o nome) — imutável e sem ambiguidade de
-      # capitalização. ID não é segredo (aparece na URL do painel); o que protege
-      # o acesso é o RAILWAY_TOKEN (Project Token, em secrets).
-      # Requer: projeto em railway.app com root directory = apps/api.
-      - name: Redeploy API on Railway
-        run: npx @railway/cli@latest redeploy --service f0afafae-1cd2-41e2-b462-8c413dd53209 --yes
+      # Deploy explícito via CLI: "railway up" sobe o código já checado neste
+      # runner (que acabou de passar no CI) e builda no Railway. Rodamos da RAIZ
+      # do repo para o lockfile de workspace estar presente; o Railway usa o
+      # Root Directory = apps/api configurado no serviço para buildar.
+      #
+      # Por que "up" e não "redeploy": com o auto-deploy nativo do Railway
+      # DESLIGADO (Actions é o único orquestrador), "redeploy" rebuilda o mesmo
+      # commit antigo. "up" envia o commit novo.
+      #
+      # "--ci" faz o passo ESPERAR o build do Railway e sair com o status real —
+      # se o build falhar, este job falha junto (sem mais "CD verde / build red").
+      #
+      # Service ID (não o nome) — imutável e sem ambiguidade. Não é segredo
+      # (aparece na URL do painel); o acesso é protegido pelo RAILWAY_TOKEN.
+      - name: Deploy API to Railway
+        run: npx @railway/cli@latest up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
