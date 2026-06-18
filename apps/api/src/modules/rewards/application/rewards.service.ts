@@ -23,20 +23,17 @@ export class RewardsService {
     if (campaign.brandId !== brand.id)
       throw new ForbiddenException('Not your campaign');
 
-    // Verifica que o influencer tem conteúdo aprovado nessa campanha
-    const hasApprovedContent = await this.prisma.contentSubmission.findFirst({
+    // Verifica que o influencer tem application aprovada nessa campanha
+    const approvedApplication = await this.prisma.application.findFirst({
       where: {
+        campaignId: dto.campaignId,
+        influencerId: dto.influencerId,
         status: 'APPROVED',
-        application: {
-          campaignId: dto.campaignId,
-          influencerId: dto.influencerId,
-          status: 'APPROVED',
-        },
       },
     });
-    if (!hasApprovedContent) {
+    if (!approvedApplication) {
       throw new BadRequestException(
-        'Influencer has no approved content for this campaign',
+        'Influencer does not have an approved application for this campaign',
       );
     }
 

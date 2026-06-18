@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Gift, Plus, Banknote, Package, Tag, Truck } from 'lucide-react';
+import axios from 'axios';
 import type { CampaignReward, RewardStatus, RewardType } from '../../types/api';
 import {
   useCampaignRewards,
@@ -40,12 +41,14 @@ function CreateRewardModal({
   onClose,
   onCreate,
   isPending,
+  error,
 }: {
   campaignId: string;
   approvedCreators: { influencerId: string; name: string }[];
   onClose: () => void;
   onCreate: (data: { influencerId: string; campaignId: string; type: string; value: string; notes?: string }) => void;
   isPending: boolean;
+  error?: string | null;
 }) {
   const [influencerId, setInfluencerId] = useState(approvedCreators[0]?.influencerId ?? '');
   const [type, setType] = useState<RewardType>('MONETARY');
@@ -134,7 +137,13 @@ function CreateRewardModal({
           </div>
         </div>
 
-        <div className="mt-5 flex justify-end gap-2">
+        {error && (
+          <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-4 flex justify-end gap-2">
           <button
             onClick={onClose}
             className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -377,6 +386,12 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
           campaignId={campaignId}
           approvedCreators={approvedCreators}
           isPending={create.isPending}
+          error={
+            create.error && axios.isAxiosError(create.error)
+              ? (create.error.response?.data?.message as string | undefined) ??
+                'Erro ao registrar recompensa.'
+              : null
+          }
           onCreate={(data) => {
             create.mutate(data, { onSuccess: () => setShowCreate(false) });
           }}
