@@ -64,6 +64,33 @@ export interface CampaignSubmission {
   influencer: SubmissionInfluencer;
 }
 
+// ─── Dashboard ─────────────────────────────────────────────────────────────────
+
+export interface BrandDashboard {
+  campaigns: {
+    total: number;
+    active: number;
+    draft: number;
+    closed: number;
+    completed: number;
+  };
+  applications: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  content: {
+    pendingReview: number;
+  };
+  rewards: {
+    total: number;
+    pending: number;
+    issued: number;
+    delivered: number;
+  };
+}
+
 // ─── Reward ────────────────────────────────────────────────────────────────────
 
 export type RewardType = 'MONETARY' | 'PRODUCT' | 'DISCOUNT';
