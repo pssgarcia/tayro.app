@@ -62,6 +62,13 @@ describe('ApplicationsService — race conditions', () => {
         findUnique: jest.fn(),
         findMany: jest.fn(),
       },
+      // Default: executa o callback interativo passando o próprio mock como tx.
+      // Testes de concorrência sobrescrevem com uma versão que serializa (mutex).
+      $transaction: jest.fn((arg: unknown) =>
+        typeof arg === 'function'
+          ? (arg as (tx: unknown) => unknown)(prisma)
+          : Promise.all(arg as unknown[]),
+      ),
     };
 
     counter.wrap(prisma);
@@ -86,49 +93,42 @@ describe('ApplicationsService — race conditions', () => {
   // ─── create() ────────────────────────────────────────────────────────────────
 
   describe('create()', () => {
-    // it.failing: RED esperado. Enquanto o bug existir, este teste PASSA no CI.
-    // Quando o fix com prisma.$transaction() entrar, ele vai parar de falhar →
-    // o it.failing vira vermelho, sinalizando "remova o .failing".
-    it.failing(
-      'não permite mais aplicações que maxSpots sob requisições concorrentes',
-      async () => {
-        // Ambas as chamadas concorrentes lêem o mesmo snapshot: count=0, maxSpots=1.
-        // Sem transação, as duas passam no check e criam uma application cada.
-        // Com prisma.$transaction() (isolamento SERIALIZABLE), apenas uma passa.
-        prisma.influencer.findUnique
-          .mockResolvedValueOnce(makeInfluencer('inf-1'))
-          .mockResolvedValueOnce(makeInfluencer('inf-2'));
+    // NÃO é race condition. create() gera applications PENDING; maxSpots conta
+    // apenas APPROVED (ver _count.where.status === APPROVED). Várias creators
+    // podem se candidatar (pending) ao mesmo programa de 1 vaga — é um funil.
+    // O limite de maxSpots é imposto em approve(), não aqui. Logo, duas
+    // candidaturas concorrentes DEVEM ambas ter sucesso.
+    it('permite múltiplas candidaturas pendentes concorrentes (maxSpots só limita APPROVED)', async () => {
+      prisma.influencer.findUnique
+        .mockResolvedValueOnce(makeInfluencer('inf-1'))
+        .mockResolvedValueOnce(makeInfluencer('inf-2'));
 
-        prisma.campaign.findUnique.mockResolvedValue(
-          makeCampaign({ _count: { applications: 0 } }),
-        );
+      // 0 aprovadas; maxSpots=1. Pendentes não contam para o limite.
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({ _count: { applications: 0 } }),
+      );
 
-        let created = 0;
-        prisma.application.create.mockImplementation(() => {
-          created++;
-          return Promise.resolve({
-            id: `app-${created}`,
-            status: ApplicationStatus.PENDING,
-          });
+      let created = 0;
+      prisma.application.create.mockImplementation(() => {
+        created++;
+        return Promise.resolve({
+          id: `app-${created}`,
+          status: ApplicationStatus.PENDING,
         });
+      });
 
-        const dto = { campaignId: 'camp-1', message: 'oi' };
+      const dto = { campaignId: 'camp-1', message: 'oi' };
 
-        const results = await Promise.allSettled([
-          service.create('user-1', dto),
-          service.create('user-2', dto),
-        ]);
+      const results = await Promise.allSettled([
+        service.create('user-1', dto),
+        service.create('user-2', dto),
+      ]);
 
-        const successes = results.filter(
-          (r) => r.status === 'fulfilled',
-        ).length;
+      const successes = results.filter((r) => r.status === 'fulfilled').length;
 
-        // RED até o fix com prisma.$transaction(isolationLevel: Serializable).
-        // Com o fix, a segunda transação lê o count atualizado e lança BadRequestException.
-        expect(successes).toBe(1);
-        expect(created).toBe(1);
-      },
-    );
+      expect(successes).toBe(2);
+      expect(created).toBe(2);
+    });
 
     it('rejeita corretamente quando a campanha já está cheia (chamada sequencial)', async () => {
       prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
@@ -179,44 +179,62 @@ describe('ApplicationsService — race conditions', () => {
   // ─── approve() ───────────────────────────────────────────────────────────────
 
   describe('approve()', () => {
-    // it.failing: RED esperado até o fix com prisma.$transaction().
-    it.failing(
-      'não aprova mais aplicações que maxSpots sob requisições concorrentes',
-      async () => {
-        // Ambas vêem approvedCount=0 antes de qualquer update commitar.
-        const app1 = makeApplication('app-1');
-        const app2 = makeApplication('app-2');
+    it('não aprova mais aplicações que maxSpots sob requisições concorrentes', async () => {
+      // GREEN após o fix: approve() faz count + update dentro de um
+      // $transaction Serializable. Modelamos a garantia do Serializable
+      // ("resultado equivalente a alguma execução serial") com um mutex no
+      // mock de $transaction: os callbacks rodam um de cada vez, e o segundo
+      // lê o approvedCount já incrementado pelo primeiro.
+      const app1 = makeApplication('app-1');
+      const app2 = makeApplication('app-2');
 
-        prisma.application.findUnique
-          .mockResolvedValueOnce(app1)
-          .mockResolvedValueOnce(app2);
+      prisma.application.findUnique
+        .mockResolvedValueOnce(app1)
+        .mockResolvedValueOnce(app2);
 
-        // Ambas lêem count=0 (janela de race)
-        prisma.application.count.mockResolvedValue(0);
+      // Estado compartilhado: conta de aprovadas no "banco".
+      let approvedCount = 0;
+      prisma.application.count.mockImplementation(() =>
+        Promise.resolve(approvedCount),
+      );
 
-        let approved = 0;
-        prisma.application.update.mockImplementation(() => {
-          approved++;
-          return Promise.resolve({
-            id: `app-${approved}`,
-            status: ApplicationStatus.APPROVED,
-          });
+      let approved = 0;
+      prisma.application.update.mockImplementation(() => {
+        approved++;
+        approvedCount++;
+        return Promise.resolve({
+          id: `app-${approved}`,
+          status: ApplicationStatus.APPROVED,
         });
+      });
 
-        const results = await Promise.allSettled([
-          service.approve('app-1', 'brand-user-1'),
-          service.approve('app-2', 'brand-user-1'),
-        ]);
+      // $transaction serializado (mutex) — simula isolamento Serializable.
+      let txChain: Promise<unknown> = Promise.resolve();
+      prisma.$transaction.mockImplementation((cb: (tx: unknown) => unknown) => {
+        const result = txChain.then(() => cb(prisma));
+        txChain = result.then(
+          () => undefined,
+          () => undefined,
+        );
+        return result;
+      });
 
-        const successes = results.filter(
-          (r) => r.status === 'fulfilled',
-        ).length;
+      const results = await Promise.allSettled([
+        service.approve('app-1', 'brand-user-1'),
+        service.approve('app-2', 'brand-user-1'),
+      ]);
 
-        // RED até o fix com prisma.$transaction(isolationLevel: Serializable).
-        expect(successes).toBe(1);
-        expect(approved).toBe(1);
-      },
-    );
+      const successes = results.filter((r) => r.status === 'fulfilled').length;
+      const rejections = results.filter((r) => r.status === 'rejected');
+
+      // Apenas uma aprovação passa; a segunda lê count=1 e é rejeitada.
+      expect(successes).toBe(1);
+      expect(approved).toBe(1);
+      expect(rejections).toHaveLength(1);
+      expect((rejections[0] as PromiseRejectedResult).reason).toBeInstanceOf(
+        BadRequestException,
+      );
+    });
 
     it('rejeita aprovação quando campanha já está cheia (sequencial)', async () => {
       prisma.application.findUnique.mockResolvedValue(makeApplication('app-1'));

@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import type { Application } from '../../types/api';
 import ApplicationCard from './ApplicationCard';
+import CampaignOverviewTab from './CampaignOverviewTab';
 import EmptyState from '../../components/primitives/EmptyState';
 import ProgressBar from '../../components/primitives/ProgressBar';
 import { cn } from '../../lib/utils';
@@ -316,7 +317,12 @@ export default function CampaignDetailPage() {
         {activeTab === 'applications' && (
           <ApplicationsTab campaignId={campaignId} />
         )}
-        {activeTab === 'overview' && <TabPlaceholder label="Visão Geral" />}
+        {activeTab === 'overview' && (
+          <CampaignOverviewTab
+            campaign={campaign}
+            approvedCount={approvedCount}
+          />
+        )}
         {activeTab === 'content' && <TabPlaceholder label="Conteúdos" />}
         {activeTab === 'rewards' && <TabPlaceholder label="Recompensas" />}
       </div>

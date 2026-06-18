@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { resolveAllowedOrigins } from './shared/config/cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,12 +24,9 @@ async function bootstrap() {
     }),
   );
 
-  // CORS — explicit origins only, never wildcard in production
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? [
-    'http://localhost:5173',
-  ];
+  // CORS — allow-list explícita. Em produção, falha se ALLOWED_ORIGINS ausente.
   app.enableCors({
-    origin: allowedOrigins,
+    origin: resolveAllowedOrigins(process.env),
     credentials: true,
   });
 

@@ -3,26 +3,7 @@ import { CalendarDays, Users } from 'lucide-react';
 import type { Campaign } from '../../types/api';
 import StatusPill from '../../components/primitives/StatusPill';
 import ProgressBar from '../../components/primitives/ProgressBar';
-
-function formatOffer(campaign: Campaign): string {
-  if (campaign.offerType === 'CASH' && campaign.offerAmount != null) {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(campaign.offerAmount / 100);
-  }
-  if (campaign.offerType === 'PRODUCT' && campaign.offerDescription) {
-    return campaign.offerDescription;
-  }
-  return '—';
-}
-
-function formatDeadline(deadline: string | null): string {
-  if (!deadline) return 'Sem prazo';
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(
-    new Date(deadline),
-  );
-}
+import { formatDate, formatOffer } from '../../utils/format';
 
 interface Props {
   campaign: Campaign;
@@ -80,7 +61,7 @@ export default function CampaignCard({ campaign }: Props) {
         <span className="font-medium text-foreground">{formatOffer(campaign)}</span>
         <span className="flex items-center gap-1">
           <CalendarDays size={11} />
-          {formatDeadline(campaign.deadline)}
+          {formatDate(campaign.deadline)}
         </span>
       </div>
     </button>

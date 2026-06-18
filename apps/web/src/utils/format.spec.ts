@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { formatNumber, formatEngagement, formatCurrency } from './format';
+import {
+  formatNumber,
+  formatEngagement,
+  formatCurrency,
+  formatDate,
+  formatOffer,
+} from './format';
 
 describe('formatNumber', () => {
   it('returns plain string for values below 1k', () => {
@@ -46,5 +52,53 @@ describe('formatCurrency', () => {
   it('handles single real (100 centavos)', () => {
     const result = formatCurrency(100);
     expect(result).toContain('1');
+  });
+});
+
+describe('formatDate', () => {
+  it('formats an ISO date in pt-BR', () => {
+    const result = formatDate('2026-06-15T12:00:00.000Z');
+    expect(result).toContain('2026');
+    expect(result).toMatch(/jun/i);
+  });
+
+  it('returns the default fallback for null', () => {
+    expect(formatDate(null)).toBe('Sem prazo');
+  });
+
+  it('accepts a custom fallback', () => {
+    expect(formatDate(null, '—')).toBe('—');
+  });
+});
+
+describe('formatOffer', () => {
+  it('formats a CASH offer as currency', () => {
+    const result = formatOffer({
+      offerType: 'CASH',
+      offerAmount: 30_000,
+      offerDescription: null,
+    });
+    expect(result).toContain('300');
+    expect(result).toContain('R$');
+  });
+
+  it('uses the description for a PRODUCT offer', () => {
+    expect(
+      formatOffer({
+        offerType: 'PRODUCT',
+        offerAmount: null,
+        offerDescription: 'Kit Whey 900g',
+      }),
+    ).toBe('Kit Whey 900g');
+  });
+
+  it('falls back to em dash when offer terms are missing', () => {
+    expect(
+      formatOffer({
+        offerType: null,
+        offerAmount: null,
+        offerDescription: null,
+      }),
+    ).toBe('—');
   });
 });

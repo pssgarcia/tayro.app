@@ -1,21 +1,14 @@
 /**
  * Race condition tests — CreatorsService
  *
- * Estes testes são RED (falham) intencionalmente com o código atual.
- * O método findOrCreateInfluencer() executa múltiplos findUnique + create sem
- * transação, abrindo três janelas de race condition:
+ * findOrCreateInfluencer() faz findUnique + create sem atomicidade total. Sob
+ * concorrência, um request pode criar o mesmo igHandle/email entre o nosso check
+ * e o create → o Postgres rejeita com P2002. O fix captura o P2002 e reusa o
+ * registro que o request concorrente criou (findExistingInfluencer), em vez de
+ * vazar um 500.
  *
- *   RC-1: Dois formulários com o mesmo igHandle → dois influencers criados
- *         (viola unique constraint; o banco rejeita com P2002, mas o erro não é
- *         tratado corretamente no fluxo de apply)
- *
- *   RC-2: Dois formulários com o mesmo email → dois users criados
- *         (mesma janela, mesmo efeito)
- *
- *   RC-3: Update de instagramHandle sem transação → sobrescrita silenciosa
- *
- * Fix esperado: envolver findOrCreateInfluencer em prisma.$transaction() com
- * isolamento adequado, ou usar upsert atômico.
+ *   RC-1: colisão concorrente em igHandle → re-fetch por handle e reusa.
+ *   RC-2: colisão concorrente em email   → re-fetch por email e reusa.
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -96,63 +89,40 @@ describe('CreatorsService — race conditions', () => {
   // ─── RC-1: igHandle duplicado sob concorrência ────────────────────────────────
 
   describe('applyPublic() — RC-1: igHandle duplicado sob concorrência', () => {
-    // it.failing: RED esperado. Enquanto findOrCreateInfluencer não estiver em
-    // transação/upsert, este teste PASSA no CI. Após o fix, vira vermelho →
-    // sinaliza "remova o .failing".
-    it.failing(
-      'não cria dois influencers com o mesmo igHandle em requests concorrentes',
-      async () => {
-        // Ambas as chamadas concorrentes:
-        //   1. Vêem influencer.findUnique → null (não existe ainda)
-        //   2. Vêem user.findUnique → null (email novo)
-        //   3. Ambas prosseguem para user.create → tentam criar o mesmo registro
-        //
-        // Comportamento ATUAL (bug): P2002 (unique) na segunda chamada não é tratado
-        // no contexto de findOrCreateInfluencer, causando 500 para um dos usuários.
-        //
-        // Fix esperado: usar prisma.$transaction() com upsert ou tratar P2002 de
-        // instagramHandle como "já existe, retorne o existente".
+    // GREEN após o fix: quando um request concorrente cria o mesmo igHandle
+    // entre nossos findUnique e o create, o Postgres rejeita com P2002. O fix
+    // captura o P2002 e reusa o influencer recém-criado (findExistingInfluencer
+    // → busca por handle), em vez de vazar um 500.
+    it('reusa o influencer existente quando user.create colide em igHandle (P2002 tratado, sem 500)', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
 
-        prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
+      // 1ª chamada (check inicial): handle não existe → null.
+      // 2ª chamada (re-fetch após P2002): o concorrente já criou → retorna.
+      prisma.influencer.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(makeInfluencer());
+      prisma.user.findUnique.mockResolvedValue(null);
 
-        // Ambas as chamadas vêem null no snapshot (janela de race)
-        prisma.influencer.findUnique.mockResolvedValue(null);
-        prisma.user.findUnique.mockResolvedValue(null);
+      // O create perde a corrida e colide na constraint de instagramHandle.
+      prisma.user.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '6.0.0',
+          meta: { target: ['instagramHandle'] },
+        }),
+      );
 
-        let createCount = 0;
-        prisma.user.create.mockImplementation(() => {
-          createCount++;
-          if (createCount === 2) {
-            // Simula o banco rejeitando a segunda criação por unique constraint
-            throw new Prisma.PrismaClientKnownRequestError(
-              'Unique constraint failed',
-              { code: 'P2002', clientVersion: '6.0.0', meta: {} },
-            );
-          }
-          return Promise.resolve(makeUser());
-        });
+      prisma.application.create.mockResolvedValue({
+        id: 'app-1',
+        status: ApplicationStatus.PENDING,
+      });
 
-        prisma.application.create.mockResolvedValue({
-          id: 'app-1',
-          status: ApplicationStatus.PENDING,
-        });
+      const result = await service.applyPublic('camp-1', applyDto);
 
-        const results = await Promise.allSettled([
-          service.applyPublic('camp-1', applyDto),
-          service.applyPublic('camp-1', applyDto),
-        ]);
-
-        const failures = results.filter((r) => r.status === 'rejected');
-
-        // TODO: após fix com transação/upsert, ambas as chamadas devem terminar
-        // com sucesso (a segunda reutiliza o influencer já criado) OU a segunda
-        // lança ConflictException com mensagem amigável. Em NENHUM caso um 500.
-        //
-        // Comportamento ATUAL: a segunda chamada lança um P2002 não tratado (500).
-        // O teste documenta que deve ser 0 failures após o fix.
-        expect(failures.length).toBe(0); // falha atualmente — P2002 escapa como 500
-      },
-    );
+      // Sem 500: a candidatura é concluída reusando o influencer existente.
+      expect(result).toHaveProperty('applicationId');
+      expect(result.status).toBe(ApplicationStatus.PENDING);
+    });
 
     it('retorna o influencer existente quando igHandle já existe (path feliz)', async () => {
       prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
@@ -190,49 +160,37 @@ describe('CreatorsService — race conditions', () => {
   // ─── RC-2: email duplicado sob concorrência ───────────────────────────────────
 
   describe('applyPublic() — RC-2: email duplicado sob concorrência', () => {
-    // it.failing: RED esperado até o fix com prisma.$transaction()/upsert.
-    it.failing(
-      'não tenta criar dois users com o mesmo email em requests concorrentes',
-      async () => {
-        // Caso: igHandle diferente (não cai no return rápido), mas email é o mesmo.
-        // Ambas as chamadas vêem user.findUnique → null e prosseguem para create.
-        prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
-        prisma.influencer.findUnique.mockResolvedValue(null); // igHandle não existe
-        prisma.user.findUnique.mockResolvedValue(null); // email não existe (snapshot)
+    // GREEN após o fix: colisão concorrente na constraint de email. O re-fetch
+    // não acha por handle (continua null), mas acha o user pelo email e reusa
+    // o influencer dele — sem vazar 500.
+    it('reusa o influencer existente quando user.create colide em email (P2002 tratado, sem 500)', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(makeActiveCampaign());
+      prisma.influencer.findUnique.mockResolvedValue(null); // handle nunca existe
 
-        let createAttempts = 0;
-        prisma.user.create.mockImplementation(() => {
-          createAttempts++;
-          if (createAttempts === 2) {
-            throw new Prisma.PrismaClientKnownRequestError(
-              'Unique constraint',
-              {
-                code: 'P2002',
-                clientVersion: '6.0.0',
-                meta: {},
-              },
-            );
-          }
-          return Promise.resolve(makeUser());
-        });
+      // 1ª chamada (fluxo principal): email não existe → null.
+      // 2ª chamada (re-fetch após P2002): concorrente já criou o user → retorna.
+      prisma.user.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(makeUser());
 
-        prisma.application.create.mockResolvedValue({
-          id: 'app-1',
-          status: ApplicationStatus.PENDING,
-        });
+      prisma.user.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: '6.0.0',
+          meta: { target: ['email'] },
+        }),
+      );
 
-        const results = await Promise.allSettled([
-          service.applyPublic('camp-1', applyDto),
-          service.applyPublic('camp-1', applyDto),
-        ]);
+      prisma.application.create.mockResolvedValue({
+        id: 'app-1',
+        status: ApplicationStatus.PENDING,
+      });
 
-        const failures = results.filter((r) => r.status === 'rejected');
+      const result = await service.applyPublic('camp-1', applyDto);
 
-        // TODO: após fix, failures.length deve ser 0 (segunda chamada reutiliza user).
-        // Comportamento ATUAL (bug): a segunda lança P2002 não tratado (500).
-        expect(failures.length).toBe(0); // falha atualmente
-      },
-    );
+      expect(result).toHaveProperty('applicationId');
+      expect(result.status).toBe(ApplicationStatus.PENDING);
+    });
   });
 
   // ─── Validações sequenciais (devem funcionar independente do fix) ─────────────
