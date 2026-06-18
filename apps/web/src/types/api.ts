@@ -64,6 +64,28 @@ export interface CampaignSubmission {
   influencer: SubmissionInfluencer;
 }
 
+// ─── Reward ────────────────────────────────────────────────────────────────────
+
+export type RewardType = 'MONETARY' | 'PRODUCT' | 'DISCOUNT';
+export type RewardStatus = 'PENDING' | 'ISSUED' | 'DELIVERED';
+
+export interface CampaignReward {
+  id: string;
+  influencerId: string;
+  campaignId: string;
+  type: RewardType;
+  value: string;
+  status: RewardStatus;
+  notes: string | null;
+  issuedAt: string | null;
+  createdAt: string;
+  influencer: {
+    name: string;
+    avatarUrl: string | null;
+    instagramHandle: string | null;
+  };
+}
+
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
