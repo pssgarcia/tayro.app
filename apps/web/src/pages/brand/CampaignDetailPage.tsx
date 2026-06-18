@@ -14,6 +14,7 @@ import type { Application } from '../../types/api';
 import ApplicationCard from './ApplicationCard';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
+import CampaignRewardsTab from './CampaignRewardsTab';
 import EmptyState from '../../components/primitives/EmptyState';
 import ProgressBar from '../../components/primitives/ProgressBar';
 import { cn } from '../../lib/utils';
@@ -264,16 +265,6 @@ function ApplicationsTab({ campaignId }: { campaignId: string }) {
   );
 }
 
-// ─── Placeholder para abas futuras ────────────────────────────────────────────
-
-function TabPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border">
-      <p className="text-sm text-muted-foreground">{label} — em breve</p>
-    </div>
-  );
-}
-
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function CampaignDetailPage() {
@@ -325,7 +316,7 @@ export default function CampaignDetailPage() {
           />
         )}
         {activeTab === 'content' && <CampaignContentTab campaignId={campaignId} />}
-        {activeTab === 'rewards' && <TabPlaceholder label="Recompensas" />}
+        {activeTab === 'rewards' && <CampaignRewardsTab campaignId={campaignId} />}
       </div>
     </div>
   );

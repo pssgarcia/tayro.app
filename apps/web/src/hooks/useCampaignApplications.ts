@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '../services/api';
-import type { Application, Campaign, CampaignSubmission } from '../types/api';
+import type { Application, Campaign, CampaignSubmission, CampaignReward } from '../types/api';
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
@@ -119,6 +119,54 @@ export function useRequestRevision(campaignId: string) {
         .then((r) => r.data),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: submissionKeys.byCampaign(campaignId) }),
+  });
+}
+
+export const rewardKeys = {
+  byCampaign: (campaignId: string) => ['rewards', 'campaign', campaignId] as const,
+};
+
+export function useCampaignRewards(campaignId: string) {
+  return useQuery({
+    queryKey: rewardKeys.byCampaign(campaignId),
+    queryFn: () =>
+      api.get<CampaignReward[]>(`/rewards/campaign/${campaignId}`).then((r) => r.data),
+    enabled: !!campaignId,
+  });
+}
+
+export function useCreateReward(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      influencerId: string;
+      campaignId: string;
+      type: string;
+      value: string;
+      notes?: string;
+    }) => api.post('/rewards', data).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: rewardKeys.byCampaign(campaignId) }),
+  });
+}
+
+export function useMarkRewardIssued(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rewardId: string) =>
+      api.patch(`/rewards/${rewardId}/issue`).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: rewardKeys.byCampaign(campaignId) }),
+  });
+}
+
+export function useMarkRewardDelivered(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rewardId: string) =>
+      api.patch(`/rewards/${rewardId}/deliver`).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: rewardKeys.byCampaign(campaignId) }),
   });
 }
 
