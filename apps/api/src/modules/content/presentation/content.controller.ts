@@ -44,6 +44,17 @@ export class ContentController {
     return this.contentService.findMine(user.id);
   }
 
+  @Get('campaign/:campaignId')
+  @UseGuards(RolesGuard)
+  @Roles('BRAND')
+  @ApiOperation({ summary: 'Todos os conteúdos de uma campanha (Brand)' })
+  findByCampaign(
+    @Param('campaignId') campaignId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.contentService.findByCampaign(campaignId, user.id);
+  }
+
   @Get('application/:applicationId')
   @ApiOperation({
     summary: 'Conteúdos de uma application (Brand ou Influencer dono)',

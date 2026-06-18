@@ -39,6 +39,31 @@ export interface Application {
   _count: { submissions: number };
 }
 
+// ─── Content Submission ────────────────────────────────────────────────────────
+
+export type ContentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVISION_REQUESTED';
+export type MediaType = 'IMAGE' | 'VIDEO' | 'REEL' | 'STORY';
+
+export interface SubmissionInfluencer {
+  id: string;
+  name: string;
+  instagramHandle: string | null;
+  avatarUrl: string | null;
+}
+
+export interface CampaignSubmission {
+  id: string;
+  applicationId: string;
+  mediaUrl: string;
+  mediaType: MediaType;
+  caption: string | null;
+  status: ContentStatus;
+  feedback: string | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+  influencer: SubmissionInfluencer;
+}
+
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
