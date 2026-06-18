@@ -13,6 +13,7 @@ import { api } from '../../services/api';
 import type { Application } from '../../types/api';
 import ApplicationCard from './ApplicationCard';
 import CampaignOverviewTab from './CampaignOverviewTab';
+import CampaignContentTab from './CampaignContentTab';
 import EmptyState from '../../components/primitives/EmptyState';
 import ProgressBar from '../../components/primitives/ProgressBar';
 import { cn } from '../../lib/utils';
@@ -323,7 +324,7 @@ export default function CampaignDetailPage() {
             approvedCount={approvedCount}
           />
         )}
-        {activeTab === 'content' && <TabPlaceholder label="Conteúdos" />}
+        {activeTab === 'content' && <CampaignContentTab campaignId={campaignId} />}
         {activeTab === 'rewards' && <TabPlaceholder label="Recompensas" />}
       </div>
     </div>

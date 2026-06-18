@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { api } from '../services/api';
-import type { Application, Campaign } from '../types/api';
+import type { Application, Campaign, CampaignSubmission } from '../types/api';
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 
@@ -72,6 +72,53 @@ export function useRefreshApplicationIg(campaignId: string) {
       api.patch(`/applications/${applicationId}/refresh-ig`).then((r) => r.data),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: applicationKeys.byCampaign(campaignId) }),
+  });
+}
+
+export const submissionKeys = {
+  byCampaign: (campaignId: string) => ['submissions', 'campaign', campaignId] as const,
+};
+
+export function useCampaignSubmissions(campaignId: string) {
+  return useQuery({
+    queryKey: submissionKeys.byCampaign(campaignId),
+    queryFn: () =>
+      api
+        .get<CampaignSubmission[]>(`/submissions/campaign/${campaignId}`)
+        .then((r) => r.data),
+    enabled: !!campaignId,
+  });
+}
+
+export function useApproveSubmission(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (submissionId: string) =>
+      api.patch(`/submissions/${submissionId}/approve`).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: submissionKeys.byCampaign(campaignId) }),
+  });
+}
+
+export function useRejectSubmission(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (submissionId: string) =>
+      api.patch(`/submissions/${submissionId}/reject`).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: submissionKeys.byCampaign(campaignId) }),
+  });
+}
+
+export function useRequestRevision(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, feedback }: { id: string; feedback: string }) =>
+      api
+        .patch(`/submissions/${id}/request-revision`, { feedback })
+        .then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: submissionKeys.byCampaign(campaignId) }),
   });
 }
 
