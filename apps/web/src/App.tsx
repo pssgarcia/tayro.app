@@ -6,6 +6,7 @@ import AuthLayout from './components/layouts/AuthLayout';
 import BrandGuard from './components/guards/BrandGuard';
 import BrandLayout from './components/layouts/BrandLayout';
 import LoginPage from './pages/auth/LoginPage';
+import DashboardPage from './pages/brand/DashboardPage';
 import CampaignsPage from './pages/brand/CampaignsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
@@ -73,7 +74,7 @@ function AppShell() {
         }
       >
         <Route index element={<Navigate to="/brand/campaigns" replace />} />
-        <Route path="dashboard" element={<PagePlaceholder label="Dashboard" />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/new" element={<NewCampaignPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />
