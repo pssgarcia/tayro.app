@@ -8,6 +8,7 @@ import { ApplicationsModule } from './modules/applications/presentation/applicat
 import { ContentModule } from './modules/content/presentation/content.module';
 import { RewardsModule } from './modules/rewards/presentation/rewards.module';
 import { CreatorsModule } from './modules/creators/presentation/creators.module';
+import { DashboardModule } from './modules/dashboard/presentation/dashboard.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CreatorsModule } from './modules/creators/presentation/creators.module'
     ContentModule,
     RewardsModule,
     CreatorsModule,
+    DashboardModule,
   ],
   providers: [
     // Guard global de rate limiting. Sem ele, ThrottlerModule só configura — não
