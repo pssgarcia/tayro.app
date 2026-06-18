@@ -141,6 +141,40 @@ export class ContentService {
     });
   }
 
+  async findByCampaign(campaignId: string, userId: string) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+      include: { brand: true },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+    if (campaign.brand.userId !== userId)
+      throw new ForbiddenException('Not your campaign');
+
+    const submissions = await this.prisma.contentSubmission.findMany({
+      where: { application: { campaignId } },
+      orderBy: { submittedAt: 'desc' },
+      include: {
+        application: {
+          select: {
+            influencer: {
+              select: {
+                id: true,
+                name: true,
+                instagramHandle: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return submissions.map(({ application, ...s }) => ({
+      ...s,
+      influencer: application.influencer,
+    }));
+  }
+
   // ─── Helpers privados ────────────────────────────────────────────────────────
 
   private async findInfluencerOrFail(userId: string) {
