@@ -1,10 +1,11 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { ClipboardList, UserRound, LogOut } from 'lucide-react';
+import { Compass, ClipboardList, UserRound, LogOut } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { cn } from '../../lib/utils';
 
 const navItems = [
+  { to: '/influencer/browse', icon: Compass, label: 'Programas' },
   { to: '/influencer/applications', icon: ClipboardList, label: 'Candidaturas' },
   { to: '/influencer/profile', icon: UserRound, label: 'Perfil' },
 ];

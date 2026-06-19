@@ -19,6 +19,7 @@ import NewCampaignPage from './pages/brand/NewCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 import InfluencerProfilePage from './pages/influencer/ProfilePage';
+import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
 
 function BootSpinner() {
   return (
@@ -91,7 +92,8 @@ function AppShell() {
           </InfluencerGuard>
         }
       >
-        <Route index element={<Navigate to="/influencer/applications" replace />} />
+        <Route index element={<Navigate to="/influencer/browse" replace />} />
+        <Route path="browse" element={<BrowseProgramsPage />} />
         <Route path="applications" element={<MyApplicationsPage />} />
         <Route path="profile" element={<InfluencerProfilePage />} />
       </Route>
