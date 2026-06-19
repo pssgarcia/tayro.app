@@ -134,6 +134,27 @@ export interface CampaignReward {
   };
 }
 
+// ─── My Application (lado creator — GET /applications/mine) ──────────────────────
+
+export interface MyApplication {
+  id: string;
+  campaignId: string;
+  status: ApplicationStatus;
+  message: string | null;
+  appliedAt: string;
+  reviewedAt: string | null;
+  campaign: {
+    title: string;
+    status: CampaignStatus;
+    deadline: string | null;
+    offerType: OfferType | null;
+    offerAmount: number | null;
+    offerDeadlineDays: number | null;
+    offerDescription: string | null;
+    brand: { name: string; logoUrl: string | null };
+  };
+}
+
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';

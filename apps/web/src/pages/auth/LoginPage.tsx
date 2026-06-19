@@ -81,10 +81,10 @@ export default function LoginPage() {
       {/* Headline */}
       <div className="space-y-1 text-center">
         <h1 className="font-display text-[32px] font-bold leading-tight text-foreground">
-          Que bom te ver de novo.
+          Que bom te ver de novo!
         </h1>
         <p className="text-sm text-muted-foreground">
-          Entre com sua conta para continuar.
+          Entre com sua conta para continuar
         </p>
       </div>
 
