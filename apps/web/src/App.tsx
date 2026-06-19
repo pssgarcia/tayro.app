@@ -8,6 +8,7 @@ import BrandLayout from './components/layouts/BrandLayout';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterBrandPage from './pages/auth/RegisterBrandPage';
 import DashboardPage from './pages/brand/DashboardPage';
+import ProfilePage from './pages/brand/ProfilePage';
 import CampaignsPage from './pages/brand/CampaignsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
@@ -73,6 +74,7 @@ function AppShell() {
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/new" element={<NewCampaignPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       {/* Influencer — em construção */}

@@ -64,6 +64,27 @@ export interface CampaignSubmission {
   influencer: SubmissionInfluencer;
 }
 
+// ─── Brand Profile ─────────────────────────────────────────────────────────────
+
+export interface BrandProfile {
+  id: string;
+  name: string;
+  email: string;
+  logoUrl: string | null;
+  niches: string[];
+  website: string | null;
+  bio: string | null;
+  createdAt: string;
+}
+
+export interface UpdateBrandPayload {
+  name?: string;
+  logoUrl?: string;
+  niches?: string[];
+  website?: string;
+  bio?: string;
+}
+
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 
 export interface BrandDashboard {
