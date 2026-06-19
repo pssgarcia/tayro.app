@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 
@@ -173,6 +173,65 @@ describe('AuthService', () => {
           niches: [],
         }),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ─── registerInfluencer ─────────────────────────────────────────────────────────
+
+  describe('registerInfluencer', () => {
+    const dto = {
+      email: 'ana@example.com',
+      password: 'senhaSegura1',
+      name: 'Ana Silva',
+      instagramHandle: 'anafit',
+      niches: [],
+    };
+
+    const p2002 = (target: string) =>
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '6.19.3',
+        meta: { target },
+      });
+
+    it('creates the influencer and returns tokens on success', async () => {
+      prisma.user.create.mockResolvedValue(
+        makeUser({ role: UserRole.INFLUENCER }),
+      );
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      const result = await service.registerInfluencer(dto);
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result.user.role).toBe(UserRole.INFLUENCER);
+    });
+
+    it('throws ConflictException with field=instagramHandle when handle is taken', async () => {
+      prisma.user.create.mockRejectedValue(
+        p2002('Influencer_instagramHandle_key'),
+      );
+
+      const err = await service
+        .registerInfluencer(dto)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ConflictException);
+      expect((err as ConflictException).getResponse()).toMatchObject({
+        field: 'instagramHandle',
+      });
+    });
+
+    it('throws ConflictException with field=email when email is taken', async () => {
+      prisma.user.create.mockRejectedValue(p2002('User_email_key'));
+
+      const err = await service
+        .registerInfluencer(dto)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ConflictException);
+      expect((err as ConflictException).getResponse()).toMatchObject({
+        field: 'email',
+      });
     });
   });
 });

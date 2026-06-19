@@ -1,33 +1,24 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
+import NicheSelector from '../../components/primitives/NicheSelector';
 import { cn } from '../../lib/utils';
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
-
 const schema = z.object({
-  brandName: z
-    .string()
-    .min(1, 'Nome da marca obrigatório')
-    .max(100, 'Máximo 100 caracteres'),
+  name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
   email: z.string().email('E-mail inválido').max(254, 'E-mail muito longo'),
   password: z
     .string()
     .min(8, 'Mínimo 8 caracteres')
     .max(72, 'Máximo 72 caracteres'),
-  niches: z.string().max(1000).optional(),
-  website: z
-    .string()
-    .url('URL inválida (inclua https://)')
-    .max(2048)
-    .optional()
-    .or(z.literal('')),
+  instagramHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
+  niches: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -37,73 +28,99 @@ interface RegisterResponse {
   user: AuthUser;
 }
 
-// Converte o campo livre de nichos (separado por vírgula) no array que a API espera
-function parseNiches(raw?: string): string[] {
-  if (!raw) return [];
-  return [
-    ...new Set(
-      raw
-        .split(',')
-        .map((n) => n.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  ].slice(0, 20);
+function cleanHandle(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const cleaned = raw.replace(/^@+/, '').toLowerCase().trim();
+  return cleaned || undefined;
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
-
-export default function RegisterBrandPage() {
+export default function RegisterInfluencerPage() {
   const { accessToken, user, setAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { niches: [] },
+  });
 
-  // Já autenticado — redireciona (depois de todos os hooks)
   if (accessToken && user) {
-    return <Navigate to="/brand" replace />;
+    return <Navigate to="/influencer" replace />;
   }
 
   const onSubmit = async (values: FormValues) => {
     const payload = {
-      brandName: values.brandName,
+      name: values.name,
       email: values.email,
       password: values.password,
-      ...(parseNiches(values.niches).length
-        ? { niches: parseNiches(values.niches) }
+      ...(cleanHandle(values.instagramHandle)
+        ? { instagramHandle: cleanHandle(values.instagramHandle) }
         : {}),
-      ...(values.website ? { website: values.website } : {}),
+      ...(values.niches.length ? { niches: values.niches } : {}),
     };
 
     try {
       const { data } = await api.post<RegisterResponse>(
-        '/auth/register/brand',
+        '/auth/register/influencer',
         payload,
       );
       setAuth(data.accessToken, data.user);
-      navigate('/brand', { replace: true });
+      navigate('/influencer', { replace: true });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        if (status === 409) {
-          setError('email', { message: 'Já existe uma conta com esse e-mail' });
-        } else if (status === 429) {
-          setError('root', {
-            message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
-          });
-        } else if (status === 400) {
-          setError('root', { message: 'Verifique os dados e tente novamente.' });
-        } else {
-          setError('root', { message: 'Erro de conexão. Tente novamente.' });
-        }
-      } else {
+      if (!axios.isAxiosError(err)) {
         setError('root', { message: 'Erro inesperado. Tente novamente.' });
+        return;
       }
+
+      // Sem response = a request não chegou ao servidor (rede caiu, API fora,
+      // proxy 502). Só AQUI faz sentido falar em "conexão".
+      if (!err.response) {
+        setError('root', {
+          message: 'Sem conexão com o servidor. Verifique sua internet e tente de novo.',
+        });
+        return;
+      }
+
+      const { status, data: body } = err.response as {
+        status: number;
+        data?: { message?: string | string[]; field?: string };
+      };
+      // class-validator devolve message como array; pegamos a primeira.
+      const serverMessage = Array.isArray(body?.message)
+        ? body?.message[0]
+        : body?.message;
+
+      if (status === 429) {
+        setError('root', {
+          message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+        });
+        return;
+      }
+
+      // Erro atrelado a um campo específico → mostra inline no input certo.
+      const FIELD_KEYS: Array<keyof FormValues> = [
+        'name',
+        'email',
+        'password',
+        'instagramHandle',
+      ];
+      if (body?.field && (FIELD_KEYS as string[]).includes(body.field)) {
+        setError(body.field as keyof FormValues, {
+          message: serverMessage ?? 'Valor inválido.',
+        });
+        return;
+      }
+
+      // Caso geral: mostra a mensagem real do servidor (ou um fallback).
+      setError('root', {
+        message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.',
+      });
     }
   };
 
@@ -118,24 +135,21 @@ export default function RegisterBrandPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Logo */}
       <div className="flex justify-center">
         <span className="font-display text-3xl font-bold tracking-tight">
           tay<span className="text-lime">ro</span>
         </span>
       </div>
 
-      {/* Headline */}
       <div className="space-y-1 text-center">
         <h1 className="font-display text-[32px] font-bold leading-tight text-foreground">
-          Crie sua conta de marca!
+          Crie sua conta de creator.
         </h1>
         <p className="text-sm text-muted-foreground">
-          Comece a receber candidaturas de creators fitness
+          Encontre programas de marcas fitness e feche parcerias.
         </p>
       </div>
 
-      {/* Formulário */}
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         {errors.root && (
           <div className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3">
@@ -143,25 +157,23 @@ export default function RegisterBrandPage() {
           </div>
         )}
 
-        {/* Nome da marca */}
         <div className="space-y-1.5">
-          <label htmlFor="brandName" className="text-sm font-medium text-foreground">
-            Nome da marca
+          <label htmlFor="name" className="text-sm font-medium text-foreground">
+            Nome
           </label>
           <input
-            id="brandName"
+            id="name"
             type="text"
-            autoComplete="organization"
-            placeholder="Minha Marca Fitness"
-            className={inputCls(!!errors.brandName)}
-            {...register('brandName')}
+            autoComplete="name"
+            placeholder="Ana Silva"
+            className={inputCls(!!errors.name)}
+            {...register('name')}
           />
-          {errors.brandName && (
-            <p className="text-xs text-destructive">{errors.brandName.message}</p>
+          {errors.name && (
+            <p className="text-xs text-destructive">{errors.name.message}</p>
           )}
         </div>
 
-        {/* Email */}
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-sm font-medium text-foreground">
             Email
@@ -170,7 +182,7 @@ export default function RegisterBrandPage() {
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="voce@suamarca.com"
+            placeholder="voce@email.com"
             className={inputCls(!!errors.email)}
             {...register('email')}
           />
@@ -179,7 +191,6 @@ export default function RegisterBrandPage() {
           )}
         </div>
 
-        {/* Senha */}
         <div className="space-y-1.5">
           <label htmlFor="password" className="text-sm font-medium text-foreground">
             Senha
@@ -208,43 +219,37 @@ export default function RegisterBrandPage() {
           )}
         </div>
 
-        {/* Nichos (opcional) */}
         <div className="space-y-1.5">
-          <label htmlFor="niches" className="text-sm font-medium text-foreground">
+          <label htmlFor="instagramHandle" className="text-sm font-medium text-foreground">
+            Instagram <span className="text-muted-foreground">(opcional)</span>
+          </label>
+          <input
+            id="instagramHandle"
+            type="text"
+            placeholder="@seuhandle"
+            className={inputCls(!!errors.instagramHandle)}
+            {...register('instagramHandle')}
+          />
+          {errors.instagramHandle && (
+            <p className="text-xs text-destructive">
+              {errors.instagramHandle.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">
             Nichos <span className="text-muted-foreground">(opcional)</span>
           </label>
-          <input
-            id="niches"
-            type="text"
-            placeholder="fitness, wellness, nutrição"
-            className={inputCls(!!errors.niches)}
-            {...register('niches')}
+          <Controller
+            name="niches"
+            control={control}
+            render={({ field }) => (
+              <NicheSelector value={field.value} onChange={field.onChange} />
+            )}
           />
-          <p className="text-xs text-muted-foreground">Separe por vírgula.</p>
-          {errors.niches && (
-            <p className="text-xs text-destructive">{errors.niches.message}</p>
-          )}
         </div>
 
-        {/* Website (opcional) */}
-        <div className="space-y-1.5">
-          <label htmlFor="website" className="text-sm font-medium text-foreground">
-            Website <span className="text-muted-foreground">(opcional)</span>
-          </label>
-          <input
-            id="website"
-            type="url"
-            autoComplete="url"
-            placeholder="https://suamarca.com"
-            className={inputCls(!!errors.website)}
-            {...register('website')}
-          />
-          {errors.website && (
-            <p className="text-xs text-destructive">{errors.website.message}</p>
-          )}
-        </div>
-
-        {/* Botão */}
         <button
           type="submit"
           disabled={isSubmitting}
@@ -258,7 +263,6 @@ export default function RegisterBrandPage() {
         </button>
       </form>
 
-      {/* Link de login */}
       <p className="text-center text-sm text-muted-foreground">
         Já tem conta?{' '}
         <Link
