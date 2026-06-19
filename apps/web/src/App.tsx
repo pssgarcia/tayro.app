@@ -5,15 +5,19 @@ import { useAuthStore, type AuthUser } from './stores/auth.store';
 import AuthLayout from './components/layouts/AuthLayout';
 import BrandGuard from './components/guards/BrandGuard';
 import BrandLayout from './components/layouts/BrandLayout';
+import InfluencerGuard from './components/guards/InfluencerGuard';
+import InfluencerLayout from './components/layouts/InfluencerLayout';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterChooserPage from './pages/auth/RegisterChooserPage';
 import RegisterBrandPage from './pages/auth/RegisterBrandPage';
+import RegisterInfluencerPage from './pages/influencer/RegisterInfluencerPage';
 import DashboardPage from './pages/brand/DashboardPage';
 import ProfilePage from './pages/brand/ProfilePage';
 import CampaignsPage from './pages/brand/CampaignsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
-import InfluencerComingSoonPage from './pages/influencer/InfluencerComingSoonPage';
+import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 
 function BootSpinner() {
   return (
@@ -55,9 +59,9 @@ function AppShell() {
       {/* Rotas de autenticação — sem sidebar */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        {/* Influencer ainda em construção → /register vai direto pro cadastro de marca */}
-        <Route path="/register" element={<Navigate to="/register/brand" replace />} />
+        <Route path="/register" element={<RegisterChooserPage />} />
         <Route path="/register/brand" element={<RegisterBrandPage />} />
+        <Route path="/register/influencer" element={<RegisterInfluencerPage />} />
       </Route>
 
       {/* Rotas da marca — protegidas por BrandGuard */}
@@ -77,8 +81,18 @@ function AppShell() {
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
-      {/* Influencer — em construção */}
-      <Route path="/influencer" element={<InfluencerComingSoonPage />} />
+      {/* Rotas da creator — protegidas por InfluencerGuard */}
+      <Route
+        path="/influencer"
+        element={
+          <InfluencerGuard>
+            <InfluencerLayout />
+          </InfluencerGuard>
+        }
+      >
+        <Route index element={<Navigate to="/influencer/applications" replace />} />
+        <Route path="applications" element={<MyApplicationsPage />} />
+      </Route>
 
       {/* Rota pública de inscrição — sem auth, sem layout */}
       <Route path="/apply/:id" element={<PublicApplyPage />} />
