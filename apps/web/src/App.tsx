@@ -6,20 +6,13 @@ import AuthLayout from './components/layouts/AuthLayout';
 import BrandGuard from './components/guards/BrandGuard';
 import BrandLayout from './components/layouts/BrandLayout';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterBrandPage from './pages/auth/RegisterBrandPage';
 import DashboardPage from './pages/brand/DashboardPage';
 import CampaignsPage from './pages/brand/CampaignsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
 import InfluencerComingSoonPage from './pages/influencer/InfluencerComingSoonPage';
-
-function PagePlaceholder({ label }: { label: string }) {
-  return (
-    <div className="flex h-64 items-center justify-center">
-      <p className="text-sm text-muted-foreground">{label} — em breve</p>
-    </div>
-  );
-}
 
 function BootSpinner() {
   return (
@@ -61,7 +54,9 @@ function AppShell() {
       {/* Rotas de autenticação — sem sidebar */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<PagePlaceholder label="Cadastro" />} />
+        {/* Influencer ainda em construção → /register vai direto pro cadastro de marca */}
+        <Route path="/register" element={<Navigate to="/register/brand" replace />} />
+        <Route path="/register/brand" element={<RegisterBrandPage />} />
       </Route>
 
       {/* Rotas da marca — protegidas por BrandGuard */}
