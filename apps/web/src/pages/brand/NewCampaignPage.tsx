@@ -7,13 +7,7 @@ import { ArrowLeft, Check, Copy } from 'lucide-react';
 import { useCreateCampaign, usePublishCampaign } from '../../hooks/useCampaigns';
 import type { Campaign } from '../../types/api';
 import { cn } from '../../lib/utils';
-
-// ─── Nichos disponíveis (fitness) ─────────────────────────────────────────────
-
-const NICHE_OPTIONS = [
-  'fitness', 'wellness', 'musculação', 'crossfit', 'yoga',
-  'corrida', 'nutrição', 'moda fitness', 'suplementação', 'lifestyle',
-];
+import NicheSelector from '../../components/primitives/NicheSelector';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
@@ -266,33 +260,7 @@ export default function NewCampaignPage() {
               name="niches"
               control={control}
               render={({ field }) => (
-                <div className="flex flex-wrap gap-2">
-                  {NICHE_OPTIONS.map((niche) => {
-                    const selected = field.value.includes(niche);
-                    return (
-                      <button
-                        key={niche}
-                        type="button"
-                        onClick={() => {
-                          if (selected) {
-                            field.onChange(field.value.filter((n) => n !== niche));
-                          } else {
-                            field.onChange([...field.value, niche]);
-                          }
-                        }}
-                        className={cn(
-                          'rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors',
-                          selected
-                            ? 'border-lime/40 bg-lime/10 text-lime'
-                            : 'border-border bg-secondary text-muted-foreground hover:text-foreground',
-                        )}
-                      >
-                        {selected && <Check size={10} className="mr-1 inline" />}
-                        {niche}
-                      </button>
-                    );
-                  })}
-                </div>
+                <NicheSelector value={field.value} onChange={field.onChange} />
               )}
             />
             <FieldError message={errors.niches?.message} />

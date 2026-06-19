@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Megaphone,
+  Building2,
   LogOut,
 } from 'lucide-react';
 import { api } from '../../services/api';
@@ -11,6 +12,7 @@ import { cn } from '../../lib/utils';
 const navItems = [
   { to: '/brand/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/brand/campaigns', icon: Megaphone, label: 'Programas' },
+  { to: '/brand/profile', icon: Building2, label: 'Perfil' },
 ];
 
 export default function BrandLayout() {
