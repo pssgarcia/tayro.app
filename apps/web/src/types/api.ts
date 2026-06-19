@@ -114,6 +114,18 @@ export interface UpdateInfluencerPayload {
   publicProfileEnabled?: boolean;
 }
 
+// ─── Paginação (espelha buildPaginatedResult da API) ─────────────────────────────
+
+export interface Paginated<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 
 export interface BrandDashboard {
