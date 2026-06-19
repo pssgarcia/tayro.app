@@ -18,6 +18,7 @@ import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
+import InfluencerProfilePage from './pages/influencer/ProfilePage';
 
 function BootSpinner() {
   return (
@@ -92,6 +93,7 @@ function AppShell() {
       >
         <Route index element={<Navigate to="/influencer/applications" replace />} />
         <Route path="applications" element={<MyApplicationsPage />} />
+        <Route path="profile" element={<InfluencerProfilePage />} />
       </Route>
 
       {/* Rota pública de inscrição — sem auth, sem layout */}

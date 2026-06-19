@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApplicationStatus,
@@ -18,6 +19,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { PublicApplyDto } from './dtos/public-apply.dto';
+import { UpdateInfluencerDto } from './dtos/update-influencer.dto';
 
 @Injectable()
 export class CreatorsService {
@@ -113,6 +115,68 @@ export class CreatorsService {
       completedPartnerships,
       results,
     };
+  }
+
+  // ─── Perfil do creator autenticado (me) ─────────────────────────────────────────
+
+  async getMe(userId: string) {
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        city: true,
+        niches: true,
+        instagramHandle: true, // read-only aqui (não editável neste fluxo)
+        tiktokHandle: true,
+        followersCount: true,
+        igEngagementRate: true,
+        igFetchStatus: true,
+        publicProfileEnabled: true,
+        createdAt: true,
+        user: { select: { email: true } },
+      },
+    });
+    if (!influencer) {
+      throw new ForbiddenException('User does not have an influencer profile');
+    }
+
+    const { user, ...rest } = influencer;
+    return { ...rest, email: user.email };
+  }
+
+  async updateMe(userId: string, dto: UpdateInfluencerDto) {
+    // Monta o data só com os campos enviados — ser explícito evita sobrescrever
+    // com undefined acidental. Nenhum campo aqui é @unique, então não há P2002.
+    const data: Prisma.InfluencerUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.bio !== undefined) data.bio = dto.bio;
+    if (dto.city !== undefined) data.city = dto.city;
+    if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
+    if (dto.niches !== undefined) data.niches = dto.niches;
+    if (dto.tiktokHandle !== undefined) data.tiktokHandle = dto.tiktokHandle;
+    if (dto.publicProfileEnabled !== undefined) {
+      data.publicProfileEnabled = dto.publicProfileEnabled;
+    }
+
+    try {
+      await this.prisma.influencer.update({ where: { userId }, data });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new ForbiddenException(
+          'User does not have an influencer profile',
+        );
+      }
+      throw err;
+    }
+
+    // Retorna o mesmo shape do getMe (com email) — mantém o contrato uniforme.
+    return this.getMe(userId);
   }
 
   // ─── Helpers privados ─────────────────────────────────────────────────────────
