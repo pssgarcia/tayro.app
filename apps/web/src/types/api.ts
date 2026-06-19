@@ -85,6 +85,35 @@ export interface UpdateBrandPayload {
   bio?: string;
 }
 
+// ─── Perfil do creator ───────────────────────────────────────────────────────────
+
+export interface InfluencerProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  city: string | null;
+  niches: string[];
+  instagramHandle: string | null; // read-only neste fluxo
+  tiktokHandle: string | null;
+  followersCount: number | null;
+  igEngagementRate: number | null;
+  igFetchStatus: string | null;
+  publicProfileEnabled: boolean;
+  createdAt: string;
+}
+
+export interface UpdateInfluencerPayload {
+  name?: string;
+  avatarUrl?: string;
+  bio?: string;
+  city?: string;
+  niches?: string[];
+  tiktokHandle?: string;
+  publicProfileEnabled?: boolean;
+}
+
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 
 export interface BrandDashboard {
