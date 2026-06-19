@@ -128,10 +128,10 @@ export default function RegisterBrandPage() {
       {/* Headline */}
       <div className="space-y-1 text-center">
         <h1 className="font-display text-[32px] font-bold leading-tight text-foreground">
-          Crie sua conta de marca.
+          Crie sua conta de marca!
         </h1>
         <p className="text-sm text-muted-foreground">
-          Comece a receber candidaturas de creators fitness.
+          Comece a receber candidaturas de creators fitness
         </p>
       </div>
 
