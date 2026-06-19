@@ -92,18 +92,58 @@ describe('RegisterInfluencerPage', () => {
     expect(useAuthStore.getState().accessToken).toBe('tok-1');
   });
 
-  it('mostra erro no email quando a API retorna 409', async () => {
+  it('mostra a mensagem do servidor no email quando 409 com field=email', async () => {
     vi.mocked(api.post).mockRejectedValue({
       isAxiosError: true,
-      response: { status: 409 },
+      response: {
+        status: 409,
+        data: { message: 'Este e-mail já está em uso', field: 'email' },
+      },
     });
     renderPage();
     fillRequired();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     expect(
-      await screen.findByText(/já existe uma conta com esse e-mail/i),
+      await screen.findByText(/este e-mail já está em uso/i),
     ).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('mostra a mensagem do servidor no campo do instagram quando o handle já existe', async () => {
+    vi.mocked(api.post).mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 409,
+        data: {
+          message: 'Este @ do Instagram já está em uso por outra conta',
+          field: 'instagramHandle',
+        },
+      },
+    });
+    renderPage();
+    fillRequired();
+    fireEvent.change(screen.getByLabelText(/instagram/i), {
+      target: { value: '@pitringym' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(
+      await screen.findByText(/já está em uso por outra conta/i),
+    ).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('mostra "sem conexão" apenas quando a request não chega ao servidor', async () => {
+    vi.mocked(api.post).mockRejectedValue({
+      isAxiosError: true,
+      // sem response = falha de rede real
+    });
+    renderPage();
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(await screen.findByText(/sem conexão com o servidor/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 });

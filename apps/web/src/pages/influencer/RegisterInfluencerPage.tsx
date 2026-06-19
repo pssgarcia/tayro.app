@@ -73,20 +73,54 @@ export default function RegisterInfluencerPage() {
       setAuth(data.accessToken, data.user);
       navigate('/influencer', { replace: true });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        if (status === 409) {
-          setError('email', { message: 'Já existe uma conta com esse e-mail' });
-        } else if (status === 429) {
-          setError('root', {
-            message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
-          });
-        } else {
-          setError('root', { message: 'Erro de conexão. Tente novamente.' });
-        }
-      } else {
+      if (!axios.isAxiosError(err)) {
         setError('root', { message: 'Erro inesperado. Tente novamente.' });
+        return;
       }
+
+      // Sem response = a request não chegou ao servidor (rede caiu, API fora,
+      // proxy 502). Só AQUI faz sentido falar em "conexão".
+      if (!err.response) {
+        setError('root', {
+          message: 'Sem conexão com o servidor. Verifique sua internet e tente de novo.',
+        });
+        return;
+      }
+
+      const { status, data: body } = err.response as {
+        status: number;
+        data?: { message?: string | string[]; field?: string };
+      };
+      // class-validator devolve message como array; pegamos a primeira.
+      const serverMessage = Array.isArray(body?.message)
+        ? body?.message[0]
+        : body?.message;
+
+      if (status === 429) {
+        setError('root', {
+          message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+        });
+        return;
+      }
+
+      // Erro atrelado a um campo específico → mostra inline no input certo.
+      const FIELD_KEYS: Array<keyof FormValues> = [
+        'name',
+        'email',
+        'password',
+        'instagramHandle',
+      ];
+      if (body?.field && (FIELD_KEYS as string[]).includes(body.field)) {
+        setError(body.field as keyof FormValues, {
+          message: serverMessage ?? 'Valor inválido.',
+        });
+        return;
+      }
+
+      // Caso geral: mostra a mensagem real do servidor (ou um fallback).
+      setError('root', {
+        message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.',
+      });
     }
   };
 

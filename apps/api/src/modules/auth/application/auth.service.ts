@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { RegisterBrandDto } from './dtos/register-brand.dto';
 import { RegisterInfluencerDto } from './dtos/register-influencer.dto';
@@ -46,25 +46,57 @@ export class AuthService {
   }
 
   async registerInfluencer(dto: RegisterInfluencerDto) {
-    await this.assertEmailAvailable(dto.email);
-
     const hash = await bcrypt.hash(dto.password, 12);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hash,
-        role: UserRole.INFLUENCER,
-        influencer: {
-          create: {
-            name: dto.name,
-            instagramHandle: dto.instagramHandle,
-            niches: dto.niches ?? [],
+
+    // Sem check-then-act: confiamos nas constraints @unique (email e
+    // instagramHandle). Isso evita race condition entre dois cadastros
+    // simultâneos e nos dá o erro exato (qual campo colidiu) no catch.
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hash,
+          role: UserRole.INFLUENCER,
+          influencer: {
+            create: {
+              name: dto.name,
+              instagramHandle: dto.instagramHandle,
+              niches: dto.niches ?? [],
+            },
           },
         },
-      },
-    });
+      });
 
-    return this.buildAuthResponse(user);
+      return this.buildAuthResponse(user);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        // P2002 expõe o(s) campo(s) que colidiram em meta.target (string | string[]).
+        const rawTarget = err.meta?.target;
+        const target = Array.isArray(rawTarget)
+          ? rawTarget.join(',')
+          : typeof rawTarget === 'string'
+            ? rawTarget
+            : '';
+        if (target.includes('instagramHandle')) {
+          throw new ConflictException({
+            statusCode: 409,
+            error: 'Conflict',
+            message: 'Este @ do Instagram já está em uso por outra conta',
+            field: 'instagramHandle',
+          });
+        }
+        throw new ConflictException({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'Este e-mail já está em uso',
+          field: 'email',
+        });
+      }
+      throw err;
+    }
   }
 
   async login(dto: LoginDto) {
