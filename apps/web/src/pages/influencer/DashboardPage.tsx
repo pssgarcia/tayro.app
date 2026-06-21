@@ -84,19 +84,26 @@ export default function DashboardPage() {
           <div className="flex gap-3">
             {(
               [
-                { value: totalApps,      label: 'candidaturas' },
-                { value: approvedApps,   label: 'aprovadas' },
-                { value: pendingRewards, label: 'a receber' },
+                { value: totalApps,      label: 'candidaturas', to: null },
+                { value: approvedApps,   label: 'aprovadas',    to: null },
+                { value: pendingRewards, label: 'a receber',    to: '/influencer/rewards' },
               ] as const
-            ).map(({ value, label }) => (
-              <div
-                key={label}
-                className="flex-1 rounded-xl border border-border bg-card p-4 text-center"
-              >
-                <p className="font-display text-2xl font-bold tabular-nums">{value}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-              </div>
-            ))}
+            ).map(({ value, label, to }) => {
+              const inner = (
+                <>
+                  <p className="font-display text-2xl font-bold tabular-nums">{value}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+                </>
+              );
+              const cls = 'flex-1 rounded-xl border border-border bg-card p-4 text-center';
+              return to ? (
+                <Link key={label} to={to} className={cn(cls, 'transition-colors hover:border-lime/30')}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={label} className={cls}>{inner}</div>
+              );
+            })}
           </div>
 
           {/* Candidaturas recentes */}
