@@ -196,6 +196,22 @@ export interface MyApplication {
   };
 }
 
+// ─── My Reward (lado creator — GET /rewards/mine) ────────────────────────────
+
+export interface MyReward {
+  id: string;
+  type: RewardType;
+  value: string;
+  status: RewardStatus;
+  notes: string | null;
+  issuedAt: string | null;
+  createdAt: string;
+  campaign: {
+    title: string;
+    brand: { name: string };
+  };
+}
+
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
