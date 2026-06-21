@@ -124,7 +124,10 @@ function SubmitModal({
           <div className="py-4 text-center">
             <p className="text-sm text-muted-foreground">
               Você não tem candidaturas aprovadas no momento.{' '}
-              <Link to="/influencer/applications" className="text-lime hover:underline">
+              <Link
+                to="/influencer/applications"
+                className="whitespace-nowrap text-lime hover:underline"
+              >
                 Ver candidaturas
               </Link>
               .

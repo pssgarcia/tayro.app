@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import MyApplicationsPage from './MyApplicationsPage';
 import * as hooks from '../../hooks/useMyApplications';
 import type { MyApplication } from '../../types/api';
@@ -45,6 +46,14 @@ function mockHooks(apps: MyApplication[] = []) {
   } as any);
 }
 
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <MyApplicationsPage />
+    </MemoryRouter>,
+  );
+}
+
 beforeEach(() => {
   withdrawMutate.mockReset();
   mockHooks();
@@ -52,7 +61,7 @@ beforeEach(() => {
 
 describe('MyApplicationsPage', () => {
   it('mostra empty state sem candidaturas', () => {
-    render(<MyApplicationsPage />);
+    renderPage();
     expect(
       screen.getByText(/você ainda não se candidatou a nenhum programa/i),
     ).toBeInTheDocument();
@@ -60,7 +69,7 @@ describe('MyApplicationsPage', () => {
 
   it('renderiza card com programa, marca e oferta', () => {
     mockHooks([baseApp]);
-    render(<MyApplicationsPage />);
+    renderPage();
     expect(screen.getByText('Programa Verão')).toBeInTheDocument();
     expect(screen.getByText('Marca Fit')).toBeInTheDocument();
     expect(screen.getByText(/R\$\s?300,00/)).toBeInTheDocument();
@@ -68,7 +77,7 @@ describe('MyApplicationsPage', () => {
 
   it('mostra retirar candidatura só em PENDING', () => {
     mockHooks([baseApp]);
-    render(<MyApplicationsPage />);
+    renderPage();
     expect(
       screen.getByRole('button', { name: /retirar candidatura/i }),
     ).toBeInTheDocument();
@@ -76,7 +85,7 @@ describe('MyApplicationsPage', () => {
 
   it('não mostra retirar em candidatura APPROVED', () => {
     mockHooks([{ ...baseApp, status: 'APPROVED' }]);
-    render(<MyApplicationsPage />);
+    renderPage();
     expect(
       screen.queryByRole('button', { name: /retirar candidatura/i }),
     ).not.toBeInTheDocument();
@@ -84,7 +93,7 @@ describe('MyApplicationsPage', () => {
 
   it('clicar em retirar chama o withdraw', () => {
     mockHooks([baseApp]);
-    render(<MyApplicationsPage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
     expect(withdrawMutate).toHaveBeenCalledWith('app-1');
   });
@@ -97,7 +106,7 @@ describe('MyApplicationsPage', () => {
       campaign: { ...baseApp.campaign, title: 'Programa Inverno' },
     };
     mockHooks([baseApp, approved]);
-    render(<MyApplicationsPage />);
+    renderPage();
 
     expect(screen.getByText('Programa Verão')).toBeInTheDocument();
     expect(screen.getByText('Programa Inverno')).toBeInTheDocument();
