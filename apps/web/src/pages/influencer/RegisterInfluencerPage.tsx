@@ -254,7 +254,7 @@ export default function RegisterInfluencerPage() {
           type="submit"
           disabled={isSubmitting}
           className={cn(
-            'w-full rounded-lg bg-lime py-2.5 text-sm font-semibold text-background',
+            'w-full min-h-[44px] rounded-lg bg-lime py-2.5 text-sm font-semibold text-background',
             'transition-opacity hover:opacity-90',
             'disabled:cursor-not-allowed disabled:opacity-60',
           )}

@@ -22,8 +22,8 @@ export default function InfluencerLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="flex w-56 flex-col border-r border-border bg-card">
+      {/* Sidebar — desktop only */}
+      <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card">
         {/* Logo */}
         <div className="flex h-16 items-center px-5">
           <span className="font-display text-xl font-bold tracking-tight">
@@ -67,10 +67,49 @@ export default function InfluencerLayout() {
         </div>
       </aside>
 
-      {/* Conteúdo principal */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
+      {/* Coluna direita: header mobile + conteúdo */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header mobile — logo + logout */}
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:hidden">
+          <span className="font-display text-xl font-bold tracking-tight">
+            tay<span className="text-lime">ro</span>
+          </span>
+          <button
+            onClick={handleLogout}
+            aria-label="Sair"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <LogOut size={18} />
+          </button>
+        </header>
+
+        {/* Conteúdo principal — recua pb-14 no mobile p/ não ficar atrás do bottom nav */}
+        <main className="flex-1 overflow-auto pb-14 md:pb-0">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Bottom tab bar — mobile only */}
+      <nav
+        className="fixed bottom-0 inset-x-0 z-40 flex border-t border-border bg-card md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {navItems.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              cn(
+                'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 py-3 text-xs font-medium transition-colors',
+                isActive ? 'text-lime' : 'text-muted-foreground',
+              )
+            }
+          >
+            <Icon size={20} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

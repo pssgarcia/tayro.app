@@ -89,9 +89,9 @@ export default function MyApplicationsPage() {
       : applications.filter((a) => a.status === filter);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Minhas candidaturas</h1>
+        <h1 className="font-display text-xl font-bold sm:text-2xl">Minhas candidaturas</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Acompanhe o status dos programas em que você se candidatou
         </p>

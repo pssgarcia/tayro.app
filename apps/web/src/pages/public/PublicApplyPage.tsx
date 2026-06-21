@@ -198,13 +198,13 @@ export default function PublicApplyPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header público — só logo */}
-      <header className="border-b border-border px-6 py-4">
+      <header className="border-b border-border px-4 py-4 sm:px-6">
         <span className="font-display text-xl font-bold tracking-tight">
           tay<span className="text-lime">ro</span>
         </span>
       </header>
 
-      <main className="mx-auto max-w-lg px-6 py-10">
+      <main className="mx-auto max-w-lg px-4 py-6 sm:px-6 sm:py-10">
         {isLoading && <PageSkeleton />}
 
         {isError && (
@@ -291,7 +291,7 @@ export default function PublicApplyPage() {
               )}
 
               {/* Descrição */}
-              <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+              <p className="break-words text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
                 {campaign.description}
               </p>
             </div>
@@ -390,7 +390,7 @@ export default function PublicApplyPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full rounded-lg bg-lime py-3 font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+                      className="w-full min-h-[44px] rounded-lg bg-lime py-3 font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
                       {isSubmitting ? 'Enviando…' : 'Quero participar'}
                     </button>

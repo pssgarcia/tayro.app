@@ -287,9 +287,9 @@ export default function ProfilePage() {
   const { data: profile, isLoading, isError } = useBrandProfile();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Perfil da marca</h1>
+        <h1 className="font-display text-xl font-bold sm:text-2xl">Perfil da marca</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Como sua marca aparece para as creators
         </p>
