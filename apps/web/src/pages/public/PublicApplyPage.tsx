@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CalendarDays, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckCircle2, Sparkles } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Campaign } from '../../types/api';
 import Avatar from '../../components/primitives/Avatar';
@@ -148,6 +148,7 @@ function PageSkeleton() {
 
 export default function PublicApplyPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
 
   const { data: campaign, isLoading, isError } = useQuery({
@@ -198,10 +199,17 @@ export default function PublicApplyPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header público — só logo */}
-      <header className="border-b border-border px-4 py-4 sm:px-6">
-        <span className="font-display text-xl font-bold tracking-tight">
+      <header className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-6">
+        <Link to="/login" className="font-display text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
           tay<span className="text-lime">ro</span>
-        </span>
+        </Link>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft size={15} />
+          Voltar
+        </button>
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-6 sm:px-6 sm:py-10">
