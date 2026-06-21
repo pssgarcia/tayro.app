@@ -67,8 +67,8 @@ function CampaignHeader({
   };
 
   return (
-    <div className="border-b border-border bg-card px-6 py-5">
-      <h1 className="font-display text-2xl font-bold text-foreground">{title}</h1>
+    <div className="border-b border-border bg-card px-4 py-3 md:px-6 md:py-5">
+      <h1 className="font-display text-xl font-bold text-foreground md:text-2xl">{title}</h1>
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <span
           className={cn(
@@ -99,13 +99,13 @@ function TabBar({
   onChange: (id: TabId) => void;
 }) {
   return (
-    <div className="flex border-b border-border bg-card px-6">
+    <div className="flex overflow-x-auto border-b border-border bg-card px-2 md:px-6">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
           className={cn(
-            'relative px-4 py-3 text-sm font-medium transition-colors',
+            'relative shrink-0 px-3 py-3 text-sm font-medium transition-colors md:px-4',
             active === tab.id
               ? 'text-lime after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-lime'
               : 'text-muted-foreground hover:text-foreground',
@@ -305,7 +305,7 @@ export default function CampaignDetailPage() {
 
       <TabBar active={activeTab} onChange={setActiveTab} />
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 md:p-6">
         {activeTab === 'applications' && (
           <ApplicationsTab campaignId={campaignId} />
         )}
