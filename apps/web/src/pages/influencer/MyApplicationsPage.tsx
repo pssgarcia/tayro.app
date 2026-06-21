@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CalendarDays, Gift, ClipboardList, X } from 'lucide-react';
+import { CalendarDays, Gift, ClipboardList, X, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   useMyApplications,
   useWithdrawApplication,
@@ -61,17 +62,28 @@ function ApplicationCard({
         </span>
       </div>
 
-      {/* Ação: retirar (só PENDING) */}
-      {application.status === 'PENDING' && (
-        <div className="border-t border-border pt-3">
-          <button
-            onClick={onWithdraw}
-            disabled={isWithdrawing}
-            className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-          >
-            <X size={13} />
-            {isWithdrawing ? 'Retirando…' : 'Retirar candidatura'}
-          </button>
+      {/* Ações */}
+      {(application.status === 'PENDING' || application.status === 'APPROVED') && (
+        <div className="flex items-center gap-2 border-t border-border pt-3">
+          {application.status === 'PENDING' && (
+            <button
+              onClick={onWithdraw}
+              disabled={isWithdrawing}
+              className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+            >
+              <X size={13} />
+              {isWithdrawing ? 'Retirando…' : 'Retirar candidatura'}
+            </button>
+          )}
+          {application.status === 'APPROVED' && (
+            <Link
+              to={`/influencer/submissions?apply=${application.id}`}
+              className="flex items-center gap-1.5 rounded-lg bg-lime/10 px-3 py-1.5 text-xs font-medium text-lime transition-colors hover:bg-lime/20"
+            >
+              <Upload size={13} />
+              Enviar conteúdo
+            </Link>
+          )}
         </div>
       )}
     </div>

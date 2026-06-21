@@ -1,14 +1,15 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Compass, ClipboardList, UserRound, LogOut } from 'lucide-react';
+import { LayoutDashboard, Compass, ClipboardList, Video, UserRound, LogOut } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { cn } from '../../lib/utils';
 
 const navItems = [
-  { to: '/influencer/dashboard',     icon: LayoutDashboard, label: 'Início' },
-  { to: '/influencer/browse',        icon: Compass,         label: 'Programas' },
-  { to: '/influencer/applications',  icon: ClipboardList,   label: 'Candidaturas' },
-  { to: '/influencer/profile',       icon: UserRound,       label: 'Perfil' },
+  { to: '/influencer/dashboard',    icon: LayoutDashboard, label: 'Início' },
+  { to: '/influencer/browse',       icon: Compass,         label: 'Programas' },
+  { to: '/influencer/applications', icon: ClipboardList,   label: 'Aplicações' },
+  { to: '/influencer/submissions',  icon: Video,           label: 'Conteúdo' },
+  { to: '/influencer/profile',      icon: UserRound,       label: 'Perfil' },
 ];
 
 export default function InfluencerLayout() {

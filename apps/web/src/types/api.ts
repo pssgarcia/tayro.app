@@ -196,6 +196,26 @@ export interface MyApplication {
   };
 }
 
+// ─── My Submission (lado creator — GET /submissions/mine) ────────────────────
+
+export interface MySubmission {
+  id: string;
+  applicationId: string;
+  mediaUrl: string;
+  mediaType: MediaType;
+  caption: string | null;
+  status: ContentStatus;
+  feedback: string | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+  application: {
+    campaign: {
+      title: string;
+      brand: { name: string };
+    };
+  };
+}
+
 // ─── My Reward (lado creator — GET /rewards/mine) ────────────────────────────
 
 export interface MyReward {
