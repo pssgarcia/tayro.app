@@ -103,9 +103,9 @@ export default function DashboardPage() {
   const attentions = data ? buildAttentions(data) : [];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+        <h1 className="font-display text-xl font-bold sm:text-2xl">Dashboard</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Visão geral dos seus programas e parcerias
         </p>

@@ -49,11 +49,11 @@ export default function CampaignsPage() {
   const visible = campaigns ? applyFilter(campaigns, filter) : [];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold">Programas</h1>
+          <h1 className="font-display text-xl font-bold sm:text-2xl">Programas</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Gerencie suas campanhas e acompanhe candidaturas
           </p>

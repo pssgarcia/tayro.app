@@ -204,7 +204,7 @@ export default function NewCampaignPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-2xl px-6 py-8">
+      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <button
@@ -215,7 +215,7 @@ export default function NewCampaignPage() {
             Voltar
           </button>
         </div>
-        <h1 className="mb-6 font-display text-2xl font-bold">Novo programa</h1>
+        <h1 className="mb-6 font-display text-xl font-bold sm:text-2xl">Novo programa</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Informações gerais */}
@@ -271,7 +271,7 @@ export default function NewCampaignPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Vagas e prazo
             </p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label required>Número de vagas</Label>
                 <Input {...register('maxSpots')} type="number" min={1} placeholder="5" />

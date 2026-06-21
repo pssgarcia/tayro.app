@@ -14,9 +14,9 @@ export default function BrowseProgramsPage() {
   const total = data?.meta.total ?? 0;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold">Programas</h1>
+        <h1 className="font-display text-xl font-bold sm:text-2xl">Programas</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           Programas abertos de marcas fitness — candidate-se aos que combinam com você
         </p>
