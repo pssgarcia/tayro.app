@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Megaphone, Building2, LogOut } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
@@ -26,9 +26,9 @@ export default function BrandLayout() {
       <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card">
         {/* Logo */}
         <div className="flex h-16 items-center px-5">
-          <span className="font-display text-xl font-bold tracking-tight">
+          <Link to="/brand" className="font-display text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
             tay<span className="text-lime">ro</span>
-          </span>
+          </Link>
         </div>
 
         {/* Nav */}
@@ -69,9 +69,9 @@ export default function BrandLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header mobile — logo + logout */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:hidden">
-          <span className="font-display text-xl font-bold tracking-tight">
+          <Link to="/brand" className="font-display text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
             tay<span className="text-lime">ro</span>
-          </span>
+          </Link>
           <button
             onClick={handleLogout}
             aria-label="Sair"
