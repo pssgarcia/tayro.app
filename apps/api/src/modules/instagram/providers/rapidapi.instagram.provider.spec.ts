@@ -23,7 +23,9 @@ const feedResponse = {
       like_count: 605,
       comment_count: 23,
       image_versions2: {
-        candidates: [{ url: 'https://cdn.example/thumb.jpg', width: 480, height: 853 }],
+        candidates: [
+          { url: 'https://cdn.example/thumb.jpg', width: 480, height: 853 },
+        ],
       },
       caption: { text: '#gym #aesthetics #fitness' },
     },
@@ -53,8 +55,14 @@ describe('RapidApiInstagramProvider', () => {
 
   it('mapeia profile + feed para InstagramProfile', async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: async () => profileResponse })
-      .mockResolvedValueOnce({ ok: true, json: async () => feedResponse });
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(profileResponse),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(feedResponse),
+      });
 
     const provider = new RapidApiInstagramProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
@@ -74,8 +82,14 @@ describe('RapidApiInstagramProvider', () => {
 
   it('usa o pk do /profile como user_id na chamada do /feed', async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: async () => profileResponse })
-      .mockResolvedValueOnce({ ok: true, json: async () => feedResponse });
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(profileResponse),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(feedResponse),
+      });
 
     const provider = new RapidApiInstagramProvider(makeConfig());
     await provider.fetchProfile('pitringym');
@@ -89,7 +103,10 @@ describe('RapidApiInstagramProvider', () => {
 
   it('feed falha (HTTP 500) → followers preservados, recentPosts vazio', async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: async () => profileResponse })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(profileResponse),
+      })
       .mockResolvedValueOnce({ ok: false, status: 500 });
 
     const provider = new RapidApiInstagramProvider(makeConfig());
@@ -100,8 +117,14 @@ describe('RapidApiInstagramProvider', () => {
 
   it('feed vazio (conta privada) → followers preservados, recentPosts vazio', async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: async () => profileResponse })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) });
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(profileResponse),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ items: [] }),
+      });
 
     const provider = new RapidApiInstagramProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
