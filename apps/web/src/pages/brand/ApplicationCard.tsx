@@ -1,4 +1,4 @@
-import { RefreshCw, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import Avatar from '../../components/primitives/Avatar';
 import StatBlock from '../../components/primitives/StatBlock';
 import StatusPill from '../../components/primitives/StatusPill';
@@ -20,9 +20,9 @@ function IgSkeleton() {
           </div>
         ))}
       </div>
-      <div className="flex gap-1.5">
+      <div className="grid grid-cols-6 gap-1.5">
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-14 w-14 rounded-md bg-secondary" />
+          <div key={i} className="aspect-square w-full rounded-md bg-secondary" />
         ))}
       </div>
     </div>
@@ -33,13 +33,13 @@ function IgSkeleton() {
 
 function IgPostStrip({ posts }: { posts: IgPost[] }) {
   return (
-    <div className="flex gap-1.5 overflow-hidden">
+    <div className="grid grid-cols-6 gap-1.5">
       {posts.slice(0, 6).map((post, i) => (
         <img
           key={i}
           src={post.thumbnail}
           alt=""
-          className="h-14 w-14 shrink-0 rounded-md object-cover"
+          className="aspect-square w-full rounded-md object-cover"
           loading="lazy"
         />
       ))}
@@ -109,9 +109,9 @@ function IgBlock({
           </button>
         </div>
         {/* Thumbnails placeholder */}
-        <div className="flex gap-1.5">
+        <div className="grid grid-cols-6 gap-1.5">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-14 w-14 rounded-md bg-secondary/50" />
+            <div key={i} className="aspect-square w-full rounded-md bg-secondary/50" />
           ))}
         </div>
       </div>
@@ -182,7 +182,15 @@ export default function ApplicationCard({
           </div>
 
           {handle && (
-            <span className="text-sm text-muted-foreground">@{handle}</span>
+            <a
+              href={`https://instagram.com/${handle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-lime"
+            >
+              @{handle}
+              <ExternalLink size={12} className="shrink-0" />
+            </a>
           )}
 
           <div className="flex flex-wrap gap-x-3 gap-y-0.5">
