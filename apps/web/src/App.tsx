@@ -22,6 +22,7 @@ import InfluencerProfilePage from './pages/influencer/ProfilePage';
 import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
 import InfluencerDashboardPage from './pages/influencer/DashboardPage';
 import SubmissionsPage from './pages/influencer/SubmissionsPage';
+import RewardsPage from './pages/influencer/RewardsPage';
 
 function BootSpinner() {
   return (
@@ -99,6 +100,7 @@ function AppShell() {
         <Route path="browse" element={<BrowseProgramsPage />} />
         <Route path="applications" element={<MyApplicationsPage />} />
         <Route path="submissions" element={<SubmissionsPage />} />
+        <Route path="rewards" element={<RewardsPage />} />
         <Route path="profile" element={<InfluencerProfilePage />} />
       </Route>
 
