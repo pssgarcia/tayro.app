@@ -1,34 +1,33 @@
 import type { ConfigService } from '@nestjs/config';
-import type { InstagramProvider, InstagramProfile } from '../instagram.types';
+import type {
+  InstagramProvider,
+  InstagramProfile,
+  IgPost,
+} from '../instagram.types';
 import { InstagramFetchError } from './instagram-fetch.error';
 
 // ---------------------------------------------------------------------------
-// Shape esperado da resposta bruta do provider RapidAPI.
-//
-// Ao escolher o provider no RapidAPI (ex: "Instagram Scraper", "Instagram Data",
-// etc.), atualize APENAS o método rawToProfile() abaixo com o mapeamento correto.
-// Nenhum outro trecho do código precisa ser alterado.
-//
-// Campos comuns em providers de Instagram scraping (ajuste conforme o real):
+// Shapes brutos da API (instagram-best-experience).
+// Versões enxutas — só os campos que consumimos. O resto do JSON é ruído.
 // ---------------------------------------------------------------------------
-interface RawApiResponse {
-  // Exemplo de estrutura genérica — substitua pelos campos reais:
-  // data?: {
-  //   user?: {
-  //     edge_followed_by?: { count: number };
-  //     edge_owner_to_timeline_media?: {
-  //       edges: Array<{
-  //         node: {
-  //           display_url: string;
-  //           thumbnail_src?: string;
-  //           edge_liked_by: { count: number };
-  //           edge_media_to_comment: { count: number };
-  //         };
-  //       }>;
-  //     };
-  //   };
-  // };
+
+interface RawProfile {
+  pk: number;
+  follower_count?: number;
   [key: string]: unknown;
+}
+
+interface RawFeedItem {
+  code?: string;
+  like_count?: number;
+  comment_count?: number;
+  image_versions2?: {
+    candidates?: Array<{ url?: string }>;
+  };
+}
+
+interface RawFeed {
+  items?: RawFeedItem[];
 }
 
 export class RapidApiInstagramProvider implements InstagramProvider {
@@ -48,31 +47,58 @@ export class RapidApiInstagramProvider implements InstagramProvider {
   }
 
   async fetchProfile(handle: string): Promise<InstagramProfile> {
+    // 1) /profile → followers + pk (numérico, exigido pelo /feed)
+    const profile = await this.getProfile(handle);
+    // 2) /feed → posts recentes. Best-effort: conta privada/erro → sem posts,
+    //    mas ainda retornamos os followers (não jogamos a busca inteira fora).
+    const feed = await this.getFeed(profile.pk);
+    return this.toProfile(profile, feed);
+  }
+
+  // ─── Internos ────────────────────────────────────────────────────────────────
+
+  /** Profile é obrigatório: 2 tentativas, depois lança (sem vazar detalhe interno). */
+  private async getProfile(handle: string): Promise<RawProfile> {
+    const url = `${this.baseUrl}/profile?username=${encodeURIComponent(handle)}`;
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        const raw = await this.fetchRaw(handle);
-        return this.rawToProfile(raw);
+        return (await this.fetchJson(url)) as RawProfile;
       } catch {
-        // continua para a próxima tentativa
+        // tenta de novo
       }
     }
-    // Nunca vaza detalhes internos do provider para camadas acima
     throw new InstagramFetchError(
       `Failed to fetch Instagram profile for @${handle} after 2 attempts`,
     );
   }
 
-  // ─── Internos ────────────────────────────────────────────────────────────────
+  /** Feed é best-effort: falha/privado → lista vazia, nunca lança. */
+  private async getFeed(pk: number): Promise<RawFeed> {
+    const url = `${this.baseUrl}/feed?user_id=${encodeURIComponent(String(pk))}`;
+    try {
+      return (await this.fetchJson(url)) as RawFeed;
+    } catch {
+      return { items: [] };
+    }
+  }
 
-  private async fetchRaw(handle: string): Promise<RawApiResponse> {
+  private toProfile(profile: RawProfile, feed: RawFeed): InstagramProfile {
+    const followers = profile.follower_count ?? 0;
+    const recentPosts: IgPost[] = (feed.items ?? []).map((item) => ({
+      url: `https://instagram.com/p/${item.code}/`,
+      thumbnail: item.image_versions2?.candidates?.[0]?.url ?? '',
+      likes: item.like_count ?? 0,
+      comments: item.comment_count ?? 0,
+    }));
+    return { followers, recentPosts };
+  }
+
+  /** GET autenticado com timeout via AbortController. Lança se !res.ok. */
+  private async fetchJson(url: string): Promise<unknown> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      // TODO: ajuste o path e query params conforme o provider escolhido no RapidAPI.
-      // Exemplo: `${this.baseUrl}/user/info?username=${handle}`
-      const url = `${this.baseUrl}/user?username=${encodeURIComponent(handle)}`;
-
       const res = await fetch(url, {
         headers: {
           'x-rapidapi-key': this.apiKey,
@@ -86,31 +112,9 @@ export class RapidApiInstagramProvider implements InstagramProvider {
         throw new InstagramFetchError(`API returned HTTP ${res.status}`);
       }
 
-      return res.json() as Promise<RawApiResponse>;
+      return res.json();
     } finally {
       clearTimeout(timer);
     }
-  }
-
-  private rawToProfile(raw: RawApiResponse): InstagramProfile {
-    // TODO: mapeie os campos do provider escolhido aqui.
-    //
-    // Exemplo genérico (substitua pelos campos reais do provider):
-    //
-    // const user = (raw as any).data?.user;
-    // const followers: number = user?.edge_followed_by?.count ?? 0;
-    // const edges = user?.edge_owner_to_timeline_media?.edges ?? [];
-    // const recentPosts: IgPost[] = edges.map((e: any) => ({
-    //   url: e.node.display_url,
-    //   thumbnail: e.node.thumbnail_src ?? e.node.display_url,
-    //   likes: e.node.edge_liked_by?.count ?? 0,
-    //   comments: e.node.edge_media_to_comment?.count ?? 0,
-    // }));
-    // return { followers, recentPosts };
-
-    void (raw satisfies RawApiResponse); // mantém a variável usada
-    throw new InstagramFetchError(
-      'RapidApiInstagramProvider.rawToProfile() não implementado — escolha o provider no RapidAPI e preencha o mapeamento acima',
-    );
   }
 }
