@@ -70,6 +70,7 @@ export class InstagramSyncService {
           followersCount: profile.followers,
           igEngagementRate,
           igRecentPosts: profile.recentPosts as unknown as Prisma.JsonArray,
+          igProfilePicUrl: profile.profilePicUrl,
           igFetchedAt: new Date(),
           igFetchStatus: IgFetchStatus.OK,
         },

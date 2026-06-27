@@ -8,6 +8,7 @@ export interface IgPost {
 export interface InstagramProfile {
   followers: number;
   recentPosts: IgPost[];
+  profilePicUrl: string | null;
 }
 
 export interface InstagramProvider {
