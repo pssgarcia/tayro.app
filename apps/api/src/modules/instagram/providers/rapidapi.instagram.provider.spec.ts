@@ -69,6 +69,7 @@ describe('RapidApiInstagramProvider', () => {
 
     expect(result).toEqual({
       followers: 990,
+      profilePicUrl: 'https://cdn.example/pic_hd.jpg',
       recentPosts: [
         {
           url: 'https://instagram.com/p/DZidf8Ttw1B/',
@@ -112,7 +113,11 @@ describe('RapidApiInstagramProvider', () => {
     const provider = new RapidApiInstagramProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
 
-    expect(result).toEqual({ followers: 990, recentPosts: [] });
+    expect(result).toEqual({
+      followers: 990,
+      profilePicUrl: 'https://cdn.example/pic_hd.jpg',
+      recentPosts: [],
+    });
   });
 
   it('feed vazio (conta privada) → followers preservados, recentPosts vazio', async () => {
@@ -129,7 +134,11 @@ describe('RapidApiInstagramProvider', () => {
     const provider = new RapidApiInstagramProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
 
-    expect(result).toEqual({ followers: 990, recentPosts: [] });
+    expect(result).toEqual({
+      followers: 990,
+      profilePicUrl: 'https://cdn.example/pic_hd.jpg',
+      recentPosts: [],
+    });
   });
 
   it('profile falha nas 2 tentativas → lança InstagramFetchError', async () => {
