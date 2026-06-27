@@ -25,7 +25,11 @@ export class StubInstagramProvider implements InstagramProvider {
     // engagementRate calculado pela mesma função compartilhada
     void calcEngagementRate(safePosts, followers);
 
-    return Promise.resolve({ followers, recentPosts: safePosts });
+    return Promise.resolve({
+      followers,
+      recentPosts: safePosts,
+      profilePicUrl: null,
+    });
   }
 
   private seedFromHandle(handle: string): number {

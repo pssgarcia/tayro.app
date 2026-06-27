@@ -20,6 +20,7 @@ export interface ApplicationInfluencer {
   followersCount: number | null;
   igEngagementRate: number | null;
   igRecentPosts: IgPost[] | null;
+  igProfilePicUrl: string | null;
   igFetchStatus: IgFetchStatus | null;
 }
 

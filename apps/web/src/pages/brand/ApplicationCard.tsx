@@ -171,7 +171,7 @@ export default function ApplicationCard({
     <article className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-border/80">
       {/* Header: avatar + identidade + status */}
       <div className="flex items-start gap-4">
-        <Avatar src={influencer.avatarUrl} name={influencer.name} size="lg" />
+        <Avatar src={influencer.igProfilePicUrl ?? influencer.avatarUrl} name={influencer.name} size="lg" />
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">

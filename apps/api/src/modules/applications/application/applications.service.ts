@@ -23,6 +23,7 @@ const influencerSelect = {
   followersCount: true,
   igEngagementRate: true,
   igRecentPosts: true,
+  igProfilePicUrl: true,
   igFetchStatus: true,
 } as const;
 

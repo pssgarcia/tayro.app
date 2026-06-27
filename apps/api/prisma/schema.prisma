@@ -118,6 +118,7 @@ model Influencer {
   // Cache do Instagram — atualizado assincronamente pelo InstagramProvider
   igEngagementRate    Float?
   igRecentPosts       Json?          // [{ url, thumbnail, likes, comments }]
+  igProfilePicUrl     String?
   igFetchedAt         DateTime?
   igFetchStatus       IgFetchStatus?
   // Opt-in LGPD — perfil público só é exibido quando true
