@@ -338,6 +338,7 @@ export default function PublicApplyPage() {
                         placeholder="seuhandle"
                         autoComplete="off"
                         autoCapitalize="none"
+                        autoCorrect="off"
                       />
                       <FieldError message={errors.igHandle?.message} />
                     </div>

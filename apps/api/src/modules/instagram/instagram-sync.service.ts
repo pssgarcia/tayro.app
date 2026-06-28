@@ -75,7 +75,7 @@ export class InstagramSyncService {
           igFetchStatus: IgFetchStatus.OK,
         },
       });
-    } catch {
+    } catch (err) {
       // Mantém valores anteriores; igFetchedAt=now para o cooldown do refresh manual
       await this.prisma.influencer.update({
         where: { id: influencerId },
@@ -84,8 +84,9 @@ export class InstagramSyncService {
           igFetchedAt: new Date(),
         },
       });
+      const reason = err instanceof Error ? err.message : String(err);
       this.logger.error(
-        `Instagram fetch failed for influencer ${influencerId}`,
+        `Instagram fetch failed for influencer ${influencerId}: ${reason}`,
       );
     }
   }
