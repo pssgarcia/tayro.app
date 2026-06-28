@@ -228,6 +228,9 @@ export default function RegisterInfluencerPage() {
             type="text"
             placeholder="@seuhandle"
             className={inputCls(!!errors.instagramHandle)}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
             {...register('instagramHandle')}
           />
           {errors.instagramHandle && (
