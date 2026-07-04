@@ -14,6 +14,7 @@ import { InstagramFetchError } from './instagram-fetch.error';
 interface RawProfile {
   pk: number;
   follower_count?: number;
+  profile_pic_url?: string;
   hd_profile_pic_url_info?: { url?: string };
   [key: string]: unknown;
 }
@@ -85,7 +86,8 @@ export class RapidApiInstagramProvider implements InstagramProvider {
 
   private toProfile(profile: RawProfile, feed: RawFeed): InstagramProfile {
     const followers = profile.follower_count ?? 0;
-    const profilePicUrl = profile.hd_profile_pic_url_info?.url ?? null;
+    const profilePicUrl =
+      profile.hd_profile_pic_url_info?.url ?? profile.profile_pic_url ?? null;
     const recentPosts: IgPost[] = (feed.items ?? []).map((item) => ({
       url: `https://instagram.com/p/${item.code}/`,
       thumbnail: item.image_versions2?.candidates?.[0]?.url ?? '',
