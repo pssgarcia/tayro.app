@@ -141,6 +141,32 @@ describe('RapidApiInstagramProvider', () => {
     });
   });
 
+  it('sem hd_profile_pic_url_info → usa profile_pic_url como fallback', async () => {
+    const profileSemHd = {
+      pk: 1327010553,
+      username: 'pitringym',
+      follower_count: 990,
+      is_private: false,
+      profile_pic_url: 'https://cdn.example/pic_150.jpg',
+      // hd_profile_pic_url_info ausente — simula conta que não retorna campo HD
+    };
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(profileSemHd),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ items: [] }),
+      });
+
+    const provider = new RapidApiInstagramProvider(makeConfig());
+    const result = await provider.fetchProfile('pitringym');
+
+    expect(result.profilePicUrl).toBe('https://cdn.example/pic_150.jpg');
+  });
+
   it('profile falha nas 2 tentativas → lança InstagramFetchError', async () => {
     fetchMock
       .mockResolvedValueOnce({ ok: false, status: 500 })
