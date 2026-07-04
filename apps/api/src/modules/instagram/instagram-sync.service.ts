@@ -35,6 +35,10 @@ export class InstagramSyncService {
 
     if (!influencer?.instagramHandle) return;
 
+    // Strip @ defensivamente — DTOs normalizam na entrada, mas dados
+    // inseridos fora do fluxo padrão (ex: Neon console) podem ter @ prefixado.
+    const handle = influencer.instagramHandle.replace(/^@+/, '');
+
     if (!force) {
       const stalenessHours = parseInt(
         this.config.get<string>('IG_FETCH_STALENESS_HOURS', '24'),
@@ -56,9 +60,7 @@ export class InstagramSyncService {
     });
 
     try {
-      const profile = await this.provider.fetchProfile(
-        influencer.instagramHandle,
-      );
+      const profile = await this.provider.fetchProfile(handle);
       const igEngagementRate = calcEngagementRate(
         profile.recentPosts,
         profile.followers,
