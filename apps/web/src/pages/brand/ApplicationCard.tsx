@@ -29,6 +29,38 @@ function IgSkeleton() {
   );
 }
 
+// ─── Botão de refresh manual (compartilhado entre estados failed e OK) ────────
+
+interface RefreshButtonProps {
+  isRefreshing: boolean;
+  /** minutos restantes de cooldown, ou null se liberado */
+  cooldownWait: number | null;
+  onRefresh: () => void;
+}
+
+function RefreshButton({ isRefreshing, cooldownWait, onRefresh }: RefreshButtonProps) {
+  const disabled = isRefreshing || cooldownWait !== null;
+  return (
+    <button
+      onClick={onRefresh}
+      disabled={disabled}
+      className={cn(
+        'flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium transition-colors',
+        disabled
+          ? 'cursor-not-allowed text-muted-foreground'
+          : 'hover:border-lime/40 hover:text-lime',
+      )}
+    >
+      <RefreshCw size={11} className={cn(isRefreshing && 'animate-spin')} />
+      {isRefreshing
+        ? 'Atualizando…'
+        : cooldownWait !== null
+        ? `Tente em ${cooldownWait} min`
+        : 'Atualizar'}
+    </button>
+  );
+}
+
 // ─── Faixa de thumbnails dos posts ────────────────────────────────────────────
 
 function IgPostStrip({ posts }: { posts: IgPost[] }) {
@@ -90,23 +122,13 @@ function IgBlock({
         <div className="flex items-center gap-2">
           <AlertCircle size={13} className="shrink-0 text-destructive" />
           <span className="text-xs text-muted-foreground">Dados do Instagram indisponíveis</span>
-          <button
-            onClick={onRefresh}
-            disabled={isRefreshing || cooldownWait !== null}
-            className={cn(
-              'ml-auto flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium transition-colors',
-              isRefreshing || cooldownWait !== null
-                ? 'cursor-not-allowed text-muted-foreground'
-                : 'hover:border-lime/40 hover:text-lime',
-            )}
-          >
-            <RefreshCw size={11} className={cn(isRefreshing && 'animate-spin')} />
-            {isRefreshing
-              ? 'Atualizando…'
-              : cooldownWait !== null
-              ? `Tente em ${cooldownWait} min`
-              : 'Atualizar'}
-          </button>
+          <div className="ml-auto">
+            <RefreshButton
+              isRefreshing={isRefreshing}
+              cooldownWait={cooldownWait}
+              onRefresh={onRefresh}
+            />
+          </div>
         </div>
         {/* Thumbnails placeholder */}
         <div className="grid grid-cols-6 gap-1.5">
@@ -121,13 +143,20 @@ function IgBlock({
   // OK
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-5">
-        {followersCount != null && (
-          <StatBlock label="Seguidores" value={formatNumber(followersCount)} />
-        )}
-        {igEngagementRate != null && (
-          <StatBlock label="Engajamento" value={formatEngagement(igEngagementRate)} />
-        )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap gap-5">
+          {followersCount != null && (
+            <StatBlock label="Seguidores" value={formatNumber(followersCount)} />
+          )}
+          {igEngagementRate != null && (
+            <StatBlock label="Engajamento" value={formatEngagement(igEngagementRate)} />
+          )}
+        </div>
+        <RefreshButton
+          isRefreshing={isRefreshing}
+          cooldownWait={cooldownWait}
+          onRefresh={onRefresh}
+        />
       </div>
       {igRecentPosts && igRecentPosts.length > 0 && (
         <IgPostStrip posts={igRecentPosts} />
