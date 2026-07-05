@@ -15,6 +15,7 @@ import { CreateApplicationDto } from './dtos/create-application.dto';
 
 // Campos de IG incluídos em todas as respostas de application que expõem o influencer
 const influencerSelect = {
+  id: true,
   name: true,
   avatarUrl: true,
   instagramHandle: true,

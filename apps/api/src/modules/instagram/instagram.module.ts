@@ -5,9 +5,11 @@ import { INSTAGRAM_PROVIDER } from './instagram.constants';
 import { InstagramSyncService } from './instagram-sync.service';
 import { StubInstagramProvider } from './providers/stub.instagram.provider';
 import { RapidApiInstagramProvider } from './providers/rapidapi.instagram.provider';
+import { IgAvatarController } from './ig-avatar.controller';
 
 @Module({
   imports: [DatabaseModule],
+  controllers: [IgAvatarController],
   providers: [
     {
       provide: INSTAGRAM_PROVIDER,
