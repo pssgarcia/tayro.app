@@ -195,12 +195,18 @@ export default function ApplicationCard({
   const isPending = status === 'PENDING';
   // Normaliza o handle: remove @ inicial do banco, adiciona exatamente um
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
+  // Foto de perfil do IG vem com CORP: same-origin → o browser bloqueia num
+  // <img> cross-origin. Servimos via proxy same-origin (/api/v1/ig/avatar/:id).
+  // Sem foto do IG → cai no avatar próprio (upload) → iniciais.
+  const avatarSrc = influencer.igProfilePicUrl
+    ? `/api/v1/ig/avatar/${influencer.id}`
+    : influencer.avatarUrl;
 
   return (
     <article className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-border/80">
       {/* Header: avatar + identidade + status */}
       <div className="flex items-start gap-4">
-        <Avatar src={influencer.igProfilePicUrl ?? influencer.avatarUrl} name={influencer.name} size="lg" />
+        <Avatar src={avatarSrc} name={influencer.name} size="lg" />
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
