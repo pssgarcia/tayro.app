@@ -12,6 +12,7 @@ export interface IgPost {
 // ─── Influencer (shape devolvido nas applications) ────────────────────────────
 
 export interface ApplicationInfluencer {
+  id: string;
   name: string;
   avatarUrl: string | null;
   instagramHandle: string | null;
