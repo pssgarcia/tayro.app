@@ -22,3 +22,19 @@ export function useWithdrawApplication() {
     onSuccess: () => qc.invalidateQueries({ queryKey: myApplicationKeys.all }),
   });
 }
+
+export interface CreateApplicationPayload {
+  campaignId: string;
+  message?: string;
+}
+
+// Apply autenticado — creator já logada se candidata direto do browse,
+// sem passar pelo fluxo público (/apply/:id) que cria conta nova.
+export function useCreateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateApplicationPayload) =>
+      api.post('/applications', payload).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: myApplicationKeys.all }),
+  });
+}
