@@ -48,8 +48,21 @@ jobs:
       #
       # Service ID (não o nome) — imutável e sem ambiguidade. Não é segredo
       # (aparece na URL do painel); o acesso é protegido pelo RAILWAY_TOKEN.
+      #
+      # Retry: o CLI falha esporadicamente com "Failed to stream build logs" —
+      # visto 2x (2026-08-03) sempre ~65s após "CI mode enabled". Nas duas vezes
+      # o build/deploy no Railway completou normalmente; só o streaming de log
+      # do CLI que dá timeout e reporta exit 1 mesmo com o deploy ok. Retenta
+      # 1x antes de falhar o job de verdade.
       - name: Deploy API to Railway
-        run: npx @railway/cli@latest up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209
+        run: |
+          for attempt in 1 2; do
+            if npx @railway/cli@latest up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209; then
+              exit 0
+            fi
+            echo "Tentativa $attempt falhou (possível flake de log-streaming do Railway CLI)."
+          done
+          exit 1
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
