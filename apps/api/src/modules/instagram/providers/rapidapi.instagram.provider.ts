@@ -32,6 +32,14 @@ interface RawFeed {
   items?: RawFeedItem[];
 }
 
+// 3 tentativas: imediata, depois +800ms, depois +2s. Duas tentativas coladas
+// (sem espera) caem exatamente no mesmo problema quando a falha é transiente
+// (rate limit momentâneo, soluço de rede) — o backoff dá tempo de passar.
+// Roda em background (setImmediate, fire-and-forget); a latência extra não
+// afeta a resposta HTTP da creator, só o tempo até a marca ver o resultado
+// (ainda bem dentro do teto de ~45s do poll-while-PENDING).
+const PROFILE_RETRY_DELAYS_MS = [0, 800, 2000];
+
 export class RapidApiInstagramProvider implements InstagramProvider {
   private readonly apiKey: string;
   private readonly apiHost: string;
@@ -59,10 +67,11 @@ export class RapidApiInstagramProvider implements InstagramProvider {
 
   // ─── Internos ────────────────────────────────────────────────────────────────
 
-  /** Profile é obrigatório: 2 tentativas, depois lança (sem vazar detalhe interno). */
+  /** Profile é obrigatório: 3 tentativas com backoff, depois lança (sem vazar detalhe interno). */
   private async getProfile(handle: string): Promise<RawProfile> {
     const url = `${this.baseUrl}/profile?username=${encodeURIComponent(handle)}`;
-    for (let attempt = 1; attempt <= 2; attempt++) {
+    for (const delayMs of PROFILE_RETRY_DELAYS_MS) {
+      if (delayMs > 0) await this.sleep(delayMs);
       try {
         return (await this.fetchJson(url)) as RawProfile;
       } catch {
@@ -70,8 +79,12 @@ export class RapidApiInstagramProvider implements InstagramProvider {
       }
     }
     throw new InstagramFetchError(
-      `Failed to fetch Instagram profile for @${handle} after 2 attempts`,
+      `Failed to fetch Instagram profile for @${handle} after ${PROFILE_RETRY_DELAYS_MS.length} attempts`,
     );
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /** Feed é best-effort: falha/privado → lista vazia, nunca lança. */
