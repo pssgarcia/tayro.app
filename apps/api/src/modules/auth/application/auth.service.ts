@@ -12,6 +12,7 @@ import { PrismaService } from '../../../shared/infrastructure/database/prisma.se
 import { RegisterBrandDto } from './dtos/register-brand.dto';
 import { RegisterInfluencerDto } from './dtos/register-influencer.dto';
 import { LoginDto } from './dtos/login.dto';
+import { ClaimAccountDto } from './dtos/claim-account.dto';
 
 type AuthUser = { id: string; email: string; role: UserRole };
 
@@ -114,6 +115,33 @@ export class AuthService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  async claimAccount(dto: ClaimAccountDto) {
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(dto.token)
+      .digest('hex');
+
+    const user = await this.prisma.user.findUnique({
+      where: { claimTokenHash: tokenHash },
+    });
+
+    if (
+      !user ||
+      !user.claimTokenExpiresAt ||
+      user.claimTokenExpiresAt < new Date()
+    ) {
+      throw new UnauthorizedException('Link inválido ou expirado');
+    }
+
+    const hash = await bcrypt.hash(dto.password, 12);
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hash, claimTokenHash: null, claimTokenExpiresAt: null },
+    });
+
+    return this.buildAuthResponse(updated);
   }
 
   async refreshTokens(userId: string, incomingToken: string) {

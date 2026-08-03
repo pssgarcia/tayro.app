@@ -45,6 +45,23 @@ describe('EmailService', () => {
     );
   });
 
+  it('sendClaimAccount manda o link de definir senha', async () => {
+    await service.sendClaimAccount({
+      to: 'creator@example.com',
+      creatorName: 'Alex',
+      claimUrl: 'https://tayro-app.vercel.app/claim?token=abc123',
+    });
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'creator@example.com',
+        html: expect.stringContaining(
+          'https://tayro-app.vercel.app/claim?token=abc123',
+        ),
+      }),
+    );
+  });
+
   it('falha no provider é engolida (best-effort) — não lança', async () => {
     sendMock.mockRejectedValueOnce(new Error('Resend fora do ar'));
 

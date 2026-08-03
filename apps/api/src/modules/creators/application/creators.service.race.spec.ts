@@ -23,9 +23,11 @@ import {
   Prisma,
   UserRole,
 } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { CreatorsService } from './creators.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 import { QueryCounter } from '../../../shared/infrastructure/database/query-counter';
 
 const makeActiveCampaign = () => ({
@@ -72,12 +74,20 @@ describe('CreatorsService — race conditions', () => {
     counter.wrap(prisma);
 
     const instagramSync = { refresh: jest.fn().mockResolvedValue(undefined) };
+    const emailService = {
+      sendClaimAccount: jest.fn().mockResolvedValue(undefined),
+    };
+    const config = {
+      getOrThrow: jest.fn().mockReturnValue('http://localhost:5173'),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatorsService,
         { provide: PrismaService, useValue: prisma },
         { provide: InstagramSyncService, useValue: instagramSync },
+        { provide: EmailService, useValue: emailService },
+        { provide: ConfigService, useValue: config },
       ],
     }).compile();
 

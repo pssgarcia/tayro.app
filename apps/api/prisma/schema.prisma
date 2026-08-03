@@ -77,6 +77,11 @@ model User {
   role          UserRole
   isActive          Boolean        @default(true)
   refreshTokenHash  String?
+  // Conta CLAIMABLE (criada via /apply/:id, senha aleatória) — presente até
+  // a creator definir a senha real via POST /auth/claim. Null = já claimada
+  // ou conta criada por registro normal (sempre teve senha usável).
+  claimTokenHash      String?   @unique
+  claimTokenExpiresAt DateTime?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 

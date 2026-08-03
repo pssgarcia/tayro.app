@@ -18,6 +18,7 @@ import { AuthService } from '../application/auth.service';
 import { RegisterBrandDto } from '../application/dtos/register-brand.dto';
 import { RegisterInfluencerDto } from '../application/dtos/register-influencer.dto';
 import { LoginDto } from '../application/dtos/login.dto';
+import { ClaimAccountDto } from '../application/dtos/claim-account.dto';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -51,6 +52,19 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.registerInfluencer(dto);
+    this.setRefreshCookie(res, result.refreshToken);
+    return { accessToken: result.accessToken, user: result.user };
+  }
+
+  @Post('claim')
+  @Throttle({ default: AUTH_THROTTLE })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Definir senha de conta CLAIMABLE (auto-login)' })
+  async claim(
+    @Body() dto: ClaimAccountDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.claimAccount(dto);
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }

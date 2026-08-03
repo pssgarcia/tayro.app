@@ -11,6 +11,7 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterChooserPage from './pages/auth/RegisterChooserPage';
 import RegisterBrandPage from './pages/auth/RegisterBrandPage';
 import RegisterInfluencerPage from './pages/influencer/RegisterInfluencerPage';
+import ClaimAccountPage from './pages/auth/ClaimAccountPage';
 import DashboardPage from './pages/brand/DashboardPage';
 import ProfilePage from './pages/brand/ProfilePage';
 import CampaignsPage from './pages/brand/CampaignsPage';
@@ -67,6 +68,7 @@ function AppShell() {
         <Route path="/register" element={<RegisterChooserPage />} />
         <Route path="/register/brand" element={<RegisterBrandPage />} />
         <Route path="/register/influencer" element={<RegisterInfluencerPage />} />
+        <Route path="/claim" element={<ClaimAccountPage />} />
       </Route>
 
       {/* Rotas da marca — protegidas por BrandGuard */}
