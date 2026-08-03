@@ -17,6 +17,7 @@ import { ApplicationStatus, CampaignStatus } from '@prisma/client';
 import { ApplicationsService } from './applications.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 import { QueryCounter } from '../../../shared/infrastructure/database/query-counter';
 
 const makeInfluencer = (id = 'inf-1') => ({ id, userId: 'user-1' });
@@ -40,8 +41,13 @@ const makeApplication = (
   influencerId: 'inf-1',
   status: ApplicationStatus.PENDING,
   campaign: {
+    title: 'Campanha Teste',
     maxSpots: 1,
-    brand: { userId: 'brand-user-1' },
+    brand: { userId: 'brand-user-1', name: 'Marca Teste' },
+  },
+  influencer: {
+    name: 'Creator Teste',
+    user: { email: 'creator@example.com' },
   },
   ...overrides,
 });
@@ -75,6 +81,10 @@ describe('ApplicationsService — race conditions', () => {
 
     const instagramSync = { refresh: jest.fn().mockResolvedValue(undefined) };
     const config = { get: jest.fn().mockReturnValue('15') };
+    const emailService = {
+      sendApplicationApproved: jest.fn().mockResolvedValue(undefined),
+      sendApplicationRejected: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -82,6 +92,7 @@ describe('ApplicationsService — race conditions', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: InstagramSyncService, useValue: instagramSync },
         { provide: ConfigService, useValue: config },
+        { provide: EmailService, useValue: emailService },
       ],
     }).compile();
 
