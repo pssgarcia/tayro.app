@@ -4,11 +4,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BrowseProgramsPage from './BrowseProgramsPage';
 import * as hook from '../../hooks/useBrowsePrograms';
+import * as applicationHooks from '../../hooks/useMyApplications';
 import type { Campaign, Paginated } from '../../types/api';
 
 vi.mock('../../hooks/useBrowsePrograms', () => ({
   useBrowsePrograms: vi.fn(),
   browseProgramsKeys: { list: (p: number) => ['programs', 'browse', p] },
+}));
+
+vi.mock('../../hooks/useMyApplications', () => ({
+  useCreateApplication: vi.fn(),
 }));
 
 function makeCampaign(over: Partial<Campaign> = {}): Campaign {
@@ -60,6 +65,10 @@ function renderPage() {
 
 beforeEach(() => {
   vi.mocked(hook.useBrowsePrograms).mockReset();
+  vi.mocked(applicationHooks.useCreateApplication).mockReturnValue({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  } as any);
 });
 
 describe('BrowseProgramsPage', () => {
@@ -83,7 +92,7 @@ describe('BrowseProgramsPage', () => {
     expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
   });
 
-  it('renderiza os cards e o link de candidatura aponta pro /apply/:id', () => {
+  it('renderiza os cards; clicar abre o modal de candidatura (apply autenticado)', () => {
     mockHook({
       data: {
         data: [makeCampaign()],
@@ -93,7 +102,9 @@ describe('BrowseProgramsPage', () => {
     renderPage();
     expect(screen.getByText('Lançamento Whey')).toBeInTheDocument();
     expect(screen.getByText('Marca Fit')).toBeInTheDocument();
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/apply/camp-1');
+
+    fireEvent.click(screen.getByRole('button', { name: /ver e candidatar/i }));
+    expect(screen.getByText('Quero participar')).toBeInTheDocument();
   });
 
   it('paginação: "Anterior" desabilitado na página 1 e avança ao clicar "Próxima"', () => {
