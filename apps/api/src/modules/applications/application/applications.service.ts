@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApplicationStatus, CampaignStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 import { CreateApplicationDto } from './dtos/create-application.dto';
 
 // Campos de IG incluídos em todas as respostas de application que expõem o influencer
@@ -34,6 +35,7 @@ export class ApplicationsService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly instagramSync: InstagramSyncService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(userId: string, dto: CreateApplicationDto) {
@@ -136,8 +138,9 @@ export class ApplicationsService {
     // numa transação Serializable: o Postgres garante execução equivalente a
     // serial — o segundo lê o count já atualizado e é rejeitado.
     const maxSpots = application.campaign.maxSpots;
+    let updated;
     try {
-      return await this.prisma.$transaction(
+      updated = await this.prisma.$transaction(
         async (tx) => {
           const approvedCount = await tx.application.count({
             where: {
@@ -169,6 +172,16 @@ export class ApplicationsService {
       }
       throw err;
     }
+
+    // Best-effort: EmailService nunca lança — falha de e-mail não derruba o approve.
+    await this.emailService.sendApplicationApproved({
+      to: application.influencer.user.email,
+      creatorName: application.influencer.name,
+      campaignTitle: application.campaign.title,
+      brandName: application.campaign.brand.name,
+    });
+
+    return updated;
   }
 
   async reject(id: string, userId: string) {
@@ -180,10 +193,19 @@ export class ApplicationsService {
       throw new BadRequestException('Application is not pending');
     }
 
-    return this.prisma.application.update({
+    const updated = await this.prisma.application.update({
       where: { id },
       data: { status: ApplicationStatus.REJECTED, reviewedAt: new Date() },
     });
+
+    await this.emailService.sendApplicationRejected({
+      to: application.influencer.user.email,
+      creatorName: application.influencer.name,
+      campaignTitle: application.campaign.title,
+      brandName: application.campaign.brand.name,
+    });
+
+    return updated;
   }
 
   async withdraw(id: string, userId: string) {
@@ -269,7 +291,10 @@ export class ApplicationsService {
   private async findWithCampaignOrFail(id: string) {
     const application = await this.prisma.application.findUnique({
       where: { id },
-      include: { campaign: { include: { brand: true } } },
+      include: {
+        campaign: { include: { brand: true } },
+        influencer: { include: { user: { select: { email: true } } } },
+      },
     });
     if (!application) throw new NotFoundException('Application not found');
     return application;
