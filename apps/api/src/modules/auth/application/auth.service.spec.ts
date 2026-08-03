@@ -144,6 +144,74 @@ describe('AuthService', () => {
     });
   });
 
+  // ─── claimAccount ─────────────────────────────────────────────────────────────
+
+  describe('claimAccount', () => {
+    it('define a senha, zera o claimToken e retorna tokens (auto-login)', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const futureDate = new Date(Date.now() + 60_000);
+      const user = makeUser({
+        role: UserRole.INFLUENCER,
+        claimTokenHash: tokenHash,
+        claimTokenExpiresAt: futureDate,
+      });
+
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      const result = await service.claimAccount({
+        token: rawToken,
+        password: 'novaSenhaSegura1',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { claimTokenHash: tokenHash },
+      });
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: user.id },
+          data: expect.objectContaining({
+            claimTokenHash: null,
+            claimTokenExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it('lança UnauthorizedException quando o token não existe', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.claimAccount({
+          token: 'inexistente',
+          password: 'senhaSegura1',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('lança UnauthorizedException quando o token expirou', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const pastDate = new Date(Date.now() - 60_000);
+
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ claimTokenHash: tokenHash, claimTokenExpiresAt: pastDate }),
+      );
+
+      await expect(
+        service.claimAccount({ token: rawToken, password: 'senhaSegura1' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
   // ─── revokeRefreshToken ───────────────────────────────────────────────────────
 
   describe('revokeRefreshToken', () => {

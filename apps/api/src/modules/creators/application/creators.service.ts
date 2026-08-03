@@ -15,11 +15,15 @@ import {
   UserRole,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 import { PublicApplyDto } from './dtos/public-apply.dto';
 import { UpdateInfluencerDto } from './dtos/update-influencer.dto';
+
+const CLAIM_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
 @Injectable()
 export class CreatorsService {
@@ -28,6 +32,8 @@ export class CreatorsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly instagramSync: InstagramSyncService,
+    private readonly emailService: EmailService,
+    private readonly config: ConfigService,
   ) {}
 
   // ─── Candidatura pública ──────────────────────────────────────────────────────
@@ -207,6 +213,14 @@ export class CreatorsService {
       const existing = await this.prisma.influencer.findUnique({
         where: { userId: userByEmail.id },
       });
+
+      // claimTokenHash só é zerado quando o claim é concluído — se ainda está
+      // preenchido, a creator nunca definiu senha. O link antigo pode ter
+      // expirado (ela reaplicando dias depois); reemite e reenvia.
+      if (userByEmail.claimTokenHash && existing) {
+        await this.issueClaimToken(userByEmail.id, dto.email, existing.name);
+      }
+
       if (existing) {
         if (!existing.instagramHandle) {
           return this.prisma.influencer.update({
@@ -219,12 +233,15 @@ export class CreatorsService {
     }
 
     const randomPassword = await bcrypt.hash(randomUUID(), 10);
+    const claimToken = this.generateClaimToken();
     try {
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
           password: randomPassword,
           role: UserRole.INFLUENCER,
+          claimTokenHash: claimToken.tokenHash,
+          claimTokenExpiresAt: claimToken.expiresAt,
           influencer: {
             create: {
               name: dto.name ?? dto.igHandle,
@@ -235,6 +252,12 @@ export class CreatorsService {
         },
         include: { influencer: true },
       });
+
+      await this.sendClaimEmail(
+        dto.email,
+        user.influencer!.name,
+        claimToken.rawToken,
+      );
 
       return user.influencer!;
     } catch (err) {
@@ -265,5 +288,45 @@ export class CreatorsService {
       include: { influencer: true },
     });
     return user?.influencer ?? null;
+  }
+
+  // ─── Claim de conta CLAIMABLE ─────────────────────────────────────────────────
+
+  private generateClaimToken(): {
+    rawToken: string;
+    tokenHash: string;
+    expiresAt: Date;
+  } {
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + CLAIM_TOKEN_TTL_MS);
+    return { rawToken, tokenHash, expiresAt };
+  }
+
+  /** Gera um novo token, grava e reenvia o e-mail de claim (caminho de reapply). */
+  private async issueClaimToken(
+    userId: string,
+    email: string,
+    creatorName: string,
+  ): Promise<void> {
+    const { rawToken, tokenHash, expiresAt } = this.generateClaimToken();
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { claimTokenHash: tokenHash, claimTokenExpiresAt: expiresAt },
+    });
+    await this.sendClaimEmail(email, creatorName, rawToken);
+  }
+
+  private async sendClaimEmail(
+    email: string,
+    creatorName: string,
+    rawToken: string,
+  ): Promise<void> {
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    await this.emailService.sendClaimAccount({
+      to: email,
+      creatorName,
+      claimUrl: `${frontendUrl}/claim?token=${rawToken}`,
+    });
   }
 }
