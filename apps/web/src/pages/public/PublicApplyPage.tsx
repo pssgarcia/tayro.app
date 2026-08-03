@@ -254,7 +254,7 @@ export default function PublicApplyPage() {
                       : campaign.offerDescription ?? '—'}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {campaign.offerType === 'CASH' ? 'por creator aprovada' : 'produto enviado para você'}
+                    {campaign.offerType === 'CASH' ? 'por candidatura aprovada' : 'produto enviado para você'}
                   </p>
                   {campaign.offerDeadlineDays != null && (
                     <p className="mt-2 text-xs text-muted-foreground">
@@ -369,7 +369,7 @@ export default function PublicApplyPage() {
                       <textarea
                         {...register('message')}
                         rows={3}
-                        placeholder="Por que você seria perfeita para esse programa?"
+                        placeholder="Por que você é ideal para esse programa?"
                         className="w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-lime/50 focus:outline-none focus:ring-1 focus:ring-lime/30"
                       />
                       <FieldError message={errors.message?.message} />

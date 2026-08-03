@@ -108,7 +108,7 @@ function ApplyModal({ campaign, onClose }: { campaign: Campaign; onClose: () => 
               onChange={(e) => setMessage(e.target.value)}
               maxLength={1000}
               rows={3}
-              placeholder="Por que você seria perfeita para esse programa?"
+              placeholder="Por que você é ideal para esse programa?"
               className="mb-4 w-full resize-none rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-lime/50 focus:outline-none focus:ring-1 focus:ring-lime/30"
             />
 

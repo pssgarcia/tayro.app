@@ -58,7 +58,7 @@ describe('ProgramCard', () => {
     render(<ProgramCard campaign={makeCampaign()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /ver e candidatar/i }));
-    fireEvent.change(screen.getByPlaceholderText(/por que você seria perfeita/i), {
+    fireEvent.change(screen.getByPlaceholderText(/por que você é ideal/i), {
       target: { value: 'Amo fitness!' },
     });
     fireEvent.click(screen.getByRole('button', { name: /confirmar candidatura/i }));
