@@ -167,15 +167,58 @@ describe('RapidApiInstagramProvider', () => {
     expect(result.profilePicUrl).toBe('https://cdn.example/pic_150.jpg');
   });
 
-  it('profile falha nas 2 tentativas → lança InstagramFetchError', async () => {
-    fetchMock
-      .mockResolvedValueOnce({ ok: false, status: 500 })
-      .mockResolvedValueOnce({ ok: false, status: 500 });
+  it('profile falha nas 3 tentativas → lança InstagramFetchError', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+        .mockResolvedValueOnce({ ok: false, status: 500 });
 
-    const provider = new RapidApiInstagramProvider(makeConfig());
+      const provider = new RapidApiInstagramProvider(makeConfig());
 
-    await expect(provider.fetchProfile('pitringym')).rejects.toThrow(
-      InstagramFetchError,
-    );
+      // Anexa a assertion IMEDIATAMENTE (antes de avançar os timers), senão a
+      // rejeição fica sem handler por um instante e o Jest acusa unhandled rejection.
+      const assertion = expect(
+        provider.fetchProfile('pitringym'),
+      ).rejects.toThrow(InstagramFetchError);
+      // Avança os 2 backoffs (800ms + 2000ms) sem esperar de verdade.
+      await jest.advanceTimersByTimeAsync(3000);
+      await assertion;
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('profile falha 2x e recupera na 3ª tentativa (backoff dá tempo do transiente passar)', async () => {
+    jest.useFakeTimers();
+    try {
+      fetchMock
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+        .mockResolvedValueOnce({ ok: false, status: 500 })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(profileResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(feedResponse),
+        });
+
+      const provider = new RapidApiInstagramProvider(makeConfig());
+
+      const assertion = expect(
+        provider.fetchProfile('pitringym'),
+      ).resolves.toMatchObject({ followers: 990 });
+      await jest.advanceTimersByTimeAsync(3000);
+      await assertion;
+
+      // 3 chamadas de /profile + 1 de /feed
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
