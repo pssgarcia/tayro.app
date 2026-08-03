@@ -8,6 +8,12 @@ export class StubEmailProvider implements EmailProvider {
 
   send(message: EmailMessage): Promise<void> {
     this.logger.log(`[stub] e-mail para ${message.to}: "${message.subject}"`);
+    // Loga qualquer link presente no corpo — é a única forma de testar fluxos
+    // como o claim (definir senha) em dev sem mandar e-mail de verdade.
+    const links = message.html.match(/https?:\/\/[^\s"<]+/g);
+    if (links) {
+      this.logger.log(`[stub] link(s): ${links.join(', ')}`);
+    }
     return Promise.resolve();
   }
 }
