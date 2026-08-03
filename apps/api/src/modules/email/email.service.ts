@@ -9,6 +9,12 @@ interface ApplicationDecisionEmailParams {
   brandName: string;
 }
 
+interface ClaimAccountEmailParams {
+  to: string;
+  creatorName: string;
+  claimUrl: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -41,6 +47,19 @@ export class EmailService {
         <p>Oi, ${params.creatorName}!</p>
         <p><strong>${params.brandName}</strong> avaliou sua candidatura para <strong>${params.campaignTitle}</strong> e, desta vez, decidiu seguir com outro perfil.</p>
         <p>Continue explorando outros programas na plataforma — sempre têm novidades.</p>
+      `,
+    });
+  }
+
+  async sendClaimAccount(params: ClaimAccountEmailParams): Promise<void> {
+    await this.sendBestEffort({
+      to: params.to,
+      subject: 'Defina sua senha para acessar a plataforma',
+      html: `
+        <p>Oi, ${params.creatorName}!</p>
+        <p>Sua conta na plataforma já existe — falta só definir uma senha para acessar.</p>
+        <p><a href="${params.claimUrl}">Clique aqui para definir sua senha</a></p>
+        <p>O link expira em 7 dias.</p>
       `,
     });
   }

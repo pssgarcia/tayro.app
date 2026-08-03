@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { CreatorsService } from './creators.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 
 const makeInfluencer = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'inf-1',
@@ -40,6 +42,13 @@ describe('CreatorsService — perfil (me)', () => {
         CreatorsService,
         { provide: PrismaService, useValue: prisma },
         { provide: InstagramSyncService, useValue: { refresh: jest.fn() } },
+        {
+          provide: EmailService,
+          useValue: {
+            sendClaimAccount: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: ConfigService, useValue: { getOrThrow: jest.fn() } },
       ],
     }).compile();
 

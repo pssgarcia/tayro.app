@@ -23,7 +23,7 @@ describe('AuthController — throttle de credenciais', () => {
     expect(AUTH_THROTTLE.ttl).toBe(15 * 60 * 1000);
   });
 
-  it.each(['login', 'registerBrand', 'registerInfluencer'] as const)(
+  it.each(['login', 'registerBrand', 'registerInfluencer', 'claim'] as const)(
     'aplica o throttle estrito em %s',
     (method) => {
       const { limit, ttl } = getThrottle(method);
