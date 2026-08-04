@@ -1,15 +1,16 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Compass, ClipboardList, Video, UserRound, LogOut } from 'lucide-react';
+import { Activity, Crosshair, ScrollText, Clapperboard, IdCard, LogOut } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { cn } from '../../lib/utils';
 
+// Rótulos e ícones do redesign 2a (README §Telas 1, 5, 6, 7, 8).
 const navItems = [
-  { to: '/influencer/dashboard',    icon: LayoutDashboard, label: 'Início' },
-  { to: '/influencer/browse',       icon: Compass,         label: 'Programas' },
-  { to: '/influencer/applications', icon: ClipboardList,   label: 'Aplicações' },
-  { to: '/influencer/submissions',  icon: Video,           label: 'Conteúdo' },
-  { to: '/influencer/profile',      icon: UserRound,       label: 'Perfil' },
+  { to: '/influencer/dashboard',    icon: Activity,      label: 'Leitura' },
+  { to: '/influencer/browse',       icon: Crosshair,     label: 'Abertos' },
+  { to: '/influencer/applications', icon: ScrollText,    label: 'Registro' },
+  { to: '/influencer/submissions',  icon: Clapperboard,  label: 'Entregas' },
+  { to: '/influencer/profile',      icon: IdCard,        label: 'Ficha' },
 ];
 
 export default function InfluencerLayout() {
@@ -33,7 +34,7 @@ export default function InfluencerLayout() {
           </Link>
         </div>
 
-        {/* Nav */}
+        {/* Nav — item ativo: barra vertical lime de 2px na esquerda, sem caixa (2a) */}
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -43,7 +44,7 @@ export default function InfluencerLayout() {
                 cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-lime/10 text-lime'
+                    ? 'text-lime shadow-[inset_2px_0_0_#C6FF33]'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                 )
               }
@@ -91,10 +92,12 @@ export default function InfluencerLayout() {
         </main>
       </div>
 
-      {/* Bottom tab bar — mobile only */}
+      {/* Bottom tab bar — mobile only. Indicador lime volta como barra de 2px
+          no topo do item ativo; sem border-t (o fundo já é o mesmo do
+          conteúdo, a borda era ruído). */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 flex border-t border-border bg-card md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-0 bottom-0 z-40 flex bg-background pb-1 md:hidden"
+        style={{ paddingBottom: 'calc(0.25rem + env(safe-area-inset-bottom))' }}
       >
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
@@ -102,12 +105,13 @@ export default function InfluencerLayout() {
             to={to}
             className={({ isActive }) =>
               cn(
-                'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 py-3 text-xs font-medium transition-colors',
-                isActive ? 'text-lime' : 'text-muted-foreground',
+                'flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1.5',
+                'font-display text-[11px] font-medium tracking-[-.01em] transition-colors',
+                isActive ? 'text-lime shadow-[inset_0_2px_0_#C6FF33]' : 'text-muted-foreground',
               )
             }
           >
-            <Icon size={20} />
+            <Icon size={19} strokeWidth={1.75} />
             <span>{label}</span>
           </NavLink>
         ))}
