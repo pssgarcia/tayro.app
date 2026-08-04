@@ -1,93 +1,41 @@
-import { RefreshCw, AlertCircle, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
-import Avatar from '../../components/primitives/Avatar';
-import StatBlock from '../../components/primitives/StatBlock';
-import StatusPill from '../../components/primitives/StatusPill';
+import { ArrowRight, RefreshCw, ExternalLink } from 'lucide-react';
+import Plate from '../../components/primitives/Plate';
+import CountUp from '../../components/primitives/CountUp';
 import { formatEngagement, formatNumber } from '../../utils/format';
 import { extractCooldownWait } from '../../hooks/useCampaignApplications';
 import type { Application, IgFetchStatus, IgPost } from '../../types/api';
 import { cn } from '../../lib/utils';
 
-// ─── Skeleton para dados IG ainda em PENDING ──────────────────────────────────
+// ─── Grade de thumbnails (6, sempre) ──────────────────────────────────────────
 
-function IgSkeleton() {
+function ThumbGrid({ posts }: { posts: IgPost[] | null }) {
+  const cells = Array.from({ length: 6 }, (_, i) => posts?.[i] ?? null);
   return (
-    <div className="animate-pulse space-y-3">
-      <div className="flex gap-4">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="space-y-1">
-            <div className="h-3 w-12 rounded bg-secondary" />
-            <div className="h-4 w-10 rounded bg-secondary" />
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-6 gap-1.5">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="aspect-square w-full rounded-md bg-secondary" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Botão de refresh manual (compartilhado entre estados failed e OK) ────────
-
-interface RefreshButtonProps {
-  isRefreshing: boolean;
-  /** minutos restantes de cooldown, ou null se liberado */
-  cooldownWait: number | null;
-  onRefresh: () => void;
-}
-
-function RefreshButton({ isRefreshing, cooldownWait, onRefresh }: RefreshButtonProps) {
-  const disabled = isRefreshing || cooldownWait !== null;
-  return (
-    <button
-      onClick={onRefresh}
-      disabled={disabled}
-      className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium transition-colors',
-        disabled
-          ? 'cursor-not-allowed text-muted-foreground'
-          : 'hover:border-lime/40 hover:text-lime',
+    <div className="grid grid-cols-6 gap-[5px]">
+      {cells.map((post, i) =>
+        post ? (
+          <img
+            key={i}
+            src={post.thumbnail}
+            alt=""
+            loading="lazy"
+            className="aspect-square w-full rounded-[3px] object-cover"
+          />
+        ) : (
+          <div key={i} className="aspect-square w-full rounded-[3px] bg-plate-fill" />
+        ),
       )}
-    >
-      <RefreshCw size={11} className={cn(isRefreshing && 'animate-spin')} />
-      {isRefreshing
-        ? 'Atualizando…'
-        : cooldownWait !== null
-        ? `Tente em ${cooldownWait} min`
-        : 'Atualizar'}
-    </button>
-  );
-}
-
-// ─── Faixa de thumbnails dos posts ────────────────────────────────────────────
-
-function IgPostStrip({ posts }: { posts: IgPost[] }) {
-  return (
-    <div className="grid grid-cols-6 gap-1.5">
-      {posts.slice(0, 6).map((post, i) => (
-        <img
-          key={i}
-          src={post.thumbnail}
-          alt=""
-          className="aspect-square w-full rounded-md object-cover"
-          loading="lazy"
-        />
-      ))}
     </div>
   );
 }
 
-// ─── Bloco de dados IG com os 3 estados ──────────────────────────────────────
+// ─── Bloco de seguidores/engajamento — 3 estados (PENDING/FAILED/OK) ─────────
 
 interface IgBlockProps {
   status: IgFetchStatus | null;
-  /** true quando igFetchStatus=PENDING mas o poll atingiu o teto de tempo */
   timedOut: boolean;
   followersCount: number | null;
   igEngagementRate: number | null;
-  igRecentPosts: IgPost[] | null;
   isRefreshing: boolean;
   refreshError: unknown;
   onRefresh: () => void;
@@ -98,77 +46,91 @@ function IgBlock({
   timedOut,
   followersCount,
   igEngagementRate,
-  igRecentPosts,
   isRefreshing,
   refreshError,
   onRefresh,
 }: IgBlockProps) {
-  // null → nunca buscado (conta criada via auth normal) → mostra botão manual
-  // PENDING + timedOut → poll esgotado → mostra botão manual
-  // PENDING sem timeout → skeleton (fetch em andamento)
   const displayState =
-    status === 'OK'
-      ? 'ok'
-      : status === 'FAILED' || status === null || timedOut
-      ? 'failed'
-      : 'loading';
+    status === 'OK' ? 'ok' : status === 'FAILED' || status === null || timedOut ? 'failed' : 'loading';
   const cooldownWait = extractCooldownWait(refreshError);
 
-  if (displayState === 'loading') return <IgSkeleton />;
-
-  if (displayState === 'failed') {
+  if (displayState === 'loading') {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <AlertCircle size={13} className="shrink-0 text-destructive" />
-          <span className="text-xs text-muted-foreground">Dados do Instagram indisponíveis</span>
-          <div className="ml-auto">
-            <RefreshButton
-              isRefreshing={isRefreshing}
-              cooldownWait={cooldownWait}
-              onRefresh={onRefresh}
-            />
-          </div>
-        </div>
-        {/* Thumbnails placeholder */}
-        <div className="grid grid-cols-6 gap-1.5">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="aspect-square w-full rounded-md bg-secondary/50" />
-          ))}
+      <div className="mb-7 animate-pulse space-y-2">
+        <div className="flex gap-7">
+          <div className="h-[46px] w-16 rounded bg-plate-fill" />
+          <div className="h-[46px] w-16 rounded bg-plate-fill" />
         </div>
       </div>
     );
   }
 
-  // OK
-  return (
-    <div className="space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-wrap gap-5">
-          {followersCount != null && (
-            <StatBlock label="Seguidores" value={formatNumber(followersCount)} />
+  if (displayState === 'failed') {
+    return (
+      <div className="mb-7 flex items-center justify-between gap-3">
+        <span className="text-xs text-plate-muted">Dados do Instagram indisponíveis</span>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isRefreshing || cooldownWait !== null}
+          className={cn(
+            'flex shrink-0 items-center gap-1.5 text-xs font-medium transition-colors',
+            isRefreshing || cooldownWait !== null
+              ? 'cursor-not-allowed text-plate-muted'
+              : 'text-plate-body hover:text-plate-ink',
           )}
-          {igEngagementRate != null && (
-            <StatBlock label="Engajamento" value={formatEngagement(igEngagementRate)} />
-          )}
-        </div>
-        <RefreshButton
-          isRefreshing={isRefreshing}
-          cooldownWait={cooldownWait}
-          onRefresh={onRefresh}
-        />
+        >
+          <RefreshCw size={13} className={cn(isRefreshing && 'animate-spin')} />
+          {isRefreshing ? 'Atualizando…' : cooldownWait !== null ? `Tente em ${cooldownWait} min` : 'Atualizar'}
+        </button>
       </div>
-      {igRecentPosts && igRecentPosts.length > 0 && (
-        <IgPostStrip posts={igRecentPosts} />
+    );
+  }
+
+  return (
+    <div className="mb-7 flex items-end gap-7">
+      {followersCount != null && (
+        <div>
+          <CountUp>
+            <span className="font-display text-d-xl text-plate-ink tabular-nums">
+              {/* pt-BR: vírgula decimal, igual ao resto do produto */}
+              {formatNumber(followersCount).replace('.', ',')}
+              <span className="text-[23px]">k</span>
+            </span>
+          </CountUp>
+          <p className="mt-3 text-xs text-plate-soft">seguidores</p>
+        </div>
       )}
+      {igEngagementRate != null && (
+        <div>
+          <CountUp delay={140}>
+            <span className="font-display text-d-xl text-plate-ink tabular-nums">
+              {formatEngagement(igEngagementRate).replace('%', '')}
+              <span className="text-[23px]">%</span>
+            </span>
+          </CountUp>
+          <p className="mt-3 text-xs text-plate-soft">engajamento</p>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={isRefreshing || cooldownWait !== null}
+        aria-label={isRefreshing ? 'Atualizando…' : cooldownWait !== null ? `Tente em ${cooldownWait} min` : 'Atualizar dados do Instagram'}
+        className="ml-auto mb-1.5 shrink-0 text-[#9A9A94] transition-colors hover:text-plate-ink disabled:cursor-not-allowed"
+      >
+        <RefreshCw size={15} className={cn(isRefreshing && 'animate-spin')} />
+      </button>
     </div>
   );
 }
 
-// ─── Card principal ───────────────────────────────────────────────────────────
+// ─── Card principal — UM candidato, a placa da fila (tela 2) ────────────────
 
 interface Props {
   application: Application;
+  /** posição 1-based na fila (pra o #NN mono e continuidade com o pager). */
+  position: number;
   onApprove: () => void;
   onReject: () => void;
   onRefreshIg: () => void;
@@ -176,12 +138,13 @@ interface Props {
   isRejecting: boolean;
   isRefreshingIg: boolean;
   refreshIgError: unknown;
-  /** true quando igFetchStatus=PENDING mas o poll atingiu o teto de 45s */
+  /** true quando igFetchStatus=PENDING mas o poll atingiu o teto de 45s. */
   igTimedOut: boolean;
 }
 
 export default function ApplicationCard({
   application,
+  position,
   onApprove,
   onReject,
   onRefreshIg,
@@ -191,105 +154,95 @@ export default function ApplicationCard({
   refreshIgError,
   igTimedOut,
 }: Props) {
-  const { influencer, status, message } = application;
-  const isPending = status === 'PENDING';
-  // Normaliza o handle: remove @ inicial do banco, adiciona exatamente um
+  const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
-  // Foto de perfil do IG vem com CORP: same-origin → o browser bloqueia num
-  // <img> cross-origin. Servimos via proxy same-origin (/api/v1/ig/avatar/:id).
-  // Sem foto do IG → cai no avatar próprio (upload) → iniciais.
   const avatarSrc = influencer.igProfilePicUrl
     ? `/api/v1/ig/avatar/${influencer.id}`
     : influencer.avatarUrl;
 
   return (
-    <article className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-border/80">
-      {/* Header: avatar + identidade + status */}
-      <div className="flex items-start gap-4">
-        <Avatar src={avatarSrc} name={influencer.name} size="lg" />
-
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-display text-base font-semibold text-foreground">
-              {influencer.name}
-            </span>
-            <StatusPill status={status} />
+    <Plate marks="top" flush>
+      <div className="px-6 pb-[26px] pt-[26px]">
+        {/* Identidade */}
+        <div className="mb-7 flex items-start gap-4">
+          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+            {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
           </div>
-
-          {handle && (
-            <a
-              href={`https://instagram.com/${handle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-lime"
-            >
-              @{handle}
-              <ExternalLink size={12} className="shrink-0" />
-            </a>
-          )}
-
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-            {influencer.niches.map((niche) => (
-              <span key={niche} className="text-xs text-muted-foreground">
-                {niche}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="truncate font-display text-[21px] font-bold leading-[1.05] tracking-[-.045em] text-plate-ink">
+                {influencer.name}
+              </p>
+              <span className="shrink-0 font-mono text-[10px] text-[#8A8A84]">
+                #{String(position).padStart(2, '0')}
               </span>
-            ))}
-            {influencer.city && (
-              <span className="text-xs text-muted-foreground">· {influencer.city}</span>
+            </div>
+            {handle && (
+              <a
+                href={`https://instagram.com/${handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-[7px] flex w-fit items-center gap-[5px] text-[13px] text-plate-muted transition-colors hover:text-plate-ink"
+              >
+                @{handle}
+                <ExternalLink size={11} className="shrink-0" />
+              </a>
             )}
+            <p className="mt-[6px] flex items-center gap-1.5 text-xs text-[#8E8E88]">
+              <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-signal-dot" />
+              Aguardando resposta
+            </p>
           </div>
         </div>
+
+        {/* Seguidores / engajamento */}
+        <IgBlock
+          status={influencer.igFetchStatus}
+          timedOut={igTimedOut}
+          followersCount={influencer.followersCount}
+          igEngagementRate={influencer.igEngagementRate}
+          isRefreshing={isRefreshingIg}
+          refreshError={refreshIgError}
+          onRefresh={onRefreshIg}
+        />
+
+        {/* Mensagem da creator */}
+        {message && (
+          <p className="mb-7 text-[15px] leading-[1.5] text-plate-body">&ldquo;{message}&rdquo;</p>
+        )}
+
+        {/* Grade do Instagram */}
+        <ThumbGrid posts={influencer.igRecentPosts} />
       </div>
 
-      {/* Mensagem da creator */}
-      {message && (
-        <p className="rounded-lg bg-accent px-4 py-3 text-sm italic text-foreground/80">
-          &ldquo;{message}&rdquo;
-        </p>
-      )}
-
-      {/* Dados do Instagram */}
-      <IgBlock
-        status={influencer.igFetchStatus}
-        timedOut={igTimedOut}
-        followersCount={influencer.followersCount}
-        igEngagementRate={influencer.igEngagementRate}
-        igRecentPosts={influencer.igRecentPosts}
-        isRefreshing={isRefreshingIg}
-        refreshError={refreshIgError}
-        onRefresh={onRefreshIg}
-      />
-
-      {/* Ações — só para candidaturas pendentes */}
-      {isPending && (
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
-          <button
-            onClick={onReject}
-            disabled={isRejecting || isApproving}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors',
-              'hover:border-destructive/40 hover:text-destructive',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
-          >
-            <XCircle size={14} />
-            {isRejecting ? 'Rejeitando…' : 'Rejeitar'}
-          </button>
-
-          <button
-            onClick={onApprove}
-            disabled={isApproving || isRejecting}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-background transition-opacity',
-              'hover:opacity-90',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
-          >
-            <CheckCircle size={14} />
-            {isApproving ? 'Aprovando…' : 'Aprovar'}
-          </button>
-        </div>
-      )}
-    </article>
+      {/* Barra de ação */}
+      <div className="flex border-t border-plate-line">
+        <button
+          type="button"
+          onClick={onReject}
+          disabled={isRejecting || isApproving}
+          className={cn(
+            'min-h-[56px] w-[100px] shrink-0 font-display text-[14px] font-medium tracking-[-.02em] text-plate-muted transition-colors duration-[140ms]',
+            'hover:bg-plate-ink hover:text-plate',
+            'disabled:cursor-not-allowed disabled:opacity-40',
+          )}
+        >
+          {isRejecting ? 'Descartando…' : 'Descartar'}
+        </button>
+        <button
+          type="button"
+          onClick={onApprove}
+          disabled={isApproving || isRejecting}
+          className={cn(
+            'flex min-h-[56px] flex-1 items-center justify-center gap-[9px] bg-plate-ink font-display text-[15px] font-semibold tracking-[-.025em] text-foreground transition-colors duration-[140ms]',
+            'hover:bg-lime hover:text-plate-ink',
+            'disabled:cursor-not-allowed disabled:opacity-40',
+          )}
+        >
+          {isApproving ? 'Aprovando…' : 'Aprovar'}
+          <ArrowRight size={16} />
+        </button>
+      </div>
+    </Plate>
   );
 }

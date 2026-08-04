@@ -28,6 +28,13 @@ export function formatDate(iso: string | null, fallback = 'Sem prazo'): string {
   }).format(new Date(iso));
 }
 
+/** ISO → dias corridos até a data (nunca negativo) | null → null */
+export function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  const diffMs = new Date(iso).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diffMs / 86_400_000));
+}
+
 /** Termos da oferta de uma campanha em texto curto. */
 export function formatOffer(offer: {
   offerType: 'CASH' | 'PRODUCT' | null;
