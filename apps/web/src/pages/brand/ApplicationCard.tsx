@@ -1,5 +1,6 @@
 import { ArrowRight, RefreshCw, ExternalLink } from 'lucide-react';
 import Plate from '../../components/primitives/Plate';
+import PlateActionBar from '../../components/primitives/PlateActionBar';
 import CountUp from '../../components/primitives/CountUp';
 import { formatEngagement, formatNumber } from '../../utils/format';
 import { extractCooldownWait } from '../../hooks/useCampaignApplications';
@@ -215,34 +216,20 @@ export default function ApplicationCard({
         <ThumbGrid posts={influencer.igRecentPosts} />
       </div>
 
-      {/* Barra de ação */}
-      <div className="flex border-t border-plate-line">
-        <button
-          type="button"
-          onClick={onReject}
-          disabled={isRejecting || isApproving}
-          className={cn(
-            'min-h-[56px] w-[100px] shrink-0 font-display text-[14px] font-medium tracking-[-.02em] text-plate-muted transition-colors duration-[140ms]',
-            'hover:bg-plate-ink hover:text-plate',
-            'disabled:cursor-not-allowed disabled:opacity-40',
-          )}
-        >
-          {isRejecting ? 'Descartando…' : 'Descartar'}
-        </button>
-        <button
-          type="button"
-          onClick={onApprove}
-          disabled={isApproving || isRejecting}
-          className={cn(
-            'flex min-h-[56px] flex-1 items-center justify-center gap-[9px] bg-plate-ink font-display text-[15px] font-semibold tracking-[-.025em] text-foreground transition-colors duration-[140ms]',
-            'hover:bg-lime hover:text-plate-ink',
-            'disabled:cursor-not-allowed disabled:opacity-40',
-          )}
-        >
-          {isApproving ? 'Aprovando…' : 'Aprovar'}
-          <ArrowRight size={16} />
-        </button>
-      </div>
+      <PlateActionBar
+        secondary={{
+          label: isRejecting ? 'Descartando…' : 'Descartar',
+          onClick: onReject,
+          disabled: isRejecting || isApproving,
+          width: 100,
+        }}
+        primary={{
+          label: isApproving ? 'Aprovando…' : 'Aprovar',
+          onClick: onApprove,
+          disabled: isApproving || isRejecting,
+          icon: <ArrowRight size={16} />,
+        }}
+      />
     </Plate>
   );
 }
