@@ -72,9 +72,14 @@ export default function InfluencerLayout() {
 
       {/* Coluna direita: header mobile + conteúdo */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Header mobile — logo + logout */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:hidden">
-          <Link to="/influencer" className="font-display text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
+        {/* Header mobile — 60px, sem borda (2a). O código mono do canto
+            direito (ver README §Telas) fica pra depois — por ora o slot
+            segue ocupado pelo logout, que precisa continuar acessível. */}
+        <header className="flex h-[60px] shrink-0 items-center justify-between px-6 md:hidden">
+          <Link
+            to="/influencer"
+            className="font-display text-[19px] font-bold tracking-[-.05em] hover:opacity-80 transition-opacity"
+          >
             tay<span className="text-lime">ro</span>
           </Link>
           <button

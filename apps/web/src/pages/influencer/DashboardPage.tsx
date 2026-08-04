@@ -1,60 +1,37 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ClipboardList, Trophy } from 'lucide-react';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { useMyRewards } from '../../hooks/useMyRewards';
-import type { ApplicationStatus, RewardStatus } from '../../types/api';
-import { cn } from '../../lib/utils';
+import Plate from '../../components/primitives/Plate';
+import CountUp from '../../components/primitives/CountUp';
+import SegmentBar from '../../components/primitives/SegmentBar';
+import StatBlock from '../../components/primitives/StatBlock';
+import StatusPill from '../../components/primitives/StatusPill';
 
-// ─── Status pills ──────────────────────────────────────────────────────────────
-
-const APP_STATUS: Record<ApplicationStatus, { label: string; cls: string }> = {
-  PENDING:   { label: 'Aguardando', cls: 'bg-amber-500/10 text-amber-400' },
-  APPROVED:  { label: 'Aprovada',   cls: 'bg-lime/10 text-lime' },
-  REJECTED:  { label: 'Recusada',   cls: 'bg-destructive/10 text-destructive' },
-  WITHDRAWN: { label: 'Retirada',   cls: 'bg-secondary text-muted-foreground' },
-};
-
-const REWARD_STATUS: Record<RewardStatus, { label: string; cls: string }> = {
-  PENDING:   { label: 'A receber', cls: 'bg-amber-500/10 text-amber-400' },
-  ISSUED:    { label: 'A caminho', cls: 'bg-blue-500/10 text-blue-400' },
-  DELIVERED: { label: 'Entregue',  cls: 'bg-lime/10 text-lime' },
-};
-
-function AppPill({ status }: { status: ApplicationStatus }) {
-  const { label, cls } = APP_STATUS[status];
-  return <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', cls)}>{label}</span>;
-}
-
-function RewardPill({ status }: { status: RewardStatus }) {
-  const { label, cls } = REWARD_STATUS[status];
-  return <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', cls)}>{label}</span>;
-}
-
-// ─── Skeleton ──────────────────────────────────────────────────────────────────
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+// "Barra 88px de altura pra placa (não card), retângulos sem borda pros
+// stats" (README §Interações e estados).
 
 function Skeleton() {
   return (
-    <div className="animate-pulse space-y-6">
-      <div className="flex gap-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-20 flex-1 rounded-xl border border-border bg-card" />
-        ))}
+    <div className="animate-pulse space-y-8">
+      <div className="h-[88px] rounded-lg bg-secondary" />
+      <div className="flex gap-3.5">
+        <div className="h-20 flex-1 rounded-lg bg-secondary" />
+        <div className="h-20 flex-1 rounded-lg bg-secondary" />
       </div>
-      <div className="space-y-3">
-        <div className="h-4 w-32 rounded bg-secondary" />
+      <div className="space-y-[22px]">
+        <div className="h-4 w-24 rounded bg-secondary" />
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-16 rounded-xl border border-border bg-card" />
+          <div key={i} className="h-10 rounded bg-secondary" />
         ))}
-      </div>
-      <div className="space-y-3">
-        <div className="h-4 w-40 rounded bg-secondary" />
-        <div className="h-16 rounded-xl border border-border bg-card" />
       </div>
     </div>
   );
 }
 
-// ─── Página ───────────────────────────────────────────────────────────────────
+// ─── Página ──────────────────────────────────────────────────────────────────
+// Tela 1 do redesign 2a. A placa carrega a taxa de conversão (maior número da
+// tela); o registro de candidaturas mostra só as 3 mais recentes.
 
 export default function DashboardPage() {
   const { data: applications, isLoading: appsLoading } = useMyApplications();
@@ -62,127 +39,90 @@ export default function DashboardPage() {
 
   const isLoading = appsLoading || rewardsLoading;
 
-  const totalApps     = applications?.length ?? 0;
-  const approvedApps  = applications?.filter((a) => a.status === 'APPROVED').length ?? 0;
+  const totalApps = applications?.length ?? 0;
+  const approvedApps = applications?.filter((a) => a.status === 'APPROVED').length ?? 0;
+  const pendingApps = applications?.filter((a) => a.status === 'PENDING').length ?? 0;
   const pendingRewards = rewards?.filter((r) => r.status !== 'DELIVERED').length ?? 0;
 
-  const recentApps   = applications?.slice(0, 4) ?? [];
-  const activeRewards = rewards?.filter((r) => r.status !== 'DELIVERED') ?? [];
+  const rate = totalApps > 0 ? Math.round((approvedApps / totalApps) * 100) : null;
+  const barTotal = Math.min(totalApps, 7);
+  const barFilled = Math.min(approvedApps, barTotal);
+
+  const recentApps = applications?.slice(0, 3) ?? [];
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-bold sm:text-2xl">Painel</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Resumo das suas atividades</p>
-      </div>
+    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
+      <h1 className="mb-7 font-display text-d-md text-foreground">Sua leitura</h1>
 
       {isLoading ? (
         <Skeleton />
       ) : (
-        <div className="space-y-8">
-          {/* Stats */}
-          <div className="flex gap-3">
-            {(
-              [
-                { value: totalApps,      label: 'candidaturas', to: null },
-                { value: approvedApps,   label: 'aprovadas',    to: null },
-                { value: pendingRewards, label: 'a receber',    to: '/influencer/rewards' },
-              ] as const
-            ).map(({ value, label, to }) => {
-              const inner = (
-                <>
-                  <p className="font-display text-2xl font-bold tabular-nums">{value}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-                </>
-              );
-              const cls = 'flex-1 rounded-xl border border-border bg-card p-4 text-center';
-              return to ? (
-                <Link key={label} to={to} className={cn(cls, 'transition-colors hover:border-lime/30')}>
-                  {inner}
-                </Link>
-              ) : (
-                <div key={label} className={cls}>{inner}</div>
-              );
-            })}
+        <>
+          <Plate marks="all" className="max-w-[520px]">
+            {rate === null ? (
+              <>
+                <p
+                  aria-hidden
+                  className="font-display text-[72px] font-bold leading-[.76] tracking-[-.075em] text-plate-ink/[.2] min-[340px]:text-d-hero"
+                >
+                  —
+                </p>
+                <p className="mt-5 text-sm leading-[1.5] text-plate-dim">
+                  Nenhuma candidatura ainda.
+                </p>
+              </>
+            ) : (
+              <>
+                <CountUp>
+                  <span className="font-display text-[72px] font-bold leading-[.76] tracking-[-.075em] text-plate-ink tabular-nums min-[340px]:text-d-hero">
+                    {rate}
+                    <span className="text-[38px] tracking-[-.05em]">%</span>
+                  </span>
+                </CountUp>
+                <p className="mt-5 text-sm leading-[1.5] text-plate-dim">
+                  {approvedApps} das suas {totalApps} candidaturas viraram parceria.
+                </p>
+                <SegmentBar filled={barFilled} total={barTotal} className="mt-[22px]" />
+              </>
+            )}
+          </Plate>
+
+          <div className="mt-8 flex max-w-[520px] gap-3.5">
+            <StatBlock label="em análise" value={pendingApps} delay={120} />
+            <Link to="/influencer/rewards" className="flex-1">
+              <StatBlock label="a receber" value={pendingRewards} highlight delay={240} />
+            </Link>
           </div>
 
-          {/* Candidaturas recentes */}
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-display text-sm font-semibold">
-                <ClipboardList size={15} className="text-lime" />
-                Últimas candidaturas
-              </h2>
-              {totalApps > 4 && (
-                <Link
-                  to="/influencer/applications"
-                  className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Ver todas <ArrowRight size={12} />
-                </Link>
-              )}
+          <h2 className="mb-5 mt-9 font-display text-d-xs text-foreground">Registro</h2>
+
+          {recentApps.length === 0 ? (
+            <p className="text-sm text-[#8A8A85]">
+              Nenhuma candidatura ainda.{' '}
+              <Link to="/influencer/browse" className="text-lime hover:underline">
+                Explore os programas
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="flex flex-col gap-[22px]">
+              {recentApps.map((app, i) => (
+                <div key={app.id} className="flex items-baseline gap-3.5">
+                  <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-d-xs font-semibold text-foreground">
+                      {app.campaign.title}
+                    </p>
+                    <p className="mt-[5px] text-xs text-[#6E6E68]">{app.campaign.brand.name}</p>
+                  </div>
+                  <StatusPill status={app.status} />
+                </div>
+              ))}
             </div>
-
-            {recentApps.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card px-5 py-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma candidatura ainda.{' '}
-                  <Link to="/influencer/browse" className="text-lime hover:underline">
-                    Explore os programas
-                  </Link>
-                  .
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {recentApps.map((app) => (
-                  <li
-                    key={app.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">{app.campaign.brand.name}</p>
-                      <p className="truncate text-sm font-medium">{app.campaign.title}</p>
-                    </div>
-                    <AppPill status={app.status} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {/* Recompensas a receber */}
-          <section>
-            <div className="mb-3">
-              <h2 className="flex items-center gap-2 font-display text-sm font-semibold">
-                <Trophy size={15} className="text-lime" />
-                Recompensas a receber
-              </h2>
-            </div>
-
-            {activeRewards.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card px-5 py-6 text-center">
-                <p className="text-sm text-muted-foreground">Nenhuma recompensa pendente.</p>
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {activeRewards.map((reward) => (
-                  <li
-                    key={reward.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">{reward.campaign.brand.name}</p>
-                      <p className="truncate text-sm font-medium">{reward.campaign.title}</p>
-                      <p className="mt-0.5 text-xs font-semibold text-lime">{reward.value}</p>
-                    </div>
-                    <RewardPill status={reward.status} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
