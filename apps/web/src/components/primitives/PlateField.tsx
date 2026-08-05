@@ -6,6 +6,12 @@ import { cn } from '../../lib/utils';
 // caixa. Duas variantes, com tamanhos distintos confirmados no mock:
 // `plate` (sobre o claro — label 11px, valor 15px) e `dark` (sobre o
 // fundo — label 12px, valor 14px).
+//
+// label/input usam htmlFor/id (não o padrão de label-envolve-input) de
+// propósito: hint e error precisam ficar FORA do <label> — se entrassem,
+// a accessible name do campo (o que getByLabelText calcula) juntaria o
+// texto do hint/error ao label, e queries exatas como getByLabelText('Senha')
+// parariam de bater assim que um hint aparecesse.
 
 interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
   label: string;
@@ -17,25 +23,26 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefi
   prefix?: string;
   /** Ex.: o olho de mostrar/ocultar senha. */
   suffix?: React.ReactNode;
+  /** Ex.: "Mínimo 8 caracteres" — some com error, error tem prioridade. */
+  hint?: string;
 }
 
 const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
-  { label, variant = 'dark', error, required, prefix, suffix, className, ...props },
+  { label, variant = 'dark', error, required, prefix, suffix, hint, id, className, ...props },
   ref,
 ) {
   const isPlate = variant === 'plate';
+  const inputId = id ?? (typeof props.name === 'string' ? props.name : undefined);
 
   return (
-    <label className="block">
-      <span
-        className={cn(
-          'mb-2 block',
-          isPlate ? 'text-[11px] text-plate-muted' : 'text-[12px] text-[#75756E]',
-        )}
+    <div>
+      <label
+        htmlFor={inputId}
+        className={cn('mb-2 block', isPlate ? 'text-[11px] text-plate-muted' : 'text-[12px] text-[#75756E]')}
       >
         {label}
         {required && <span className={cn('ml-0.5', isPlate ? 'text-plate-ink' : 'text-foreground')}>*</span>}
-      </span>
+      </label>
       <span
         className={cn(
           'flex items-center gap-2.5 border-b pb-[9px] transition-colors duration-[140ms]',
@@ -56,6 +63,7 @@ const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
           </span>
         )}
         <input
+          id={inputId}
           ref={ref}
           className={cn(
             'w-full bg-transparent leading-none outline-none',
@@ -68,8 +76,12 @@ const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
         />
         {suffix}
       </span>
-      {error && <span className="mt-1.5 block text-[11px] text-destructive">{error}</span>}
-    </label>
+      {error ? (
+        <span className="mt-1.5 block text-[11px] text-destructive">{error}</span>
+      ) : (
+        hint && <span className="mt-1.5 block text-[11px] text-[#8A8A84]">{hint}</span>
+      )}
+    </div>
   );
 });
 

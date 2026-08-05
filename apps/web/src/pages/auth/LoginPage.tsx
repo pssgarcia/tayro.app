@@ -86,7 +86,7 @@ export default function LoginPage() {
         <Plate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             <PlateField
-              label="Email"
+              label="E-mail"
               type="email"
               variant="plate"
               autoComplete="email"

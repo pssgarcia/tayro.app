@@ -25,10 +25,24 @@ interface Props {
    * Sem isso, um nicho fora da lista sumiria ao salvar.
    */
   extraOptions?: string[];
+  /**
+   * "plate" — variante do redesign 2a pros cadastros (a placa-formulário
+   * vive sobre o claro): selecionado = bg-plate-ink text-plate, sem borda;
+   * não selecionado = border rgba(14,14,14,.16) text-plate-muted. Tag
+   * quadrada (radius 3px), sem ícone de check — só a inversão de cor avisa.
+   * "dark" (default) mantém o pill rounded-full de sempre.
+   */
+  variant?: 'dark' | 'plate';
 }
 
-export default function NicheSelector({ value, onChange, extraOptions = [] }: Props) {
+export default function NicheSelector({
+  value,
+  onChange,
+  extraOptions = [],
+  variant = 'dark',
+}: Props) {
   const options = [...new Set([...NICHE_OPTIONS, ...extraOptions, ...value])];
+  const isPlate = variant === 'plate';
 
   const toggle = (niche: string) => {
     if (value.includes(niche)) {
@@ -39,9 +53,28 @@ export default function NicheSelector({ value, onChange, extraOptions = [] }: Pr
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={cn('flex flex-wrap', isPlate ? 'gap-[7px]' : 'gap-2')}>
       {options.map((niche) => {
         const selected = value.includes(niche);
+
+        if (isPlate) {
+          return (
+            <button
+              key={niche}
+              type="button"
+              onClick={() => toggle(niche)}
+              className={cn(
+                'rounded-[3px] text-[11px] capitalize transition-colors',
+                selected
+                  ? 'bg-plate-ink px-[10px] py-[6px] text-plate'
+                  : 'border border-[rgba(14,14,14,.16)] px-[10px] py-[5px] text-plate-muted',
+              )}
+            >
+              {niche}
+            </button>
+          );
+        }
+
         return (
           <button
             key={niche}

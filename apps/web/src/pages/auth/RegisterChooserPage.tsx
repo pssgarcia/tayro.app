@@ -1,78 +1,54 @@
 import { Link } from 'react-router-dom';
-import { Building2, Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
+import Plate from '../../components/primitives/Plate';
+import PlateActionBar from '../../components/primitives/PlateActionBar';
+
+// ─── Página ──────────────────────────────────────────────────────────────────
+// Tela 9 do redesign 2a. Os dois cards iguais viram placa (o caminho
+// recomendado — creator, o volume do produto) + uma linha de texto.
 
 export default function RegisterChooserPage() {
   return (
-    <div className="flex flex-col gap-8">
-      {/* Logo */}
-      <div className="flex justify-center">
-        <span className="font-display text-3xl font-bold tracking-tight">
-          tay<span className="text-lime">ro</span>
+    <div>
+      <span className="mb-[26px] block font-display text-[26px] font-bold tracking-[-.05em] text-foreground">
+        tay<span className="text-lime">ro</span>
+      </span>
+
+      <h1 className="mb-7 font-display text-d-md text-foreground">
+        Como você quer
+        <br />
+        começar?
+      </h1>
+
+      <Plate marks="top" flush>
+        <div className="px-6 pb-[26px] pt-[30px]">
+          <p className="font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+            Sou creator
+          </p>
+          <p className="mt-2.5 text-[14px] leading-[1.5] text-plate-body">
+            Encontre programas abertos e feche parcerias com marcas.
+          </p>
+        </div>
+        <PlateActionBar
+          primary={{ label: 'Criar conta de creator', icon: <ArrowRight size={16} /> }}
+        />
+      </Plate>
+
+      <Link to="/register/brand" className="mt-[30px] flex items-center gap-3.5">
+        <span className="min-w-0 flex-1">
+          <p className="font-display text-[15px] font-semibold tracking-[-.025em] text-foreground">
+            Sou marca
+          </p>
+          <p className="mt-[5px] text-xs leading-[1.5] text-[#75756E]">
+            Crie programas e receba candidaturas.
+          </p>
         </span>
-      </div>
+        <ChevronRight size={14} className="shrink-0 text-[#4A4A46]" />
+      </Link>
 
-      {/* Headline */}
-      <div className="space-y-1 text-center">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-foreground">
-          Como você quer começar?
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Escolha o tipo de conta para criar.
-        </p>
-      </div>
-
-      {/* Opções */}
-      <div className="space-y-3">
-        <Link
-          to="/register/influencer"
-          className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-lime/30 hover:bg-card/80"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-lime/10 text-lime">
-            <Sparkles size={18} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-sm font-semibold text-foreground">
-              Sou creator
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Encontre programas e feche parcerias com marcas.
-            </p>
-          </div>
-          <ArrowRight
-            size={16}
-            className="text-muted-foreground transition-transform group-hover:translate-x-0.5"
-          />
-        </Link>
-
-        <Link
-          to="/register/brand"
-          className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-lime/30 hover:bg-card/80"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
-            <Building2 size={18} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-sm font-semibold text-foreground">
-              Sou marca
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Crie programas e receba candidaturas de creators.
-            </p>
-          </div>
-          <ArrowRight
-            size={16}
-            className="text-muted-foreground transition-transform group-hover:translate-x-0.5"
-          />
-        </Link>
-      </div>
-
-      {/* Link de login */}
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="mt-[30px] text-[13px] text-[#75756E]">
         Já tem conta?{' '}
-        <Link
-          to="/login"
-          className="font-medium text-foreground underline-offset-4 hover:text-lime hover:underline"
-        >
+        <Link to="/login" className="font-medium text-lime hover:underline">
           Entrar
         </Link>
       </p>

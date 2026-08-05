@@ -38,12 +38,16 @@ type FormValues = z.infer<typeof schema>;
 function PlateSelectField({
   label,
   error,
+  id,
   children,
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; error?: string }) {
+  const selectId = id ?? (typeof props.name === 'string' ? props.name : undefined);
   return (
-    <label className="block">
-      <span className="mb-2 block text-[11px] text-plate-muted">{label}</span>
+    <div>
+      <label htmlFor={selectId} className="mb-2 block text-[11px] text-plate-muted">
+        {label}
+      </label>
       <span
         className={cn(
           'block border-b pb-[9px] transition-colors duration-[140ms]',
@@ -51,6 +55,7 @@ function PlateSelectField({
         )}
       >
         <select
+          id={selectId}
           {...props}
           className="w-full appearance-none bg-transparent text-[15px] leading-none text-plate-ink outline-none"
         >
@@ -58,7 +63,7 @@ function PlateSelectField({
         </select>
       </span>
       {error && <span className="mt-1.5 block text-[11px] text-destructive">{error}</span>}
-    </label>
+    </div>
   );
 }
 
