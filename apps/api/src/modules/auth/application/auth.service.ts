@@ -144,6 +144,51 @@ export class AuthService {
     return this.buildAuthResponse(updated);
   }
 
+  /**
+   * Preview de identidade pro token de claim — NÃO consome o token (ao
+   * contrário de claimAccount). Usado pra tela de Ativar conta mostrar quem
+   * é antes de pedir a senha, e pra pegar link inválido/expirado ANTES do
+   * submit em vez de só no erro do POST.
+   */
+  async getClaimPreview(token: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await this.prisma.user.findUnique({
+      where: { claimTokenHash: tokenHash },
+      include: {
+        influencer: {
+          include: {
+            applications: {
+              orderBy: { appliedAt: 'desc' },
+              take: 1,
+              include: { campaign: { select: { title: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    if (
+      !user ||
+      !user.claimTokenExpiresAt ||
+      user.claimTokenExpiresAt < new Date() ||
+      !user.influencer
+    ) {
+      throw new UnauthorizedException('Link inválido ou expirado');
+    }
+
+    const latestApplication = user.influencer.applications[0];
+
+    return {
+      instagramHandle: user.influencer.instagramHandle,
+      email: user.email,
+      avatarUrl: user.influencer.avatarUrl,
+      influencerId: user.influencer.id,
+      hasIgAvatar: Boolean(user.influencer.igProfilePicUrl),
+      campaignTitle: latestApplication?.campaign.title ?? null,
+    };
+  }
+
   async refreshTokens(userId: string, incomingToken: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.isActive || !user.refreshTokenHash)

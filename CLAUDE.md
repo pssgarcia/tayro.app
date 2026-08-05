@@ -1,6 +1,6 @@
 # TAYRO — Contexto do Projeto
 
-> Versionado no repositório — precisa sobreviver entre dispositivos (perdido uma vez, 2026-06-17, na reescrita de histórico; reconstruído). Detalhe específico de uma máquina só (não do projeto em si) vai em `CLAUDE.local.md`, esse sim gitignored.
+> Versionado no repositório — precisa sobreviver entre dispositivos (já foi perdido 2x enquanto gitignored: 2026-06-17 e 2026-08-05; agora versionado de propósito). Detalhe específico de uma máquina só (não do projeto em si) vai em `CLAUDE.local.md`, esse sim gitignored.
 
 ## O que é
 CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de influência. Infra real = Neon (Postgres serverless).
@@ -67,22 +67,24 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
 - **Apply autenticado direto do browse (v0.24.0/#67):** backend (`POST /applications`, role INFLUENCER) já existia — gap era só frontend. `ProgramCard` vira modal de confirmação (mensagem opcional) em vez de mandar a creator logada pro fluxo público `/apply/:id` (que criava conta duplicada). Fix junto: copy sem gênero assumido ("perfeita"→"ideal", "creator aprovada"→"candidatura aprovada").
 - **E-mail de aprovação/recusa (v0.25.0/#69):** `EmailModule` novo — mesmo padrão do Instagram (interface `EmailProvider` + DI token `EMAIL_PROVIDER`, `stub`|`resend`). Disparo best-effort (nunca derruba approve/reject) em `ApplicationsService.approve()`/`.reject()`. `EMAIL_PROVIDER=stub` em prod até ter domínio verificado no Resend (Pedro decidiu comprar domínio real só no fim do MVP — sandbox do Resend só entrega pro próprio e-mail da conta).
 - **Claim/set-password de conta CLAIMABLE (v0.26.0/#71):** `User.claimTokenHash`(`@unique`, hash SHA-256)+`claimTokenExpiresAt` (7 dias). Emitido na criação da conta (`CreatorsService.findOrCreateInfluencer`, sem N+1) + e-mail via `EmailService.sendClaimAccount`. Reaplicar com token ainda não usado reemite+reenvia automaticamente (fecha caso de link expirado). `POST /auth/claim` reaproveita `buildAuthResponse` — auto-login. Frontend `/claim?token=` (público, fora de guards). `StubEmailProvider` loga qualquer link do corpo do e-mail (fix v0.27.0/#73) — é a única forma de pegar o link do claim em dev sem configurar Resend de verdade.
-- Estrutura de testes (Jest + Vitest): **131 testes API + 89 web** (2026-08-03)
+- **Preview de identidade no Claim (v0.29.0):** `GET /auth/claim/:token` (novo, público, throttled) traz identidade (handle/e-mail/avatar/`influencerId`) + título da candidatura mais recente SEM consumir o token — ao contrário do `POST /auth/claim`. Fecha a limitação conhecida de link inválido/expirado só aparecer no erro do submit: agora `ClaimAccountPage` mostra a mensagem já na carga da página (401 do preview = mesma UX de token inválido). Se o preview falhar por outro motivo (rede/5xx, não 401), degrada pro form sem a placa de identidade — quem valida o token de verdade continua sendo o POST. Frontend: hook `useClaimPreview` (padrão de hook dedicado + mock em teste, não `useQuery` inline), avatar via o mesmo proxy `/ig/avatar/:influencerId` já usado no `ApplicationCard`.
+- Estrutura de testes (Jest + Vitest): **137 testes API + 96 web** (2026-08-05)
 - CI/CD completo + Git Flow + branch protection
 - Deploy funcionando: API (Railway) + Web (Vercel) + migrations (Neon). Auto-deploy nativo do Railway DESLIGADO (Actions é o único gatilho); serviço "web" vestigial do Railway removido
 - SPA routing fix (vercel.json), build do Railway com prisma generate
 - Rename ugc-platform → tayro (código + Neon project)
+- **Redesign visual TAYRO 2a (v0.29.0, PR #80):** implementação do handoff `apps/web/design_handoff_tayro_2a/` (gitignored, referência local, não é código de produção). Dark-first (`#0A0A0A`), lime `#C6FF33`, "placa" (plate) como elemento de assinatura. Primitives novos: `Plate`, `CountUp`, `SegmentBar`, `StatusPill`, `StatBlock`, `ContentStatusPill`, `TabsUnderline`, `PlateField`, `PlateTextarea`, `PlateActionBar`, `NicheSelector` (variant `dark`|`plate`, tag quadrada — sem pill lime), `PlateEditField`/`PlateEditNiches` (row label+valor+chevron abre modal placa-formulário de campo único — padrão literal do mock pro "Editar" do Perfil da creator e da marca). 16 telas do handoff reconstruídas. Backend: `GET /campaigns/mine` ganhou `approvedCount`/`pendingCount` via `Promise.all` (groupBy quebra tipagem dentro de `$transaction` array form). Fix de bug: placa em destaque de Programas (`CampaignsPage`) só aparece em "Todas"/"Ativas", nunca em Rascunho/Encerradas (antes vazava pra qualquer aba). Tela da creator renomeada "Ficha"→"Perfil" (nav + título, mais claro pro usuário).
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)
-- PR de release é MANUAL — não abre ao mergear feature no develop. Última: v0.10.0.
+- PR de release é MANUAL — não abre ao mergear feature no develop. Última: v0.28.0 (#77).
 - **SEMPRE usar merge commit, NUNCA squash** em releases. Squash cria commit sem ancestral comum → divergência de histórico → conflitos em futuros PRs. v0.8.0 usou squash (exceção pra limpar atribuição) e exigiu `git merge -s ours` em chore/sync-main-into-develop (PR #38) pra reconciliar.
 - Releases antigos #1–#15 (infra/CI/CD) ficaram sem versão (pré-v0.1)
 
 ## Pendente
-- **Gaps do MVP (levantamento 2026-08-03) — TODOS FECHADOS:** apply autenticado (v0.24.0) · e-mail de decisão (v0.25.0) · claim/set-password (v0.26.0). Ver "Feito" pra detalhe de cada um.
-  - Limitações conhecidas, aceitas por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa); sem endpoint de validar token antes de mostrar o form de claim (erro só aparece no submit).
+- **Gaps do MVP (levantamento 2026-08-03) — TODOS FECHADOS:** apply autenticado (v0.24.0) · e-mail de decisão (v0.25.0) · claim/set-password (v0.26.0) · preview de identidade no Claim (v0.29.0). Ver "Feito" pra detalhe de cada um.
+  - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
 - **PWA** — pendente (responsividade concluída em v0.11.0).
   - `vite-plugin-pwa` + manifest + service worker.
   - Regra INVIOLÁVEL: service worker NUNCA cacheia `/auth/*` nem endpoints autenticados. Não interceptar silent refresh no AppShell boot.
@@ -98,6 +100,7 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
 - Texto #F0F0F0 / secundário #888888 · Sucesso #1EDB8C / Erro #FF4D4D
 - Fontes: Space Grotesk (display/headings) · Inter (body). Stats com tabular-nums.
 - CARDS, nunca tabelas. Avatares proeminentes. StatusPills coloridas. Copy encorajadora.
+- **Redesign 2a (v0.29.0):** substitui os tokens acima em todas as telas migradas. BG `#0A0A0A`, lime `#C6FF33` mantido, "placa" `#E8E8E3` (card claro com crop marks) como elemento de assinatura — no máx. 1 por tela. JetBrains Mono (mono, máx. 3 usos/tela) somado a Space Grotesk/Inter. Ver `apps/web/design_handoff_tayro_2a/` (gitignored) pra spec completa. 6 regras do sistema: máx. 3 labels mono/tela, máx. 2 divisores/tela, sem efeitos empilhados, 1 "orçamento" de lime/tela, 1 placa/tela, piso de contraste no texto secundário.
 
 ## Decisões de domínio — não quebrar
 - offer* em Campaign (offerAmount[centavos], offerType CASH|PRODUCT, offerDeadlineDays, offerDescription) = fonte de verdade da oferta. rewardType/rewardValue DEPRECATED — não escrever, não expor.
@@ -123,15 +126,15 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
   - Candidaturas: ApplicationCard (thumbnails 6col, foto de perfil via proxy `/ig/avatar/:id`, handle clicável), 3 estados IG (PENDING/FAILED+retry/OK, botão "Atualizar" nos dois últimos), poll-while-PENDING, filtro, approve/reject
   - Visão Geral (CampaignOverviewTab) · Conteúdos (CampaignContentTab, aprovar/recusar/revisão) · Recompensas (CampaignRewardsTab, modal de registro + issue/deliver)
 - /brand/campaigns (lista+filtro) · /brand/campaigns/new (form rhf+zod, toggle CASH/PRODUCT, centavos, modal publicar + link /apply/:id)
-- /brand/profile (ProfilePage: form rhf+zod, email read-only, salvar só habilita se dirty)
+- /brand/profile (ProfilePage: rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches, padrão 2a; email read-only, salvar só habilita se dirty)
 - /apply/:id (página pública: oferta, form, estados 201/409/429) — responsivo (px-4 sm:px-6, min-h-[44px] no CTA, break-words na descrição)
 - **Creator (v0.8.0):** InfluencerLayout + InfluencerGuard · /register/influencer (rhf+zod, NicheSelector, erro inline por `field` vindo do 409) · /influencer (minhas candidaturas via `useMyApplications`)
-- **Creator (v0.9.0):** /influencer/profile (4 cards, toggle LGPD, dirty gate, email read-only)
+- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; email read-only)
 - **Creator (v0.10.0):** /influencer/browse (grid + paginação, ProgramCard, link /apply/:id)
 - **Creator (v0.13.0):** /influencer/dashboard (nova home/index) — 3 pills de resumo, últimas 4 candidaturas, recompensas PENDING+ISSUED. Nav 4 itens.
 - **Creator (v0.14.0):** /influencer/submissions — lista com status + feedback, modal "Enviar conteúdo". Nav 5 itens (+ Conteúdo).
 - **Creator (v0.15.0):** /influencer/rewards — lista de recompensas (tipo, valor, StatusPill, notas, data de emissão).
-- **Claim (v0.26.0):** /claim?token= (AuthLayout) — form de senha, auto-login, erros 401/429/sem-conexão.
+- **Claim (v0.26.0, preview de identidade v0.29.0):** /claim?token= (AuthLayout) — placa confirma quem é (avatar/@handle/e-mail) e o programa da candidatura antes do form de senha (`useClaimPreview`), link inválido/expirado detectado já na carga (não só no submit), auto-login, erros 401/429/sem-conexão.
 - Helpers compartilhados em `utils/format.ts`: formatCurrency, formatDate, formatOffer (não duplicar)
 
 ## Convenções de trabalho (somar às de performance)

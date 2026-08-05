@@ -5,40 +5,43 @@ type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
 
 type Status = ApplicationStatus | CampaignStatus;
 
+// Fundo sólido nos dois estados que importam (Análise, Fechada/Ativa),
+// outline puro no estado inerte — não bg-x/10 + border-x/20 (redesign 2a).
+// Mono 9px/uppercase é um dos 3 usos de mono permitidos por tela (regra 1).
 const config: Record<Status, { label: string; classes: string }> = {
   // Application statuses
   PENDING: {
-    label: 'Aguardando',
-    classes: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+    label: 'Análise',
+    classes: 'bg-signal-wait text-background',
   },
   APPROVED: {
-    label: 'Aprovada',
-    classes: 'bg-lime/10 text-lime border-lime/20',
+    label: 'Fechada',
+    classes: 'bg-lime text-background',
   },
   REJECTED: {
     label: 'Recusada',
-    classes: 'bg-destructive/10 text-destructive border-destructive/20',
+    classes: 'border border-destructive/40 text-destructive',
   },
   WITHDRAWN: {
     label: 'Retirada',
-    classes: 'bg-muted text-muted-foreground border-border',
+    classes: 'border border-[#2A2A2A] text-muted-foreground',
   },
   // Campaign statuses
   DRAFT: {
     label: 'Rascunho',
-    classes: 'bg-muted text-muted-foreground border-border',
+    classes: 'border border-[#2A2A2A] text-muted-foreground',
   },
   ACTIVE: {
     label: 'Ativa',
-    classes: 'bg-lime/10 text-lime border-lime/20',
+    classes: 'bg-lime text-background',
   },
   CLOSED: {
     label: 'Encerrada',
-    classes: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    classes: 'border border-[#2A2A2A] text-muted-foreground',
   },
   COMPLETED: {
     label: 'Concluída',
-    classes: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    classes: 'bg-plate text-plate-ink',
   },
 };
 
@@ -52,7 +55,8 @@ export default function StatusPill({ status, className }: Props) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex shrink-0 items-center rounded-[3px] px-2 py-[3px]',
+        'font-mono text-[9px] uppercase tracking-[.1em]',
         classes,
         className,
       )}

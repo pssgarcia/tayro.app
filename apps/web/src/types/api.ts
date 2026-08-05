@@ -234,6 +234,17 @@ export interface MyReward {
   };
 }
 
+// ─── Claim (GET /auth/claim/:token — preview, não consome o token) ──────────
+
+export interface ClaimPreview {
+  instagramHandle: string | null;
+  email: string;
+  avatarUrl: string | null;
+  influencerId: string;
+  hasIgAvatar: boolean;
+  campaignTitle: string | null;
+}
+
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
@@ -256,4 +267,8 @@ export interface Campaign {
   createdAt: string;
   brand?: { name: string; logoUrl: string | null; website: string | null };
   _count: { applications: number };
+  /** Só em GET /campaigns/mine — total de candidaturas APROVADAS (vagas preenchidas). */
+  approvedCount?: number;
+  /** Só em GET /campaigns/mine — total de candidaturas PENDING (na fila). */
+  pendingCount?: number;
 }

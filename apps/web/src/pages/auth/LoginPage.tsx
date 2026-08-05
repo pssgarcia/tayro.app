@@ -3,11 +3,13 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
-import { cn } from '../../lib/utils';
+import Plate from '../../components/primitives/Plate';
+import PlateField from '../../components/primitives/PlateField';
+import PlateActionBar from '../../components/primitives/PlateActionBar';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -30,9 +32,10 @@ function redirectPath(role: AuthUser['role']): string {
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
+// Tela 3 do redesign 2a. Sem header — a placa-formulário é o padrão reusado
+// nos 3 cadastros, Ativar conta e nos modais de PublishModal/Entregas.
 
 export default function LoginPage() {
-  // ── Todos os hooks ANTES de qualquer return condicional ──────────────────────
   const { accessToken, user, setAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +46,7 @@ export default function LoginPage() {
     setError,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
-  // ─────────────────────────────────────────────────────────────────────────────
 
-  // Já autenticado — só redireciona depois que todos os hooks foram chamados
   if (accessToken && user) {
     return <Navigate to={redirectPath(user.role)} replace />;
   }
@@ -70,115 +71,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Logo */}
-      <div className="flex justify-center">
-        <span className="font-display text-3xl font-bold tracking-tight">
-          tay<span className="text-lime">ro</span>
-        </span>
-      </div>
+    <div>
+      <span className="mb-[26px] block font-display text-[26px] font-bold tracking-[-.05em] text-foreground">
+        tay<span className="text-lime">ro</span>
+      </span>
 
-      {/* Headline */}
-      <div className="space-y-1 text-center">
-        <h1 className="font-display text-[32px] font-bold leading-tight text-foreground">
-          Que bom te ver de novo!
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Entre com sua conta para continuar
-        </p>
-      </div>
+      <h1 className="mb-7 font-display text-d-md text-foreground">
+        Que bom te ver
+        <br />
+        de novo.
+      </h1>
 
-      {/* Formulário */}
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-        {/* Erro global (credenciais / rede) */}
-        {errors.root && (
-          <div className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3">
-            <p className="text-sm text-destructive">{errors.root.message}</p>
-          </div>
-        )}
-
-        {/* Email */}
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="seu@email.com"
-            className={cn(
-              'w-full rounded-lg border bg-secondary px-4 py-2.5 text-sm text-foreground',
-              'placeholder:text-muted-foreground',
-              'focus:outline-none focus:ring-1',
-              errors.email
-                ? 'border-destructive focus:border-destructive focus:ring-destructive/30'
-                : 'border-input focus:border-lime/50 focus:ring-lime/20',
-            )}
-            {...register('email')}
-          />
-          {errors.email && (
-            <p className="text-xs text-destructive">{errors.email.message}</p>
-          )}
-        </div>
-
-        {/* Senha */}
-        <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm font-medium text-foreground">
-            Senha
-          </label>
-          <div className="relative">
-            <input
-              id="password"
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Plate marks="top" flush>
+          <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
+            <PlateField
+              label="E-mail"
+              type="email"
+              variant="plate"
+              autoComplete="email"
+              placeholder="seu@email.com"
+              error={errors.email?.message}
+              {...register('email')}
+            />
+            <PlateField
+              label="Senha"
               type={showPassword ? 'text' : 'password'}
+              variant="plate"
               autoComplete="current-password"
               placeholder="••••••••"
-              className={cn(
-                'w-full rounded-lg border bg-secondary px-4 py-2.5 pr-10 text-sm text-foreground',
-                'placeholder:text-muted-foreground',
-                'focus:outline-none focus:ring-1',
-                errors.password
-                  ? 'border-destructive focus:border-destructive focus:ring-destructive/30'
-                  : 'border-input focus:border-lime/50 focus:ring-lime/20',
-              )}
+              error={errors.password?.message}
+              suffix={
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="shrink-0 text-[#8A8A84] transition-colors hover:text-plate-ink"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              }
               {...register('password')}
             />
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+            {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
           </div>
-          {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
-          )}
-        </div>
 
-        {/* Botão */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={cn(
-            'w-full min-h-[44px] rounded-lg bg-lime py-2.5 text-sm font-semibold text-background',
-            'transition-opacity hover:opacity-90',
-            'disabled:cursor-not-allowed disabled:opacity-60',
-          )}
-        >
-          {isSubmitting ? 'Entrando…' : 'Entrar'}
-        </button>
+          <PlateActionBar
+            secondary={{ label: 'Esqueci', width: 106 }}
+            primary={{
+              label: isSubmitting ? 'Entrando…' : 'Entrar',
+              type: 'submit',
+              disabled: isSubmitting,
+              icon: <ArrowRight size={16} />,
+            }}
+          />
+        </Plate>
       </form>
 
-      {/* Link de cadastro */}
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="mt-[26px] text-[13px] text-[#75756E]">
         Não tem conta?{' '}
-        <Link
-          to="/register"
-          className="font-medium text-foreground underline-offset-4 hover:text-lime hover:underline"
-        >
+        <Link to="/register" className="font-medium text-lime hover:underline">
           Cadastre-se
         </Link>
       </p>
