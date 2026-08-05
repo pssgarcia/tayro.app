@@ -256,4 +256,6 @@ export interface Campaign {
   createdAt: string;
   brand?: { name: string; logoUrl: string | null; website: string | null };
   _count: { applications: number };
+  /** Só em GET /campaigns/mine — total de candidaturas APROVADAS (vagas preenchidas). */
+  approvedCount?: number;
 }

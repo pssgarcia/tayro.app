@@ -39,6 +39,9 @@ describe('CampaignsService', () => {
         delete: jest.fn(),
         count: jest.fn(),
       },
+      application: {
+        groupBy: jest.fn(),
+      },
       brand: {
         findUnique: jest.fn(),
         count: jest.fn(),
@@ -180,19 +183,25 @@ describe('CampaignsService', () => {
   // ─── findMine ─────────────────────────────────────────────────────────────────
 
   describe('findMine', () => {
-    it('returns only campaigns owned by the brand', async () => {
+    it('returns only campaigns owned by the brand, each with approvedCount and pendingCount', async () => {
       prisma.brand.findUnique.mockResolvedValue(makeBrand());
       prisma.campaign.findMany.mockResolvedValue([
         makeCampaign(),
         makeCampaign({ id: 'camp-2' }),
       ]);
+      prisma.application.groupBy.mockResolvedValue([
+        { campaignId: 'camp-1', status: 'APPROVED', _count: { _all: 3 } },
+        { campaignId: 'camp-1', status: 'PENDING', _count: { _all: 6 } },
+      ]);
 
       const result = await service.findMine('user-1');
 
       expect(result).toHaveLength(2);
-      expect(prisma.campaign.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { brandId: 'brand-1' } }),
-      );
+      expect(result[0].approvedCount).toBe(3);
+      expect(result[0].pendingCount).toBe(6);
+      // camp-2 sem entrada no groupBy — nenhuma candidatura ainda, não some da lista
+      expect(result[1].approvedCount).toBe(0);
+      expect(result[1].pendingCount).toBe(0);
     });
 
     it('throws ForbiddenException when user has no brand profile', async () => {
