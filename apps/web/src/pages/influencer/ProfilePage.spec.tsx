@@ -71,24 +71,32 @@ describe('Creator ProfilePage', () => {
     expect(screen.getByText(/erro ao carregar o perfil/i)).toBeInTheDocument();
   });
 
-  it('preenche o form com os dados do perfil', () => {
+  it('preenche o form com os dados do perfil; email é texto (não input, somente leitura)', () => {
     render(<ProfilePage />);
     expect(screen.getByDisplayValue('Ana Silva')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('ana@exemplo.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Belo Horizonte')).toBeInTheDocument();
+    // email aparece como texto simples — não é mais um <input>
+    expect(screen.getAllByText('ana@exemplo.com').length).toBeGreaterThan(0);
+    expect(screen.queryByDisplayValue('ana@exemplo.com')).not.toBeInTheDocument();
   });
 
-  it('email é somente leitura', () => {
+  it('a placa em destaque reflete o nome ao vivo (watch)', () => {
     render(<ProfilePage />);
-    expect(screen.getByDisplayValue('ana@exemplo.com')).toBeDisabled();
+    // nome aparece duas vezes: na placa-preview e no campo editável
+    expect(screen.getAllByText('Ana Silva').length + screen.getAllByDisplayValue('Ana Silva').length).toBeGreaterThan(1);
+
+    fireEvent.change(screen.getByDisplayValue('Ana Silva'), {
+      target: { value: 'Ana Renovada' },
+    });
+    expect(screen.getByText('Ana Renovada')).toBeInTheDocument();
   });
 
   it('botão salvar começa desabilitado e habilita ao editar', () => {
     render(<ProfilePage />);
-    const btn = screen.getByRole('button', { name: /salvar alterações/i });
+    const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText(/^nome$/i), {
+    fireEvent.change(screen.getByDisplayValue('Ana Silva'), {
       target: { value: 'Ana Renovada' },
     });
     expect(btn).toBeEnabled();
@@ -103,9 +111,7 @@ describe('Creator ProfilePage', () => {
 
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-checked', 'true');
-    expect(
-      screen.getByRole('button', { name: /salvar alterações/i }),
-    ).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^salvar$/i })).toBeEnabled();
   });
 
   it('salva enviando publicProfileEnabled=true após ativar o toggle (LGPD)', async () => {
@@ -114,7 +120,7 @@ describe('Creator ProfilePage', () => {
     fireEvent.click(
       screen.getByRole('switch', { name: /tornar meu perfil público/i }),
     );
-    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith(
