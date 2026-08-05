@@ -72,12 +72,17 @@ function QueueTab({ campaignId }: { campaignId: string }) {
   const [index, setIndex] = useState(0);
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollStartRef = useRef<number | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: applicationKeys.byCampaign(campaignId),
     queryFn: () =>
       api.get<Application[]>(`/applications/campaign/${campaignId}`).then((r) => r.data),
     enabled: !!campaignId,
+    // Sem staleTime: uma candidatura nova precisa aparecer assim que a marca
+    // volta pra aba. Com o padrão de 1 min do QueryClient, ela ficava fora da
+    // fila até o cache vencer, dando a impressão de candidatura sumida.
+    staleTime: 0,
     refetchInterval: (query) => {
       if (pollTimedOut) return false;
       const data = query.state.data as Application[] | undefined;
@@ -91,7 +96,24 @@ function QueueTab({ campaignId }: { campaignId: string }) {
   // em tudo (posição na placa, dot ativo do pager), nunca o `index` cru.
   const queue = applications.filter((a) => a.status === 'PENDING');
   const clampedIndex = Math.min(index, Math.max(queue.length - 1, 0));
-  const current = queue[clampedIndex];
+
+  /** Arrastou: descobre em qual card o snap parou e sincroniza o pager. */
+  function handleScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== index && i >= 0 && i < queue.length) setIndex(i);
+  }
+
+  /** Clicou numa bolinha: leva o carrossel junto, senão o pager mente. */
+  function goTo(i: number) {
+    setIndex(i);
+    const el = scrollerRef.current;
+    if (!el) return;
+    const left = i * el.clientWidth;
+    // scrollTo nem sempre existe (jsdom, WebViews antigas); scrollLeft sim.
+    if (typeof el.scrollTo === 'function') el.scrollTo({ left });
+    else el.scrollLeft = left;
+  }
 
   const hasPending = queue.some((a) => a.influencer.igFetchStatus === 'PENDING');
 
@@ -131,30 +153,52 @@ function QueueTab({ campaignId }: { campaignId: string }) {
 
   return (
     <div>
-      <ApplicationCard
-        key={current.id}
-        application={current}
-        position={clampedIndex + 1}
-        onApprove={() => approve.mutate(current.id)}
-        onReject={() => reject.mutate(current.id)}
-        onRefreshIg={() => refreshIg.mutate(current.id)}
-        isApproving={approve.isPending && approve.variables === current.id}
-        isRejecting={reject.isPending && reject.variables === current.id}
-        isRefreshingIg={refreshIg.isPending && refreshIg.variables === current.id}
-        refreshIgError={refreshIg.variables === current.id ? refreshIg.error : null}
-        igTimedOut={current.influencer.igFetchStatus === 'PENDING' && pollTimedOut}
-      />
+      {/* Arrastar é o gesto esperado pra percorrer a fila no mobile — o pager
+          de bolinhas sozinho (2px de altura) não é alvo de toque viável. Todas
+          as candidaturas ficam no DOM e o snap garante uma placa por vez, então
+          a regra "uma placa por tela" continua valendo. */}
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        className="no-scrollbar -mx-6 flex snap-x snap-mandatory overflow-x-auto scroll-smooth"
+      >
+        {queue.map((app, i) => (
+          <div key={app.id} className="w-full shrink-0 snap-center px-6">
+            <ApplicationCard
+              application={app}
+              position={i + 1}
+              onApprove={() => approve.mutate(app.id)}
+              onReject={() => reject.mutate(app.id)}
+              onRefreshIg={() => refreshIg.mutate(app.id)}
+              isApproving={approve.isPending && approve.variables === app.id}
+              isRejecting={reject.isPending && reject.variables === app.id}
+              isRefreshingIg={refreshIg.isPending && refreshIg.variables === app.id}
+              refreshIgError={refreshIg.variables === app.id ? refreshIg.error : null}
+              igTimedOut={app.influencer.igFetchStatus === 'PENDING' && pollTimedOut}
+            />
+          </div>
+        ))}
+      </div>
 
       {queue.length > 1 && (
-        <div className="mt-[22px] flex items-center justify-center gap-[7px]">
+        <div className="mt-[22px] flex items-center justify-center">
           {queue.map((app, i) => (
             <button
               key={app.id}
               type="button"
               aria-label={`Candidato ${i + 1} de ${queue.length}`}
-              onClick={() => setIndex(i)}
-              className={cn('h-0.5 w-[22px] rounded-full', i === clampedIndex ? 'bg-lime' : 'bg-[#242422]')}
-            />
+              aria-current={i === clampedIndex}
+              onClick={() => goTo(i)}
+              // Barra continua com 2px, mas o botão tem 24px de alvo de toque.
+              className="group px-[3.5px] py-[11px]"
+            >
+              <span
+                className={cn(
+                  'block h-0.5 w-[22px] rounded-full transition-colors',
+                  i === clampedIndex ? 'bg-lime' : 'bg-[#242422] group-hover:bg-[#3A3A38]',
+                )}
+              />
+            </button>
           ))}
         </div>
       )}

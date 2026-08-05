@@ -51,3 +51,15 @@
     @apply font-display;
   }
 }
+
+@layer utilities {
+  /* Carrossel arrastável (fila de candidaturas): a barra de rolagem no desktop
+     poluiria a placa — quem indica posição são as bolinhas do pager. */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
