@@ -61,11 +61,12 @@ describe('ProfilePage', () => {
     expect(screen.getByText(/erro ao carregar o perfil/i)).toBeInTheDocument();
   });
 
-  it('preenche o form com os dados do perfil', () => {
+  it('preenche o form com os dados do perfil; email é texto (não input, somente leitura)', () => {
     render(<ProfilePage />);
     expect(screen.getByDisplayValue('Marca Fit')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('marca@exemplo.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('https://marca.com')).toBeInTheDocument();
+    expect(screen.getAllByText('marca@exemplo.com').length).toBeGreaterThan(0);
+    expect(screen.queryByDisplayValue('marca@exemplo.com')).not.toBeInTheDocument();
   });
 
   it('marca como selecionados os nichos do perfil (pills)', () => {
@@ -89,14 +90,9 @@ describe('ProfilePage', () => {
     expect(screen.getAllByText('Marca Fit').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('email é somente leitura', () => {
-    render(<ProfilePage />);
-    expect(screen.getByDisplayValue('marca@exemplo.com')).toBeDisabled();
-  });
-
   it('botão salvar começa desabilitado e habilita ao editar', () => {
     render(<ProfilePage />);
-    const btn = screen.getByRole('button', { name: /salvar alterações/i });
+    const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText(/nome da marca/i), {
@@ -110,7 +106,7 @@ describe('ProfilePage', () => {
 
     // adiciona um nicho clicando no pill (perfil já tem fitness + wellness)
     fireEvent.click(screen.getByRole('button', { name: /^crossfit$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /salvar alterações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith(
@@ -126,7 +122,7 @@ describe('ProfilePage', () => {
 
   it('habilita salvar ao alternar um nicho (dirty)', () => {
     render(<ProfilePage />);
-    const btn = screen.getByRole('button', { name: /salvar alterações/i });
+    const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: /^crossfit$/i }));
