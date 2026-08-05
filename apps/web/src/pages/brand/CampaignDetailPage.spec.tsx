@@ -1,0 +1,158 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import CampaignDetailPage from './CampaignDetailPage';
+import * as hooks from '../../hooks/useCampaignApplications';
+import { api } from '../../services/api';
+import type { Application, Campaign } from '../../types/api';
+
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return { ...actual, useParams: () => ({ id: 'camp-1' }) };
+});
+
+vi.mock('../../services/api', () => ({ api: { get: vi.fn() } }));
+
+vi.mock('../../hooks/useCampaignApplications', async (importOriginal) => {
+  const actual = await importOriginal<typeof hooks>();
+  return {
+    ...actual,
+    useCampaign: vi.fn(),
+    useApproveApplication: vi.fn(),
+    useRejectApplication: vi.fn(),
+    useRefreshApplicationIg: vi.fn(),
+  };
+});
+
+const campaign: Campaign = {
+  id: 'camp-1',
+  title: 'Basic Drop QA',
+  description: 'Descrição',
+  briefUrl: null,
+  status: 'ACTIVE',
+  niches: ['fitness'],
+  maxSpots: 10,
+  deadline: null,
+  offerType: 'CASH',
+  offerAmount: 30000,
+  offerDeadlineDays: 30,
+  offerDescription: null,
+  createdAt: '2026-06-01T00:00:00.000Z',
+  _count: { applications: 0 },
+} as any;
+
+function makeApplication(i: number, overrides: Partial<Application> = {}): Application {
+  return {
+    id: `app-${i}`,
+    campaignId: 'camp-1',
+    influencerId: `inf-${i}`,
+    status: 'PENDING',
+    message: null,
+    appliedAt: '2026-06-10T10:00:00.000Z',
+    reviewedAt: null,
+    influencer: {
+      id: `inf-${i}`,
+      name: `Creator ${i}`,
+      avatarUrl: null,
+      instagramHandle: `creator${i}`,
+      niches: [],
+      city: null,
+      followersCount: 1000 * i,
+      igEngagementRate: 4.2,
+      igRecentPosts: null,
+      igProfilePicUrl: null,
+      igFetchStatus: 'OK',
+    },
+    _count: { submissions: 0 },
+    ...overrides,
+  };
+}
+
+const noopMutation = { mutate: vi.fn(), isPending: false, variables: undefined, error: null };
+
+function renderPage(applications: Application[]) {
+  vi.mocked(api.get).mockResolvedValue({ data: applications } as any);
+  vi.mocked(hooks.useCampaign).mockReturnValue({
+    data: campaign,
+    isLoading: false,
+  } as any);
+  vi.mocked(hooks.useApproveApplication).mockReturnValue(noopMutation as any);
+  vi.mocked(hooks.useRejectApplication).mockReturnValue(noopMutation as any);
+  vi.mocked(hooks.useRefreshApplicationIg).mockReturnValue(noopMutation as any);
+
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <CampaignDetailPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('CampaignDetailPage — aba Fila (carrossel)', () => {
+  // Regressão: a fila renderizava só o candidato ativo, então o resto só era
+  // alcançável pelas bolinhas (2px de altura) — arrastar não fazia nada e
+  // "a última da fila" parecia ter sumido.
+  it('mantém TODAS as candidaturas pendentes no DOM, não só a ativa', async () => {
+    renderPage([1, 2, 3, 4, 5].map((i) => makeApplication(i)));
+
+    await waitFor(() => expect(screen.getByText('Creator 1')).toBeInTheDocument());
+    for (const i of [2, 3, 4, 5]) {
+      expect(screen.getByText(`Creator ${i}`)).toBeInTheDocument();
+    }
+  });
+
+  it('o pager tem uma bolinha por candidatura da fila', async () => {
+    renderPage([1, 2, 3, 4, 5].map((i) => makeApplication(i)));
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Candidato 1 de 5' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Candidato 5 de 5' })).toBeInTheDocument();
+  });
+
+  it('clicar numa bolinha marca aquele candidato como atual', async () => {
+    renderPage([1, 2, 3].map((i) => makeApplication(i)));
+
+    const first = await screen.findByRole('button', { name: 'Candidato 1 de 3' });
+    const third = screen.getByRole('button', { name: 'Candidato 3 de 3' });
+    expect(first).toHaveAttribute('aria-current', 'true');
+
+    fireEvent.click(third);
+
+    expect(third).toHaveAttribute('aria-current', 'true');
+    expect(first).toHaveAttribute('aria-current', 'false');
+  });
+
+  it('decididas (aprovada/recusada) ficam fora da fila', async () => {
+    renderPage([
+      makeApplication(1),
+      makeApplication(2, { status: 'APPROVED' }),
+      makeApplication(3, { status: 'REJECTED' }),
+    ]);
+
+    await waitFor(() => expect(screen.getByText('Creator 1')).toBeInTheDocument());
+    expect(screen.queryByText('Creator 2')).not.toBeInTheDocument();
+    expect(screen.queryByText('Creator 3')).not.toBeInTheDocument();
+    // fila de 1 não mostra pager
+    expect(screen.queryByRole('button', { name: /^Candidato/ })).not.toBeInTheDocument();
+  });
+
+  it('sem pendentes, mostra o estado vazio', async () => {
+    renderPage([makeApplication(1, { status: 'APPROVED' })]);
+
+    await waitFor(() =>
+      expect(screen.getByText(/nenhuma candidatura aguardando análise/i)).toBeInTheDocument(),
+    );
+  });
+});
