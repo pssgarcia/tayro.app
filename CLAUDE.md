@@ -1,6 +1,6 @@
 # TAYRO — Contexto do Projeto
 
-> Versionado no repositório — precisa sobreviver entre dispositivos. Detalhe específico de uma máquina só (não do projeto em si) vai em `CLAUDE.local.md`, esse sim gitignored.
+> Versionado no repositório — precisa sobreviver entre dispositivos (já foi perdido 2x enquanto gitignored: 2026-06-17 e 2026-08-05; agora versionado de propósito). Detalhe específico de uma máquina só (não do projeto em si) vai em `CLAUDE.local.md`, esse sim gitignored.
 
 ## O que é
 CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de influência. Infra real = Neon (Postgres serverless).
@@ -100,7 +100,7 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
 - Texto #F0F0F0 / secundário #888888 · Sucesso #1EDB8C / Erro #FF4D4D
 - Fontes: Space Grotesk (display/headings) · Inter (body). Stats com tabular-nums.
 - CARDS, nunca tabelas. Avatares proeminentes. StatusPills coloridas. Copy encorajadora.
-- **Redesign 2a (em andamento, branch `feature/redesign-2a`):** substitui os tokens acima nas telas já migradas. BG `#0A0A0A`, lime `#C6FF33` mantido, "placa" `#E8E8E3` (card claro com crop marks) como elemento de assinatura — no máx. 1 por tela. JetBrains Mono (mono, máx. 3 usos/tela) somado a Space Grotesk/Inter. Ver `apps/web/design_handoff_tayro_2a/` (gitignored) pra spec completa. 6 regras do sistema: máx. 3 labels mono/tela, máx. 2 divisores/tela, sem efeitos empilhados, 1 "orçamento" de lime/tela, 1 placa/tela, piso de contraste no texto secundário.
+- **Redesign 2a (v0.29.0):** substitui os tokens acima em todas as telas migradas. BG `#0A0A0A`, lime `#C6FF33` mantido, "placa" `#E8E8E3` (card claro com crop marks) como elemento de assinatura — no máx. 1 por tela. JetBrains Mono (mono, máx. 3 usos/tela) somado a Space Grotesk/Inter. Ver `apps/web/design_handoff_tayro_2a/` (gitignored) pra spec completa. 6 regras do sistema: máx. 3 labels mono/tela, máx. 2 divisores/tela, sem efeitos empilhados, 1 "orçamento" de lime/tela, 1 placa/tela, piso de contraste no texto secundário.
 
 ## Decisões de domínio — não quebrar
 - offer* em Campaign (offerAmount[centavos], offerType CASH|PRODUCT, offerDeadlineDays, offerDescription) = fonte de verdade da oferta. rewardType/rewardValue DEPRECATED — não escrever, não expor.
