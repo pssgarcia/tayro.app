@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   formatNumber,
+  formatNumberParts,
   formatEngagement,
   formatCurrency,
   formatDate,
@@ -24,6 +25,30 @@ describe('formatNumber', () => {
     expect(formatNumber(1_000_000)).toBe('1.0M');
     expect(formatNumber(1_500_000)).toBe('1.5M');
     expect(formatNumber(2_000_000)).toBe('2.0M');
+  });
+});
+
+describe('formatNumberParts', () => {
+  // Existe porque a UI renderiza o sufixo num <span> menor que o número. Antes
+  // disso, as telas concatenavam um "k" fixo no fim de formatNumber() — que já
+  // vinha com sufixo — e produziam "13,6Mk", "8,2kk" e, pior, "800k" pra quem
+  // tinha 800 seguidores.
+  it('separa valor e sufixo, com vírgula decimal (pt-BR)', () => {
+    expect(formatNumberParts(13_600_000)).toEqual({ value: '13,6', suffix: 'M' });
+    expect(formatNumberParts(8_200)).toEqual({ value: '8,2', suffix: 'k' });
+  });
+
+  it('abaixo de 1k não tem sufixo — 800 seguidores nunca vira "800k"', () => {
+    expect(formatNumberParts(800)).toEqual({ value: '800', suffix: '' });
+    expect(formatNumberParts(0)).toEqual({ value: '0', suffix: '' });
+    expect(formatNumberParts(999)).toEqual({ value: '999', suffix: '' });
+  });
+
+  it('concatenar value+suffix reproduz formatNumber (com vírgula)', () => {
+    for (const n of [0, 999, 1_000, 8_200, 10_500, 1_500_000, 13_600_000]) {
+      const { value, suffix } = formatNumberParts(n);
+      expect(value + suffix).toBe(formatNumber(n).replace('.', ','));
+    }
   });
 });
 

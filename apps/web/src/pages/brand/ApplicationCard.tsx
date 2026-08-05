@@ -2,7 +2,7 @@ import { ArrowRight, RefreshCw, ExternalLink } from 'lucide-react';
 import Plate from '../../components/primitives/Plate';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
 import CountUp from '../../components/primitives/CountUp';
-import { formatEngagement, formatNumber } from '../../utils/format';
+import { formatEngagement, formatNumberParts } from '../../utils/format';
 import { extractCooldownWait } from '../../hooks/useCampaignApplications';
 import type { Application, IgFetchStatus, IgPost } from '../../types/api';
 import { cn } from '../../lib/utils';
@@ -54,6 +54,7 @@ function IgBlock({
   const displayState =
     status === 'OK' ? 'ok' : status === 'FAILED' || status === null || timedOut ? 'failed' : 'loading';
   const cooldownWait = extractCooldownWait(refreshError);
+  const followers = followersCount != null ? formatNumberParts(followersCount) : null;
 
   if (displayState === 'loading') {
     return (
@@ -90,13 +91,14 @@ function IgBlock({
 
   return (
     <div className="mb-7 flex items-end gap-7">
-      {followersCount != null && (
+      {followers && (
         <div>
           <CountUp>
             <span className="font-display text-d-xl text-plate-ink tabular-nums">
-              {/* pt-BR: vírgula decimal, igual ao resto do produto */}
-              {formatNumber(followersCount).replace('.', ',')}
-              <span className="text-[23px]">k</span>
+              {/* sufixo (k/M) vem do próprio formatador — nunca hardcoded, senão
+                  800 seguidores viram "800k" e 13,6M vira "13,6Mk" */}
+              {followers.value}
+              <span className="text-[23px]">{followers.suffix}</span>
             </span>
           </CountUp>
           <p className="mt-3 text-xs text-plate-soft">seguidores</p>

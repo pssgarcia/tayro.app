@@ -5,6 +5,23 @@ export function formatNumber(n: number): string {
   return n.toString();
 }
 
+/**
+ * Mesma escala do formatNumber, mas com o sufixo separado — a UI do redesign 2a
+ * renderiza o "k"/"M" num <span> menor que o número. Quem precisa disso DEVE usar
+ * esta função: concatenar um sufixo fixo em cima do formatNumber() duplica o que
+ * ele já devolve ("13,6Mk") e, abaixo de 1k, inventa escala ("800" → "800k").
+ * Vírgula decimal (pt-BR), igual ao resto do produto.
+ */
+export function formatNumberParts(n: number): { value: string; suffix: string } {
+  if (n >= 1_000_000) {
+    return { value: (n / 1_000_000).toFixed(1).replace('.', ','), suffix: 'M' };
+  }
+  if (n >= 1_000) {
+    return { value: (n / 1_000).toFixed(1).replace('.', ','), suffix: 'k' };
+  }
+  return { value: n.toString(), suffix: '' };
+}
+
 /** 3.5 → "3,5%" */
 export function formatEngagement(rate: number): string {
   return `${rate.toFixed(1).replace('.', ',')}%`;

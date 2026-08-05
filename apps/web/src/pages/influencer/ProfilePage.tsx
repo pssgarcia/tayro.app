@@ -10,7 +10,7 @@ import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
 import PlateEditField from '../../components/primitives/PlateEditField';
 import PlateEditNiches from '../../components/primitives/PlateEditNiches';
-import { formatEngagement, formatNumber } from '../../utils/format';
+import { formatEngagement, formatNumberParts } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -148,8 +148,12 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
               <div>
                 <CountUp>
                   <span className="font-display text-d-xl text-plate-ink tabular-nums">
-                    {formatNumber(profile.followersCount).replace('.', ',')}
-                    <span className="text-[23px] tracking-[-.04em]">k</span>
+                    {/* sufixo (k/M) vem do formatador — hardcodar "k" fazia
+                        800 seguidores virarem "800k" e 13,6M virar "13,6Mk" */}
+                    {formatNumberParts(profile.followersCount).value}
+                    <span className="text-[23px] tracking-[-.04em]">
+                      {formatNumberParts(profile.followersCount).suffix}
+                    </span>
                   </span>
                 </CountUp>
                 <p className="mt-3 text-xs text-plate-soft">seguidores</p>
