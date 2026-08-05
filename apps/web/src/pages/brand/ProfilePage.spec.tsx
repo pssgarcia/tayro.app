@@ -69,17 +69,17 @@ describe('ProfilePage', () => {
     expect(screen.queryByDisplayValue('marca@exemplo.com')).not.toBeInTheDocument();
   });
 
-  it('marca como selecionados os nichos do perfil (pills)', () => {
+  it('marca como selecionados os nichos do perfil (tags)', () => {
     render(<ProfilePage />);
-    // pills dos nichos do perfil ficam com a classe lime; um não-selecionado não
+    // selecionado = bg-plate (a placa "vaza" pro fundo escuro); não selecionado, não
     expect(screen.getByRole('button', { name: /^fitness$/i }).className).toMatch(
-      /lime/,
+      /bg-plate\b/,
     );
     expect(screen.getByRole('button', { name: /^wellness$/i }).className).toMatch(
-      /lime/,
+      /bg-plate\b/,
     );
     expect(screen.getByRole('button', { name: /^yoga$/i }).className).not.toMatch(
-      /lime/,
+      /bg-plate\b/,
     );
   });
 
