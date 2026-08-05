@@ -3,52 +3,40 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark palette como padrão — sem dependência de classe .dark */
-  :root {
-    --background: 0 0% 5%;          /* #0D0D0D */
-    --foreground: 0 0% 95%;
-    --card: 0 0% 9%;                 /* #171717 */
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 77 100% 60%;          /* ≈ #C6FF33 */
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 13%;
-    --secondary-foreground: 0 0% 75%;
-    --muted: 0 0% 13%;
-    --muted-foreground: 0 0% 55%;
-    --accent: 0 0% 16%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 77 100% 60%;
-    --radius: 0.75rem;
-  }
-
-  /* Alias .dark = mesmo que :root — shadcn espera a classe, mantemos compatível */
+  /* Redesign 2a — dark-only, :root e .dark com os mesmos valores.
+     Fundo mais escuro (#0A0A0A), borda menos clara (#232323), foreground
+     levemente quente (#EDEDE8), muted-foreground com mais contraste (#75756E,
+     regra 6 do README: não escurecer além disso). */
+  :root,
   .dark {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 77 100% 60%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 13%;
-    --secondary-foreground: 0 0% 75%;
-    --muted: 0 0% 13%;
-    --muted-foreground: 0 0% 55%;
-    --accent: 0 0% 16%;
-    --accent-foreground: 0 0% 95%;
+    --background: 0 0% 4%;            /* #0A0A0A  fundo do app */
+    --foreground: 60 14% 92%;         /* #EDEDE8  texto principal */
+
+    --card: 0 0% 7%;                  /* #121212  usar pouco: o padrão 2a é SEM caixa */
+    --card-foreground: 60 14% 92%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 60 14% 92%;
+
+    --primary: 76 100% 60%;           /* #C6FF33  lime */
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 0 0% 11%;            /* #1C1C1C  trilhas, fundos sutis */
+    --secondary-foreground: 60 4% 55%;
+
+    --muted: 0 0% 10%;                /* #1A1A1A  divisores internos */
+    --muted-foreground: 60 4% 45%;    /* #75756E  legendas e labels */
+
+    --accent: 0 0% 14%;               /* #232323  hover de linha */
+    --accent-foreground: 60 14% 92%;
+
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 77 100% 60%;
-    --radius: 0.75rem;
+
+    --border: 0 0% 14%;               /* #232323  borda externa */
+    --input: 0 0% 14%;
+    --ring: 76 100% 60%;
+
+    --radius: 0.5rem;                 /* 8px — era 12px. 2a usa 8px em quase tudo */
   }
 }
 

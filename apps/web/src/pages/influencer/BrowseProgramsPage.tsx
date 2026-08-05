@@ -1,9 +1,26 @@
 import { useState } from 'react';
-import { Compass, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBrowsePrograms } from '../../hooks/useBrowsePrograms';
-import EmptyState from '../../components/primitives/EmptyState';
 import ProgramCard from './ProgramCard';
 import { cn } from '../../lib/utils';
+
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
+function Skeleton() {
+  return (
+    <div className="animate-pulse space-y-8">
+      <div className="h-[88px] rounded-lg bg-secondary" />
+      <div className="space-y-[22px]">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-10 rounded bg-secondary" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Página ──────────────────────────────────────────────────────────────────
+// Tela 5 do redesign 2a. O primeiro programa da PÁGINA vira a placa em
+// destaque; o resto são rows. Pager de traços no lugar de Anterior/Próxima.
 
 export default function BrowseProgramsPage() {
   const [page, setPage] = useState(1);
@@ -13,83 +30,60 @@ export default function BrowseProgramsPage() {
   const totalPages = data?.meta.totalPages ?? 1;
   const total = data?.meta.total ?? 0;
 
+  const [featured, ...rest] = programs;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-bold sm:text-2xl">Programas</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Programas abertos de marcas fitness — candidate-se aos que combinam com você
+    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
+      <div className="mb-[26px] flex items-end justify-between">
+        <h1 className="font-display text-d-md text-foreground">Abertos</h1>
+        <p className="font-display text-d-inline leading-none tabular-nums text-foreground">
+          {total}
         </p>
       </div>
 
-      {isLoading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-52 w-full animate-pulse rounded-xl border border-border bg-card"
-            />
-          ))}
-        </div>
-      )}
+      {isLoading && <Skeleton />}
 
       {isError && (
-        <p className="text-sm text-destructive">
-          Erro ao carregar os programas. Tente novamente.
-        </p>
+        <p className="text-sm text-destructive">Erro ao carregar os programas. Tente novamente.</p>
       )}
 
       {!isLoading && !isError && programs.length === 0 && (
-        <EmptyState
-          icon={<Compass size={22} />}
-          title="Nenhum programa aberto agora"
-          description="Quando marcas publicarem programas, eles aparecem aqui. Volte em breve."
-        />
+        <p className="text-sm text-[#8A8A85]">Nenhum programa aberto agora. Volte em breve.</p>
       )}
 
-      {!isLoading && !isError && programs.length > 0 && (
-        <>
-          <div
-            className={cn(
-              'grid gap-4 sm:grid-cols-2 lg:grid-cols-3',
-              isPlaceholderData && 'opacity-60',
-            )}
-          >
-            {programs.map((c) => (
-              <ProgramCard key={c.id} campaign={c} />
-            ))}
-          </div>
+      {!isLoading && !isError && featured && (
+        <div className={cn(isPlaceholderData && 'opacity-60')}>
+          <p className="mb-3.5 text-xs text-[#75756E]">Em destaque</p>
+          <ProgramCard campaign={featured} variant="featured" />
 
-          {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <ChevronLeft size={15} />
-                Anterior
-              </button>
-              <span className="text-sm text-muted-foreground">
-                Página {page} de {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Próxima
-                <ChevronRight size={15} />
-              </button>
-            </div>
+          {rest.length > 0 && (
+            <>
+              <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">
+                Todos os abertos
+              </h2>
+              <div className="flex flex-col gap-[22px]">
+                {rest.map((c, i) => (
+                  <ProgramCard key={c.id} campaign={c} variant="row" index={i + 2} />
+                ))}
+              </div>
+            </>
           )}
 
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            {total} programa{total !== 1 ? 's' : ''} aberto{total !== 1 ? 's' : ''}
-          </p>
-        </>
+          {totalPages > 1 && (
+            <div className="mt-[26px] flex items-center justify-center gap-[7px]">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Página ${i + 1} de ${totalPages}`}
+                  aria-current={page === i + 1}
+                  onClick={() => setPage(i + 1)}
+                  className={cn('h-0.5 w-[22px] rounded-full', page === i + 1 ? 'bg-lime' : 'bg-[#242422]')}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

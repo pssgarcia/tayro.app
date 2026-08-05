@@ -43,9 +43,6 @@ Thumbs.db
 *.swp
 *.swo
 
-# ─── Claude Code — instruções locais, não vão pro repo ────────────────────────
-CLAUDE.md
-
 # ─── Misc ──────────────────────────────────────────────────────────────────────
 *.tsbuildinfo
 
@@ -54,3 +51,9 @@ CLAUDE.md
 
 # ─── Local tooling ───────────────────────────────────────────────────────────────
 .claude/
+
+# ─── Claude Code — notas específicas de UMA máquina, não do projeto ───────────
+CLAUDE.local.md
+
+# Design
+design_handoff_tayro_2a

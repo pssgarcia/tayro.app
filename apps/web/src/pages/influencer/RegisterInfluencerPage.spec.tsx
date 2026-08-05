@@ -28,7 +28,7 @@ function fillRequired() {
   fireEvent.change(screen.getByLabelText('Nome'), {
     target: { value: 'Ana Silva' },
   });
-  fireEvent.change(screen.getByLabelText('Email'), {
+  fireEvent.change(screen.getByLabelText('E-mail'), {
     target: { value: 'ana@exemplo.com' },
   });
   fireEvent.change(screen.getByLabelText('Senha'), {
@@ -46,7 +46,7 @@ describe('RegisterInfluencerPage', () => {
   it('renderiza os campos', () => {
     renderPage();
     expect(screen.getByLabelText('Nome')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(screen.getByLabelText('Senha')).toBeInTheDocument();
     expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
   });

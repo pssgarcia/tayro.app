@@ -1,27 +1,23 @@
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { UserRound, FileText, Globe, Lock, Check } from 'lucide-react';
+import { ExternalLink, Lock, Check } from 'lucide-react';
 import axios from 'axios';
-import {
-  useInfluencerProfile,
-  useUpdateInfluencerProfile,
-} from '../../hooks/useInfluencerProfile';
+import { useInfluencerProfile, useUpdateInfluencerProfile } from '../../hooks/useInfluencerProfile';
 import type { InfluencerProfile, UpdateInfluencerPayload } from '../../types/api';
-import Avatar from '../../components/primitives/Avatar';
-import NicheSelector from '../../components/primitives/NicheSelector';
+import Plate from '../../components/primitives/Plate';
+import CountUp from '../../components/primitives/CountUp';
+import PlateEditField from '../../components/primitives/PlateEditField';
+import PlateEditNiches from '../../components/primitives/PlateEditNiches';
+import { formatEngagement, formatNumber } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
-  avatarUrl: z
-    .string()
-    .url('URL inválida (inclua https://)')
-    .max(2048)
-    .optional()
-    .or(z.literal('')),
+  avatarUrl: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   city: z.string().max(100, 'Máximo 100 caracteres').optional(),
   tiktokHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
@@ -36,64 +32,7 @@ function cleanHandle(raw?: string): string {
   return raw.replace(/^@+/, '').toLowerCase().trim();
 }
 
-// ─── UI helpers ───────────────────────────────────────────────────────────────
-
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-border bg-card p-5">{children}</section>
-  );
-}
-
-function SectionHeader({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="mb-4 flex items-center gap-2">
-      <span className="text-lime">{icon}</span>
-      <div>
-        <h2 className="font-display text-sm font-semibold text-foreground">{title}</h2>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-      </div>
-    </div>
-  );
-}
-
-function Label({
-  htmlFor,
-  children,
-}: {
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className="mb-1.5 block text-xs font-medium text-foreground"
-    >
-      {children}
-    </label>
-  );
-}
-
-const inputCls = (hasError: boolean) =>
-  cn(
-    'w-full rounded-lg border bg-secondary px-3 py-2 text-sm text-foreground',
-    'placeholder:text-muted-foreground focus:outline-none focus:ring-1',
-    hasError
-      ? 'border-destructive focus:border-destructive focus:ring-destructive/30'
-      : 'border-border focus:border-lime/50 focus:ring-lime/30',
-  );
-
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <p className="mt-1 text-xs text-destructive">{message}</p>;
-}
+// ─── Toggle — usa a placa, não o lime (o lime dessa tela é do "Salvar") ──────
 
 function Toggle({
   checked,
@@ -112,30 +51,29 @@ function Toggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-lime/40',
-        checked ? 'bg-lime' : 'bg-secondary border border-border',
+        'relative flex h-6 w-11 shrink-0 items-center rounded-full px-[3px] transition-colors',
+        checked ? 'justify-end bg-plate' : 'justify-start border border-[#232323] bg-[#1C1C1C]',
       )}
     >
       <span
-        className={cn(
-          'inline-block h-4 w-4 transform rounded-full bg-background transition-transform',
-          checked ? 'translate-x-6' : 'translate-x-1',
-        )}
+        className={cn('h-[18px] w-[18px] rounded-full', checked ? 'bg-background' : 'bg-[#55554F]')}
       />
     </button>
   );
 }
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
+// "Editar" = rows label+valor+chevron, cada uma abre um modal placa-formulário
+// de campo único (PlateEditField/PlateEditNiches) — igual ao mock.
 
 function ProfileForm({ profile }: { profile: InfluencerProfile }) {
   const update = useUpdateInfluencerProfile();
+  const [justSaved, setJustSaved] = useState(false);
 
   const {
-    register,
     control,
     watch,
+    setValue,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting, isDirty },
@@ -154,6 +92,8 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
   const watchedName = watch('name');
   const watchedAvatar = watch('avatarUrl');
+  const watchedBio = watch('bio');
+  const watchedNiches = watch('niches');
 
   const onSubmit = async (values: FormValues) => {
     const payload: UpdateInfluencerPayload = {
@@ -168,6 +108,8 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
     try {
       await update.mutateAsync(payload);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 2000);
     } catch (err) {
       const msg =
         axios.isAxiosError(err) && err.response?.status === 429
@@ -178,223 +120,188 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      {errors.root && (
-        <div className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3">
-          <p className="text-sm text-destructive">{errors.root.message}</p>
-        </div>
-      )}
-
-      {/* Card 1 — Identidade */}
-      <Card>
-        <SectionHeader
-          icon={<UserRound size={16} />}
-          title="Identidade"
-          subtitle="É como você aparece para as marcas."
-        />
-
-        <div className="mb-4 flex items-center gap-3 rounded-lg border border-border bg-secondary/40 p-4">
-          <Avatar src={watchedAvatar || undefined} name={watchedName} size="lg" />
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      {/* Placa — preview ao vivo do que a marca vê na Fila (tela 2) */}
+      <Plate marks="all" className="max-w-[520px]">
+        <div className="flex items-center gap-3.5">
+          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+            {watchedAvatar && (
+              <img src={watchedAvatar} alt="" className="h-full w-full object-cover" />
+            )}
+          </div>
           <div className="min-w-0">
-            <p className="truncate font-display text-base font-semibold text-foreground">
+            <p className="truncate font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
               {watchedName || '—'}
             </p>
             {profile.instagramHandle && (
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="mt-[5px] flex items-center gap-[5px] text-[13px] text-plate-muted">
                 @{profile.instagramHandle}
+                <ExternalLink size={11} className="shrink-0" />
               </p>
             )}
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="avatarUrl">Foto (URL)</Label>
-          <input
-            id="avatarUrl"
-            type="url"
-            placeholder="https://cdn.exemplo.com/voce.png"
-            className={inputCls(!!errors.avatarUrl)}
-            {...register('avatarUrl')}
-          />
-          <FieldError message={errors.avatarUrl?.message} />
-        </div>
-
-        <div className="mt-4">
-          <Label htmlFor="name">Nome</Label>
-          <input
-            id="name"
-            type="text"
-            className={inputCls(!!errors.name)}
-            {...register('name')}
-          />
-          <FieldError message={errors.name?.message} />
-        </div>
-
-        <div className="mt-4">
-          <Label htmlFor="city">Cidade</Label>
-          <input
-            id="city"
-            type="text"
-            placeholder="Belo Horizonte"
-            className={inputCls(!!errors.city)}
-            {...register('city')}
-          />
-          <FieldError message={errors.city?.message} />
-        </div>
-      </Card>
-
-      {/* Card 2 — Sobre */}
-      <Card>
-        <SectionHeader
-          icon={<FileText size={16} />}
-          title="Sobre"
-          subtitle="Conte sua história e em que nichos você cria."
-        />
-
-        <div>
-          <Label htmlFor="bio">Bio</Label>
-          <textarea
-            id="bio"
-            rows={3}
-            placeholder="Fale um pouco sobre você para as marcas."
-            className={cn(inputCls(!!errors.bio), 'resize-none')}
-            {...register('bio')}
-          />
-          <FieldError message={errors.bio?.message} />
-        </div>
-
-        <div className="mt-4">
-          <Label htmlFor="niches">Nichos</Label>
-          <Controller
-            name="niches"
-            control={control}
-            render={({ field }) => (
-              <NicheSelector
-                value={field.value}
-                onChange={field.onChange}
-                extraOptions={profile.niches}
-              />
+        {(profile.followersCount != null || profile.igEngagementRate != null) && (
+          <div className="mt-7 flex gap-7">
+            {profile.followersCount != null && (
+              <div>
+                <CountUp>
+                  <span className="font-display text-d-xl text-plate-ink tabular-nums">
+                    {formatNumber(profile.followersCount).replace('.', ',')}
+                    <span className="text-[23px] tracking-[-.04em]">k</span>
+                  </span>
+                </CountUp>
+                <p className="mt-3 text-xs text-plate-soft">seguidores</p>
+              </div>
             )}
-          />
-        </div>
+            {profile.igEngagementRate != null && (
+              <div>
+                <CountUp delay={140}>
+                  <span className="font-display text-d-xl text-plate-ink tabular-nums">
+                    {formatEngagement(profile.igEngagementRate).replace('%', '')}
+                    <span className="text-[23px] tracking-[-.04em]">%</span>
+                  </span>
+                </CountUp>
+                <p className="mt-3 text-xs text-plate-soft">engajamento</p>
+              </div>
+            )}
+          </div>
+        )}
 
-        <div className="mt-4">
-          <Label htmlFor="tiktokHandle">TikTok</Label>
-          <input
-            id="tiktokHandle"
-            type="text"
-            placeholder="@seuhandle"
-            className={inputCls(!!errors.tiktokHandle)}
-            {...register('tiktokHandle')}
-          />
-          <FieldError message={errors.tiktokHandle?.message} />
-        </div>
-      </Card>
+        {watchedBio && <p className="mt-7 text-[15px] leading-[1.5] text-plate-body">{watchedBio}</p>}
 
-      {/* Card 3 — Perfil público (LGPD) */}
-      <Card>
-        <SectionHeader
-          icon={<Globe size={16} />}
-          title="Perfil público"
-          subtitle="Você controla se as marcas podem ver seu perfil."
+        {watchedNiches.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-[7px]">
+            {watchedNiches.map((n) => (
+              <span
+                key={n}
+                className="rounded-[3px] border border-[rgba(14,14,14,.16)] px-[9px] py-[5px] text-[11px] capitalize text-[#6A6A64]"
+              >
+                {n}
+              </span>
+            ))}
+          </div>
+        )}
+      </Plate>
+
+      {errors.root && <p className="mt-6 text-sm text-destructive">{errors.root.message}</p>}
+
+      {/* Editar — rows que abrem um modal de campo único (padrão do mock) */}
+      <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">Editar</h2>
+      <div className="flex flex-col gap-[22px]">
+        <PlateEditField
+          label="Nome"
+          value={watchedName}
+          error={errors.name?.message}
+          onSave={(v) => setValue('name', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-4">
+        <PlateEditField
+          label="Cidade"
+          value={watch('city') ?? ''}
+          onSave={(v) => setValue('city', v, { shouldDirty: true })}
+        />
+        <PlateEditField
+          label="Foto (URL)"
+          value={watchedAvatar ?? ''}
+          placeholder="https://cdn.exemplo.com/voce.png"
+          error={errors.avatarUrl?.message}
+          onSave={(v) => setValue('avatarUrl', v, { shouldDirty: true, shouldValidate: true })}
+        />
+        <PlateEditField
+          label="TikTok"
+          value={watch('tiktokHandle') ?? ''}
+          error={errors.tiktokHandle?.message}
+          onSave={(v) => setValue('tiktokHandle', v, { shouldDirty: true, shouldValidate: true })}
+        />
+        <PlateEditField
+          label="Bio"
+          value={watchedBio ?? ''}
+          multiline
+          placeholder="Fale um pouco sobre você para as marcas."
+          error={errors.bio?.message}
+          onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
+        />
+        <PlateEditNiches
+          label="Nichos"
+          value={watchedNiches}
+          extraOptions={profile.niches}
+          onSave={(v) => setValue('niches', v, { shouldDirty: true })}
+        />
+
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground">
-              Tornar meu perfil público
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Quando ativo, marcas podem ver seu perfil em tayro.app/c/
-              {profile.instagramHandle ?? 'seuhandle'} — com seus nichos,
-              métricas e parcerias. Desligado, ele fica invisível.
+            <p className="text-sm text-foreground">Perfil público</p>
+            <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
+              Marcas encontram você em tayro.app/c/{profile.instagramHandle ?? 'seuhandle'}.
             </p>
           </div>
           <Controller
             name="publicProfileEnabled"
             control={control}
             render={({ field }) => (
-              <Toggle
-                checked={field.value}
-                onChange={field.onChange}
-                label="Tornar meu perfil público"
-              />
+              <Toggle checked={field.value} onChange={field.onChange} label="Tornar meu perfil público" />
             )}
           />
         </div>
-      </Card>
-
-      {/* Card 4 — Conta */}
-      <Card>
-        <SectionHeader icon={<Lock size={16} />} title="Conta" />
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <input
-            id="email"
-            type="email"
-            value={profile.email}
-            disabled
-            className="w-full cursor-not-allowed rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-muted-foreground"
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            O email não pode ser alterado.
-          </p>
-        </div>
-      </Card>
-
-      {/* Ações */}
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting || !isDirty}
-          className={cn(
-            'rounded-lg bg-lime px-5 py-2.5 text-sm font-semibold text-background',
-            'transition-opacity hover:opacity-90',
-            'disabled:cursor-not-allowed disabled:opacity-60',
-          )}
-        >
-          {isSubmitting ? 'Salvando…' : 'Salvar alterações'}
-        </button>
-        {update.isSuccess && !isDirty && (
-          <span className="flex items-center gap-1.5 text-sm text-lime">
-            <Check size={15} />
-            Salvo
-          </span>
-        )}
       </div>
+
+      <div className="my-[26px] h-px bg-muted" />
+
+      <div className="flex items-center gap-2.5 text-[#6E6E68]">
+        <Lock size={13} className="shrink-0" />
+        <p className="flex-1 text-sm">{profile.email}</p>
+      </div>
+
+      <button
+        type="submit"
+        disabled={isSubmitting || (!isDirty && !justSaved)}
+        className={cn(
+          'mb-5 mt-[26px] flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-lime font-display text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90',
+          'disabled:cursor-not-allowed disabled:opacity-40',
+        )}
+      >
+        {isSubmitting ? 'Salvando…' : justSaved && !isDirty ? (
+          <>
+            Salvo <Check size={16} />
+          </>
+        ) : (
+          'Salvar'
+        )}
+      </button>
     </form>
   );
 }
 
-// ─── Página ───────────────────────────────────────────────────────────────────
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
+function Skeleton() {
+  return (
+    <div className="animate-pulse space-y-8">
+      <div className="h-[220px] rounded-lg bg-secondary" />
+      <div className="space-y-[22px]">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-10 rounded bg-secondary" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Página ──────────────────────────────────────────────────────────────────
+// Tela 8 do redesign 2a.
 
 export default function ProfilePage() {
   const { data: profile, isLoading, isError } = useInfluencerProfile();
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-bold sm:text-2xl">Meu perfil</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Como você aparece para as marcas
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
+      <h1 className="font-display text-d-md text-foreground">Perfil</h1>
+      <p className="mb-[22px] mt-2 text-[13px] text-[#75756E]">É exatamente isso que a marca vê.</p>
 
-      {isLoading && (
-        <div className="space-y-5">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-40 w-full animate-pulse rounded-xl border border-border bg-card"
-            />
-          ))}
-        </div>
-      )}
+      {isLoading && <Skeleton />}
 
-      {isError && (
-        <p className="text-sm text-destructive">
-          Erro ao carregar o perfil. Tente novamente.
-        </p>
-      )}
+      {isError && <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>}
 
       {!isLoading && !isError && profile && <ProfileForm profile={profile} />}
     </div>

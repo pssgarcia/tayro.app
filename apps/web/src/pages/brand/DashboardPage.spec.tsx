@@ -59,43 +59,41 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/erro ao carregar o dashboard/i)).toBeInTheDocument();
   });
 
-  it('renderiza as métricas principais', () => {
+  it('renderiza o Resumo com as métricas principais', () => {
     renderPage();
-    // total de programas
-    expect(screen.getByText('6')).toBeInTheDocument();
-    // hint de programas
-    expect(screen.getByText(/3 ativos · 2 rascunho/i)).toBeInTheDocument();
-    // candidaturas aprovadas no hint
-    expect(screen.getByText(/4 aprovadas/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 ativos/i)).toBeInTheDocument();
+    expect(screen.getByText(/4 fechadas/i)).toBeInTheDocument();
+    expect(screen.getByText('conteúdos a revisar')).toBeInTheDocument();
+    expect(screen.getByText(/3 entregues/i)).toBeInTheDocument();
   });
 
-  it('mostra os cards de "precisa de atenção" quando há pendências', () => {
+  it('candidaturas pendentes > 0: mostra a placa em destaque com o botão "Analisar agora"', () => {
     renderPage();
-    expect(screen.getByText(/candidaturas aguardando análise/i)).toBeInTheDocument();
-    expect(screen.getByText(/conteúdos aguardando revisão/i)).toBeInTheDocument();
-    expect(screen.getByText(/recompensas pendentes de emissão/i)).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText(/esperando sua análise/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /analisar agora/i })).toBeInTheDocument();
   });
 
-  it('não mostra "precisa de atenção" quando não há pendências', () => {
+  it('sem candidaturas pendentes: não mostra a placa em destaque', () => {
     mockDashboard({
       data: {
         ...baseData,
         applications: { total: 4, pending: 0, approved: 4, rejected: 0 },
-        content: { pendingReview: 0 },
-        rewards: { total: 3, pending: 0, issued: 0, delivered: 3 },
       },
     });
     renderPage();
-    expect(screen.queryByText(/precisa de atenção/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /analisar agora/i })).not.toBeInTheDocument();
+    // o Resumo continua aparecendo — os números não têm ação, só leitura
+    expect(screen.getByText('conteúdos a revisar')).toBeInTheDocument();
   });
 
-  it('clicar num card de atenção navega para os programas', () => {
+  it('clicar em "Analisar agora" navega para os programas', () => {
     renderPage();
-    fireEvent.click(screen.getByText(/candidaturas aguardando análise/i));
+    fireEvent.click(screen.getByRole('button', { name: /analisar agora/i }));
     expect(navigateMock).toHaveBeenCalledWith('/brand/campaigns');
   });
 
-  it('mostra CTA de criar programa quando não há campanhas', () => {
+  it('sem programas: a placa vira convite com "Criar o primeiro"', () => {
     mockDashboard({
       data: {
         campaigns: { total: 0, active: 0, draft: 0, closed: 0, completed: 0 },
@@ -105,7 +103,8 @@ describe('DashboardPage', () => {
       },
     });
     renderPage();
-    fireEvent.click(screen.getByRole('button', { name: /criar programa/i }));
+    expect(screen.getByText(/nenhum programa ainda/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /criar o primeiro/i }));
     expect(navigateMock).toHaveBeenCalledWith('/brand/campaigns/new');
   });
 });

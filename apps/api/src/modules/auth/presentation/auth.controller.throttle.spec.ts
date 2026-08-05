@@ -23,14 +23,17 @@ describe('AuthController — throttle de credenciais', () => {
     expect(AUTH_THROTTLE.ttl).toBe(15 * 60 * 1000);
   });
 
-  it.each(['login', 'registerBrand', 'registerInfluencer', 'claim'] as const)(
-    'aplica o throttle estrito em %s',
-    (method) => {
-      const { limit, ttl } = getThrottle(method);
-      expect(limit).toBe(AUTH_THROTTLE.limit);
-      expect(ttl).toBe(AUTH_THROTTLE.ttl);
-    },
-  );
+  it.each([
+    'login',
+    'registerBrand',
+    'registerInfluencer',
+    'claim',
+    'claimPreview',
+  ] as const)('aplica o throttle estrito em %s', (method) => {
+    const { limit, ttl } = getThrottle(method);
+    expect(limit).toBe(AUTH_THROTTLE.limit);
+    expect(ttl).toBe(AUTH_THROTTLE.ttl);
+  });
 
   it.each(['refresh', 'logout'] as const)(
     'NÃO aplica o throttle estrito em %s (tráfego legítimo frequente, já guardado por JWT)',

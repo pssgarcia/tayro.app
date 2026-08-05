@@ -71,11 +71,48 @@ export class CampaignsService {
   async findMine(userId: string) {
     const brand = await this.findBrandOrFail(userId);
 
-    return this.prisma.campaign.findMany({
-      where: { brandId: brand.id },
-      orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { applications: true } } },
-    });
+    // _count.applications é o TOTAL (todas as situações) — pro redesign 2a
+    // (placa "vagas preenchidas · N na fila" na listagem) precisamos também
+    // do total por STATUS (aprovadas = vagas preenchidas, pendentes = fila)
+    // por campanha. Um único groupBy por [campaignId, status] cobre os dois
+    // de uma vez. Promise.all (não $transaction) porque são duas leituras
+    // independentes, sem risco de check-then-act — 2 queries no total, não
+    // N+1 (não é uma query por campanha).
+    const [campaigns, statusCounts] = await Promise.all([
+      this.prisma.campaign.findMany({
+        where: { brandId: brand.id },
+        orderBy: { createdAt: 'desc' },
+        include: { _count: { select: { applications: true } } },
+      }),
+      this.prisma.application.groupBy({
+        by: ['campaignId', 'status'],
+        where: { campaign: { brandId: brand.id } },
+        orderBy: { campaignId: 'asc' },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const countsByCampaign = new Map<
+      string,
+      { approved: number; pending: number }
+    >();
+    for (const row of statusCounts) {
+      const entry = countsByCampaign.get(row.campaignId) ?? {
+        approved: 0,
+        pending: 0,
+      };
+      if (row.status === ApplicationStatus.APPROVED)
+        entry.approved = row._count._all;
+      if (row.status === ApplicationStatus.PENDING)
+        entry.pending = row._count._all;
+      countsByCampaign.set(row.campaignId, entry);
+    }
+
+    return campaigns.map((c) => ({
+      ...c,
+      approvedCount: countsByCampaign.get(c.id)?.approved ?? 0,
+      pendingCount: countsByCampaign.get(c.id)?.pending ?? 0,
+    }));
   }
 
   async findOne(id: string, viewerId?: string) {

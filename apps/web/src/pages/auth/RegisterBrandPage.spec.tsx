@@ -28,7 +28,7 @@ async function fillRequired() {
   fireEvent.change(screen.getByLabelText('Nome da marca'), {
     target: { value: 'Marca Fit' },
   });
-  fireEvent.change(screen.getByLabelText('Email'), {
+  fireEvent.change(screen.getByLabelText('E-mail'), {
     target: { value: 'marca@exemplo.com' },
   });
   fireEvent.change(screen.getByLabelText('Senha'), {
@@ -46,9 +46,9 @@ describe('RegisterBrandPage', () => {
   it('renderiza os campos do formulário', () => {
     renderPage();
     expect(screen.getByLabelText('Nome da marca')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(screen.getByLabelText('Senha')).toBeInTheDocument();
-    expect(screen.getByLabelText(/nichos/i)).toBeInTheDocument();
+    expect(screen.getByText('Nichos da marca')).toBeInTheDocument();
     expect(screen.getByLabelText(/website/i)).toBeInTheDocument();
   });
 
@@ -57,7 +57,7 @@ describe('RegisterBrandPage', () => {
     fireEvent.change(screen.getByLabelText('Nome da marca'), {
       target: { value: 'Marca Fit' },
     });
-    fireEvent.change(screen.getByLabelText('Email'), {
+    fireEvent.change(screen.getByLabelText('E-mail'), {
       target: { value: 'marca@exemplo.com' },
     });
     fireEvent.change(screen.getByLabelText('Senha'), {
@@ -79,9 +79,8 @@ describe('RegisterBrandPage', () => {
 
     renderPage();
     await fillRequired();
-    fireEvent.change(screen.getByLabelText(/nichos/i), {
-      target: { value: 'fitness, Wellness, fitness' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: /^fitness$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^wellness$/i }));
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     await waitFor(() =>
@@ -89,7 +88,7 @@ describe('RegisterBrandPage', () => {
         brandName: 'Marca Fit',
         email: 'marca@exemplo.com',
         password: 'senhaSegura1',
-        niches: ['fitness', 'wellness'], // normalizado: trim, lowercase, dedupe
+        niches: ['fitness', 'wellness'],
       }),
     );
     await waitFor(() =>

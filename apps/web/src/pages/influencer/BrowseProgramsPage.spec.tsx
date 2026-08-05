@@ -92,7 +92,7 @@ describe('BrowseProgramsPage', () => {
     expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
   });
 
-  it('renderiza os cards; clicar abre o modal de candidatura (apply autenticado)', () => {
+  it('renderiza o primeiro programa como placa em destaque; clicar abre o modal (apply autenticado)', () => {
     mockHook({
       data: {
         data: [makeCampaign()],
@@ -103,11 +103,23 @@ describe('BrowseProgramsPage', () => {
     expect(screen.getByText('Lançamento Whey')).toBeInTheDocument();
     expect(screen.getByText('Marca Fit')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ver e candidatar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ver programa/i }));
     expect(screen.getByText('Quero participar')).toBeInTheDocument();
   });
 
-  it('paginação: "Anterior" desabilitado na página 1 e avança ao clicar "Próxima"', () => {
+  it('programas além do primeiro aparecem como rows em "Todos os abertos"', () => {
+    mockHook({
+      data: {
+        data: [makeCampaign(), makeCampaign({ id: 'camp-2', title: 'Segundo Programa' })],
+        meta: { total: 2, page: 1, limit: 12, totalPages: 1 },
+      },
+    });
+    renderPage();
+    expect(screen.getByText('Todos os abertos')).toBeInTheDocument();
+    expect(screen.getByText('Segundo Programa')).toBeInTheDocument();
+  });
+
+  it('pager de traços: avança de página ao clicar num traço', () => {
     mockHook({
       data: {
         data: [makeCampaign()],
@@ -116,8 +128,7 @@ describe('BrowseProgramsPage', () => {
     });
     renderPage();
 
-    expect(screen.getByRole('button', { name: /anterior/i })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: /próxima/i }));
+    fireEvent.click(screen.getByRole('button', { name: /página 2 de 3/i }));
 
     // ao avançar, o hook é re-chamado com page 2
     expect(hook.useBrowsePrograms).toHaveBeenLastCalledWith(2);
