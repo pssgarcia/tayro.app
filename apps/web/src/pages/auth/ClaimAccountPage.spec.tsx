@@ -34,15 +34,15 @@ describe('ClaimAccountPage', () => {
   it('sem token na URL, mostra link inválido e não renderiza o form', () => {
     renderPage('/claim');
     expect(screen.getByText(/link inválido/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/nova senha/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/criar senha/i)).not.toBeInTheDocument();
   });
 
   it('valida senha curta antes de chamar a API', async () => {
     renderPage();
-    fireEvent.change(screen.getByLabelText(/nova senha/i), {
+    fireEvent.change(screen.getByLabelText(/criar senha/i), {
       target: { value: '123' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /definir senha e entrar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ativar minha conta/i }));
 
     expect(await screen.findByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
@@ -57,10 +57,10 @@ describe('ClaimAccountPage', () => {
     } as any);
 
     renderPage();
-    fireEvent.change(screen.getByLabelText(/nova senha/i), {
+    fireEvent.change(screen.getByLabelText(/criar senha/i), {
       target: { value: 'senhaSegura1' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /definir senha e entrar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ativar minha conta/i }));
 
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith('/auth/claim', {
@@ -80,10 +80,10 @@ describe('ClaimAccountPage', () => {
       response: { status: 401 },
     });
     renderPage();
-    fireEvent.change(screen.getByLabelText(/nova senha/i), {
+    fireEvent.change(screen.getByLabelText(/criar senha/i), {
       target: { value: 'senhaSegura1' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /definir senha e entrar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ativar minha conta/i }));
 
     expect(await screen.findByText(/link expirou ou já foi utilizado/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
@@ -95,10 +95,10 @@ describe('ClaimAccountPage', () => {
       response: { status: 429 },
     });
     renderPage();
-    fireEvent.change(screen.getByLabelText(/nova senha/i), {
+    fireEvent.change(screen.getByLabelText(/criar senha/i), {
       target: { value: 'senhaSegura1' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /definir senha e entrar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ativar minha conta/i }));
 
     expect(await screen.findByText(/muitas tentativas/i)).toBeInTheDocument();
   });
@@ -106,10 +106,10 @@ describe('ClaimAccountPage', () => {
   it('mostra "sem conexão" apenas quando a request não chega ao servidor', async () => {
     vi.mocked(api.post).mockRejectedValue({ isAxiosError: true });
     renderPage();
-    fireEvent.change(screen.getByLabelText(/nova senha/i), {
+    fireEvent.change(screen.getByLabelText(/criar senha/i), {
       target: { value: 'senhaSegura1' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /definir senha e entrar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ativar minha conta/i }));
 
     expect(await screen.findByText(/sem conexão com o servidor/i)).toBeInTheDocument();
   });
