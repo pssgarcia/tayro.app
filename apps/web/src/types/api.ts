@@ -258,4 +258,6 @@ export interface Campaign {
   _count: { applications: number };
   /** Só em GET /campaigns/mine — total de candidaturas APROVADAS (vagas preenchidas). */
   approvedCount?: number;
+  /** Só em GET /campaigns/mine — total de candidaturas PENDING (na fila). */
+  pendingCount?: number;
 }
