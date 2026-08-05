@@ -48,8 +48,10 @@ function Skeleton() {
 
 // ─── Página ──────────────────────────────────────────────────────────────────
 // Tela 14 do redesign 2a. O programa ativo mais cheio vira a placa em
-// destaque (não filtrada pelas abas — é "o que se destaca", sempre visível);
-// o resto das linhas segue o filtro.
+// destaque. Ela só faz sentido em "Todas"/"Ativas" (ela É ativa, por
+// definição) — em "Rascunho"/"Encerradas" some, senão parece um programa
+// ativo vazando pra uma aba que só devia ter rascunho/encerrado (bug
+// reportado: a placa aparecia em qualquer aba, sem relação com o filtro).
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
@@ -57,7 +59,8 @@ export default function CampaignsPage() {
   const [filter, setFilter] = useState<Filter>('ALL');
 
   const visible = campaigns ? applyFilter(campaigns, filter) : [];
-  const featured = campaigns ? pickFeatured(campaigns) : null;
+  const showFeatured = filter === 'ALL' || filter === 'ACTIVE';
+  const featured = campaigns && showFeatured ? pickFeatured(campaigns) : null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 pt-[14px]">

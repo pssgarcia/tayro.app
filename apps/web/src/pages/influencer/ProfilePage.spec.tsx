@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import ProfilePage from './ProfilePage';
 import * as hooks from '../../hooks/useInfluencerProfile';
 import type { InfluencerProfile } from '../../types/api';
@@ -52,6 +52,14 @@ function mockHooks(
   } as any);
 }
 
+/** Abre a row "Nome", edita no modal e salva — fecha o modal. */
+function editNameTo(newValue: string) {
+  fireEvent.click(screen.getByRole('button', { name: /^nome/i }));
+  const dialog = screen.getByRole('dialog', { name: 'Nome' });
+  fireEvent.change(within(dialog).getByLabelText('Nome'), { target: { value: newValue } });
+  fireEvent.click(within(dialog).getByRole('button', { name: /^salvar$/i }));
+}
+
 beforeEach(() => {
   mutateAsync.mockReset();
   mutateAsync.mockResolvedValue(baseProfile);
@@ -71,35 +79,50 @@ describe('Creator ProfilePage', () => {
     expect(screen.getByText(/erro ao carregar o perfil/i)).toBeInTheDocument();
   });
 
-  it('preenche o form com os dados do perfil; email é texto (não input, somente leitura)', () => {
+  it('mostra os dados do perfil na placa e nas rows de "Editar"; email é texto', () => {
     render(<ProfilePage />);
-    expect(screen.getByDisplayValue('Ana Silva')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Belo Horizonte')).toBeInTheDocument();
-    // email aparece como texto simples — não é mais um <input>
+    // "Ana Silva" aparece na placa-preview E na row "Nome"
+    expect(screen.getAllByText('Ana Silva').length).toBeGreaterThan(1);
+    expect(screen.getByText('Belo Horizonte')).toBeInTheDocument();
     expect(screen.getAllByText('ana@exemplo.com').length).toBeGreaterThan(0);
     expect(screen.queryByDisplayValue('ana@exemplo.com')).not.toBeInTheDocument();
   });
 
-  it('a placa em destaque reflete o nome ao vivo (watch)', () => {
+  it('clicar numa row abre um modal placa-formulário pra editar aquele campo', () => {
     render(<ProfilePage />);
-    // nome aparece duas vezes: na placa-preview e no campo editável
-    expect(screen.getAllByText('Ana Silva').length + screen.getAllByDisplayValue('Ana Silva').length).toBeGreaterThan(1);
-
-    fireEvent.change(screen.getByDisplayValue('Ana Silva'), {
-      target: { value: 'Ana Renovada' },
-    });
-    expect(screen.getByText('Ana Renovada')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^nome/i }));
+    const dialog = screen.getByRole('dialog', { name: 'Nome' });
+    expect(within(dialog).getByLabelText('Nome')).toHaveValue('Ana Silva');
   });
 
-  it('botão salvar começa desabilitado e habilita ao editar', () => {
+  it('editar e salvar no modal atualiza a row e a placa em destaque (ao vivo após salvar)', () => {
+    render(<ProfilePage />);
+    editNameTo('Ana Renovada');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Ana Renovada').length).toBeGreaterThan(1);
+    expect(screen.queryByText('Ana Silva')).not.toBeInTheDocument();
+  });
+
+  it('cancelar no modal não altera o valor', () => {
+    render(<ProfilePage />);
+    fireEvent.click(screen.getByRole('button', { name: /^nome/i }));
+    const dialog = screen.getByRole('dialog', { name: 'Nome' });
+    fireEvent.change(within(dialog).getByLabelText('Nome'), { target: { value: 'Rascunho' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: /^cancelar$/i }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rascunho')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Ana Silva').length).toBeGreaterThan(1);
+  });
+
+  it('botão salvar da página começa desabilitado e habilita depois de editar um campo', () => {
     render(<ProfilePage />);
     const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
-    fireEvent.change(screen.getByDisplayValue('Ana Silva'), {
-      target: { value: 'Ana Renovada' },
-    });
-    expect(btn).toBeEnabled();
+    editNameTo('Ana Renovada');
+    expect(screen.getByRole('button', { name: /^salvar$/i })).toBeEnabled();
   });
 
   it('o toggle de perfil público reflete o estado e habilita salvar ao alternar', () => {

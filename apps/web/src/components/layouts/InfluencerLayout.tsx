@@ -10,7 +10,7 @@ const navItems = [
   { to: '/influencer/browse',       icon: Crosshair,     label: 'Abertos' },
   { to: '/influencer/applications', icon: ScrollText,    label: 'Registro' },
   { to: '/influencer/submissions',  icon: Clapperboard,  label: 'Entregas' },
-  { to: '/influencer/profile',      icon: IdCard,        label: 'Ficha' },
+  { to: '/influencer/profile',      icon: IdCard,        label: 'Perfil' },
 ];
 
 export default function InfluencerLayout() {

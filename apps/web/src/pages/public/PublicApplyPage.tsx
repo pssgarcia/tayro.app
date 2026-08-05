@@ -288,7 +288,6 @@ export default function PublicApplyPage() {
                         label="Seu @ do Instagram"
                         required
                         prefix="@"
-                        placeholder="seuhandle"
                         autoComplete="off"
                         autoCapitalize="none"
                         autoCorrect="off"
@@ -299,7 +298,6 @@ export default function PublicApplyPage() {
                         label="E-mail"
                         required
                         type="email"
-                        placeholder="seu@email.com"
                         autoComplete="email"
                         error={errors.email?.message}
                         {...register('email')}

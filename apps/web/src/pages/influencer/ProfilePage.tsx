@@ -8,9 +8,8 @@ import { useInfluencerProfile, useUpdateInfluencerProfile } from '../../hooks/us
 import type { InfluencerProfile, UpdateInfluencerPayload } from '../../types/api';
 import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
-import PlateField from '../../components/primitives/PlateField';
-import PlateTextarea from '../../components/primitives/PlateTextarea';
-import NicheSelector from '../../components/primitives/NicheSelector';
+import PlateEditField from '../../components/primitives/PlateEditField';
+import PlateEditNiches from '../../components/primitives/PlateEditNiches';
 import { formatEngagement, formatNumber } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
@@ -64,19 +63,17 @@ function Toggle({
 }
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
-// O mock mostra "Editar" como rows label+valor+chevron (implicando edição em
-// tela/modal separada por campo). Mantido editável inline nessa mesma tela via
-// PlateField/PlateTextarea dark — evita inventar uma tela de edição por campo
-// que não está entre as 16 do handoff, sem perder nenhuma funcionalidade.
+// "Editar" = rows label+valor+chevron, cada uma abre um modal placa-formulário
+// de campo único (PlateEditField/PlateEditNiches) — igual ao mock.
 
 function ProfileForm({ profile }: { profile: InfluencerProfile }) {
   const update = useUpdateInfluencerProfile();
   const [justSaved, setJustSaved] = useState(false);
 
   const {
-    register,
     control,
     watch,
+    setValue,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting, isDirty },
@@ -190,39 +187,47 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
       {errors.root && <p className="mt-6 text-sm text-destructive">{errors.root.message}</p>}
 
-      {/* Editar — campos reais (a edição é sempre inline nessa tela) */}
+      {/* Editar — rows que abrem um modal de campo único (padrão do mock) */}
       <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">Editar</h2>
-      <div className="flex flex-col gap-6">
-        <PlateField label="Nome" error={errors.name?.message} {...register('name')} />
-        <PlateField label="Cidade" placeholder="Belo Horizonte" {...register('city')} />
-        <PlateField
+      <div className="flex flex-col gap-[22px]">
+        <PlateEditField
+          label="Nome"
+          value={watchedName}
+          error={errors.name?.message}
+          onSave={(v) => setValue('name', v, { shouldDirty: true, shouldValidate: true })}
+        />
+        <PlateEditField
+          label="Cidade"
+          value={watch('city') ?? ''}
+          onSave={(v) => setValue('city', v, { shouldDirty: true })}
+        />
+        <PlateEditField
           label="Foto (URL)"
+          value={watchedAvatar ?? ''}
           placeholder="https://cdn.exemplo.com/voce.png"
           error={errors.avatarUrl?.message}
-          {...register('avatarUrl')}
+          onSave={(v) => setValue('avatarUrl', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateField
+        <PlateEditField
           label="TikTok"
-          placeholder="adicionar"
+          value={watch('tiktokHandle') ?? ''}
           error={errors.tiktokHandle?.message}
-          {...register('tiktokHandle')}
+          onSave={(v) => setValue('tiktokHandle', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateTextarea
+        <PlateEditField
           label="Bio"
+          value={watchedBio ?? ''}
+          multiline
           placeholder="Fale um pouco sobre você para as marcas."
           error={errors.bio?.message}
-          {...register('bio')}
+          onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <div>
-          <p className="mb-2 text-[12px] text-[#75756E]">Nichos</p>
-          <Controller
-            name="niches"
-            control={control}
-            render={({ field }) => (
-              <NicheSelector value={field.value} onChange={field.onChange} extraOptions={profile.niches} />
-            )}
-          />
-        </div>
+        <PlateEditNiches
+          label="Nichos"
+          value={watchedNiches}
+          extraOptions={profile.niches}
+          onSave={(v) => setValue('niches', v, { shouldDirty: true })}
+        />
 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -291,7 +296,7 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <h1 className="font-display text-d-md text-foreground">Ficha</h1>
+      <h1 className="font-display text-d-md text-foreground">Perfil</h1>
       <p className="mb-[22px] mt-2 text-[13px] text-[#75756E]">É exatamente isso que a marca vê.</p>
 
       {isLoading && <Skeleton />}

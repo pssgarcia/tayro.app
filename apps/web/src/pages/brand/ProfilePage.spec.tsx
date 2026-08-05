@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import ProfilePage from './ProfilePage';
 import * as hooks from '../../hooks/useBrandProfile';
 import type { BrandProfile } from '../../types/api';
@@ -42,6 +42,24 @@ function mockHooks(
   } as any);
 }
 
+/** Abre a row "Nome da marca", edita no modal e salva. */
+function editNameTo(newValue: string) {
+  fireEvent.click(screen.getByRole('button', { name: /^nome da marca/i }));
+  const dialog = screen.getByRole('dialog', { name: 'Nome da marca' });
+  fireEvent.change(within(dialog).getByLabelText('Nome da marca'), {
+    target: { value: newValue },
+  });
+  fireEvent.click(within(dialog).getByRole('button', { name: /^salvar$/i }));
+}
+
+/** Abre a row "Nichos", clica num nicho dentro do modal e salva. */
+function toggleNicheInModal(niche: string) {
+  fireEvent.click(screen.getByRole('button', { name: /^nichos/i }));
+  const dialog = screen.getByRole('dialog', { name: 'Nichos' });
+  fireEvent.click(within(dialog).getByRole('button', { name: new RegExp(`^${niche}$`, 'i') }));
+  fireEvent.click(within(dialog).getByRole('button', { name: /^salvar$/i }));
+}
+
 beforeEach(() => {
   mutateAsync.mockReset();
   mutateAsync.mockResolvedValue(baseProfile);
@@ -61,51 +79,49 @@ describe('ProfilePage', () => {
     expect(screen.getByText(/erro ao carregar o perfil/i)).toBeInTheDocument();
   });
 
-  it('preenche o form com os dados do perfil; email é texto (não input, somente leitura)', () => {
+  it('mostra os dados do perfil na placa e nas rows de "Editar"; email é texto', () => {
     render(<ProfilePage />);
-    expect(screen.getByDisplayValue('Marca Fit')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('https://marca.com')).toBeInTheDocument();
+    expect(screen.getAllByText('Marca Fit').length).toBeGreaterThan(1);
+    expect(screen.getByText('https://marca.com')).toBeInTheDocument();
     expect(screen.getAllByText('marca@exemplo.com').length).toBeGreaterThan(0);
     expect(screen.queryByDisplayValue('marca@exemplo.com')).not.toBeInTheDocument();
   });
 
-  it('marca como selecionados os nichos do perfil (tags)', () => {
+  it('abrir a row "Nichos" mostra os nichos do perfil selecionados no modal', () => {
     render(<ProfilePage />);
-    // selecionado = bg-plate (a placa "vaza" pro fundo escuro); não selecionado, não
-    expect(screen.getByRole('button', { name: /^fitness$/i }).className).toMatch(
-      /bg-plate\b/,
+    fireEvent.click(screen.getByRole('button', { name: /^nichos/i }));
+    const dialog = screen.getByRole('dialog', { name: 'Nichos' });
+
+    expect(within(dialog).getByRole('button', { name: /^fitness$/i }).className).toMatch(
+      /bg-plate-ink\b/,
     );
-    expect(screen.getByRole('button', { name: /^wellness$/i }).className).toMatch(
-      /bg-plate\b/,
+    expect(within(dialog).getByRole('button', { name: /^wellness$/i }).className).toMatch(
+      /bg-plate-ink\b/,
     );
-    expect(screen.getByRole('button', { name: /^yoga$/i }).className).not.toMatch(
-      /bg-plate\b/,
+    expect(within(dialog).getByRole('button', { name: /^yoga$/i }).className).not.toMatch(
+      /bg-plate-ink\b/,
     );
   });
 
   it('mostra o preview ao vivo com o nome da marca', () => {
     render(<ProfilePage />);
     expect(screen.getByText('Programa de')).toBeInTheDocument();
-    // nome aparece no input E no preview
     expect(screen.getAllByText('Marca Fit').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('botão salvar começa desabilitado e habilita ao editar', () => {
+  it('botão salvar da página começa desabilitado e habilita depois de editar um campo', () => {
     render(<ProfilePage />);
     const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText(/nome da marca/i), {
-      target: { value: 'Marca Renovada' },
-    });
-    expect(btn).toBeEnabled();
+    editNameTo('Marca Renovada');
+    expect(screen.getByRole('button', { name: /^salvar$/i })).toBeEnabled();
   });
 
   it('salva enviando o payload com os nichos selecionados', async () => {
     render(<ProfilePage />);
 
-    // adiciona um nicho clicando no pill (perfil já tem fitness + wellness)
-    fireEvent.click(screen.getByRole('button', { name: /^crossfit$/i }));
+    toggleNicheInModal('crossfit');
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
     await waitFor(() =>
@@ -120,12 +136,12 @@ describe('ProfilePage', () => {
     );
   });
 
-  it('habilita salvar ao alternar um nicho (dirty)', () => {
+  it('habilita salvar ao alternar um nicho no modal (dirty)', () => {
     render(<ProfilePage />);
     const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: /^crossfit$/i }));
+    toggleNicheInModal('crossfit');
     expect(btn).toBeEnabled();
   });
 });
