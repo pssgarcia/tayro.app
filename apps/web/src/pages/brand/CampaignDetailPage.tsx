@@ -15,6 +15,7 @@ import ApplicationCard from './ApplicationCard';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
+import TabsUnderline from '../../components/primitives/TabsUnderline';
 import { cn } from '../../lib/utils';
 
 // ─── Abas ─────────────────────────────────────────────────────────────────────
@@ -58,31 +59,6 @@ function CampaignHeader({
         {spotsUsed}
         <span className="text-[#6E6E68]">/{maxSpots}</span>
       </p>
-    </div>
-  );
-}
-
-// ─── Tab bar ─────────────────────────────────────────────────────────────────
-// Ver reference-tsx/TabsUnderline.snippet.tsx — único divisor da tela junto ao
-// da barra de ação da placa.
-
-function TabBar({ active, onChange }: { active: TabId; onChange: (id: TabId) => void }) {
-  return (
-    <div className="flex shrink-0 gap-5 overflow-x-auto border-b border-muted px-6">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={cn(
-            'shrink-0 pb-3 font-display text-sm tracking-[-.02em] transition-colors',
-            active === tab.id
-              ? 'font-semibold text-foreground shadow-[inset_0_-2px_0_#C6FF33]'
-              : 'font-medium text-[#75756E] hover:text-foreground',
-          )}
-        >
-          {tab.label}
-        </button>
-      ))}
     </div>
   );
 }
@@ -224,7 +200,7 @@ export default function CampaignDetailPage() {
         maxSpots={campaign.maxSpots}
       />
 
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      <TabsUnderline tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       <div className={cn('flex-1 overflow-auto', activeTab === 'queue' ? 'px-6 pt-6' : 'p-4 md:p-6')}>
         {activeTab === 'queue' && <QueueTab campaignId={campaignId} />}

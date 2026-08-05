@@ -49,3 +49,29 @@ export function formatOffer(offer: {
   }
   return '—';
 }
+
+/**
+ * Oferta em reais inteiros, sem centavos — pra contextos de escaneio
+ * (Abertos, Registro). O valor exato com centavos só importa na hora de
+ * decidir (Apply), que usa formatCurrency.
+ */
+export function formatOfferWhole(offer: {
+  offerType: 'CASH' | 'PRODUCT' | null;
+  offerAmount: number | null;
+}): { prefix?: string; value: string } | null {
+  if (offer.offerType === 'CASH' && offer.offerAmount != null) {
+    return { prefix: 'R$ ', value: String(Math.round(offer.offerAmount / 100)) };
+  }
+  if (offer.offerType === 'PRODUCT') {
+    return { value: 'produto' };
+  }
+  return null;
+}
+
+/** ISO → "hoje" | "há 1 dia" | "há N dias" */
+export function formatRelativeDays(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return 'hoje';
+  if (days === 1) return 'há 1 dia';
+  return `há ${days} dias`;
+}

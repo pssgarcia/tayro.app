@@ -22,26 +22,29 @@ interface PrimaryProps {
 }
 
 interface Props {
-  secondary: SecondaryProps;
+  /** Omitido quando a barra tem só uma ação (ex.: "Ver programa" no Abertos). */
+  secondary?: SecondaryProps;
   primary: PrimaryProps;
 }
 
 export default function PlateActionBar({ secondary, primary }: Props) {
   return (
     <div className="flex border-t border-plate-line">
-      <button
-        type="button"
-        onClick={secondary.onClick}
-        disabled={secondary.disabled}
-        style={{ width: secondary.width ?? 100 }}
-        className={cn(
-          'min-h-[56px] shrink-0 font-display text-[14px] font-medium tracking-[-.02em] text-plate-muted transition-colors duration-[140ms]',
-          'hover:bg-plate-ink hover:text-plate',
-          'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-plate-muted',
-        )}
-      >
-        {secondary.label}
-      </button>
+      {secondary && (
+        <button
+          type="button"
+          onClick={secondary.onClick}
+          disabled={secondary.disabled}
+          style={{ width: secondary.width ?? 100 }}
+          className={cn(
+            'min-h-[56px] shrink-0 font-display text-[14px] font-medium tracking-[-.02em] text-plate-muted transition-colors duration-[140ms]',
+            'hover:bg-plate-ink hover:text-plate',
+            'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-plate-muted',
+          )}
+        >
+          {secondary.label}
+        </button>
+      )}
       <button
         type={primary.type ?? 'button'}
         onClick={primary.onClick}
