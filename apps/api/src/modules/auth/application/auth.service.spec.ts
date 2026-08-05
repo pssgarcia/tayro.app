@@ -212,6 +212,104 @@ describe('AuthService', () => {
     });
   });
 
+  // ─── getClaimPreview ──────────────────────────────────────────────────────────
+
+  describe('getClaimPreview', () => {
+    it('retorna a identidade (handle, e-mail, avatar, programa) sem consumir o token', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const futureDate = new Date(Date.now() + 60_000);
+      const user = makeUser({
+        role: UserRole.INFLUENCER,
+        claimTokenHash: tokenHash,
+        claimTokenExpiresAt: futureDate,
+        influencer: {
+          id: 'inf-1',
+          instagramHandle: 'thaismoreira',
+          avatarUrl: null,
+          igProfilePicUrl: 'https://scontent.cdninstagram.com/pic.jpg',
+          applications: [{ campaign: { title: 'Basic Drop 2026' } }],
+        },
+      });
+
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.getClaimPreview(rawToken);
+
+      expect(prisma.user.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { claimTokenHash: tokenHash } }),
+      );
+      expect(result).toEqual({
+        instagramHandle: 'thaismoreira',
+        email: user.email,
+        avatarUrl: null,
+        influencerId: 'inf-1',
+        hasIgAvatar: true,
+        campaignTitle: 'Basic Drop 2026',
+      });
+    });
+
+    it('campaignTitle é null quando a creator ainda não tem nenhuma candidatura', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const futureDate = new Date(Date.now() + 60_000);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({
+          role: UserRole.INFLUENCER,
+          claimTokenHash: tokenHash,
+          claimTokenExpiresAt: futureDate,
+          influencer: {
+            id: 'inf-1',
+            instagramHandle: 'thaismoreira',
+            avatarUrl: null,
+            igProfilePicUrl: null,
+            applications: [],
+          },
+        }),
+      );
+
+      const result = await service.getClaimPreview(rawToken);
+
+      expect(result.campaignTitle).toBeNull();
+      expect(result.hasIgAvatar).toBe(false);
+    });
+
+    it('lança UnauthorizedException quando o token não existe', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.getClaimPreview('inexistente')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('lança UnauthorizedException quando o token expirou', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const pastDate = new Date(Date.now() - 60_000);
+
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({
+          claimTokenHash: tokenHash,
+          claimTokenExpiresAt: pastDate,
+          influencer: { id: 'inf-1', applications: [] },
+        }),
+      );
+
+      await expect(service.getClaimPreview(rawToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
   // ─── revokeRefreshToken ───────────────────────────────────────────────────────
 
   describe('revokeRefreshToken', () => {

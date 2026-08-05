@@ -1,7 +1,9 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
+  Param,
   Res,
   HttpCode,
   HttpStatus,
@@ -67,6 +69,15 @@ export class AuthController {
     const result = await this.authService.claimAccount(dto);
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
+  }
+
+  @Get('claim/:token')
+  @Throttle({ default: AUTH_THROTTLE })
+  @ApiOperation({
+    summary: 'Preview de identidade do token de claim (não consome o token)',
+  })
+  async claimPreview(@Param('token') token: string) {
+    return this.authService.getClaimPreview(token);
   }
 
   @Post('login')

@@ -67,7 +67,8 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
 - **Apply autenticado direto do browse (v0.24.0/#67):** backend (`POST /applications`, role INFLUENCER) já existia — gap era só frontend. `ProgramCard` vira modal de confirmação (mensagem opcional) em vez de mandar a creator logada pro fluxo público `/apply/:id` (que criava conta duplicada). Fix junto: copy sem gênero assumido ("perfeita"→"ideal", "creator aprovada"→"candidatura aprovada").
 - **E-mail de aprovação/recusa (v0.25.0/#69):** `EmailModule` novo — mesmo padrão do Instagram (interface `EmailProvider` + DI token `EMAIL_PROVIDER`, `stub`|`resend`). Disparo best-effort (nunca derruba approve/reject) em `ApplicationsService.approve()`/`.reject()`. `EMAIL_PROVIDER=stub` em prod até ter domínio verificado no Resend (Pedro decidiu comprar domínio real só no fim do MVP — sandbox do Resend só entrega pro próprio e-mail da conta).
 - **Claim/set-password de conta CLAIMABLE (v0.26.0/#71):** `User.claimTokenHash`(`@unique`, hash SHA-256)+`claimTokenExpiresAt` (7 dias). Emitido na criação da conta (`CreatorsService.findOrCreateInfluencer`, sem N+1) + e-mail via `EmailService.sendClaimAccount`. Reaplicar com token ainda não usado reemite+reenvia automaticamente (fecha caso de link expirado). `POST /auth/claim` reaproveita `buildAuthResponse` — auto-login. Frontend `/claim?token=` (público, fora de guards). `StubEmailProvider` loga qualquer link do corpo do e-mail (fix v0.27.0/#73) — é a única forma de pegar o link do claim em dev sem configurar Resend de verdade.
-- Estrutura de testes (Jest + Vitest): **131 testes API + 92 web** (2026-08-05)
+- **Preview de identidade no Claim (v0.28.0, branch `feature/redesign-2a`):** `GET /auth/claim/:token` (novo, público, throttled) traz identidade (handle/e-mail/avatar/`influencerId`) + título da candidatura mais recente SEM consumir o token — ao contrário do `POST /auth/claim`. Fecha a limitação conhecida de link inválido/expirado só aparecer no erro do submit: agora `ClaimAccountPage` mostra a mensagem já na carga da página (401 do preview = mesma UX de token inválido). Se o preview falhar por outro motivo (rede/5xx, não 401), degrada pro form sem a placa de identidade — quem valida o token de verdade continua sendo o POST. Frontend: hook `useClaimPreview` (padrão de hook dedicado + mock em teste, não `useQuery` inline), avatar via o mesmo proxy `/ig/avatar/:influencerId` já usado no `ApplicationCard`.
+- Estrutura de testes (Jest + Vitest): **137 testes API + 96 web** (2026-08-05)
 - CI/CD completo + Git Flow + branch protection
 - Deploy funcionando: API (Railway) + Web (Vercel) + migrations (Neon). Auto-deploy nativo do Railway DESLIGADO (Actions é o único gatilho); serviço "web" vestigial do Railway removido
 - SPA routing fix (vercel.json), build do Railway com prisma generate
@@ -82,9 +83,8 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
 - Releases antigos #1–#15 (infra/CI/CD) ficaram sem versão (pré-v0.1)
 
 ## Pendente
-- **Gaps do MVP (levantamento 2026-08-03) — TODOS FECHADOS:** apply autenticado (v0.24.0) · e-mail de decisão (v0.25.0) · claim/set-password (v0.26.0). Ver "Feito" pra detalhe de cada um.
-  - Limitações conhecidas, aceitas por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa); sem endpoint de validar token antes de mostrar o form de claim (erro só aparece no submit).
-- **Redesign 2a — preview de identidade no Claim:** a pedido do usuário, adicionar preview da identidade (nome/foto/programa) na tela `/claim?token=`, depois que o resto do redesign estabilizar. Ainda não iniciado.
+- **Gaps do MVP (levantamento 2026-08-03) — TODOS FECHADOS:** apply autenticado (v0.24.0) · e-mail de decisão (v0.25.0) · claim/set-password (v0.26.0) · preview de identidade no Claim (v0.28.0). Ver "Feito" pra detalhe de cada um.
+  - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
 - **PWA** — pendente (responsividade concluída em v0.11.0).
   - `vite-plugin-pwa` + manifest + service worker.
   - Regra INVIOLÁVEL: service worker NUNCA cacheia `/auth/*` nem endpoints autenticados. Não interceptar silent refresh no AppShell boot.
@@ -134,7 +134,7 @@ CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de in
 - **Creator (v0.13.0):** /influencer/dashboard (nova home/index) — 3 pills de resumo, últimas 4 candidaturas, recompensas PENDING+ISSUED. Nav 4 itens.
 - **Creator (v0.14.0):** /influencer/submissions — lista com status + feedback, modal "Enviar conteúdo". Nav 5 itens (+ Conteúdo).
 - **Creator (v0.15.0):** /influencer/rewards — lista de recompensas (tipo, valor, StatusPill, notas, data de emissão).
-- **Claim (v0.26.0):** /claim?token= (AuthLayout) — form de senha, auto-login, erros 401/429/sem-conexão.
+- **Claim (v0.26.0, preview de identidade v0.28.0):** /claim?token= (AuthLayout) — placa confirma quem é (avatar/@handle/e-mail) e o programa da candidatura antes do form de senha (`useClaimPreview`), link inválido/expirado detectado já na carga (não só no submit), auto-login, erros 401/429/sem-conexão.
 - Helpers compartilhados em `utils/format.ts`: formatCurrency, formatDate, formatOffer (não duplicar)
 
 ## Convenções de trabalho (somar às de performance)

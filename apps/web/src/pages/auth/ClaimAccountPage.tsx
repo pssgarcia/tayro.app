@@ -7,6 +7,7 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
+import { useClaimPreview } from '../../hooks/useClaimPreview';
 import Plate from '../../components/primitives/Plate';
 import PlateField from '../../components/primitives/PlateField';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
@@ -22,13 +23,50 @@ interface ClaimResponse {
   user: AuthUser;
 }
 
+// ─── Sub-blocos ─────────────────────────────────────────────────────────────
+
+function Wordmark() {
+  return (
+    <span className="mb-[26px] block font-display text-[26px] font-bold tracking-[-.05em] text-foreground">
+      tay<span className="text-lime">ro</span>
+    </span>
+  );
+}
+
+function InvalidLinkMessage({ message }: { message: string }) {
+  return (
+    <div>
+      <Wordmark />
+      <p className="text-sm text-destructive">{message}</p>
+      <p className="mt-[22px] text-xs leading-[1.5] text-[#6E6E68]">
+        <Link to="/login" className="font-medium text-lime hover:underline">
+          Entrar com e-mail
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function PreviewSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <Wordmark />
+      <div className="mb-[10px] h-[60px] w-full rounded bg-secondary" />
+      <div className="mb-7 h-4 w-4/5 rounded bg-secondary" />
+      <div className="h-[220px] w-full rounded-lg bg-secondary" />
+    </div>
+  );
+}
+
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Tela 12 do redesign 2a. O mock mostra a placa confirmando "quem você é"
-// (avatar/@handle/e-mail) antes de pedir a senha — não dá pra reproduzir: não
-// existe endpoint pra validar o token e trazer essa identidade antes do
-// submit (limitação conhecida, já registrada no CLAUDE.md). A placa aqui só
-// carrega o campo de senha; inventar um preview sem dado real ficaria pior
-// que não ter.
+// Tela 12 do redesign 2a. GET /auth/claim/:token (sem consumir o token) traz
+// a identidade — avatar/@handle/e-mail — e o programa da candidatura mais
+// recente, pra placa confirmar "quem você é" antes de pedir a senha, igual
+// ao mock. Também fecha a limitação conhecida de link inválido/expirado só
+// aparecer no erro do submit: agora aparece já na carga da página. Se o
+// preview falhar por outro motivo (não 401 — rede, 5xx), degrada pro
+// comportamento anterior: mostra o form sem a placa de identidade, porque
+// quem valida o token de verdade é o POST /auth/claim.
 
 export default function ClaimAccountPage() {
   const { accessToken, user, setAuth } = useAuthStore();
@@ -43,6 +81,15 @@ export default function ClaimAccountPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
+
+  const {
+    data: preview,
+    isLoading: previewLoading,
+    error: previewError,
+  } = useClaimPreview(token, !(accessToken && user));
+
+  const previewInvalid =
+    axios.isAxiosError(previewError) && previewError.response?.status === 401;
 
   if (accessToken && user) {
     return <Navigate to="/influencer" replace />;
@@ -82,27 +129,27 @@ export default function ClaimAccountPage() {
 
   if (!token) {
     return (
-      <div>
-        <span className="mb-[26px] block font-display text-[26px] font-bold tracking-[-.05em] text-foreground">
-          tay<span className="text-lime">ro</span>
-        </span>
-        <p className="text-sm text-destructive">
-          Link inválido — falta o token de acesso. Confira o link do e-mail.
-        </p>
-        <p className="mt-[22px] text-xs leading-[1.5] text-[#6E6E68]">
-          <Link to="/login" className="font-medium text-lime hover:underline">
-            Entrar com e-mail
-          </Link>
-        </p>
-      </div>
+      <InvalidLinkMessage message="Link inválido — falta o token de acesso. Confira o link do e-mail." />
     );
   }
 
+  if (previewLoading) {
+    return <PreviewSkeleton />;
+  }
+
+  if (previewInvalid) {
+    return (
+      <InvalidLinkMessage message="Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a um programa." />
+    );
+  }
+
+  const avatarSrc = preview?.hasIgAvatar
+    ? `/api/v1/ig/avatar/${preview.influencerId}`
+    : preview?.avatarUrl;
+
   return (
     <div>
-      <span className="mb-[26px] block font-display text-[26px] font-bold tracking-[-.05em] text-foreground">
-        tay<span className="text-lime">ro</span>
-      </span>
+      <Wordmark />
 
       <h1 className="mb-[10px] font-display text-d-md leading-[1.02] text-foreground">
         Falta só
@@ -110,12 +157,29 @@ export default function ClaimAccountPage() {
         a senha.
       </h1>
       <p className="mb-7 text-sm leading-[1.5] text-[#8A8A85]">
-        Falta só isso para acessar sua conta e acompanhar suas candidaturas.
+        {preview?.campaignTitle
+          ? `Sua candidatura ao ${preview.campaignTitle} já foi enviada. Crie uma senha para acompanhar a resposta.`
+          : 'Falta só isso para acessar sua conta e acompanhar suas candidaturas.'}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Plate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
+            {preview && (
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+                  {avatarSrc && (
+                    <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-display text-[17px] font-bold tracking-[-.035em] text-plate-ink">
+                    @{preview.instagramHandle}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-plate-muted">{preview.email}</p>
+                </div>
+              </div>
+            )}
             <PlateField
               label="Criar senha"
               variant="plate"

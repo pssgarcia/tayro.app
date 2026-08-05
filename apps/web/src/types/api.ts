@@ -234,6 +234,17 @@ export interface MyReward {
   };
 }
 
+// ─── Claim (GET /auth/claim/:token — preview, não consome o token) ──────────
+
+export interface ClaimPreview {
+  instagramHandle: string | null;
+  email: string;
+  avatarUrl: string | null;
+  influencerId: string;
+  hasIgAvatar: boolean;
+  campaignTitle: string | null;
+}
+
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
