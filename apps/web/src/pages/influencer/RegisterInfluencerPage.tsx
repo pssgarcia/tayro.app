@@ -171,7 +171,6 @@ export default function RegisterInfluencerPage() {
                   label="@ do Instagram"
                   variant="plate"
                   prefix="@"
-                  placeholder="seuhandle"
                   autoComplete="off"
                   autoCapitalize="none"
                   autoCorrect="off"
