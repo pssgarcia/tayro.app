@@ -106,6 +106,31 @@ export interface InfluencerProfile {
   createdAt: string;
 }
 
+// ─── Perfil público do creator (/c/:handle) ─────────────────────────────────
+
+export interface PublicCreatorProfile {
+  id: string;
+  handle: string;
+  name: string;
+  avatarUrl: string | null;
+  igProfilePicUrl: string | null;
+  bio: string | null;
+  niches: string[];
+  city: string | null;
+  followersCount: number | null;
+  igEngagementRate: number | null;
+  igRecentPosts: IgPost[] | null;
+  igFetchStatus: IgFetchStatus | null;
+  completedPartnerships: number;
+  results: {
+    reach: number | null;
+    impressions: number | null;
+    couponsUsed: number | null;
+    note: string | null;
+    createdAt: string;
+  }[];
+}
+
 export interface UpdateInfluencerPayload {
   name?: string;
   avatarUrl?: string;
