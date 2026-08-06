@@ -4,16 +4,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BrowseProgramsPage from './BrowseProgramsPage';
 import * as hook from '../../hooks/useBrowsePrograms';
-import * as applicationHooks from '../../hooks/useMyApplications';
 import type { Campaign, Paginated } from '../../types/api';
 
 vi.mock('../../hooks/useBrowsePrograms', () => ({
   useBrowsePrograms: vi.fn(),
   browseProgramsKeys: { list: (p: number) => ['programs', 'browse', p] },
-}));
-
-vi.mock('../../hooks/useMyApplications', () => ({
-  useCreateApplication: vi.fn(),
 }));
 
 function makeCampaign(over: Partial<Campaign> = {}): Campaign {
@@ -65,10 +60,6 @@ function renderPage() {
 
 beforeEach(() => {
   vi.mocked(hook.useBrowsePrograms).mockReset();
-  vi.mocked(applicationHooks.useCreateApplication).mockReturnValue({
-    mutateAsync: vi.fn(),
-    isPending: false,
-  } as any);
 });
 
 describe('BrowseProgramsPage', () => {
@@ -92,7 +83,7 @@ describe('BrowseProgramsPage', () => {
     expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
   });
 
-  it('renderiza o primeiro programa como placa em destaque; clicar abre o modal (apply autenticado)', () => {
+  it('renderiza o primeiro programa como placa em destaque, linkando pro detalhe', () => {
     mockHook({
       data: {
         data: [makeCampaign()],
@@ -103,8 +94,12 @@ describe('BrowseProgramsPage', () => {
     expect(screen.getByText('Lançamento Whey')).toBeInTheDocument();
     expect(screen.getByText('Marca Fit')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ver programa/i }));
-    expect(screen.getByText('Quero participar')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+      'href',
+      '/influencer/programs/camp-1',
+    );
+    // candidatura não sai mais da lista — só do detalhe
+    expect(screen.queryByText('Quero participar')).not.toBeInTheDocument();
   });
 
   it('programas além do primeiro aparecem como rows em "Todos os abertos"', () => {

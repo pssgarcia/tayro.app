@@ -21,6 +21,7 @@ import PublicApplyPage from './pages/public/PublicApplyPage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 import InfluencerProfilePage from './pages/influencer/ProfilePage';
 import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
+import ProgramDetailPage from './pages/influencer/ProgramDetailPage';
 import InfluencerDashboardPage from './pages/influencer/DashboardPage';
 import SubmissionsPage from './pages/influencer/SubmissionsPage';
 import RewardsPage from './pages/influencer/RewardsPage';
@@ -100,6 +101,7 @@ function AppShell() {
         <Route index element={<Navigate to="/influencer/dashboard" replace />} />
         <Route path="dashboard" element={<InfluencerDashboardPage />} />
         <Route path="browse" element={<BrowseProgramsPage />} />
+        <Route path="programs/:id" element={<ProgramDetailPage />} />
         <Route path="applications" element={<MyApplicationsPage />} />
         <Route path="submissions" element={<SubmissionsPage />} />
         <Route path="rewards" element={<RewardsPage />} />
