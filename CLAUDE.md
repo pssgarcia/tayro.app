@@ -5,6 +5,12 @@
 ## O que é
 CRM de creators fitness, **creator-first**. MVP de plataforma de marketing de influência. Infra real = Neon (Postgres serverless).
 
+## Cérebro do produto → `.claude/knowledge/`
+Este arquivo é **como construir** (stack, convenções, footguns, o que já está pronto).
+O **o quê e por quê** mora em `.claude/knowledge/` — versionado de propósito (ver `.gitignore`):
+`vision.md` (os "nunca") · `positioning.md` · `personas.md` · `competitors.md` · `decisions.md` (append-only, com as decisões ABERTAS que bloqueiam trabalho) · `customer-interviews.md` (**n=0** — nenhuma frase do tipo "clientes dizem" tem respaldo hoje) · `roadmap.md`.
+Não duplicar conteúdo entre os dois lugares. Fluxo de produto: `/feature` → `/research` → `/architect` → implementar (TDD) → `/review`.
+
 ## Stack
 - **Monorepo:** Turborepo (npm workspaces) — `apps/api` + `apps/web`
 - **API:** NestJS (Clean Architecture) · Prisma · PostgreSQL (Neon) · JWT (access + refresh com rotação SHA-256) · Jest

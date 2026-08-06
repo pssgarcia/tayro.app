@@ -55,7 +55,14 @@ CLAUDE.local.md
 .env*
 
 # ─── Local tooling ───────────────────────────────────────────────────────────────
-.claude/
+# .claude/ é ignorado por padrão, MAS o "cérebro" do produto é versionado de propósito:
+# conhecimento (visão/posicionamento/decisões), agentes e comandos precisam sobreviver
+# entre máquinas e clones. Mesmo motivo pelo qual o CLAUDE.md foi versionado depois de
+# se perder 2x (2026-06-17 e 2026-08-05) enquanto estava aqui.
+.claude/*
+!.claude/knowledge/
+!.claude/agents/
+!.claude/commands/
 
 # ─── Design handoffs — material de referência, não vai pro repo ───────────────
 apps/web/design_handoff_tayro_2a/
