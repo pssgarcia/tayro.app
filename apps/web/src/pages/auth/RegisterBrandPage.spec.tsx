@@ -24,16 +24,22 @@ function renderPage() {
   );
 }
 
-async function fillRequired() {
-  fireEvent.change(screen.getByLabelText('Nome da marca'), {
-    target: { value: 'Marca Fit' },
-  });
-  fireEvent.change(screen.getByLabelText('E-mail'), {
+function continueStep() {
+  fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
+}
+
+/** Preenche os 3 passos e deixa o form na tela final ("Criar conta"). */
+async function fillAllSteps() {
+  fireEvent.change(screen.getByLabelText('Nome da marca'), { target: { value: 'Marca Fit' } });
+  continueStep();
+
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
     target: { value: 'marca@exemplo.com' },
   });
-  fireEvent.change(screen.getByLabelText('Senha'), {
-    target: { value: 'senhaSegura1' },
-  });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senhaSegura1' } });
+  continueStep();
+
+  await screen.findByRole('button', { name: /criar conta/i });
 }
 
 beforeEach(() => {
@@ -43,30 +49,48 @@ beforeEach(() => {
 });
 
 describe('RegisterBrandPage', () => {
-  it('renderiza os campos do formulário', () => {
+  it('renderiza o passo 1 (Identidade) primeiro', () => {
     renderPage();
     expect(screen.getByLabelText('Nome da marca')).toBeInTheDocument();
-    expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
-    expect(screen.getByLabelText('Senha')).toBeInTheDocument();
-    expect(screen.getByText('Nichos da marca')).toBeInTheDocument();
     expect(screen.getByLabelText(/website/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
   });
 
-  it('valida senha curta antes de chamar a API', async () => {
+  it('não avança do passo 1 sem preencher o nome da marca', async () => {
     renderPage();
-    fireEvent.change(screen.getByLabelText('Nome da marca'), {
-      target: { value: 'Marca Fit' },
-    });
-    fireEvent.change(screen.getByLabelText('E-mail'), {
+    continueStep();
+
+    expect(await screen.findByText(/nome da marca obrigatório/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
+  });
+
+  it('valida senha curta antes de avançar do passo 2', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome da marca'), { target: { value: 'Marca Fit' } });
+    continueStep();
+
+    fireEvent.change(await screen.findByLabelText('E-mail'), {
       target: { value: 'marca@exemplo.com' },
     });
-    fireEvent.change(screen.getByLabelText('Senha'), {
-      target: { value: '123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: '123' } });
+    continueStep();
 
     expect(await screen.findByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('chega no passo 3 (Nichos) só com Voltar/Continuar, preservando valores', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome da marca'), { target: { value: 'Marca Fit' } });
+    continueStep();
+
+    fireEvent.change(await screen.findByLabelText('E-mail'), {
+      target: { value: 'marca@exemplo.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senhaSegura1' } });
+    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
+
+    expect(await screen.findByLabelText('Nome da marca')).toHaveValue('Marca Fit');
   });
 
   it('envia payload, autentica e redireciona em caso de sucesso', async () => {
@@ -78,7 +102,7 @@ describe('RegisterBrandPage', () => {
     } as any);
 
     renderPage();
-    await fillRequired();
+    await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /^fitness$/i }));
     fireEvent.click(screen.getByRole('button', { name: /^wellness$/i }));
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
@@ -97,19 +121,20 @@ describe('RegisterBrandPage', () => {
     expect(useAuthStore.getState().accessToken).toBe('tok-123');
   });
 
-  it('mostra erro no campo email quando a API retorna 409', async () => {
+  it('mostra erro no campo email e volta pro passo do e-mail quando a API retorna 409', async () => {
     vi.mocked(api.post).mockRejectedValue({
       isAxiosError: true,
       response: { status: 409 },
     });
-    // axios.isAxiosError checa a flag isAxiosError no objeto
     renderPage();
-    await fillRequired();
+    await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     expect(
       await screen.findByText(/já existe uma conta com esse e-mail/i),
     ).toBeInTheDocument();
+    // O erro é do passo 2 (Acesso) — precisa ter voltado pra lá pra ficar visível.
+    expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
@@ -119,7 +144,7 @@ describe('RegisterBrandPage', () => {
       response: { status: 429 },
     });
     renderPage();
-    await fillRequired();
+    await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     expect(await screen.findByText(/muitas tentativas/i)).toBeInTheDocument();
