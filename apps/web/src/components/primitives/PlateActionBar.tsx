@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 
 // Barra de ação transversal, colada na base de uma placa `flush`: secundário
@@ -19,6 +20,8 @@ interface PrimaryProps {
   type?: 'button' | 'submit';
   disabled?: boolean;
   icon?: React.ReactNode;
+  /** Navegação em vez de ação — renderiza <Link> com o mesmo visual do botão. */
+  to?: string;
 }
 
 interface Props {
@@ -26,6 +29,12 @@ interface Props {
   secondary?: SecondaryProps;
   primary: PrimaryProps;
 }
+
+const primaryClasses = cn(
+  'flex min-h-[56px] flex-1 items-center justify-center gap-[9px] bg-plate-ink font-display text-[15px] font-semibold tracking-[-.025em] text-foreground transition-colors duration-[140ms]',
+  'hover:bg-lime hover:text-plate-ink',
+  'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-plate-ink disabled:hover:text-foreground',
+);
 
 export default function PlateActionBar({ secondary, primary }: Props) {
   return (
@@ -45,19 +54,22 @@ export default function PlateActionBar({ secondary, primary }: Props) {
           {secondary.label}
         </button>
       )}
-      <button
-        type={primary.type ?? 'button'}
-        onClick={primary.onClick}
-        disabled={primary.disabled}
-        className={cn(
-          'flex min-h-[56px] flex-1 items-center justify-center gap-[9px] bg-plate-ink font-display text-[15px] font-semibold tracking-[-.025em] text-foreground transition-colors duration-[140ms]',
-          'hover:bg-lime hover:text-plate-ink',
-          'disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-plate-ink disabled:hover:text-foreground',
-        )}
-      >
-        {primary.label}
-        {primary.icon}
-      </button>
+      {primary.to ? (
+        <Link to={primary.to} className={primaryClasses}>
+          {primary.label}
+          {primary.icon}
+        </Link>
+      ) : (
+        <button
+          type={primary.type ?? 'button'}
+          onClick={primary.onClick}
+          disabled={primary.disabled}
+          className={primaryClasses}
+        >
+          {primary.label}
+          {primary.icon}
+        </button>
+      )}
     </div>
   );
 }
