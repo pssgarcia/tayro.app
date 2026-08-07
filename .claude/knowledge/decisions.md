@@ -7,6 +7,13 @@
 **Formato:** `D-nn · data · decisão · motivo · status · gatilho de revisão`
 **Status possíveis:** `FIRME` · `TEMPORÁRIA` · `PROPOSTA` · `ABERTA` · `SUPERADA`
 
+**Regra sobre `FIRME` (incidente 2026-08-07):** só fica `FIRME` **sem** "revisar se" uma decisão
+de **valor ou obrigação legal** (ex.: `D-06` LGPD, os "nunca" de `vision.md`) — aí não é hipótese
+de mercado, não existe entrevista que a derrube. Toda decisão que é **aposta sobre o que
+cliente quer** (formato de oferta, nicho, canal, precificação) precisa de gatilho, mesmo
+`FIRME`, porque "já está implementado" é fato sobre o código, não evidência de mercado. Errar
+essa distinção foi exatamente o que aconteceu em `D-05` até o Pedro corrigir.
+
 ---
 
 ## 🔴 Decisões ABERTAS (bloqueiam trabalho)
@@ -20,6 +27,11 @@ define o que é limite de plano gratuito.
 o espaço, não o fecha.
 **Como resolver:** perguntas 11–13 do roteiro de marca. 5 entrevistas.
 **Não construir feature de billing, plano ou limite antes disto.**
+**Padrão a sondar (2026-08-07):** afiliação por cupom + comissão % recorrente — visto de perto
+no programa de creators do RamboTeam (consultoria esportiva). Diferente do mecanismo atual do
+TAYRO (`D-05`, oferta única fixa). Não adotar por causa de uma conversa só (viés: Pedro é
+afiliado pagante do programa) — mas é candidato real de modelo a perguntar nas entrevistas P1,
+não descartar de antemão.
 
 ### D-B · Comprador primário: marca ou agência
 **Status:** `ABERTA`
@@ -69,11 +81,23 @@ Não é exclusividade permanente.
 **Motivo:** construir produto, não software interno. Feature que só serve pra Lilo morre no `/feature`.
 **Status:** `FIRME` (invariante de visão)
 
-### D-05 · ~2026-06 · Oferta definida ANTES da candidatura
-`offer*` em `Campaign` é fonte de verdade (`offerAmount` em centavos, `offerType` CASH|PRODUCT,
-`offerDeadlineDays`, `offerDescription`). `rewardType`/`rewardValue` **deprecados**.
-**Motivo:** mata negociação constrangedora e leilão de preço. É diferencial nº 4.
-**Status:** `FIRME` (invariante de domínio, já no código)
+### D-05 · ~2026-06 · Oferta transparente definida ANTES da candidatura (princípio) · mecanismo em aberto
+**Princípio — este sim `FIRME`, é `vision.md` "nunca" nº 2:** a creator sabe valor e condições
+ANTES de se candidatar. Sem negociação constrangedora, sem leilão de preço, sem descobrir o
+valor depois de topar.
+**Mecanismo atual — isto é o que pode mudar:** `offer*` em `Campaign` (`offerAmount` em
+centavos, `offerType` CASH|PRODUCT, `offerDeadlineDays`, `offerDescription`) — pagamento
+**único, não recorrente, não percentual**. `rewardType`/`rewardValue` deprecados.
+**Motivo original:** mata negociação constrangedora. É diferencial nº 4.
+**Status:** princípio `FIRME` · mecanismo `TEMPORÁRIA`.
+**Revisar mecanismo se:** entrevista mostrar demanda por modelo recorrente/comissionado (ex.:
+afiliação por % contínuo, padrão RamboTeam) que ainda respeite o princípio — taxa fixa e
+transparente, não negociada candidatura a candidatura. Ligado a `D-A` (monetização, `ABERTA`).
+
+**Correção de 2026-08-07 (Pedro pegou o erro):** esta entrada estava `FIRME` sem gatilho de
+revisão, a única no arquivo nessa condição sem ser valor/legal. "Já estar implementado" tinha
+virado sinônimo de "validado" — exatamente o vício que este arquivo existe pra impedir. Nada
+que está pronto está testado só por estar pronto. Regra geral movida pro cabeçalho do arquivo.
 
 ### D-06 · ~2026-06 · Perfil público da creator nasce desligado
 `publicProfileEnabled` default `false`.
