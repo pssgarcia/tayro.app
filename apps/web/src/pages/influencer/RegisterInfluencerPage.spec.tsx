@@ -24,16 +24,25 @@ function renderPage() {
   );
 }
 
-function fillRequired() {
-  fireEvent.change(screen.getByLabelText('Nome'), {
-    target: { value: 'Ana Silva' },
-  });
-  fireEvent.change(screen.getByLabelText('E-mail'), {
+function continueStep() {
+  fireEvent.click(screen.getByRole('button', { name: /continuar/i }));
+}
+
+/** Preenche os 3 passos e deixa o form na tela final ("Criar conta"). */
+async function fillAllSteps({ instagramHandle }: { instagramHandle?: string } = {}) {
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+  if (instagramHandle) {
+    fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: instagramHandle } });
+  }
+  continueStep();
+
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
     target: { value: 'ana@exemplo.com' },
   });
-  fireEvent.change(screen.getByLabelText('Senha'), {
-    target: { value: 'senhaSegura1' },
-  });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senhaSegura1' } });
+  continueStep();
+
+  await screen.findByRole('button', { name: /criar conta/i });
 }
 
 beforeEach(() => {
@@ -43,19 +52,43 @@ beforeEach(() => {
 });
 
 describe('RegisterInfluencerPage', () => {
-  it('renderiza os campos', () => {
+  it('renderiza o passo 1 (Identidade) primeiro', () => {
     renderPage();
     expect(screen.getByLabelText('Nome')).toBeInTheDocument();
-    expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
-    expect(screen.getByLabelText('Senha')).toBeInTheDocument();
     expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continuar/i })).toBeInTheDocument();
   });
 
-  it('valida senha curta antes de chamar a API', async () => {
+  it('não avança do passo 1 sem preencher o nome', async () => {
     renderPage();
-    fillRequired();
+    continueStep();
+
+    expect(await screen.findByText(/nome obrigatório/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
+  });
+
+  it('Voltar retorna pro passo anterior preservando os valores digitados', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    continueStep();
+
+    await screen.findByLabelText('E-mail');
+    fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
+
+    expect(await screen.findByLabelText('Nome')).toHaveValue('Ana Silva');
+  });
+
+  it('valida senha curta antes de avançar do passo 2', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    continueStep();
+
+    fireEvent.change(await screen.findByLabelText('E-mail'), {
+      target: { value: 'ana@exemplo.com' },
+    });
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: '123' } });
-    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    continueStep();
 
     expect(await screen.findByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
@@ -70,10 +103,7 @@ describe('RegisterInfluencerPage', () => {
     } as any);
 
     renderPage();
-    fillRequired();
-    fireEvent.change(screen.getByLabelText(/instagram/i), {
-      target: { value: '@AnaFit' },
-    });
+    await fillAllSteps({ instagramHandle: '@AnaFit' });
     fireEvent.click(screen.getByRole('button', { name: /^crossfit$/i }));
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
@@ -92,7 +122,7 @@ describe('RegisterInfluencerPage', () => {
     expect(useAuthStore.getState().accessToken).toBe('tok-1');
   });
 
-  it('mostra a mensagem do servidor no email quando 409 com field=email', async () => {
+  it('mostra a mensagem do servidor no email e volta pro passo do e-mail quando 409', async () => {
     vi.mocked(api.post).mockRejectedValue({
       isAxiosError: true,
       response: {
@@ -101,16 +131,18 @@ describe('RegisterInfluencerPage', () => {
       },
     });
     renderPage();
-    fillRequired();
+    await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     expect(
       await screen.findByText(/este e-mail já está em uso/i),
     ).toBeInTheDocument();
+    // O erro é do passo 2 (Acesso) — precisa ter voltado pra lá pra ficar visível.
+    expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it('mostra a mensagem do servidor no campo do instagram quando o handle já existe', async () => {
+  it('mostra a mensagem do servidor no campo do instagram e volta pro passo 1 quando o handle já existe', async () => {
     vi.mocked(api.post).mockRejectedValue({
       isAxiosError: true,
       response: {
@@ -122,15 +154,14 @@ describe('RegisterInfluencerPage', () => {
       },
     });
     renderPage();
-    fillRequired();
-    fireEvent.change(screen.getByLabelText(/instagram/i), {
-      target: { value: '@pitringym' },
-    });
+    await fillAllSteps({ instagramHandle: '@pitringym' });
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     expect(
       await screen.findByText(/já está em uso por outra conta/i),
     ).toBeInTheDocument();
+    // O erro é do passo 1 (Identidade) — precisa ter voltado pra lá.
+    expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
@@ -140,7 +171,7 @@ describe('RegisterInfluencerPage', () => {
       // sem response = falha de rede real
     });
     renderPage();
-    fillRequired();
+    await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
     expect(await screen.findByText(/sem conexão com o servidor/i)).toBeInTheDocument();
