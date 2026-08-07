@@ -36,6 +36,55 @@ Meta mínima antes do lançamento: **5 entrevistas com marca (P1)**.
 
 ---
 
+## Como conseguir as 5 primeiras
+
+**O canal conhecido é a rede da Thais (ex-Lilo).** Isso resolve *acesso*, não resolve
+*qualificação* — "conhecer alguém" não é a mesma coisa que "essa pessoa é o P1". Gastar as 5
+entrevistas com quem está mais acessível em vez de quem mais se parece com a Marina
+(`personas.md`) é o jeito mais fácil de sair dessa rodada sem aprender nada. `D-C` (canal de
+aquisição, `decisions.md`) continua aberta depois disso — isto aqui é só pra destravar a rodada 1.
+
+### Filtro rápido (de `positioning.md`)
+
+Prioridade em quem bate os 3 primeiros. Os 2 últimos são bônus, não corte:
+
+1. Já recebe candidatura espontânea de creator (por DM ou formulário) — sem isso não há dor de avaliação
+2. Trabalha com **muitas creators pequenas**, não com poucas grandes
+3. **Uma pessoa só** decide/opera o marketing de influência (sócia, social media, assistente) — não um time
+4. Paga em produto, cupom ou PIX de valor baixo/médio — sem contrato jurídico por campanha
+5. Nicho fitness/wellness (reduz o custo de conseguir a conversa; não é filtro de exclusão)
+
+**Descarta de cara** (ver `positioning.md`, "Quem NÃO compra"): marca sem nenhuma candidatura
+espontânea ainda, marca que já tem time de marketing dedicado, ou quem no primeiro contato disser
+"vocês rodam a campanha pra mim?" (isso é busca por agência, não por ferramenta).
+
+**Se a pessoa opera pra clientes de terceiros** (não pra marca própria), ela não é P1 — é **P3
+(agência)**, e serve pra outra meta de entrevista (ver contador no fim deste arquivo, e `D-B`).
+Não misturar: rotular direito importa mais do que fechar 5 rápido.
+
+### Mensagem de abordagem (rascunho — ajustar a voz pra como a Thais fala de verdade)
+
+Curta, sem vender, pedindo a dor e não a opinião sobre o produto. Contato quente (rede da Thais)
+não precisa de contexto institucional — vai direto:
+
+> Oi [nome]! Tô com um projetinho e queria muito ouvir você — não é venda de nada, é 20 minutinhos
+> pra eu entender como você faz hoje pra escolher/gerenciar creators pra [marca]. Topa um cafézinho
+> (ou call) essa semana? Me ajuda muito mais do que imagina 🙏
+
+Se a pessoa perguntar "o que é o projeto": responder depois de ouvir, não antes. `vision.md` tem
+o porquê — a entrevista serve pra ouvir o problema dela, não pra apresentar a solução nossa. Se
+ela insistir antes de topar, uma frase basta: *"é uma ideia que a gente tá validando pra ajudar
+marca a lidar com candidatura de creator — te conto tudo depois que a gente conversar."*
+
+### Depois de cada uma
+
+Registrar em até 24h no formato abaixo (seção "Como registrar"), rotular a pessoa como P1 ou P3,
+e atualizar o contador no fim deste arquivo. Se 2 entrevistas seguidas confirmarem exatamente o
+que a gente já achava, checar se a pergunta 4 ("como você decidiu que era ela?") está sendo feita
+de verdade ou se a conversa está sendo conduzida — é o sinal mais comum de entrevista mal feita.
+
+---
+
 ## Roteiro — marca (P1)
 
 Regra de ouro: perguntar sobre o **passado concreto**, nunca sobre o futuro hipotético.
