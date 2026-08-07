@@ -1,11 +1,16 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, Briefcase, Sparkles } from 'lucide-react';
 import Plate from '../../components/primitives/Plate';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
 
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Tela 9 do redesign 2a. Os dois cards iguais viram placa (o caminho
-// recomendado — creator, o volume do produto) + uma linha de texto.
+// Tela 4a do handoff atualizado (design/TAYRO - Direções.dc.html#4a). O
+// resumo em prosa do README §9 ("a outra opção é uma linha de texto") está
+// desatualizado em relação ao mockup — a legenda da própria referência diz
+// "dois cards empilhados, mesmo peso · claro vs escuro diferencia sem
+// hierarquizar". Valores extraídos pixel a pixel do HTML, não da prosa.
+// Barra de ação própria (50px/14px/gap 8px) — mais compacta que o padrão
+// de 56px do PlateActionBar usado nas telas de formulário (Login/Cadastro);
+// mockup usa uma escala menor pros dois cards de escolha.
 
 export default function RegisterChooserPage() {
   return (
@@ -20,33 +25,47 @@ export default function RegisterChooserPage() {
         começar?
       </h1>
 
-      <Plate marks="top" flush>
-        <div className="px-6 pb-[26px] pt-[30px]">
-          <p className="font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
-            Sou creator
-          </p>
-          <p className="mt-2.5 text-[14px] leading-[1.5] text-plate-body">
-            Encontre programas abertos e feche parcerias com marcas.
-          </p>
+      <div className="flex flex-col gap-3.5">
+        <Plate marks="top" flush>
+          <div className="px-[22px] pb-[22px] pt-[26px]">
+            <Sparkles size={20} className="mb-3.5 block text-plate-ink" />
+            <p className="font-display text-[19px] font-bold tracking-[-.04em] text-plate-ink">
+              Sou creator
+            </p>
+            <p className="mt-[9px] text-[13.5px] leading-[1.5] text-plate-body">
+              Encontre programas abertos e feche parcerias com marcas.
+            </p>
+          </div>
+          <Link
+            to="/register/influencer"
+            className="flex min-h-[50px] items-center justify-center gap-2 bg-plate-ink font-display text-[14px] font-semibold tracking-[-.02em] text-foreground transition-colors duration-[140ms] hover:bg-lime hover:text-plate-ink"
+          >
+            Criar conta de creator
+            <ArrowRight size={14} />
+          </Link>
+        </Plate>
+
+        <div className="overflow-hidden rounded-lg border border-[#232323] bg-[#141414] shadow-[0_0_40px_-10px_rgba(198,255,51,.14)]">
+          <div className="px-[22px] pb-5 pt-[26px]">
+            <Briefcase size={20} className="mb-3.5 block text-lime" />
+            <p className="font-display text-[19px] font-bold tracking-[-.04em] text-foreground">
+              Sou marca
+            </p>
+            <p className="mt-[9px] text-[13.5px] leading-[1.5] text-[#8A8A85]">
+              Crie programas e receba candidaturas.
+            </p>
+          </div>
+          <Link
+            to="/register/brand"
+            className="flex min-h-[50px] items-center justify-center gap-2 border-t border-[#232323] font-display text-[14px] font-semibold tracking-[-.02em] text-foreground transition-colors duration-[140ms] hover:bg-[#1C1C1C]"
+          >
+            Criar conta de marca
+            <ArrowRight size={14} className="text-lime" />
+          </Link>
         </div>
-        <PlateActionBar
-          primary={{ label: 'Criar conta de creator', icon: <ArrowRight size={16} /> }}
-        />
-      </Plate>
+      </div>
 
-      <Link to="/register/brand" className="mt-[30px] flex items-center gap-3.5">
-        <span className="min-w-0 flex-1">
-          <p className="font-display text-[15px] font-semibold tracking-[-.025em] text-foreground">
-            Sou marca
-          </p>
-          <p className="mt-[5px] text-xs leading-[1.5] text-[#75756E]">
-            Crie programas e receba candidaturas.
-          </p>
-        </span>
-        <ChevronRight size={14} className="shrink-0 text-[#4A4A46]" />
-      </Link>
-
-      <p className="mt-[30px] text-[13px] text-[#75756E]">
+      <p className="mt-[22px] text-[13px] text-[#75756E]">
         Já tem conta?{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
           Entrar

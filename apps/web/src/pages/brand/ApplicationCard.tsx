@@ -2,33 +2,11 @@ import { ArrowRight, RefreshCw, ExternalLink } from 'lucide-react';
 import Plate from '../../components/primitives/Plate';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
 import CountUp from '../../components/primitives/CountUp';
+import ThumbGrid from '../../components/primitives/ThumbGrid';
 import { formatEngagement, formatNumberParts } from '../../utils/format';
 import { extractCooldownWait } from '../../hooks/useCampaignApplications';
-import type { Application, IgFetchStatus, IgPost } from '../../types/api';
+import type { Application, IgFetchStatus } from '../../types/api';
 import { cn } from '../../lib/utils';
-
-// ─── Grade de thumbnails (6, sempre) ──────────────────────────────────────────
-
-function ThumbGrid({ posts }: { posts: IgPost[] | null }) {
-  const cells = Array.from({ length: 6 }, (_, i) => posts?.[i] ?? null);
-  return (
-    <div className="grid grid-cols-6 gap-[5px]">
-      {cells.map((post, i) =>
-        post ? (
-          <img
-            key={i}
-            src={post.thumbnail}
-            alt=""
-            loading="lazy"
-            className="aspect-square w-full rounded-[3px] object-cover"
-          />
-        ) : (
-          <div key={i} className="aspect-square w-full rounded-[3px] bg-plate-fill" />
-        ),
-      )}
-    </div>
-  );
-}
 
 // ─── Bloco de seguidores/engajamento — 3 estados (PENDING/FAILED/OK) ─────────
 

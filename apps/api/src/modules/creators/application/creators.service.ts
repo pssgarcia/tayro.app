@@ -108,9 +108,11 @@ export class CreatorsService {
       }));
 
     return {
+      id: influencer.id,
       handle: influencer.instagramHandle,
       name: influencer.name,
       avatarUrl: influencer.avatarUrl,
+      igProfilePicUrl: influencer.igProfilePicUrl,
       bio: influencer.bio,
       niches: influencer.niches,
       city: influencer.city,

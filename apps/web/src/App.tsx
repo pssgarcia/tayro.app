@@ -18,6 +18,7 @@ import CampaignsPage from './pages/brand/CampaignsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
+import PublicCreatorProfilePage from './pages/public/PublicCreatorProfilePage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 import InfluencerProfilePage from './pages/influencer/ProfilePage';
 import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
@@ -110,6 +111,9 @@ function AppShell() {
 
       {/* Rota pública de inscrição — sem auth, sem layout */}
       <Route path="/apply/:id" element={<PublicApplyPage />} />
+
+      {/* Perfil público da creator (media kit) — sem auth, sem layout */}
+      <Route path="/c/:handle" element={<PublicCreatorProfilePage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
