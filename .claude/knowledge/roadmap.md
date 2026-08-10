@@ -49,8 +49,6 @@ link de claim. Uma creator real que se candidatar nunca recebe nada.
 - **Bug conhecido: IG incompleto na 1ª candidatura** — a marca vê "dados indisponíveis" no
   primeiro contato com a plataforma. É a pior primeira impressão possível, no exato momento em
   que a gente promete resolver a avaliação. Investigar logs do Railway **antes** de mexer no código
-- **PWA** (`vite-plugin-pwa` + manifest + service worker). Regra inviolável: service worker
-  **nunca** cacheia `/auth/*` nem endpoint autenticado, e não intercepta o silent refresh no boot
 
 ---
 
