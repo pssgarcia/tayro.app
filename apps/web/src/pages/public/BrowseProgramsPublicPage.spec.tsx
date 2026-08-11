@@ -7,6 +7,10 @@ import * as hook from '../../hooks/useBrowsePrograms';
 import { useAuthStore } from '../../stores/auth.store';
 import type { Campaign, Paginated } from '../../types/api';
 
+// Loading/erro/vazio/paginação já são cobertos em ProgramsList.spec.tsx
+// (componente compartilhado com /influencer/browse). Aqui só o que é
+// específico desta página: header público e o hrefBuilder condicionado ao
+// estado de autenticação.
 vi.mock('../../hooks/useBrowsePrograms', () => ({
   useBrowsePrograms: vi.fn(),
   browseProgramsKeys: { list: (p: number) => ['programs', 'browse', p] },
@@ -34,20 +38,12 @@ function makeCampaign(over: Partial<Campaign> = {}): Campaign {
   };
 }
 
-function mockHook(
-  result: Partial<{
-    data: Paginated<Campaign>;
-    isLoading: boolean;
-    isError: boolean;
-    isPlaceholderData: boolean;
-  }>,
-) {
+function mockHook(data: Paginated<Campaign>) {
   vi.mocked(hook.useBrowsePrograms).mockReturnValue({
-    data: undefined,
+    data,
     isLoading: false,
     isError: false,
     isPlaceholderData: false,
-    ...result,
   } as any);
 }
 
@@ -65,32 +61,10 @@ beforeEach(() => {
 });
 
 describe('BrowseProgramsPublicPage', () => {
-  it('mostra skeleton enquanto carrega', () => {
-    mockHook({ isLoading: true });
-    const { container } = renderPage();
-    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
-  });
-
-  it('mostra erro em isError', () => {
-    mockHook({ isError: true });
-    renderPage();
-    expect(screen.getByText(/erro ao carregar os programas/i)).toBeInTheDocument();
-  });
-
-  it('mostra empty state quando não há programas', () => {
-    mockHook({
-      data: { data: [], meta: { total: 0, page: 1, limit: 12, totalPages: 0 } },
-    });
-    renderPage();
-    expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
-  });
-
   it('visitante sem conta: card leva para /apply/:id, não para o fluxo autenticado', () => {
     mockHook({
-      data: {
-        data: [makeCampaign()],
-        meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
-      },
+      data: [makeCampaign()],
+      meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
     });
     renderPage();
 
@@ -107,10 +81,8 @@ describe('BrowseProgramsPublicPage', () => {
       isInitialized: true,
     });
     mockHook({
-      data: {
-        data: [makeCampaign()],
-        meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
-      },
+      data: [makeCampaign()],
+      meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
     });
     renderPage();
 
@@ -120,8 +92,29 @@ describe('BrowseProgramsPublicPage', () => {
     );
   });
 
+  it('marca autenticada também vai pro /apply/:id (não pode se candidatar mesmo)', () => {
+    useAuthStore.setState({
+      accessToken: 'tok-456',
+      user: { id: 'u2', email: 'marca@example.com', role: 'BRAND' },
+      isInitialized: true,
+    });
+    mockHook({
+      data: [makeCampaign()],
+      meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
+    });
+    renderPage();
+
+    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+      'href',
+      '/apply/camp-1',
+    );
+  });
+
   it('link do cabeçalho leva ao login', () => {
-    mockHook({ isLoading: true });
+    mockHook({
+      data: [],
+      meta: { total: 0, page: 1, limit: 12, totalPages: 0 },
+    });
     renderPage();
     expect(screen.getByRole('link', { name: /tayro/i })).toHaveAttribute('href', '/login');
   });
