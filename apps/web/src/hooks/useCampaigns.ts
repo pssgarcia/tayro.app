@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import type { Campaign } from '../types/api';
+import { campaignKeys as campaignDetailKeys } from './useCampaignApplications';
 
 export const campaignKeys = {
   mine: ['campaigns', 'mine'] as const,
@@ -45,5 +46,35 @@ export function usePublishCampaign() {
       qc.invalidateQueries({ queryKey: campaignKeys.mine });
       qc.invalidateQueries({ queryKey: campaignKeys.detail(id) });
     },
+  });
+}
+
+export function useCloseCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.patch<Campaign>(`/campaigns/${id}/close`).then((r) => r.data),
+    onSuccess: (updated, id) => {
+      qc.invalidateQueries({ queryKey: campaignKeys.mine });
+      // Escreve a campanha atualizada direto no cache em vez de invalidar +
+      // esperar refetch - campaignKeys.detail aqui é ['campaigns', id],
+      // diferente da chave real usada por useCampaign (useCampaignApplications.ts,
+      // ['campaign', id] singular). usePublishCampaign herda esse descompasso
+      // (mascarado: publish sempre navega pra uma página sem cache ainda).
+      // Faz merge, não substitui: a resposta do PATCH /close não inclui
+      // `_count` (o GET /campaigns/:id sim) - sobrescrever o cache inteiro
+      // com ela quebra o header/Briefing, que leem `campaign._count.applications`.
+      qc.setQueryData(campaignDetailKeys.detail(id), (old: Campaign | undefined) =>
+        old ? { ...old, ...updated } : updated,
+      );
+    },
+  });
+}
+
+export function useDeleteCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/campaigns/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: campaignKeys.mine }),
   });
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import {
   applicationKeys,
   useApproveApplication,
@@ -7,15 +8,18 @@ import {
   useRejectApplication,
   useRefreshApplicationIg,
 } from '../../hooks/useCampaignApplications';
+import { useCloseCampaign, useDeleteCampaign } from '../../hooks/useCampaigns';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import type { Application } from '../../types/api';
+import type { Application, Campaign } from '../../types/api';
 import { daysUntil } from '../../utils/format';
 import ApplicationCard from './ApplicationCard';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
 import TabsUnderline from '../../components/primitives/TabsUnderline';
+import Plate from '../../components/primitives/Plate';
+import PlateActionBar from '../../components/primitives/PlateActionBar';
 import { cn } from '../../lib/utils';
 
 // ─── Abas ─────────────────────────────────────────────────────────────────────
@@ -39,11 +43,17 @@ function CampaignHeader({
   deadline,
   spotsUsed,
   maxSpots,
+  status,
+  onEncerrar,
+  onApagar,
 }: {
   title: string;
   deadline: string | null;
   spotsUsed: number;
   maxSpots: number;
+  status: Campaign['status'];
+  onEncerrar: () => void;
+  onApagar: () => void;
 }) {
   const days = daysUntil(deadline);
 
@@ -54,11 +64,116 @@ function CampaignHeader({
         <p className="mt-[7px] text-xs text-[#6E6E68]">
           {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
         </p>
+        {/* Ação de gestão do status - só existe transição pra estado ativo/rascunho,
+            CLOSED/COMPLETED não tem ação nenhuma (terminal). */}
+        {status === 'ACTIVE' && (
+          <button
+            type="button"
+            onClick={onEncerrar}
+            className="mt-2 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            Encerrar campanha
+          </button>
+        )}
+        {status === 'DRAFT' && (
+          <button
+            type="button"
+            onClick={onApagar}
+            className="mt-2 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            Apagar rascunho
+          </button>
+        )}
       </div>
       <p className="font-display text-d-inline leading-none text-foreground">
         {spotsUsed}
         <span className="text-[#6E6E68]">/{maxSpots}</span>
       </p>
+    </div>
+  );
+}
+
+// ─── Modais de encerrar/apagar — mesmo padrão do PublishModal (NewCampaignPage) ─
+
+function CloseCampaignModal({
+  campaignId,
+  onClose,
+}: {
+  campaignId: string;
+  onClose: () => void;
+}) {
+  const close = useCloseCampaign();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full sm:max-w-md">
+        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-[26px] pt-[30px]">
+            <p className="font-display text-d-xs text-plate-ink">Encerrar campanha?</p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+              O link de candidatura deixa de aceitar novas inscrições na hora. Candidaturas e
+              conteúdos já em andamento continuam visíveis, mas não será possível reabrir a
+              campanha depois.
+            </p>
+          </div>
+          <PlateActionBar
+            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
+            primary={{
+              label: close.isPending ? 'Encerrando…' : 'Encerrar',
+              onClick: () => close.mutate(campaignId, { onSuccess: onClose }),
+              disabled: close.isPending,
+              icon: <ArrowRight size={16} />,
+            }}
+          />
+        </Plate>
+      </div>
+    </div>
+  );
+}
+
+function DeleteCampaignModal({
+  campaignId,
+  onClose,
+}: {
+  campaignId: string;
+  onClose: () => void;
+}) {
+  const navigate = useNavigate();
+  const deleteCampaign = useDeleteCampaign();
+
+  function handleDelete() {
+    deleteCampaign.mutate(campaignId, {
+      onSuccess: () => navigate('/brand/campaigns', { replace: true }),
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full sm:max-w-md">
+        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-[26px] pt-[30px]">
+            <p className="font-display text-d-xs text-plate-ink">Apagar rascunho?</p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+              O rascunho e todos os dados preenchidos somem pra sempre - não dá pra desfazer. Só é
+              possível apagar campanhas que ainda não foram publicadas.
+            </p>
+            {deleteCampaign.isError && (
+              <p className="mt-3 text-[13px] text-destructive">
+                Não foi possível apagar. Tente novamente.
+              </p>
+            )}
+          </div>
+          <PlateActionBar
+            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
+            primary={{
+              label: deleteCampaign.isPending ? 'Apagando…' : 'Apagar',
+              onClick: handleDelete,
+              disabled: deleteCampaign.isPending,
+              icon: <ArrowRight size={16} />,
+            }}
+          />
+        </Plate>
+      </div>
     </div>
   );
 }
@@ -211,6 +326,7 @@ function QueueTab({ campaignId }: { campaignId: string }) {
 export default function CampaignDetailPage() {
   const { id: campaignId = '' } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<TabId>('queue');
+  const [openModal, setOpenModal] = useState<'close' | 'delete' | null>(null);
 
   const { data: campaign, isLoading: campaignLoading } = useCampaign(campaignId);
 
@@ -242,6 +358,9 @@ export default function CampaignDetailPage() {
         deadline={campaign.deadline}
         spotsUsed={approvedCount}
         maxSpots={campaign.maxSpots}
+        status={campaign.status}
+        onEncerrar={() => setOpenModal('close')}
+        onApagar={() => setOpenModal('delete')}
       />
 
       <TabsUnderline tabs={TABS} active={activeTab} onChange={setActiveTab} />
@@ -254,6 +373,13 @@ export default function CampaignDetailPage() {
         {activeTab === 'content' && <CampaignContentTab campaignId={campaignId} />}
         {activeTab === 'payment' && <CampaignRewardsTab campaignId={campaignId} />}
       </div>
+
+      {openModal === 'close' && (
+        <CloseCampaignModal campaignId={campaignId} onClose={() => setOpenModal(null)} />
+      )}
+      {openModal === 'delete' && (
+        <DeleteCampaignModal campaignId={campaignId} onClose={() => setOpenModal(null)} />
+      )}
     </div>
   );
 }
