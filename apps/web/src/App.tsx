@@ -19,6 +19,7 @@ import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
 import PublicCreatorProfilePage from './pages/public/PublicCreatorProfilePage';
+import BrowseProgramsPublicPage from './pages/public/BrowseProgramsPublicPage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 import InfluencerProfilePage from './pages/influencer/ProfilePage';
 import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
@@ -108,6 +109,9 @@ function AppShell() {
         <Route path="rewards" element={<RewardsPage />} />
         <Route path="profile" element={<InfluencerProfilePage />} />
       </Route>
+
+      {/* Vitrine pública de programas — sem auth, sem layout (roadmap.md, AGORA #4) */}
+      <Route path="/programs" element={<BrowseProgramsPublicPage />} />
 
       {/* Rota pública de inscrição — sem auth, sem layout */}
       <Route path="/apply/:id" element={<PublicApplyPage />} />

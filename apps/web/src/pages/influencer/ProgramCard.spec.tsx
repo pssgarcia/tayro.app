@@ -57,4 +57,33 @@ describe('ProgramCard', () => {
     expect(screen.getByText('500')).toBeInTheDocument();
     expect(screen.getByText(/5 vagas/i)).toBeInTheDocument();
   });
+
+  it('featured usa hrefBuilder customizado quando informado (ex: visitante sem conta)', () => {
+    renderCard(
+      <ProgramCard
+        campaign={makeCampaign()}
+        variant="featured"
+        hrefBuilder={(id) => `/apply/${id}`}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+      'href',
+      '/apply/camp-1',
+    );
+  });
+
+  it('row usa hrefBuilder customizado quando informado', () => {
+    renderCard(
+      <ProgramCard
+        campaign={makeCampaign({ id: 'camp-9' })}
+        hrefBuilder={(id) => `/apply/${id}`}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
+      'href',
+      '/apply/camp-9',
+    );
+  });
 });
