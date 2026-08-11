@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import RegisterInfluencerPage from './RegisterInfluencerPage';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
+import { useStepGuard } from '../../hooks/useStepGuard';
 
 const navigateMock = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -14,6 +15,10 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 vi.mock('../../services/api', () => ({
   api: { post: vi.fn() },
+}));
+
+vi.mock('../../hooks/useStepGuard', () => ({
+  useStepGuard: vi.fn(() => false),
 }));
 
 function renderPage() {
@@ -48,6 +53,7 @@ async function fillAllSteps({ instagramHandle }: { instagramHandle?: string } = 
 beforeEach(() => {
   navigateMock.mockClear();
   vi.mocked(api.post).mockReset();
+  vi.mocked(useStepGuard).mockReturnValue(false);
   useAuthStore.setState({ accessToken: null, user: null, isInitialized: true });
 });
 
@@ -92,6 +98,13 @@ describe('RegisterInfluencerPage', () => {
 
     expect(await screen.findByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('desabilita o botão primário quando useStepGuard indica guarda ativa (bug do clique reaproveitado)', () => {
+    vi.mocked(useStepGuard).mockReturnValue(true);
+    renderPage();
+
+    expect(screen.getByRole('button', { name: /continuar/i })).toBeDisabled();
   });
 
   it('envia payload, autentica e redireciona pra /influencer', async () => {

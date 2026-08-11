@@ -7,6 +7,7 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
+import { useStepGuard } from '../../hooks/useStepGuard';
 import Plate from '../../components/primitives/Plate';
 import PlateField from '../../components/primitives/PlateField';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
@@ -58,6 +59,7 @@ export default function RegisterBrandPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(0);
+  const isStepGuarded = useStepGuard(step);
 
   const {
     register,
@@ -207,11 +209,17 @@ export default function RegisterBrandPage() {
             secondary={step > 0 ? { label: 'Voltar', onClick: back } : undefined}
             primary={
               step < STEPS.length - 1
-                ? { label: 'Continuar', type: 'button', onClick: next, icon: <ArrowRight size={16} /> }
+                ? {
+                    label: 'Continuar',
+                    type: 'button',
+                    onClick: next,
+                    disabled: isStepGuarded,
+                    icon: <ArrowRight size={16} />,
+                  }
                 : {
                     label: isSubmitting ? 'Criando conta…' : 'Criar conta',
                     type: 'submit',
-                    disabled: isSubmitting,
+                    disabled: isSubmitting || isStepGuarded,
                     icon: <ArrowRight size={16} />,
                   }
             }
