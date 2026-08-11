@@ -38,6 +38,16 @@ no perfil da creator e pra ela.
 link de claim. Uma creator real que se candidatar nunca recebe nada.
 É gate de lançamento, não feature. Depende de comprar o domínio (`D-13`).
 
+### 4. Navegar campanhas sem login — `IMPLEMENTADO 2026-08-11 (PROPOSTA — aguardando ratificação do Pedro)`
+Ataca o risco não testado da P2 em `personas.md` ("pode simplesmente não querer mais uma
+plataforma"). Desenho em `/architect` 2026-08-10: em vez de reconstruir uma tela de detalhe
+pública, `/apply/:id` **já fazia esse papel** (oferta completa + form, cria conta ao
+candidatar) — só faltava ser encontrável. Escopo final: `/programs` (vitrine pública, sem
+guard) linkando pro que já existia; `GET /campaigns` ganhou `OptionalJwtAuthGuard` (mesmo
+padrão de `:id`) só pra logar `anonymous=true|false` — o contador cru que era condição de
+admissão. Nenhuma tela de detalhe pública nova, nenhuma mudança no fluxo de candidatura.
+Detalhe em `CLAUDE.md` → Feito, v0.34.0. Falta: Pedro ratificar e isso entrar num release.
+
 ---
 
 ## PRÓXIMO — antes do lançamento

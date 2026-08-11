@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import BrowseProgramsPage from './BrowseProgramsPage';
 import * as hook from '../../hooks/useBrowsePrograms';
 import type { Campaign, Paginated } from '../../types/api';
 
+// Loading/erro/vazio/paginação/hrefBuilder já são cobertos em ProgramsList.spec.tsx
+// (ProgramsList é o componente compartilhado com /programs). Aqui só a fiação:
+// título certo e o link default (autenticado).
 vi.mock('../../hooks/useBrowsePrograms', () => ({
   useBrowsePrograms: vi.fn(),
   browseProgramsKeys: { list: (p: number) => ['programs', 'browse', p] },
@@ -19,7 +22,7 @@ function makeCampaign(over: Partial<Campaign> = {}): Campaign {
     description: 'desc',
     briefUrl: null,
     status: 'ACTIVE' as any,
-    niches: ['fitness', 'wellness'],
+    niches: ['fitness'],
     maxSpots: 5,
     offerType: 'CASH' as any,
     offerAmount: 50000,
@@ -33,29 +36,13 @@ function makeCampaign(over: Partial<Campaign> = {}): Campaign {
   };
 }
 
-function mockHook(
-  result: Partial<{
-    data: Paginated<Campaign>;
-    isLoading: boolean;
-    isError: boolean;
-    isPlaceholderData: boolean;
-  }>,
-) {
+function mockHook(data: Paginated<Campaign>) {
   vi.mocked(hook.useBrowsePrograms).mockReturnValue({
-    data: undefined,
+    data,
     isLoading: false,
     isError: false,
     isPlaceholderData: false,
-    ...result,
   } as any);
-}
-
-function renderPage() {
-  return render(
-    <MemoryRouter>
-      <BrowseProgramsPage />
-    </MemoryRouter>,
-  );
 }
 
 beforeEach(() => {
@@ -63,69 +50,22 @@ beforeEach(() => {
 });
 
 describe('BrowseProgramsPage', () => {
-  it('mostra skeleton enquanto carrega', () => {
-    mockHook({ isLoading: true });
-    const { container } = renderPage();
-    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
-  });
-
-  it('mostra erro em isError', () => {
-    mockHook({ isError: true });
-    renderPage();
-    expect(screen.getByText(/erro ao carregar os programas/i)).toBeInTheDocument();
-  });
-
-  it('mostra empty state quando não há programas', () => {
+  it('título "Abertos" e card leva pro detalhe autenticado', () => {
     mockHook({
-      data: { data: [], meta: { total: 0, page: 1, limit: 12, totalPages: 0 } },
+      data: [makeCampaign()],
+      meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
     });
-    renderPage();
-    expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
-  });
 
-  it('renderiza o primeiro programa como placa em destaque, linkando pro detalhe', () => {
-    mockHook({
-      data: {
-        data: [makeCampaign()],
-        meta: { total: 1, page: 1, limit: 12, totalPages: 1 },
-      },
-    });
-    renderPage();
-    expect(screen.getByText('Lançamento Whey')).toBeInTheDocument();
-    expect(screen.getByText('Marca Fit')).toBeInTheDocument();
+    render(
+      <MemoryRouter>
+        <BrowseProgramsPage />
+      </MemoryRouter>,
+    );
 
+    expect(screen.getByText('Abertos')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
       'href',
       '/influencer/programs/camp-1',
     );
-    // candidatura não sai mais da lista — só do detalhe
-    expect(screen.queryByText('Quero participar')).not.toBeInTheDocument();
-  });
-
-  it('programas além do primeiro aparecem como rows em "Todos os abertos"', () => {
-    mockHook({
-      data: {
-        data: [makeCampaign(), makeCampaign({ id: 'camp-2', title: 'Segundo Programa' })],
-        meta: { total: 2, page: 1, limit: 12, totalPages: 1 },
-      },
-    });
-    renderPage();
-    expect(screen.getByText('Todos os abertos')).toBeInTheDocument();
-    expect(screen.getByText('Segundo Programa')).toBeInTheDocument();
-  });
-
-  it('pager de traços: avança de página ao clicar num traço', () => {
-    mockHook({
-      data: {
-        data: [makeCampaign()],
-        meta: { total: 30, page: 1, limit: 12, totalPages: 3 },
-      },
-    });
-    renderPage();
-
-    fireEvent.click(screen.getByRole('button', { name: /página 2 de 3/i }));
-
-    // ao avançar, o hook é re-chamado com page 2
-    expect(hook.useBrowsePrograms).toHaveBeenLastCalledWith(2);
   });
 });
