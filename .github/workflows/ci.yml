@@ -6,9 +6,12 @@ on:
   pull_request:
     branches: [main, develop]
 
-# Cancela o run anterior do mesmo PR/branch quando um novo push chega
+# Cancela o run anterior do mesmo PR/branch quando um novo push chega.
+# github.head_ref (só existe em pull_request) cai pra github.ref_name (push) —
+# sem isso, push + pull_request na mesma branch geram refs diferentes e rodam em paralelo,
+# duplicando o CI a cada commit em branch com PR aberto.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
