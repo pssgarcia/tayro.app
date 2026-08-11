@@ -88,7 +88,7 @@ Não duplicar conteúdo entre os dois lugares. Fluxo de produto: `/feature` → 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)
-- PR de release é MANUAL — não abre ao mergear feature no develop. Última: v0.30.0 (#84).
+- PR de release é MANUAL — não abre ao mergear feature no develop. Última: v0.34.0 (#96).
 - **SEMPRE usar merge commit, NUNCA squash** em releases. Squash cria commit sem ancestral comum → divergência de histórico → conflitos em futuros PRs. v0.8.0 usou squash (exceção pra limpar atribuição) e exigiu `git merge -s ours` em chore/sync-main-into-develop (PR #38) pra reconciliar.
 - Releases antigos #1–#15 (infra/CI/CD) ficaram sem versão (pré-v0.1)
 
@@ -96,6 +96,7 @@ Não duplicar conteúdo entre os dois lugares. Fluxo de produto: `/feature` → 
 - **Gaps do MVP (levantamento 2026-08-03) — TODOS FECHADOS:** apply autenticado (v0.24.0) · e-mail de decisão (v0.25.0) · claim/set-password (v0.26.0) · preview de identidade no Claim (v0.29.0). Ver "Feito" pra detalhe de cada um.
   - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
 - **Ícones PWA são placeholder** (monograma "T" lime/dark gerado, não é o mark oficial do TAYRO — produto só tem wordmark texto hoje). Trocar `apps/web/src/assets/pwa-icon.svg` e rodar `npx pwa-assets-generator` de novo quando houver logomark definitivo. `public/favicon.svg`/`icons.svg` antigos (roxos, off-brand) ficaram órfãos — não referenciados em lugar nenhum, podem ser removidos.
+- **Link "Ver programas abertos" no `LoginPage` (v0.34.0) ficou genérico visualmente** — testado em prod (2026-08-11), Pedro não gostou de como ficou embaixo da opção de login de marca (botão sem destaque, some no meio da tela). Revisitar posicionamento/estilo quando for polir essa tela; não é bloqueio funcional.
 
 ## Bugs conhecidos (backlog)
 - **IG não vem completo na 1ª candidatura, exige "Atualizar" manual (reportado 2026-08-03):** Ana Flávia se candidatou pela 1ª vez a um programa (mentalmadness) e o card na marca mostrou "Dados do Instagram indisponíveis" (estado FAILED) — precisou clicar "Atualizar" manualmente pra puxar foto/feed/seguidores. Esperado: dados completos já na 1ª tentativa (`scheduleIgFetch` no apply, fire-and-forget via `setImmediate`). Hipótese não confirmada: falha na 1ª tentativa do `RapidApiInstagramProvider.getProfile()` (2 retries internos, mas sem retry automático posterior — só o cooldown de 15min do botão manual). Investigar logs do Railway no momento do apply antes de mexer no código.
