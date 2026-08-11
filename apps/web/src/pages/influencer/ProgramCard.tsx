@@ -15,11 +15,19 @@ function programPath(id: string) {
 
 // ─── Row (padrão "Todos os abertos") ─────────────────────────────────────────
 
-function ProgramRow({ campaign, index }: { campaign: Campaign; index: number }) {
+function ProgramRow({
+  campaign,
+  index,
+  hrefBuilder,
+}: {
+  campaign: Campaign;
+  index: number;
+  hrefBuilder: (id: string) => string;
+}) {
   const offer = formatOfferWhole(campaign);
   return (
     <Link
-      to={programPath(campaign.id)}
+      to={hrefBuilder(campaign.id)}
       className="flex w-full items-baseline gap-3.5 text-left transition-colors hover:bg-accent"
     >
       <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
@@ -44,7 +52,13 @@ function ProgramRow({ campaign, index }: { campaign: Campaign; index: number }) 
 
 // ─── Placa (destaque — primeiro programa da página) ──────────────────────────
 
-function ProgramFeatured({ campaign }: { campaign: Campaign }) {
+function ProgramFeatured({
+  campaign,
+  hrefBuilder,
+}: {
+  campaign: Campaign;
+  hrefBuilder: (id: string) => string;
+}) {
   const offer = formatOfferWhole(campaign);
   return (
     <Plate marks="top" flush className="max-w-[520px]">
@@ -68,7 +82,7 @@ function ProgramFeatured({ campaign }: { campaign: Campaign }) {
       <PlateActionBar
         primary={{
           label: 'Ver programa',
-          to: programPath(campaign.id),
+          to: hrefBuilder(campaign.id),
           icon: <ArrowRight size={16} />,
         }}
       />
@@ -84,15 +98,23 @@ interface Props {
   /** índice mono, 1-based — só usado na variant="row". */
   index?: number;
   className?: string;
+  /** Destino do link. Default: detalhe autenticado. Visitante sem conta usa /apply/:id. */
+  hrefBuilder?: (id: string) => string;
 }
 
-export default function ProgramCard({ campaign, variant = 'row', index = 1, className }: Props) {
+export default function ProgramCard({
+  campaign,
+  variant = 'row',
+  index = 1,
+  className,
+  hrefBuilder = programPath,
+}: Props) {
   return (
     <div className={className}>
       {variant === 'featured' ? (
-        <ProgramFeatured campaign={campaign} />
+        <ProgramFeatured campaign={campaign} hrefBuilder={hrefBuilder} />
       ) : (
-        <ProgramRow campaign={campaign} index={index} />
+        <ProgramRow campaign={campaign} index={index} hrefBuilder={hrefBuilder} />
       )}
     </div>
   );

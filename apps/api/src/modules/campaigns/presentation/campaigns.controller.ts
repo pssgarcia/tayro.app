@@ -37,9 +37,13 @@ export class CampaignsController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Listar campanhas ativas (público)' })
-  findAll(@Query() query: ListCampaignsDto) {
-    return this.campaignsService.findAll(query);
+  findAll(
+    @Query() query: ListCampaignsDto,
+    @CurrentUser() user?: { id: string },
+  ) {
+    return this.campaignsService.findAll(query, user?.id);
   }
 
   // Precisa vir antes de :id para não ser interpretado como um UUID

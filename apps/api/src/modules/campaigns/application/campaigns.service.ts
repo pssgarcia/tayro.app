@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
@@ -16,6 +17,8 @@ import { ListCampaignsDto } from './dtos/list-campaigns.dto';
 
 @Injectable()
 export class CampaignsService {
+  private readonly logger = new Logger(CampaignsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateCampaignDto) {
@@ -41,7 +44,7 @@ export class CampaignsService {
     });
   }
 
-  async findAll(query: ListCampaignsDto) {
+  async findAll(query: ListCampaignsDto, viewerId?: string) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const niches = query.niches
@@ -64,6 +67,10 @@ export class CampaignsService {
       }),
       this.prisma.campaign.count({ where }),
     ]);
+
+    // Contador cru pra saber se abrir a listagem pra visitante anônimo
+    // (roadmap.md, AGORA #4) ajuda — sem instrumentação, ninguém saberia.
+    this.logger.log(`campaign_list_view anonymous=${!viewerId}`);
 
     return buildPaginatedResult(data, total, { page, limit });
   }
@@ -140,6 +147,8 @@ export class CampaignsService {
       // 404 em vez de 403 — não vaza que a campanha existe como DRAFT
       if (!isOwner) throw new NotFoundException('Campaign not found');
     }
+
+    this.logger.log(`campaign_view campaignId=${id} anonymous=${!viewerId}`);
 
     return campaign;
   }

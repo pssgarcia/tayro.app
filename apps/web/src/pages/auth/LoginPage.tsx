@@ -135,6 +135,12 @@ export default function LoginPage() {
           Cadastre-se
         </Link>
       </p>
+
+      <p className="mt-3 text-[13px] text-[#75756E]">
+        <Link to="/programs" className="hover:underline">
+          Ver programas abertos sem criar conta
+        </Link>
+      </p>
     </div>
   );
 }

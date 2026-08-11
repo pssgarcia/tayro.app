@@ -59,6 +59,47 @@ describe('CampaignsService', () => {
     service = module.get(CampaignsService);
   });
 
+  // ─── findAll ──────────────────────────────────────────────────────────────────
+
+  describe('findAll', () => {
+    beforeEach(() => {
+      prisma.$transaction.mockResolvedValue([[makeCampaign()], 1]);
+    });
+
+    it('returns paginated ACTIVE campaigns regardless of viewer', async () => {
+      const result = await service.findAll({ page: 1, limit: 20 });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('logs an anonymous view when no viewer id is given', async () => {
+      const logSpy = jest
+        .spyOn((service as any).logger, 'log')
+        .mockImplementation();
+
+      await service.findAll({ page: 1, limit: 20 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('anonymous=true'),
+      );
+      logSpy.mockRestore();
+    });
+
+    it('logs an authenticated view when a viewer id is given', async () => {
+      const logSpy = jest
+        .spyOn((service as any).logger, 'log')
+        .mockImplementation();
+
+      await service.findAll({ page: 1, limit: 20 }, 'user-1');
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('anonymous=false'),
+      );
+      logSpy.mockRestore();
+    });
+  });
+
   // ─── findOne ──────────────────────────────────────────────────────────────────
 
   describe('findOne', () => {
@@ -77,6 +118,34 @@ describe('CampaignsService', () => {
       const result = await service.findOne('camp-1', 'other-user');
 
       expect(result.id).toBe('camp-1');
+    });
+
+    it('logs an anonymous view when an ACTIVE campaign is returned without a viewer id', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(makeCampaign());
+      const logSpy = jest
+        .spyOn((service as any).logger, 'log')
+        .mockImplementation();
+
+      await service.findOne('camp-1');
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('anonymous=true'),
+      );
+      logSpy.mockRestore();
+    });
+
+    it('does not log when the campaign lookup ends in a 404', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(null);
+      const logSpy = jest
+        .spyOn((service as any).logger, 'log')
+        .mockImplementation();
+
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(logSpy).not.toHaveBeenCalled();
+      logSpy.mockRestore();
     });
 
     it('returns DRAFT campaign to its brand owner', async () => {
