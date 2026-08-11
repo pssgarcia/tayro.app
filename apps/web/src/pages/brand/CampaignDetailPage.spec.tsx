@@ -5,12 +5,14 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CampaignDetailPage from './CampaignDetailPage';
 import * as hooks from '../../hooks/useCampaignApplications';
+import * as campaignHooks from '../../hooks/useCampaigns';
 import { api } from '../../services/api';
 import type { Application, Campaign } from '../../types/api';
 
+const navigateMock = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>();
-  return { ...actual, useParams: () => ({ id: 'camp-1' }) };
+  return { ...actual, useParams: () => ({ id: 'camp-1' }), useNavigate: () => navigateMock };
 });
 
 vi.mock('../../services/api', () => ({ api: { get: vi.fn() } }));
@@ -25,6 +27,11 @@ vi.mock('../../hooks/useCampaignApplications', async (importOriginal) => {
     useRefreshApplicationIg: vi.fn(),
   };
 });
+
+vi.mock('../../hooks/useCampaigns', () => ({
+  useCloseCampaign: vi.fn(),
+  useDeleteCampaign: vi.fn(),
+}));
 
 const campaign: Campaign = {
   id: 'camp-1',
@@ -72,15 +79,25 @@ function makeApplication(i: number, overrides: Partial<Application> = {}): Appli
 
 const noopMutation = { mutate: vi.fn(), isPending: false, variables: undefined, error: null };
 
-function renderPage(applications: Application[]) {
+function renderPage(
+  applications: Application[],
+  campaignOverrides: Partial<Campaign> = {},
+  mutationOverrides: { close?: any; delete?: any } = {},
+) {
   vi.mocked(api.get).mockResolvedValue({ data: applications } as any);
   vi.mocked(hooks.useCampaign).mockReturnValue({
-    data: campaign,
+    data: { ...campaign, ...campaignOverrides },
     isLoading: false,
   } as any);
   vi.mocked(hooks.useApproveApplication).mockReturnValue(noopMutation as any);
   vi.mocked(hooks.useRejectApplication).mockReturnValue(noopMutation as any);
   vi.mocked(hooks.useRefreshApplicationIg).mockReturnValue(noopMutation as any);
+  vi.mocked(campaignHooks.useCloseCampaign).mockReturnValue(
+    (mutationOverrides.close ?? { ...noopMutation, mutate: vi.fn() }) as any,
+  );
+  vi.mocked(campaignHooks.useDeleteCampaign).mockReturnValue(
+    (mutationOverrides.delete ?? { ...noopMutation, mutate: vi.fn() }) as any,
+  );
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -154,5 +171,76 @@ describe('CampaignDetailPage — aba Fila (carrossel)', () => {
     await waitFor(() =>
       expect(screen.getByText(/nenhuma candidatura aguardando análise/i)).toBeInTheDocument(),
     );
+  });
+});
+
+describe('CampaignDetailPage — encerrar/apagar', () => {
+  it('campanha ACTIVE mostra "Encerrar campanha" e não mostra "Apagar rascunho"', async () => {
+    renderPage([], { status: 'ACTIVE' });
+
+    expect(await screen.findByRole('button', { name: /encerrar campanha/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /apagar rascunho/i })).not.toBeInTheDocument();
+  });
+
+  it('campanha DRAFT mostra "Apagar rascunho" e não mostra "Encerrar campanha"', async () => {
+    renderPage([], { status: 'DRAFT' });
+
+    expect(await screen.findByRole('button', { name: /apagar rascunho/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /encerrar campanha/i })).not.toBeInTheDocument();
+  });
+
+  it.each(['CLOSED', 'COMPLETED'] as const)(
+    'campanha %s não mostra nem "Encerrar" nem "Apagar"',
+    async (status) => {
+      renderPage([], { status });
+
+      await waitFor(() => expect(screen.getByText('Basic Drop QA')).toBeInTheDocument());
+      expect(screen.queryByRole('button', { name: /encerrar campanha/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /apagar rascunho/i })).not.toBeInTheDocument();
+    },
+  );
+
+  it('clicar em "Encerrar campanha" abre a confirmação; "Cancelar" fecha sem chamar a mutation', async () => {
+    const closeMutate = vi.fn();
+    renderPage([], { status: 'ACTIVE' }, { close: { mutate: closeMutate, isPending: false } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /encerrar campanha/i }));
+    expect(await screen.findByText('Encerrar campanha?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
+    expect(screen.queryByText('Encerrar campanha?')).not.toBeInTheDocument();
+    expect(closeMutate).not.toHaveBeenCalled();
+  });
+
+  it('confirmar "Encerrar" chama a mutation com o id da campanha', async () => {
+    const closeMutate = vi.fn((_id, opts) => opts?.onSuccess?.());
+    renderPage([], { status: 'ACTIVE' }, { close: { mutate: closeMutate, isPending: false } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /encerrar campanha/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^encerrar$/i }));
+
+    expect(closeMutate).toHaveBeenCalledWith('camp-1', expect.objectContaining({
+      onSuccess: expect.any(Function),
+    }));
+  });
+
+  it('confirmar "Apagar" chama a mutation e navega pra lista ao ter sucesso', async () => {
+    const deleteMutate = vi.fn((_id, opts) => opts?.onSuccess?.());
+    renderPage([], { status: 'DRAFT' }, { delete: { mutate: deleteMutate, isPending: false, isError: false } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /apagar rascunho/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^apagar$/i }));
+
+    expect(deleteMutate).toHaveBeenCalledWith('camp-1', expect.objectContaining({
+      onSuccess: expect.any(Function),
+    }));
+    expect(navigateMock).toHaveBeenCalledWith('/brand/campaigns', { replace: true });
+  });
+
+  it('botão de confirmação some enquanto a mutation está pendente', async () => {
+    renderPage([], { status: 'ACTIVE' }, { close: { mutate: vi.fn(), isPending: true } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /encerrar campanha/i }));
+    expect(await screen.findByRole('button', { name: /encerrando/i })).toBeDisabled();
   });
 });
