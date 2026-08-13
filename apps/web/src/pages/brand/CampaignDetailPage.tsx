@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import {
   applicationKeys,
@@ -8,7 +8,7 @@ import {
   useRejectApplication,
   useRefreshApplicationIg,
 } from '../../hooks/useCampaignApplications';
-import { useCloseCampaign, useDeleteCampaign } from '../../hooks/useCampaigns';
+import { useCloseCampaign, useDeleteCampaign, usePublishCampaign } from '../../hooks/useCampaigns';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import type { Application, Campaign } from '../../types/api';
@@ -43,7 +43,9 @@ function CampaignHeader({
   deadline,
   spotsUsed,
   maxSpots,
+  campaignId,
   status,
+  onPublicar,
   onEncerrar,
   onApagar,
 }: {
@@ -51,7 +53,9 @@ function CampaignHeader({
   deadline: string | null;
   spotsUsed: number;
   maxSpots: number;
+  campaignId: string;
   status: Campaign['status'];
+  onPublicar: () => void;
   onEncerrar: () => void;
   onApagar: () => void;
 }) {
@@ -75,14 +79,34 @@ function CampaignHeader({
             Encerrar campanha
           </button>
         )}
+        {/* DRAFT tem três saídas. "Publicar" é a que faltava: sem ela, um
+            rascunho salvo com "Agora não" no NewCampaignPage ficava preso em
+            DRAFT pra sempre — o publish só existia naquele modal pós-criação.
+            Vem em lime porque é a ação que destrava o programa; apagar é a
+            saída destrutiva e fica em ghost, como antes. */}
         {status === 'DRAFT' && (
-          <button
-            type="button"
-            onClick={onApagar}
-            className="mt-2 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
-          >
-            Apagar rascunho
-          </button>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button
+              type="button"
+              onClick={onPublicar}
+              className="text-xs font-semibold text-lime underline-offset-2 transition-opacity hover:underline hover:opacity-80"
+            >
+              Publicar programa
+            </button>
+            <Link
+              to={`/brand/campaigns/${campaignId}/edit`}
+              className="text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
+              Editar
+            </Link>
+            <button
+              type="button"
+              onClick={onApagar}
+              className="text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
+              Apagar rascunho
+            </button>
+          </div>
         )}
       </div>
       <p className="font-display text-d-inline leading-none text-foreground">
@@ -93,7 +117,50 @@ function CampaignHeader({
   );
 }
 
-// ─── Modais de encerrar/apagar — mesmo padrão do PublishModal (NewCampaignPage) ─
+// ─── Modais de publicar/encerrar/apagar — mesmo padrão do PublishModal ────────
+
+function PublishCampaignModal({
+  campaignId,
+  onClose,
+}: {
+  campaignId: string;
+  onClose: () => void;
+}) {
+  const publish = usePublishCampaign();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full sm:max-w-md">
+        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-[26px] pt-[30px]">
+            <p className="font-display text-d-xs text-plate-ink">Publicar programa?</p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+              O link de candidatura fica ativo na hora e creators já podem se inscrever. Depois de
+              publicado o programa não volta para rascunho e os detalhes não podem mais ser
+              editados.
+            </p>
+            {publish.isError && (
+              <p className="mt-3 text-[13px] text-destructive">
+                Não foi possível publicar. Tente novamente.
+              </p>
+            )}
+          </div>
+          <PlateActionBar
+            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
+            primary={{
+              label: publish.isPending ? 'Publicando…' : 'Publicar',
+              // Fecha só no sucesso: em erro o modal fica de pé pra dar retry,
+              // em vez de sumir por baixo do usuário fingindo que aconteceu.
+              onClick: () => publish.mutate(campaignId, { onSuccess: onClose }),
+              disabled: publish.isPending,
+              icon: <ArrowRight size={16} />,
+            }}
+          />
+        </Plate>
+      </div>
+    </div>
+  );
+}
 
 function CloseCampaignModal({
   campaignId,
@@ -326,7 +393,7 @@ function QueueTab({ campaignId }: { campaignId: string }) {
 export default function CampaignDetailPage() {
   const { id: campaignId = '' } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<TabId>('queue');
-  const [openModal, setOpenModal] = useState<'close' | 'delete' | null>(null);
+  const [openModal, setOpenModal] = useState<'publish' | 'close' | 'delete' | null>(null);
 
   const { data: campaign, isLoading: campaignLoading } = useCampaign(campaignId);
 
@@ -358,7 +425,9 @@ export default function CampaignDetailPage() {
         deadline={campaign.deadline}
         spotsUsed={approvedCount}
         maxSpots={campaign.maxSpots}
+        campaignId={campaignId}
         status={campaign.status}
+        onPublicar={() => setOpenModal('publish')}
         onEncerrar={() => setOpenModal('close')}
         onApagar={() => setOpenModal('delete')}
       />
@@ -374,6 +443,9 @@ export default function CampaignDetailPage() {
         {activeTab === 'payment' && <CampaignRewardsTab campaignId={campaignId} />}
       </div>
 
+      {openModal === 'publish' && (
+        <PublishCampaignModal campaignId={campaignId} onClose={() => setOpenModal(null)} />
+      )}
       {openModal === 'close' && (
         <CloseCampaignModal campaignId={campaignId} onClose={() => setOpenModal(null)} />
       )}

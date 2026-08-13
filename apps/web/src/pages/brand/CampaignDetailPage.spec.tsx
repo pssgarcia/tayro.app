@@ -31,6 +31,7 @@ vi.mock('../../hooks/useCampaignApplications', async (importOriginal) => {
 vi.mock('../../hooks/useCampaigns', () => ({
   useCloseCampaign: vi.fn(),
   useDeleteCampaign: vi.fn(),
+  usePublishCampaign: vi.fn(),
 }));
 
 const campaign: Campaign = {
@@ -82,7 +83,7 @@ const noopMutation = { mutate: vi.fn(), isPending: false, variables: undefined, 
 function renderPage(
   applications: Application[],
   campaignOverrides: Partial<Campaign> = {},
-  mutationOverrides: { close?: any; delete?: any } = {},
+  mutationOverrides: { close?: any; delete?: any; publish?: any } = {},
 ) {
   vi.mocked(api.get).mockResolvedValue({ data: applications } as any);
   vi.mocked(hooks.useCampaign).mockReturnValue({
@@ -97,6 +98,9 @@ function renderPage(
   );
   vi.mocked(campaignHooks.useDeleteCampaign).mockReturnValue(
     (mutationOverrides.delete ?? { ...noopMutation, mutate: vi.fn() }) as any,
+  );
+  vi.mocked(campaignHooks.usePublishCampaign).mockReturnValue(
+    (mutationOverrides.publish ?? { ...noopMutation, mutate: vi.fn(), isError: false }) as any,
   );
 
   const queryClient = new QueryClient({
@@ -200,6 +204,13 @@ describe('CampaignDetailPage — encerrar/apagar', () => {
     },
   );
 
+  it.each(['CLOSED', 'COMPLETED'] as const)('campanha %s não oferece publicar', async (status) => {
+    renderPage([], { status });
+
+    await waitFor(() => expect(screen.getByText('Basic Drop QA')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /publicar programa/i })).not.toBeInTheDocument();
+  });
+
   it('clicar em "Encerrar campanha" abre a confirmação; "Cancelar" fecha sem chamar a mutation', async () => {
     const closeMutate = vi.fn();
     renderPage([], { status: 'ACTIVE' }, { close: { mutate: closeMutate, isPending: false } });
@@ -242,5 +253,76 @@ describe('CampaignDetailPage — encerrar/apagar', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /encerrar campanha/i }));
     expect(await screen.findByRole('button', { name: /encerrando/i })).toBeDisabled();
+  });
+});
+
+// O rascunho salvo com "Agora não" no NewCampaignPage ficava preso em DRAFT
+// pra sempre: o publish só existia naquele modal pós-criação. Estas provam a
+// saída pelo detalhe.
+describe('CampaignDetailPage — publicar/editar rascunho', () => {
+  it('campanha DRAFT oferece publicar e editar', async () => {
+    renderPage([], { status: 'DRAFT' });
+
+    expect(await screen.findByRole('button', { name: /publicar programa/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^editar$/i })).toHaveAttribute(
+      'href',
+      '/brand/campaigns/camp-1/edit',
+    );
+  });
+
+  it('campanha ACTIVE não oferece publicar nem editar (publicado não volta atrás)', async () => {
+    renderPage([], { status: 'ACTIVE' });
+
+    await waitFor(() => expect(screen.getByText('Basic Drop QA')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /publicar programa/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^editar$/i })).not.toBeInTheDocument();
+  });
+
+  it('clicar em "Publicar programa" pede confirmação antes de chamar a mutation', async () => {
+    const publishMutate = vi.fn();
+    renderPage([], { status: 'DRAFT' }, { publish: { mutate: publishMutate, isPending: false } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+
+    expect(await screen.findByText('Publicar programa?')).toBeInTheDocument();
+    expect(publishMutate).not.toHaveBeenCalled();
+  });
+
+  it('confirmar "Publicar" chama a mutation com o id da campanha', async () => {
+    const publishMutate = vi.fn((_id, opts) => opts?.onSuccess?.());
+    renderPage([], { status: 'DRAFT' }, { publish: { mutate: publishMutate, isPending: false } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^publicar$/i }));
+
+    expect(publishMutate).toHaveBeenCalledWith(
+      'camp-1',
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it('"Cancelar" fecha a confirmação sem publicar', async () => {
+    const publishMutate = vi.fn();
+    renderPage([], { status: 'DRAFT' }, { publish: { mutate: publishMutate, isPending: false } });
+
+    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /cancelar/i }));
+
+    expect(screen.queryByText('Publicar programa?')).not.toBeInTheDocument();
+    expect(publishMutate).not.toHaveBeenCalled();
+  });
+
+  // Em erro o modal continua de pé — sumir daria a impressão de que publicou.
+  it('falha ao publicar mantém a confirmação aberta com o erro', async () => {
+    renderPage(
+      [],
+      { status: 'DRAFT' },
+      { publish: { mutate: vi.fn(), isPending: false, isError: true } },
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+
+    expect(await screen.findByText(/não foi possível publicar/i)).toBeInTheDocument();
+    expect(screen.getByText('Publicar programa?')).toBeInTheDocument();
   });
 });

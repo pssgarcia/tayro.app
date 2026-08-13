@@ -28,6 +28,9 @@ export interface CreateCampaignPayload {
   offerDescription?: string;
 }
 
+/** PATCH /campaigns/:id aceita o mesmo shape, todos os campos opcionais. */
+export type UpdateCampaignPayload = Partial<CreateCampaignPayload>;
+
 export function useCreateCampaign() {
   const qc = useQueryClient();
   return useMutation({
@@ -42,9 +45,34 @@ export function usePublishCampaign() {
   return useMutation({
     mutationFn: (id: string) =>
       api.patch<Campaign>(`/campaigns/${id}/publish`).then((r) => r.data),
-    onSuccess: (_data, id) => {
+    onSuccess: (updated, id) => {
       qc.invalidateQueries({ queryKey: campaignKeys.mine });
-      qc.invalidateQueries({ queryKey: campaignKeys.detail(id) });
+      // Mesmo tratamento do close, e pela mesma razão: `campaignKeys.detail`
+      // daqui é ['campaigns', id], enquanto `useCampaign` lê ['campaign', id]
+      // (singular, em useCampaignApplications) — invalidar aqui nunca chegava
+      // no cache real. Ficou mascarado enquanto o publish só existia no
+      // NewCampaignPage, que navega pra uma tela ainda sem cache; publicando
+      // de dentro do detalhe, o status ficaria DRAFT na tela após o 200.
+      // Merge em vez de substituir: a resposta do PATCH não traz `_count`, que
+      // o header e o Briefing leem.
+      qc.setQueryData(campaignDetailKeys.detail(id), (old: Campaign | undefined) =>
+        old ? { ...old, ...updated } : updated,
+      );
+    },
+  });
+}
+
+/** Editar campanha — só DRAFT (o backend recusa ACTIVE/CLOSED com 400). */
+export function useUpdateCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateCampaignPayload }) =>
+      api.patch<Campaign>(`/campaigns/${id}`, payload).then((r) => r.data),
+    onSuccess: (updated, { id }) => {
+      qc.invalidateQueries({ queryKey: campaignKeys.mine });
+      qc.setQueryData(campaignDetailKeys.detail(id), (old: Campaign | undefined) =>
+        old ? { ...old, ...updated } : updated,
+      );
     },
   });
 }
