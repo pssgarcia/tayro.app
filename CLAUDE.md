@@ -29,6 +29,9 @@ Não duplicar conteúdo entre os dois lugares. Fluxo de produto: `/feature` → 
 - **CI** (`.github/workflows/ci.yml`): roda em todo PR — lint · typecheck · test · build (API e Web).
 - **CD** (`.github/workflows/cd.yml`): no merge em `main`, após CI passar → migrations + deploy.
 - **Git Flow:** `feature/* → develop → main`, sempre via PR. Branches protegidas (CI obrigatório).
+- **SEMPRE partir da `develop` atualizada — regra nº 1, antes de qualquer código (MORDEU 2026-08-13).** `develop` tem que estar idêntica à produção antes de começar qualquer coisa. O primeiro comando de toda sessão de implementação é `git fetch origin`; depois conferir `git diff origin/develop origin/main --stat` (tem que vir **vazio** — os merge commits de release ficam só na `main`, então `git log` mostrar a develop "atrás" é normal, o que importa é o diff de conteúdo) e só então criar a branch a partir de `origin/develop`.
+  - **Nunca confiar no CLAUDE.md, no snapshot de git status do início da sessão, nem em memória de sessão anterior** para saber a versão atual ou o que já foi entregue. Antes de afirmar que algo "não existe" / "não tem tela", verificar contra `origin/develop`, não contra a working tree.
+  - O que custou ignorar isso: a `feature/campaign-lifecycle` saiu de uma base velha, a `main` já estava na v0.36.0 (não v0.30.0, como o CLAUDE.md local dizia), e o PR #104 saiu conflitado reimplementando "encerrar e apagar campanha" — que o #102 tinha entregue em produção 2 dias antes. Uma auditoria inteira do produto foi feita em cima de um retrato obsoleto e reportou como furo em produção coisas já corrigidas.
 
 ## Regras de segurança (invioláveis)
 - Secrets SEMPRE em `.env` / GitHub Secrets. Nunca no bundle, logs ou erros HTTP.
@@ -90,7 +93,7 @@ Não duplicar conteúdo entre os dois lugares. Fluxo de produto: `/feature` → 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)
-- PR de release é MANUAL — não abre ao mergear feature no develop. Última: v0.34.0 (#96).
+- PR de release é MANUAL — não abre ao mergear feature no develop. Última: **v0.36.0 (#103)** — a próxima é a v0.37.0. Esta linha vive desatualizada (já apontou v0.30.0 e v0.34.0 com a produção mais adiante); **confirmar com `gh pr list --base main --state merged --limit 5` antes de numerar uma release**, nunca ler daqui e confiar.
 - **SEMPRE usar merge commit, NUNCA squash** em releases. Squash cria commit sem ancestral comum → divergência de histórico → conflitos em futuros PRs. v0.8.0 usou squash (exceção pra limpar atribuição) e exigiu `git merge -s ours` em chore/sync-main-into-develop (PR #38) pra reconciliar.
 - Releases antigos #1–#15 (infra/CI/CD) ficaram sem versão (pré-v0.1)
 
@@ -149,6 +152,7 @@ Não duplicar conteúdo entre os dois lugares. Fluxo de produto: `/feature` → 
 - Helpers compartilhados em `utils/format.ts`: formatCurrency, formatDate, formatOffer (não duplicar)
 
 ## Convenções de trabalho (somar às de performance)
+- **`git fetch origin` + branch da `develop` atualizada ANTES de escrever qualquer linha.** Ver a regra completa em CI/CD — é o passo zero, não uma checagem opcional.
 - Ler controllers/DTOs REAIS antes de assumir shape. Nunca inventar contrato.
 - Um chunk por vez: PASSO 0 (contratos/gap) → OK → implementar.
 - Rotas: literais antes de :id; públicas fora de guards.
