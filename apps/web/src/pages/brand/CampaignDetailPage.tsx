@@ -9,12 +9,14 @@ import {
 } from '../../hooks/useCampaignApplications';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
-import type { Application } from '../../types/api';
+import type { Application, CampaignStatus } from '../../types/api';
 import { daysUntil } from '../../utils/format';
 import ApplicationCard from './ApplicationCard';
+import CampaignActions from './CampaignActions';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
+import StatusPill from '../../components/primitives/StatusPill';
 import TabsUnderline from '../../components/primitives/TabsUnderline';
 import { cn } from '../../lib/utils';
 
@@ -36,11 +38,13 @@ type TabId = (typeof TABS)[number]['id'];
 
 function CampaignHeader({
   title,
+  status,
   deadline,
   spotsUsed,
   maxSpots,
 }: {
   title: string;
+  status: CampaignStatus;
   deadline: string | null;
   spotsUsed: number;
   maxSpots: number;
@@ -49,13 +53,19 @@ function CampaignHeader({
 
   return (
     <div className="flex items-end justify-between gap-3 px-6 pb-[22px] pt-2">
-      <div>
-        <h1 className="font-display text-d-sm text-foreground">{title}</h1>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2.5">
+          <h1 className="truncate font-display text-d-sm text-foreground">{title}</h1>
+          {/* O status virou informação viva agora que a marca publica e encerra
+              daqui — sem a pill, a única pista de "isso ainda é rascunho" era o
+              botão Publicar logo abaixo. */}
+          <StatusPill status={status} />
+        </div>
         <p className="mt-[7px] text-xs text-[#6E6E68]">
           {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
         </p>
       </div>
-      <p className="font-display text-d-inline leading-none text-foreground">
+      <p className="shrink-0 font-display text-d-inline leading-none text-foreground">
         {spotsUsed}
         <span className="text-[#6E6E68]">/{maxSpots}</span>
       </p>
@@ -239,10 +249,13 @@ export default function CampaignDetailPage() {
     <div className="flex h-full flex-col">
       <CampaignHeader
         title={campaign.title}
+        status={campaign.status}
         deadline={campaign.deadline}
         spotsUsed={approvedCount}
         maxSpots={campaign.maxSpots}
       />
+
+      <CampaignActions campaign={campaign} />
 
       <TabsUnderline tabs={TABS} active={activeTab} onChange={setActiveTab} />
 

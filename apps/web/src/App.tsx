@@ -17,6 +17,7 @@ import ProfilePage from './pages/brand/ProfilePage';
 import CampaignsPage from './pages/brand/CampaignsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
+import EditCampaignPage from './pages/brand/EditCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
 import PublicCreatorProfilePage from './pages/public/PublicCreatorProfilePage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
@@ -87,6 +88,7 @@ function AppShell() {
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/new" element={<NewCampaignPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />
+        <Route path="campaigns/:id/edit" element={<EditCampaignPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
 
