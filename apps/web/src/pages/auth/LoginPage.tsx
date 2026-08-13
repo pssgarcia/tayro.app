@@ -117,8 +117,12 @@ export default function LoginPage() {
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
           </div>
 
+          {/* O secundário "Esqueci" do mock saiu daqui: não existe fluxo de
+              recuperação de senha (nem endpoint nem tela), então o botão ficava
+              clicável em produção sem fazer nada. Botão morto é pior que botão
+              ausente — quem esquece a senha ao menos não perde tempo tentando.
+              Volta quando POST /auth/forgot-password existir. */}
           <PlateActionBar
-            secondary={{ label: 'Esqueci', width: 106 }}
             primary={{
               label: isSubmitting ? 'Entrando…' : 'Entrar',
               type: 'submit',
