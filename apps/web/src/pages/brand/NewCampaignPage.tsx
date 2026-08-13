@@ -17,6 +17,26 @@ import NicheSelector from '../../components/primitives/NicheSelector';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
+/**
+ * Campo numérico OPCIONAL vindo de <input type="number">.
+ *
+ * Input vazio chega como "" (o RHF lê o valor do DOM), e `z.coerce.number()`
+ * converte "" em 0 — que então estoura o `.min(1)`. O `.optional()` não
+ * protege: ele só aceita `undefined`, nunca "". O preprocess normaliza ""/null
+ * pra `undefined` ANTES da coerção, que é o único ponto onde dá pra
+ * diferenciar "não preencheu" de "preencheu com zero".
+ *
+ * Sem isso, "Prazo p/ pagamento (dias)" — opcional na API (`@IsOptional()`) e
+ * sem asterisco na tela — travava a criação de programa com "Number must be
+ * greater than or equal to 1", em inglês, num campo que a marca nem precisava
+ * preencher.
+ */
+const optionalPositiveInt = (message: string) =>
+  z.preprocess(
+    (v) => (v === '' || v === null ? undefined : v),
+    z.coerce.number().int().min(1, message).optional(),
+  );
+
 const schema = z
   .object({
     title: z.string().min(3, 'Mínimo 3 caracteres'),
@@ -26,9 +46,13 @@ const schema = z
     maxSpots: z.coerce.number().int().min(1, 'Mínimo 1 vaga'),
     deadline: z.string().optional(),
     offerType: z.enum(['CASH', 'PRODUCT']),
-    offerAmountBRL: z.coerce.number().min(0).optional(), // em R$, convertido p/ centavos no submit
+    // em R$, convertido p/ centavos no submit
+    offerAmountBRL: z.preprocess(
+      (v) => (v === '' || v === null ? undefined : v),
+      z.coerce.number().min(0, 'Valor inválido').optional(),
+    ),
     offerDescription: z.string().optional(),
-    offerDeadlineDays: z.coerce.number().int().min(1).optional(),
+    offerDeadlineDays: optionalPositiveInt('Mínimo 1 dia'),
   })
   .superRefine((val, ctx) => {
     if (val.offerType === 'CASH' && (!val.offerAmountBRL || val.offerAmountBRL <= 0)) {
