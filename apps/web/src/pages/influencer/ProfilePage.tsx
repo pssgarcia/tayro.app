@@ -32,6 +32,74 @@ function cleanHandle(raw?: string): string {
   return raw.replace(/^@+/, '').toLowerCase().trim();
 }
 
+// ─── Link do perfil público ──────────────────────────────────────────────────
+//
+// Duas guardas, senão a promessa continua quebrada de outro jeito:
+// 1) sem instagramHandle não existe URL nenhuma pra oferecer;
+// 2) o link só vale com o perfil público JÁ SALVO. `GET /creators/:handle/public`
+//    devolve 404 uniforme quando publicProfileEnabled=false (anti-enumeração),
+//    então linkar com o perfil privado mandaria a creator pra um 404. Lê de
+//    `profile` (servidor), NUNCA do watch() do form: com o toggle recém-ligado
+//    e ainda não salvo, o backend continua devolvendo 404.
+
+function PublicProfileLink({
+  handle,
+  enabled,
+}: {
+  handle: string | null;
+  enabled: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  if (!handle) {
+    return (
+      <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
+        Adicione seu @ do Instagram para ganhar um endereço em tayro.app/c/.
+      </p>
+    );
+  }
+
+  const path = `/c/${handle}`;
+  const shareUrl = `https://tayro.app${path}`;
+
+  if (!enabled) {
+    return (
+      <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
+        Ative para as marcas encontrarem você em tayro.app{path}.
+      </p>
+    );
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {/* Rota pública, fora dos guards — abre em aba nova pra creator não
+          perder o formulário se estiver no meio de uma edição. */}
+      <a
+        href={path}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 text-xs text-lime underline-offset-2 hover:underline"
+      >
+        tayro.app{path}
+        <ExternalLink size={11} className="shrink-0" />
+      </a>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="text-xs text-[#75756E] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+      >
+        {copied ? 'Copiado!' : 'Copiar link'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Toggle — usa a placa, não o lime (o lime dessa tela é do "Salvar") ──────
 
 function Toggle({
@@ -236,9 +304,10 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm text-foreground">Perfil público</p>
-            <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
-              Marcas encontram você em tayro.app/c/{profile.instagramHandle ?? 'seuhandle'}.
-            </p>
+            <PublicProfileLink
+              handle={profile.instagramHandle}
+              enabled={profile.publicProfileEnabled}
+            />
           </div>
           <Controller
             name="publicProfileEnabled"
