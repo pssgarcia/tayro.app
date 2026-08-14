@@ -125,17 +125,82 @@ function FeaturedPlate({
   );
 }
 
+// ─── Confirmação de retirada ─────────────────────────────────────────────────
+// Retirar é DEFINITIVO e a consequência não é óbvia: o unique
+// (campaignId, influencerId) não olha status, então `POST /applications`
+// devolve 409 mesmo depois de WITHDRAWN — a creator fica trancada fora daquele
+// programa pra sempre, e não existe rota de "desfazer". Por isso a confirmação
+// diz o que acontece em vez de perguntar "tem certeza?". Antes disso o botão da
+// placa em destaque disparava a retirada num clique só.
+
+function WithdrawModal({
+  app,
+  onConfirm,
+  onClose,
+  isPending,
+  isError,
+}: {
+  app: MyApplication;
+  onConfirm: () => void;
+  onClose: () => void;
+  isPending: boolean;
+  isError: boolean;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Retirar candidatura?"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center"
+    >
+      <div className="w-full sm:max-w-md">
+        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-[26px] pt-[30px]">
+            <p className="font-display text-d-xs text-plate-ink">Retirar candidatura?</p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+              Sua candidatura para <strong className="font-semibold">{app.campaign.title}</strong>{' '}
+              sai da fila de {app.campaign.brand.name}. Você não poderá se candidatar de novo a
+              este programa.
+            </p>
+            {isError && (
+              <p className="mt-3 text-[13px] text-destructive">
+                Não foi possível retirar. Tente novamente.
+              </p>
+            )}
+          </div>
+          <PlateActionBar
+            secondary={{ label: 'Cancelar', onClick: onClose, disabled: isPending, width: 100 }}
+            primary={{
+              label: isPending ? 'Retirando…' : 'Retirar',
+              onClick: onConfirm,
+              disabled: isPending,
+            }}
+          />
+        </Plate>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página ──────────────────────────────────────────────────────────────────
 // Tela 6 do redesign 2a.
 
 export default function MyApplicationsPage() {
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [confirming, setConfirming] = useState<MyApplication | null>(null);
   const { data: applications = [], isLoading, isError } = useMyApplications();
   const { data: submissions = [] } = useMySubmissions();
   const withdraw = useWithdrawApplication();
 
   const submittedApplicationIds = new Set(submissions.map((s) => s.applicationId));
   const featured = pickFeatured(applications, submittedApplicationIds);
+
+  function confirmWithdraw() {
+    if (!confirming) return;
+    // Fecha só no sucesso — em erro o modal fica de pé pra dar retry, em vez de
+    // sumir dando a impressão de que a candidatura saiu da fila.
+    withdraw.mutate(confirming.id, { onSuccess: () => setConfirming(null) });
+  }
 
   const visible = filter === 'ALL' ? applications : applications.filter((a) => a.status === filter);
 
@@ -170,7 +235,7 @@ export default function MyApplicationsPage() {
           {featured && (
             <FeaturedPlate
               featured={featured}
-              onWithdraw={() => withdraw.mutate(featured.app.id)}
+              onWithdraw={() => setConfirming(featured.app)}
               isWithdrawing={withdraw.isPending && withdraw.variables === featured.app.id}
             />
           )}
@@ -199,12 +264,36 @@ export default function MyApplicationsPage() {
                       {app.campaign.brand.name} · {formatRelativeDays(app.appliedAt)}
                     </p>
                   </div>
+                  {/* Retirar em QUALQUER pendente, não só na que está em
+                      destaque: quem tinha 3 na fila só conseguia retirar a mais
+                      recente, porque as linhas eram inertes. O backend sempre
+                      aceitou (PATCH /applications/:id/withdraw exige apenas
+                      PENDING + dono) — faltava a superfície. */}
+                  {app.status === 'PENDING' && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(app)}
+                      className="shrink-0 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                    >
+                      Retirar
+                    </button>
+                  )}
                   <StatusPill status={app.status} />
                 </div>
               ))}
             </div>
           )}
         </>
+      )}
+
+      {confirming && (
+        <WithdrawModal
+          app={confirming}
+          onConfirm={confirmWithdraw}
+          onClose={() => setConfirming(null)}
+          isPending={withdraw.isPending}
+          isError={withdraw.isError}
+        />
       )}
     </div>
   );

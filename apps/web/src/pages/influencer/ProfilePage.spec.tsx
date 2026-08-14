@@ -156,3 +156,61 @@ describe('Creator ProfilePage', () => {
     );
   });
 });
+
+// A tela prometia "tayro.app/c/{handle}" como texto puro desde a v0.9.0; a rota
+// existe desde a v0.32.0 e mesmo assim continuou sem ser clicável.
+describe('Creator ProfilePage — link do perfil público', () => {
+  it('com perfil público ativo, o endereço vira link de verdade', () => {
+    mockHooks({ data: { ...baseProfile, publicProfileEnabled: true } });
+    render(<ProfilePage />);
+
+    const link = screen.getByRole('link', { name: /tayro\.app\/c\/anafit/i });
+    expect(link).toHaveAttribute('href', '/c/anafit');
+    // Aba nova: a creator pode estar no meio de uma edição do formulário.
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+
+  it('copiar link põe a URL absoluta na área de transferência', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    mockHooks({ data: { ...baseProfile, publicProfileEnabled: true } });
+    render(<ProfilePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: /copiar link/i }));
+
+    expect(writeText).toHaveBeenCalledWith('https://tayro.app/c/anafit');
+    expect(await screen.findByText(/copiado!/i)).toBeInTheDocument();
+  });
+
+  // GET /creators/:handle/public devolve 404 uniforme quando o perfil é
+  // privado (anti-enumeração) — linkar aqui mandaria a creator pro 404.
+  it('com perfil privado não oferece link, explica que precisa ativar', () => {
+    mockHooks({ data: { ...baseProfile, publicProfileEnabled: false } });
+    render(<ProfilePage />);
+
+    expect(screen.queryByRole('link', { name: /tayro\.app\/c\//i })).not.toBeInTheDocument();
+    expect(screen.getByText(/ative para as marcas encontrarem você/i)).toBeInTheDocument();
+  });
+
+  // Estado salvo no servidor, não o do form: com o toggle recém-ligado e ainda
+  // não salvo, o backend continua devolvendo 404 pra esse handle.
+  it('ligar o toggle sem salvar ainda não oferece o link', () => {
+    mockHooks({ data: { ...baseProfile, publicProfileEnabled: false } });
+    render(<ProfilePage />);
+
+    fireEvent.click(screen.getByRole('switch', { name: /tornar meu perfil público/i }));
+
+    expect(screen.queryByRole('link', { name: /tayro\.app\/c\//i })).not.toBeInTheDocument();
+  });
+
+  it('sem handle do Instagram não promete endereço nenhum', () => {
+    mockHooks({
+      data: { ...baseProfile, instagramHandle: null, publicProfileEnabled: true },
+    });
+    render(<ProfilePage />);
+
+    expect(screen.queryByRole('link', { name: /tayro\.app\/c\//i })).not.toBeInTheDocument();
+    expect(screen.getByText(/adicione seu @ do instagram/i)).toBeInTheDocument();
+  });
+});
