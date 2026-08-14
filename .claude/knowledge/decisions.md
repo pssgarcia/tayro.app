@@ -44,6 +44,22 @@ distribuição conhecido. Não há plano.
 confirmar? o que é público no perfil da creator?
 **Ligado a `vision.md` nº 5** — nada de métrica que a gente não consiga provar.
 
+### D-E · Exclusão de conta: apagar ou anonimizar
+**Status:** `ABERTA` — levantada em 2026-08-14, nunca discutida
+**Por que bloqueia:** é o direito do art. 18 VI (eliminação), e **os dois lados colidem**. Hoje o
+schema tem `onDelete: Cascade` em tudo que pende de `User`, então apagar a conta de uma creator
+levaria junto `Application` → `ContentSubmission` → `Reward` → `PartnershipResult`. Se ela já
+recebeu pagamento, **a marca perde o próprio registro** da transação — e a marca também tem
+obrigação de guardar isso.
+**Precisa responder:** apagar de fato ou anonimizar (zerar nome/e-mail/handle/foto e manter a
+linha do reward)? O que a marca continua vendo de uma creator que saiu? Existe prazo de retenção
+antes da eliminação definitiva? Vale o mesmo para conta de marca?
+**Consequência de desenho:** anonimizar não é "delete com outro nome" — muda o modelo (campos
+nullable, flag de anonimização, o que os `select` da API passam a devolver) e é irreversível na
+prática. Decidir ANTES de escrever o endpoint.
+**Ligado a:** `vision.md` (o produto se posiciona em respeito à creator) e ao opt-in
+`publicProfileEnabled`, que é a única superfície de LGPD que já existe hoje.
+
 ---
 
 ## Decisões de produto

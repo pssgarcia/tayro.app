@@ -52,8 +52,51 @@ Detalhe em `CLAUDE.md` → Feito, v0.34.0. Falta: Pedro ratificar e isso entrar 
 
 ## PRÓXIMO — antes do lançamento
 
+### LGPD — levantamento 2026-08-14 (Pedro: "importante, mas não agora")
+
+Auditoria dos direitos que a lei nomeia contra o que o código faz hoje. **Não é opinião jurídica**
+— é mapeamento de engenharia; quem diz se está conforme é advogado.
+
+**O que já está certo** (não refazer): `publicProfileEnabled` é opt-in com default `false` e
+revogável a qualquer momento — revogação de consentimento (art. 18 IX) bem feita. Correção de
+perfil existe (`PATCH /influencers/me`). 404 uniforme pra perfil privado é anti-enumeração
+deliberado.
+
+**Bloco 1 — só código, sem decisão pendente. Dá pra fazer a qualquer momento:**
+
+| Item | Por que importa |
+|---|---|
+| **Trocar senha logada** | O mais urgente dos três, e é **segurança antes de LGPD**: hoje, se a senha de alguém vazar, a pessoa não tem como trocá-la. Não existe endpoint |
+| **Trocar e-mail** | `email` não está em nenhum DTO de update. Correção (art. 18 III) do dado mais identificador é impossível pelo produto |
+| **Exportar dados** | Acesso e portabilidade (art. 18 II e V). Não existe |
+
+**Bloco 2 — depende de você, não de código:**
+
+- **Política de privacidade + termos** — `[FATO — verificado 2026-08-14]` **zero** ocorrências de
+  "privacidade", "termos" ou "LGPD" em todo o frontend. É art. 9 (finalidade, duração,
+  compartilhamento) e hoje não há base legal documentada pra nada. Precisa de texto que o Pedro
+  escreva ou valide — agente não inventa texto jurídico e publica.
+- **Captura de consentimento** — nenhum aceite nos três fluxos de entrada (`RegisterBrandPage`,
+  `RegisterInfluencerPage`, `PublicApplyPage`). Sem registro de manifestação nem timestamp. O
+  ponto mais sensível é o `/apply/:id`: a pessoa entrega e-mail e handle **antes de ter conta**.
+- **Exclusão de conta** — **bloqueado por `D-E`** (apagar vs. anonimizar). Não começar sem decisão.
+
+**Bloco 3 — transparência sobre dado de terceiro:**
+
+- `followersCount`, `igProfilePicUrl` e `igRecentPosts` (URLs, thumbnails, likes, comentários) são
+  buscados via RapidAPI e ficam **cacheados no banco por tempo indeterminado**. A creator nunca é
+  informada de que o handle dela é enviado a um terceiro, nem por quanto tempo o dado fica. Art. 9
+  (informação sobre compartilhamento). Resolve-se junto com a política de privacidade — mas é
+  conteúdo separado, não parágrafo genérico.
+
+Ordem sugerida: trocar senha → política + consentimento (quando houver texto) → e-mail → export →
+exclusão (depois de `D-E`).
+
+---
+
 - **Checklist de lançamento** (`prelaunch`): HTTPS · env vars revisadas · política de privacidade
-  e termos · backup do banco · auditoria de segurança e arquitetura **via Fable** (`D-15`)
+  e termos (ver bloco LGPD acima) · backup do banco · auditoria de segurança e arquitetura
+  **via Fable** (`D-15`)
 - **Monitoramento de erros (Sentry)** — hoje um erro em produção só se descobre por reclamação,
   e não há de quem reclamar ainda. Vira urgente no minuto em que houver usuário real
 - **Bug conhecido: IG incompleto na 1ª candidatura** — a marca vê "dados indisponíveis" no
