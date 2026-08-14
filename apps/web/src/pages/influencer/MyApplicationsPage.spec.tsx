@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import MyApplicationsPage from './MyApplicationsPage';
 import * as hooks from '../../hooks/useMyApplications';
@@ -39,7 +39,7 @@ const baseApp: MyApplication = {
 
 const withdrawMutate = vi.fn();
 
-function mockHooks(apps: MyApplication[] = []) {
+function mockHooks(apps: MyApplication[] = [], withdrawState: Record<string, unknown> = {}) {
   vi.mocked(hooks.useMyApplications).mockReturnValue({
     data: apps,
     isLoading: false,
@@ -48,7 +48,9 @@ function mockHooks(apps: MyApplication[] = []) {
   vi.mocked(hooks.useWithdrawApplication).mockReturnValue({
     mutate: withdrawMutate,
     isPending: false,
+    isError: false,
     variables: undefined,
+    ...withdrawState,
   } as any);
   vi.mocked(submissionHooks.useMySubmissions).mockReturnValue({
     data: [],
@@ -105,11 +107,91 @@ describe('MyApplicationsPage', () => {
     expect(screen.getByText(/enviar conteúdo/i)).toBeInTheDocument();
   });
 
-  it('clicar em retirar chama o withdraw com o id da candidatura em destaque', () => {
+  // Retirar é definitivo: o unique (campaignId, influencerId) não olha status,
+  // então re-candidatar dá 409 mesmo depois de WITHDRAWN. Antes disso a placa
+  // em destaque retirava num clique só, sem confirmação.
+  it('retirar pede confirmação antes de chamar a mutation', () => {
     mockHooks([baseApp]);
     renderPage();
+
     fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
-    expect(withdrawMutate).toHaveBeenCalledWith('app-1');
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(withdrawMutate).not.toHaveBeenCalled();
+  });
+
+  it('a confirmação avisa que não dá pra se candidatar de novo', () => {
+    mockHooks([baseApp]);
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
+
+    expect(
+      within(screen.getByRole('dialog')).getByText(/não poderá se candidatar de novo/i),
+    ).toBeInTheDocument();
+  });
+
+  it('confirmar chama o withdraw com o id da candidatura em destaque', () => {
+    mockHooks([baseApp]);
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^retirar$/i }));
+
+    expect(withdrawMutate).toHaveBeenCalledWith('app-1', expect.objectContaining({
+      onSuccess: expect.any(Function),
+    }));
+  });
+
+  it('cancelar fecha a confirmação sem retirar', () => {
+    mockHooks([baseApp]);
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /cancelar/i }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(withdrawMutate).not.toHaveBeenCalled();
+  });
+
+  it('falha ao retirar mantém a confirmação aberta com o erro', () => {
+    mockHooks([baseApp], { isError: true });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/não foi possível retirar/i)).toBeInTheDocument();
+  });
+
+  // O furo: as linhas da lista eram <div> inerte, então quem tinha 3 candidaturas
+  // PENDING só conseguia retirar a mais recente (a que virava placa em destaque).
+  it('qualquer candidatura PENDING da lista pode ser retirada, não só a em destaque', () => {
+    const outraPendente: MyApplication = {
+      ...baseApp,
+      id: 'app-2',
+      appliedAt: '2026-06-01T10:00:00.000Z',
+      campaign: { ...baseApp.campaign, title: 'Programa Inverno' },
+    };
+    mockHooks([baseApp, outraPendente]);
+    renderPage();
+
+    // Duas linhas PENDING na lista → duas ações "Retirar" (a placa usa o rótulo
+    // longo "Retirar candidatura", então não colide).
+    const rowButtons = screen.getAllByRole('button', { name: /^retirar$/i });
+    expect(rowButtons).toHaveLength(2);
+
+    fireEvent.click(rowButtons[1]);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^retirar$/i }));
+
+    expect(withdrawMutate).toHaveBeenCalledWith('app-2', expect.anything());
+  });
+
+  it('candidatura já decidida não oferece retirar na lista', () => {
+    mockHooks([{ ...baseApp, status: 'REJECTED' }]);
+    renderPage();
+
+    expect(screen.queryByRole('button', { name: /^retirar$/i })).not.toBeInTheDocument();
   });
 
   it('filtra a lista de "Registro" por status pelas abas — a placa em destaque não filtra', () => {
