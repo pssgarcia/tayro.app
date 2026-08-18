@@ -14,6 +14,22 @@ export default {
         // Hex literal para cor de marca — sem drift de conversão HSL
         lime: '#C6FF33',
 
+        // "Kinetic Editorial" — nova direção visual (aprovada 2026-08-16,
+        // telas de revisão de candidato), promovida a token porque virou a
+        // identidade padrão do projeto daqui pra frente. `lime` acima É o
+        // "kinetic-accent" do mock original — mesmo hex, sem duplicar token.
+        // Convive com `plate`/`signal` (redesign 2a) enquanto o resto do
+        // produto ainda não foi migrado — não remover os antigos até migrar.
+        kinetic: {
+          black: '#121212', // fundo
+          dark: '#1a1a1a', // superfície elevada (hover, skeleton, sheet)
+          gray: '#2a2a2a', // borda / placeholder de imagem
+          light: '#e5e5e0', // "placa" clara do Kinetic — equivalente ao plate.DEFAULT
+          text: '#d1d1d1', // texto secundário forte
+          muted: '#888888', // legenda / rótulo mono
+          border: '#3a3a3a', // borda de controle sobre superfície escura (mais clara que `gray`, que é base/placeholder)
+        },
+
         // "Placa transparente": o objeto claro que ancora toda tela (redesign
         // 2a). É o único elemento claro do app — usar UMA por tela.
         plate: {
