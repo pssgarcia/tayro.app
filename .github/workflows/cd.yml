@@ -54,13 +54,21 @@ jobs:
       # o build/deploy no Railway completou normalmente; só o streaming de log
       # do CLI que dá timeout e reporta exit 1 mesmo com o deploy ok. Retenta
       # 1x antes de falhar o job de verdade.
+      #
+      # Timeout por tentativa (achado 2026-08-19): o retry acima só dispara se
+      # o comando RETORNAR com erro — visto 1x o CLI travar sem nunca retornar
+      # (~40min, bem além dos 5-11min normais do job inteiro), enquanto o
+      # deploy real já tinha completado no Railway. `timeout` mata a tentativa
+      # travada e deixa o loop cair pra próxima; `timeout-minutes` do step é
+      # a rede de segurança se até o `timeout` falhar em matar o processo.
       - name: Deploy API to Railway
+        timeout-minutes: 12
         run: |
           for attempt in 1 2; do
-            if npx @railway/cli@latest up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209; then
+            if timeout 300 npx @railway/cli@latest up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209; then
               exit 0
             fi
-            echo "Tentativa $attempt falhou (possível flake de log-streaming do Railway CLI)."
+            echo "Tentativa $attempt falhou (possível flake de log-streaming do Railway CLI, ou travou e foi morta pelo timeout)."
           done
           exit 1
         env:
