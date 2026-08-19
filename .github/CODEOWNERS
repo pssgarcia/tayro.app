@@ -1,0 +1,3 @@
+# Toda aprovação que desbloqueia merge precisa vir do dono do repo — não
+# basta 1 review de qualquer colaborador com Write (ver CLAUDE.md § CI/CD).
+* @pssgarcia
