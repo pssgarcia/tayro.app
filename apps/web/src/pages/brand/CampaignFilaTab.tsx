@@ -149,7 +149,7 @@ function ProfilePlate({
           <div className="flex min-w-0 items-center gap-4">
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-300">
               {avatarSrc && (
-                <img src={avatarSrc} alt="" className="h-full w-full object-cover grayscale" />
+                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
               )}
             </div>
             <div className="min-w-0">
@@ -270,7 +270,7 @@ function ProfilePlate({
                     src={post.thumbnail}
                     alt=""
                     loading="lazy"
-                    className="h-full w-full object-cover grayscale"
+                    className="h-full w-full object-cover"
                   />
                 </div>
               ) : (

@@ -92,7 +92,7 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 // Tela 15 do redesign 2a, a última — e a mais longa. As 4 section com bg-card
-// viram 2 seções tipográficas; a placa é a "Prévia da creator", montada ao
+// viram 2 seções tipográficas; a placa é a "Prévia da oferta", montada ao
 // vivo com watch() — é o que justifica a placa numa tela sem número herói, e
 // a maior alavanca de conversão: a marca vê o resultado antes de publicar.
 // O form em si vive em CampaignForm, compartilhado com a tela de edição.
