@@ -21,8 +21,8 @@ function Skeleton() {
 }
 
 // ─── Bloco de seguidores/engajamento — sem ação de refresh (página pública) ──
-// Ao contrário do ApplicationCard, não há botão "Atualizar": o endpoint de
-// sync é autenticado e não existe sessão de marca aqui.
+// Ao contrário da placa de candidatura da marca, não há botão "Atualizar":
+// o endpoint de sync é autenticado e não existe sessão de marca aqui.
 
 function IgStats({
   status,

@@ -22,7 +22,15 @@ export default function BrandLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    // h-screen (não min-h-screen): com só um piso mínimo, o container crescia
+    // pelo conteúdo e a página inteira rolava — o `overflow-auto` do <main>
+    // nunca tinha uma altura de verdade pra limitar contra, então nunca
+    // agia. Com altura travada em 100vh, o <main> passa a rolar por dentro
+    // de verdade (é o que a Fila precisa pra manter aprovar/descartar
+    // visível sem rolar a página — achado 2026-08-17). Sidebar e nav mobile
+    // ganham de brinde: antes rolavam junto com o conteúdo comprido, agora
+    // ficam fixos, que é o comportamento certo de app shell.
+    <div className="flex h-screen bg-background">
       {/* Sidebar — desktop only */}
       <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card">
         {/* Logo */}
