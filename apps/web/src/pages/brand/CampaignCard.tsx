@@ -92,7 +92,7 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
       <PlateActionBar
         secondary={{ label: copied ? 'Copiado!' : 'Copiar link', onClick: handleCopy, width: 100 }}
         primary={{
-          label: 'Ver fila',
+          label: 'Ver detalhes',
           onClick: () => navigate(`/brand/campaigns/${campaign.id}`),
           icon: <ArrowRight size={16} />,
         }}

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CampaignDetailPage from './CampaignDetailPage';
@@ -83,15 +83,19 @@ const noopMutation = { mutate: vi.fn(), isPending: false, variables: undefined, 
 function renderPage(
   applications: Application[],
   campaignOverrides: Partial<Campaign> = {},
-  mutationOverrides: { close?: any; delete?: any; publish?: any } = {},
+  mutationOverrides: { close?: any; delete?: any; publish?: any; approve?: any; reject?: any } = {},
 ) {
   vi.mocked(api.get).mockResolvedValue({ data: applications } as any);
   vi.mocked(hooks.useCampaign).mockReturnValue({
     data: { ...campaign, ...campaignOverrides },
     isLoading: false,
   } as any);
-  vi.mocked(hooks.useApproveApplication).mockReturnValue(noopMutation as any);
-  vi.mocked(hooks.useRejectApplication).mockReturnValue(noopMutation as any);
+  vi.mocked(hooks.useApproveApplication).mockReturnValue(
+    (mutationOverrides.approve ?? noopMutation) as any,
+  );
+  vi.mocked(hooks.useRejectApplication).mockReturnValue(
+    (mutationOverrides.reject ?? noopMutation) as any,
+  );
   vi.mocked(hooks.useRefreshApplicationIg).mockReturnValue(noopMutation as any);
   vi.mocked(campaignHooks.useCloseCampaign).mockReturnValue(
     (mutationOverrides.close ?? { ...noopMutation, mutate: vi.fn() }) as any,
@@ -120,61 +124,65 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('CampaignDetailPage — aba Fila (carrossel)', () => {
-  // Regressão: a fila renderizava só o candidato ativo, então o resto só era
-  // alcançável pelas bolinhas (2px de altura) — arrastar não fazia nada e
-  // "a última da fila" parecia ter sumido.
-  it('mantém TODAS as candidaturas pendentes no DOM, não só a ativa', async () => {
-    renderPage([1, 2, 3, 4, 5].map((i) => makeApplication(i)));
-
-    await waitFor(() => expect(screen.getByText('Creator 1')).toBeInTheDocument());
-    for (const i of [2, 3, 4, 5]) {
-      expect(screen.getByText(`Creator ${i}`)).toBeInTheDocument();
-    }
-  });
-
-  it('o pager tem uma bolinha por candidatura da fila', async () => {
-    renderPage([1, 2, 3, 4, 5].map((i) => makeApplication(i)));
-
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Candidato 1 de 5' })).toBeInTheDocument(),
-    );
-    expect(screen.getByRole('button', { name: 'Candidato 5 de 5' })).toBeInTheDocument();
-  });
-
-  it('clicar numa bolinha marca aquele candidato como atual', async () => {
-    renderPage([1, 2, 3].map((i) => makeApplication(i)));
-
-    const first = await screen.findByRole('button', { name: 'Candidato 1 de 3' });
-    const third = screen.getByRole('button', { name: 'Candidato 3 de 3' });
-    expect(first).toHaveAttribute('aria-current', 'true');
-
-    fireEvent.click(third);
-
-    expect(third).toHaveAttribute('aria-current', 'true');
-    expect(first).toHaveAttribute('aria-current', 'false');
-  });
-
-  it('decididas (aprovada/recusada) ficam fora da fila', async () => {
+// A aba Fila renderiza desktop (lista Pipeline + placa) e mobile (Story) ao
+// mesmo tempo no DOM — só CSS (hidden/lg:*) decide o que aparece de verdade,
+// e o jsdom não avalia media query. Por isso as buscas aqui são sempre
+// escopadas: `within(list)` pra Pipeline, `within(section)` pra placa —
+// senão "Creator 1" bate tanto na linha da lista quanto no hero do Story.
+describe('CampaignDetailPage — aba Fila (pipeline + placa)', () => {
+  it('mostra toda candidatura na Pipeline, qualquer status', async () => {
     renderPage([
       makeApplication(1),
       makeApplication(2, { status: 'APPROVED' }),
       makeApplication(3, { status: 'REJECTED' }),
     ]);
 
-    await waitFor(() => expect(screen.getByText('Creator 1')).toBeInTheDocument());
-    expect(screen.queryByText('Creator 2')).not.toBeInTheDocument();
-    expect(screen.queryByText('Creator 3')).not.toBeInTheDocument();
-    // fila de 1 não mostra pager
-    expect(screen.queryByRole('button', { name: /^Candidato/ })).not.toBeInTheDocument();
+    const list = await screen.findByRole('list');
+    for (const i of [1, 2, 3]) {
+      expect(within(list).getByText(`Creator ${i}`)).toBeInTheDocument();
+    }
+    // decidida continua navegável (não é mais "some da fila" — regra nova)
+    expect(within(list).getByText('Approved')).toBeInTheDocument();
+    expect(within(list).getByText('Rejected')).toBeInTheDocument();
   });
 
-  it('sem pendentes, mostra o estado vazio', async () => {
-    renderPage([makeApplication(1, { status: 'APPROVED' })]);
+  it('a primeira candidatura da lista aparece selecionada na placa por padrão', async () => {
+    const { container } = renderPage([1, 2, 3].map((i) => makeApplication(i)));
 
-    await waitFor(() =>
-      expect(screen.getByText(/nenhuma candidatura aguardando análise/i)).toBeInTheDocument(),
+    await screen.findByRole('list');
+    const section = container.querySelector('section')!;
+    expect(within(section).getByText('Creator 1')).toBeInTheDocument();
+  });
+
+  it('clicar numa linha da Pipeline troca quem aparece na placa', async () => {
+    const { container } = renderPage([1, 2, 3].map((i) => makeApplication(i)));
+
+    const list = await screen.findByRole('list');
+    fireEvent.click(within(list).getByRole('button', { name: /Creator 2/ }));
+
+    const section = container.querySelector('section')!;
+    expect(within(section).getByText('Creator 2')).toBeInTheDocument();
+  });
+
+  it('aprovar na placa chama a mutation com o id da candidatura selecionada', async () => {
+    const approveMutate = vi.fn();
+    const { container } = renderPage(
+      [makeApplication(1)],
+      {},
+      { approve: { ...noopMutation, mutate: approveMutate } },
     );
+
+    await screen.findByRole('list');
+    const section = container.querySelector('section')!;
+    fireEvent.click(within(section).getByRole('button', { name: /^aprovar$/i }));
+
+    expect(approveMutate).toHaveBeenCalledWith('app-1');
+  });
+
+  it('sem candidatura nenhuma, mostra o estado vazio da Pipeline', async () => {
+    renderPage([]);
+
+    expect(await screen.findByText('Nenhuma candidatura ainda.')).toBeInTheDocument();
   });
 });
 
