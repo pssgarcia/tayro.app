@@ -19,10 +19,8 @@ import type { Application, Campaign } from '../../types/api';
 // próximo candidato ocupa a mesma posição sozinho quando a query revalida
 // (sem precisar avançar o index manualmente).
 //
-// Fotos aqui ficam a cores (não grayscale como no desktop) — o p&b do
-// desktop é um efeito específico da placa clara "Kinetic"; sobre fundo quase
-// preto em tela cheia, foto a cores lê mais imersivo/premium (e é como a
-// própria referência do Instagram Stories funciona).
+// Fotos aqui ficam a cores, igual ao desktop (o p&b da placa clara "Kinetic"
+// foi removido — ver CampaignFilaTab.tsx).
 
 const SWIPE_THRESHOLD = 56;
 

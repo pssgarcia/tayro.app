@@ -114,14 +114,14 @@ export default function CampaignForm({
           <PlateField
             label="Título"
             required
-            placeholder="Ex: Embaixadoras Verão 2026"
+            placeholder="Ex: Verão Fitness 2026"
             error={errors.title?.message}
             {...register('title')}
           />
           <PlateTextarea
             label="Descrição"
             required
-            placeholder="O que você espera das creators, que conteúdo quer, qual é a vibe da marca…"
+            placeholder="O que você espera do conteúdo, que tipo de post quer, qual é a vibe da marca…"
             error={errors.description?.message}
             {...register('description')}
           />
@@ -169,7 +169,7 @@ export default function CampaignForm({
         </div>
 
         <h2 className="mb-[6px] mt-[34px] font-display text-d-xs text-foreground">A oferta</h2>
-        <p className="mb-5 text-xs text-[#75756E]">É a primeira coisa que a creator lê.</p>
+        <p className="mb-5 text-xs text-[#75756E]">É a primeira coisa que quem se candidata lê.</p>
 
         <Controller
           name="offerType"
@@ -212,7 +212,7 @@ export default function CampaignForm({
           </div>
         </div>
 
-        <p className="mb-[14px] mt-8 text-xs text-[#75756E]">Prévia da creator</p>
+        <p className="mb-[14px] mt-8 text-xs text-[#75756E]">Prévia da oferta</p>
         <Plate marks="all">
           <p className="mb-3 font-mono text-[9px] uppercase tracking-[.16em] text-plate-muted">
             O que você recebe
