@@ -6,6 +6,8 @@ import {
   formatCurrency,
   formatDate,
   formatOffer,
+  formatOfferWhole,
+  formatPercent,
 } from './format';
 
 describe('formatNumber', () => {
@@ -125,5 +127,38 @@ describe('formatOffer', () => {
         offerDescription: null,
       }),
     ).toBe('—');
+  });
+
+  it('formats a COMMISSION offer as a percentage per sale', () => {
+    expect(
+      formatOffer({
+        offerType: 'COMMISSION',
+        offerAmount: null,
+        offerDescription: null,
+        offerCommissionPercent: 10,
+      }),
+    ).toBe('10% por venda');
+  });
+});
+
+describe('formatPercent', () => {
+  it('drops the decimal for whole numbers', () => {
+    expect(formatPercent(10)).toBe('10%');
+  });
+
+  it('uses comma as decimal separator (pt-BR) for fractional values', () => {
+    expect(formatPercent(12.5)).toBe('12,5%');
+  });
+});
+
+describe('formatOfferWhole', () => {
+  it('formats a COMMISSION offer as a plain percentage', () => {
+    expect(
+      formatOfferWhole({
+        offerType: 'COMMISSION',
+        offerAmount: null,
+        offerCommissionPercent: 7.5,
+      }),
+    ).toEqual({ value: '7,5%' });
   });
 });

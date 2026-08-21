@@ -249,6 +249,100 @@ describe('CampaignsService', () => {
     });
   });
 
+  // ─── create ───────────────────────────────────────────────────────────────────
+
+  describe('create', () => {
+    const baseDto = {
+      title: 'Verão 2026',
+      description: 'Conteúdo mostrando o produto no treino',
+      niches: ['fitness'],
+      maxSpots: 5,
+      offerType: 'CASH' as const,
+      offerAmount: 30_000,
+    };
+
+    beforeEach(() => {
+      prisma.brand.findUnique.mockResolvedValue(makeBrand());
+      prisma.campaign.create.mockResolvedValue(makeCampaign());
+    });
+
+    it('creates the campaign when deadline is today or in the future', async () => {
+      const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+      }).format(new Date());
+
+      await service.create('user-1', { ...baseDto, deadline: todayStr });
+
+      expect(prisma.campaign.create).toHaveBeenCalled();
+    });
+
+    it('creates the campaign without a deadline', async () => {
+      await service.create('user-1', baseDto);
+
+      expect(prisma.campaign.create).toHaveBeenCalled();
+    });
+
+    // Regressão: nada no DTO (só @IsDateString) barrava uma data passada — a
+    // marca conseguia cadastrar "inscrições até" ontem.
+    it('rejects a deadline in the past', async () => {
+      await expect(
+        service.create('user-1', { ...baseDto, deadline: '2020-01-01' }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.campaign.create).not.toHaveBeenCalled();
+    });
+
+    it('passes offerCommissionPercent through to the create call', async () => {
+      await service.create('user-1', {
+        ...baseDto,
+        offerType: 'COMMISSION' as const,
+        offerAmount: undefined,
+        offerCommissionPercent: 10,
+      });
+
+      expect(prisma.campaign.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ offerCommissionPercent: 10 }),
+        }),
+      );
+    });
+  });
+
+  // ─── update ───────────────────────────────────────────────────────────────────
+
+  describe('update', () => {
+    it('rejects a deadline in the past', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+
+      await expect(
+        service.update('camp-1', 'user-1', { deadline: '2020-01-01' }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.campaign.update).not.toHaveBeenCalled();
+    });
+
+    it('updates the campaign when deadline is in the future', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+      prisma.campaign.update.mockResolvedValue(makeCampaign());
+
+      await service.update('camp-1', 'user-1', {
+        deadline: '2099-01-01',
+      });
+
+      expect(prisma.campaign.update).toHaveBeenCalled();
+    });
+  });
+
   // ─── findMine ─────────────────────────────────────────────────────────────────
 
   describe('findMine', () => {

@@ -3,7 +3,9 @@ import {
   IsOptional,
   IsArray,
   IsInt,
+  IsNumber,
   Min,
+  Max,
   IsEnum,
   IsDateString,
 } from 'class-validator';
@@ -70,6 +72,16 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsString()
   offerDescription?: string;
+
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'Percentual de comissão por venda (ex: 10 = 10%)',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  @Max(100)
+  offerCommissionPercent?: number;
 
   // ─── DEPRECATED — mantidos para não quebrar registros antigos ─────────────
 

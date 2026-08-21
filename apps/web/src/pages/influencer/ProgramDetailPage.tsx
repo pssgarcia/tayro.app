@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { useProgram } from '../../hooks/useProgram';
 import { useMyApplications } from '../../hooks/useMyApplications';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatDate, formatOffer } from '../../utils/format';
 import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
 import StatusPill from '../../components/primitives/StatusPill';
@@ -42,7 +42,7 @@ export default function ProgramDetailPage() {
   // anterior — inclusive retirada — bloqueia um novo apply com 409.
   const myApplication = applications?.find((a) => a.campaignId === id);
 
-  const isCash = campaign?.offerType === 'CASH';
+  const isProduct = campaign?.offerType === 'PRODUCT';
   const initials = (campaign?.brand?.name ?? '')
     .split(/\s+/)
     .slice(0, 2)
@@ -103,12 +103,10 @@ export default function ProgramDetailPage() {
               O que você recebe
             </p>
             <p className="font-display text-[26px] font-bold leading-[1.04] tracking-[-.045em] text-plate-ink">
-              {isCash && campaign.offerAmount != null
-                ? formatCurrency(campaign.offerAmount)
-                : (campaign.offerDescription ?? '—')}
+              {formatOffer(campaign)}
             </p>
             <p className="mt-2.5 text-xs text-plate-muted">
-              {isCash ? 'por candidatura aprovada' : 'produto enviado para você'}
+              {isProduct ? 'produto enviado para você' : 'por candidatura aprovada'}
             </p>
 
             <div className="mb-5 mt-[22px] h-px bg-plate-line" />
@@ -121,7 +119,7 @@ export default function ProgramDetailPage() {
                     </span>
                   </CountUp>
                   <p className="mt-3 text-xs text-plate-soft">
-                    {isCash ? 'dias até o pagamento' : 'dias até o envio'}
+                    {isProduct ? 'dias até o envio' : 'dias até o pagamento'}
                   </p>
                 </div>
               )}

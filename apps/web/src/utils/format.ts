@@ -27,6 +27,11 @@ export function formatEngagement(rate: number): string {
   return `${rate.toFixed(1).replace('.', ',')}%`;
 }
 
+/** 10 → "10%" | 12.5 → "12,5%" — sem casa decimal forçada (diferente de formatEngagement). */
+export function formatPercent(value: number): string {
+  return `${Number.isInteger(value) ? value : value.toFixed(1).replace('.', ',')}%`;
+}
+
 /** centavos → "R$ 300,00" */
 export function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -54,15 +59,19 @@ export function daysUntil(iso: string | null): number | null {
 
 /** Termos da oferta de uma campanha em texto curto. */
 export function formatOffer(offer: {
-  offerType: 'CASH' | 'PRODUCT' | null;
+  offerType: 'CASH' | 'PRODUCT' | 'COMMISSION' | null;
   offerAmount: number | null;
   offerDescription: string | null;
+  offerCommissionPercent?: number | null;
 }): string {
   if (offer.offerType === 'CASH' && offer.offerAmount != null) {
     return formatCurrency(offer.offerAmount);
   }
   if (offer.offerType === 'PRODUCT' && offer.offerDescription) {
     return offer.offerDescription;
+  }
+  if (offer.offerType === 'COMMISSION' && offer.offerCommissionPercent != null) {
+    return `${formatPercent(offer.offerCommissionPercent)} por venda`;
   }
   return '—';
 }
@@ -73,14 +82,18 @@ export function formatOffer(offer: {
  * decidir (Apply), que usa formatCurrency.
  */
 export function formatOfferWhole(offer: {
-  offerType: 'CASH' | 'PRODUCT' | null;
+  offerType: 'CASH' | 'PRODUCT' | 'COMMISSION' | null;
   offerAmount: number | null;
+  offerCommissionPercent?: number | null;
 }): { prefix?: string; value: string } | null {
   if (offer.offerType === 'CASH' && offer.offerAmount != null) {
     return { prefix: 'R$ ', value: String(Math.round(offer.offerAmount / 100)) };
   }
   if (offer.offerType === 'PRODUCT') {
     return { value: 'produto' };
+  }
+  if (offer.offerType === 'COMMISSION' && offer.offerCommissionPercent != null) {
+    return { value: formatPercent(offer.offerCommissionPercent) };
   }
   return null;
 }

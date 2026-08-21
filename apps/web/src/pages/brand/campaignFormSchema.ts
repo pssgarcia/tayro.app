@@ -25,6 +25,14 @@ const optionalPositiveInt = (message: string) =>
     z.coerce.number().int().min(1, message).optional(),
   );
 
+/** yyyy-MM-dd de "hoje" no fuso local do browser — mesma base do `min` do <input type="date">. */
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
 export const campaignFormSchema = z
   .object({
     title: z.string().min(3, 'Mínimo 3 caracteres'),
@@ -32,8 +40,12 @@ export const campaignFormSchema = z
     briefUrl: z.string().url('URL inválida').or(z.literal('')).optional(),
     niches: z.array(z.string()).min(1, 'Selecione ao menos um nicho'),
     maxSpots: z.coerce.number().int().min(1, 'Mínimo 1 vaga'),
-    deadline: z.string().optional(),
-    offerType: z.enum(['CASH', 'PRODUCT']),
+    // Comparação em string funciona pq yyyy-MM-dd ordena igual lexicograficamente.
+    deadline: z
+      .string()
+      .optional()
+      .refine((v) => !v || v >= todayStr(), 'A data não pode ser no passado'),
+    offerType: z.enum(['CASH', 'PRODUCT', 'COMMISSION']),
     // em R$, convertido p/ centavos no submit
     offerAmountBRL: z.preprocess(
       (v) => (v === '' || v === null ? undefined : v),
@@ -41,6 +53,11 @@ export const campaignFormSchema = z
     ),
     offerDescription: z.string().optional(),
     offerDeadlineDays: optionalPositiveInt('Mínimo 1 dia'),
+    // percentual (ex: 10 = 10%)
+    offerCommissionPercent: z.preprocess(
+      (v) => (v === '' || v === null ? undefined : v),
+      z.coerce.number().min(0.01, 'Valor inválido').max(100, 'Máximo 100%').optional(),
+    ),
   })
   .superRefine((val, ctx) => {
     if (val.offerType === 'CASH' && (!val.offerAmountBRL || val.offerAmountBRL <= 0)) {
@@ -55,6 +72,16 @@ export const campaignFormSchema = z
         code: 'custom',
         path: ['offerDescription'],
         message: 'Descreva o produto oferecido',
+      });
+    }
+    if (
+      val.offerType === 'COMMISSION' &&
+      (!val.offerCommissionPercent || val.offerCommissionPercent <= 0)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['offerCommissionPercent'],
+        message: 'Informe o percentual de comissão',
       });
     }
   });
@@ -75,6 +102,7 @@ export function campaignToFormValues(campaign: Campaign): CampaignFormValues {
     offerAmountBRL: campaign.offerAmount != null ? campaign.offerAmount / 100 : undefined,
     offerDescription: campaign.offerDescription ?? '',
     offerDeadlineDays: campaign.offerDeadlineDays ?? undefined,
+    offerCommissionPercent: campaign.offerCommissionPercent ?? undefined,
   };
 }
 
@@ -92,5 +120,7 @@ export function formValuesToPayload(values: CampaignFormValues): CreateCampaignP
       values.offerType === 'CASH' ? Math.round((values.offerAmountBRL ?? 0) * 100) : undefined,
     offerDescription: values.offerType === 'PRODUCT' ? values.offerDescription : undefined,
     offerDeadlineDays: values.offerDeadlineDays || undefined,
+    offerCommissionPercent:
+      values.offerType === 'COMMISSION' ? values.offerCommissionPercent : undefined,
   };
 }
