@@ -25,12 +25,18 @@ const optionalPositiveInt = (message: string) =>
     z.coerce.number().int().min(1, message).optional(),
   );
 
-/** yyyy-MM-dd de "hoje" no fuso local do browser — mesma base do `min` do <input type="date">. */
+/**
+ * yyyy-MM-dd de "hoje" no fuso do PRODUTO, não no do navegador.
+ *
+ * Tem que ser o mesmo cálculo do backend (`CampaignsService.assertDeadlineNotPast`),
+ * senão as duas pontas discordam sobre que dia é hoje: uma marca com o relógio
+ * fora do Brasil (VPN, viajando, sistema mal configurado) via o form recusar
+ * uma data que a API aceitaria — ou o contrário. `en-CA` porque é o locale que
+ * formata como yyyy-MM-dd, que é o formato do <input type="date"> e ordena
+ * igual lexicograficamente.
+ */
 function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 }
 
 export const campaignFormSchema = z
