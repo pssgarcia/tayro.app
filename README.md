@@ -1,6 +1,6 @@
 # tayro
 
-CRM de creators fitness, creator-first. MVP de plataforma de marketing de influência — creators constroem carreira, marcas encontram o fit certo, sem planilha e sem DM de Instagram.
+CRM de creators fitness, creator-first. SaaS de plataforma de marketing de influência — creators constroem carreira, marcas encontram o fit certo, sem planilha e sem DM de Instagram.
 
 [![CI](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml/badge.svg)](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml)
 
