@@ -33,6 +33,7 @@ const baseApp: MyApplication = {
     offerAmount: 30_000,
     offerDeadlineDays: 30,
     offerDescription: null,
+    offerCommissionPercent: null,
     brand: { name: 'Marca Fit', logoUrl: null },
   },
 };

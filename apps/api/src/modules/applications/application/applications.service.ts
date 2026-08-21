@@ -95,6 +95,7 @@ export class ApplicationsService {
             offerAmount: true,
             offerDeadlineDays: true,
             offerDescription: true,
+            offerCommissionPercent: true,
             status: true,
             deadline: true,
             brand: { select: { name: true, logoUrl: true } },

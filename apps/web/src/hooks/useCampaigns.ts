@@ -22,10 +22,11 @@ export interface CreateCampaignPayload {
   niches: string[];
   maxSpots: number;
   deadline?: string;
-  offerType?: 'CASH' | 'PRODUCT';
+  offerType?: 'CASH' | 'PRODUCT' | 'COMMISSION';
   offerAmount?: number;
   offerDeadlineDays?: number;
   offerDescription?: string;
+  offerCommissionPercent?: number;
 }
 
 /** PATCH /campaigns/:id aceita o mesmo shape, todos os campos opcionais. */
