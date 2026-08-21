@@ -34,9 +34,15 @@ sem refazer a discussão.
 
 `CLAUDE.md` (raiz do repo) = **como construir**: stack, convenções, footguns, o que já está pronto.
 `.claude/knowledge/` = **o que construir e por quê**: visão, cliente, concorrência, prioridade.
+`specs/<slug>/spec.md` (raiz do repo, ver `specs/README.md`) = **o que cada capacidade faz,
+agora** — comportamento vivo, editável; editar a spec é o pedido de mudança. Terceira categoria,
+não é nem uma coisa nem outra: `decisions.md` registra por que decidimos X uma vez (append-only,
+não se edita); a spec registra o que X faz hoje (se edita, é o ponto).
 
 Não duplicar. Se um agente precisa saber que dinheiro é em centavos, isso é `CLAUDE.md`.
 Se precisa saber por que a oferta aparece antes da candidatura, isso é `decisions.md`.
+Se precisa saber quais são os estados de `ContentSubmission` e quem pode transicionar cada um,
+isso é `specs/content-submissions/spec.md`.
 
 ## Regra 5 — Quem atualiza
 
@@ -49,6 +55,7 @@ Se precisa saber por que a oferta aparece antes da candidatura, isso é `decisio
 | `customer-interviews.md` | Pedro/Thais **na mão**, agente nunca escreve | a cada entrevista |
 | `decisions.md` | agente `product` propõe, Pedro ratifica | a cada decisão |
 | `roadmap.md` | agente `product` | a cada release |
+| `specs/<slug>/spec.md` | agente `architect` propõe, Pedro ratifica | a cada mudança de comportamento da capacidade |
 
 ## Estado da base (2026-08-06)
 

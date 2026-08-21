@@ -1,5 +1,5 @@
 ---
-description: Revisa o trabalho da branch atual em 4 eixos — código, UX, performance e consistência com o produto.
+description: Revisa o trabalho da branch atual em 5 eixos — código, UX, performance, consistência com o produto e deriva de spec.
 argument-hint: [foco opcional — ex: "só performance" ou "só a tela nova"]
 allowed-tools: Read, Grep, Glob, Bash, Edit
 ---
@@ -16,11 +16,15 @@ repo é comum a tela nova ainda não estar commitada.
 Leia também `CLAUDE.md` (invariantes, footguns, telas prontas) e
 `.claude/knowledge/vision.md` + `decisions.md`.
 
+Identifique quais `specs/<slug>/spec.md` cobrem os arquivos tocados (o frontmatter `implements:`
+de cada spec lista os arquivos-chave — `grep` por eles, ou por nome de pasta/rota, se o
+`implements:` não bater exatamente) e leia essas specs inteiras antes de revisar.
+
 Foco pedido (se houver): $ARGUMENTS
 
 ---
 
-## Os 4 eixos
+## Os 5 eixos
 
 ### 1. Código
 - Faz o que diz? Caminho de erro tratado ou só o feliz?
@@ -50,6 +54,21 @@ Foco pedido (se houver): $ARGUMENTS
 - Isso **entrega o que a gente diz que entrega**? Se toca um dos 4 diferenciais, ele ficou mais
   verdadeiro ou só mais bonito?
 - Escopo cresceu além do que o `/feature` aprovou?
+
+### 5. Deriva de spec (`specs/<slug>/spec.md`)
+- O código, depois da mudança, ainda bate com `Behavior`, `API / Interfaces` e `Acceptance
+  Criteria` da spec correspondente? Divergência aqui é achado — a spec parou de ser confiável.
+- O diff muda regra de negócio, endpoint, modelo ou máquina de estados que uma spec descreve,
+  **sem atualizar a spec**? Isso é o caso mais comum e o mais importante de pegar: código sem
+  spec atualizada volta a ser exatamente o problema que `specs/` existe pra resolver. Sinalize
+  mesmo que o código em si esteja correto — falta o `/architect` passar e atualizar o arquivo.
+- O diff corrige algo que a spec listava em `Known Gaps` ou `Test Coverage` (um `- [ ]`)? Se
+  sim, a spec precisa marcar `- [x]` e mover a linha — gap resolvido documentado como gap ainda
+  aberto é o erro inverso, igualmente enganoso.
+- O diff introduz detalhe de implementação (nome de método, ORM, service) dentro de uma frase
+  que deveria ser requisito em `Behavior`/`API / Interfaces`? Aponte a seção errada.
+- Nenhuma spec cobre os arquivos tocados? Não é bloqueio (pode ser código genuinamente sem
+  capacidade própria — util, config), mas vale mencionar como 🔵 se parecer que deveria existir.
 
 ---
 
