@@ -16,6 +16,7 @@ const baseCampaign: Campaign = {
   offerAmount: 30_000,
   offerDeadlineDays: 30,
   offerDescription: null,
+  offerCommissionPercent: null,
   deadline: '2026-07-15T00:00:00.000Z',
   createdAt: '2026-06-01T00:00:00.000Z',
   _count: { applications: 3 },

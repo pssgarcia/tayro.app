@@ -28,6 +28,7 @@ function makeCampaign(over: Partial<Campaign> = {}): Campaign {
     offerAmount: 50000,
     offerDeadlineDays: 14,
     offerDescription: null,
+    offerCommissionPercent: null,
     deadline: '2026-07-01T00:00:00.000Z',
     createdAt: '2026-06-01T00:00:00.000Z',
     brand: { name: 'Marca Fit', logoUrl: null, website: null },

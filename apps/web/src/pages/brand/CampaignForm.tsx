@@ -25,12 +25,12 @@ function OfferTypeToggle({
   value,
   onChange,
 }: {
-  value: 'CASH' | 'PRODUCT';
-  onChange: (v: 'CASH' | 'PRODUCT') => void;
+  value: 'CASH' | 'PRODUCT' | 'COMMISSION';
+  onChange: (v: 'CASH' | 'PRODUCT' | 'COMMISSION') => void;
 }) {
   return (
     <div className="mb-6 flex gap-1.5">
-      {(['CASH', 'PRODUCT'] as const).map((type) => (
+      {(['CASH', 'PRODUCT', 'COMMISSION'] as const).map((type) => (
         <button
           key={type}
           type="button"
@@ -40,7 +40,7 @@ function OfferTypeToggle({
             value === type ? 'bg-plate text-[#0A0A0A]' : 'text-[#75756E] hover:text-foreground',
           )}
         >
-          {type === 'CASH' ? 'Dinheiro (PIX)' : 'Produto'}
+          {type === 'CASH' ? 'Dinheiro (PIX)' : type === 'PRODUCT' ? 'Produto' : 'Comissão'}
         </button>
       ))}
     </div>
@@ -85,13 +85,18 @@ export default function CampaignForm({
   const watchedDescription = watch('offerDescription');
   const watchedDeadlineDays = watch('offerDeadlineDays');
   const watchedMaxSpots = watch('maxSpots');
+  const watchedCommissionPercent = watch('offerCommissionPercent');
 
   const previewOffer =
     offerType === 'CASH'
       ? watchedAmount
         ? formatCurrency(Math.round(watchedAmount * 100))
         : null
-      : watchedDescription || null;
+      : offerType === 'COMMISSION'
+        ? watchedCommissionPercent
+          ? `${watchedCommissionPercent}% por venda`
+          : null
+        : watchedDescription || null;
 
   const busy = isSubmitting || isPending;
 
@@ -190,7 +195,7 @@ export default function CampaignForm({
               error={errors.offerAmountBRL?.message}
               {...register('offerAmountBRL')}
             />
-          ) : (
+          ) : offerType === 'PRODUCT' ? (
             <PlateTextarea
               label="Descrição do produto"
               required
@@ -198,11 +203,24 @@ export default function CampaignForm({
               error={errors.offerDescription?.message}
               {...register('offerDescription')}
             />
+          ) : (
+            <PlateField
+              label="Comissão (%)"
+              required
+              type="number"
+              min={0.01}
+              max={100}
+              step={0.01}
+              suffix="%"
+              placeholder="10"
+              error={errors.offerCommissionPercent?.message}
+              {...register('offerCommissionPercent')}
+            />
           )}
 
           <div className="w-[110px]">
             <PlateField
-              label={offerType === 'CASH' ? 'Prazo p/ pagamento (dias)' : 'Prazo p/ envio (dias)'}
+              label={offerType === 'PRODUCT' ? 'Prazo p/ envio (dias)' : 'Prazo p/ pagamento (dias)'}
               type="number"
               min={1}
               placeholder="15"
@@ -227,7 +245,7 @@ export default function CampaignForm({
             </p>
           )}
           <p className="mt-2.5 text-xs text-plate-muted">
-            {offerType === 'CASH' ? 'por candidatura aprovada' : 'produto enviado para você'}
+            {offerType === 'PRODUCT' ? 'produto enviado para você' : 'por candidatura aprovada'}
           </p>
 
           <div className="mb-5 mt-[22px] h-px bg-plate-line" />
@@ -239,7 +257,7 @@ export default function CampaignForm({
                 </span>
               </CountUp>
               <p className="mt-3 text-xs text-plate-soft">
-                {offerType === 'CASH' ? 'dias até o pagamento' : 'dias até o envio'}
+                {offerType === 'PRODUCT' ? 'dias até o envio' : 'dias até o pagamento'}
               </p>
             </div>
             <div>

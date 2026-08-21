@@ -219,6 +219,7 @@ export interface MyApplication {
     offerAmount: number | null;
     offerDeadlineDays: number | null;
     offerDescription: string | null;
+    offerCommissionPercent: number | null;
     brand: { name: string; logoUrl: string | null };
   };
 }
@@ -273,7 +274,7 @@ export interface ClaimPreview {
 // ─── Campaign ──────────────────────────────────────────────────────────────────
 
 export type CampaignStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'COMPLETED';
-export type OfferType = 'CASH' | 'PRODUCT';
+export type OfferType = 'CASH' | 'PRODUCT' | 'COMMISSION';
 
 export interface Campaign {
   id: string;
@@ -288,6 +289,7 @@ export interface Campaign {
   offerAmount: number | null;      // centavos
   offerDeadlineDays: number | null;
   offerDescription: string | null;
+  offerCommissionPercent: number | null;
   deadline: string | null;
   createdAt: string;
   brand?: { name: string; logoUrl: string | null; website: string | null };

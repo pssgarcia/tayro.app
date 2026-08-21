@@ -126,6 +126,66 @@ describe('NewCampaignPage', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('cria o rascunho com oferta em comissão', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: draft } as any);
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/título/i), { target: { value: 'Verão 2026' } });
+    fireEvent.change(screen.getByLabelText(/descrição/i), {
+      target: { value: 'Conteúdo mostrando o produto no treino' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^fitness$/i }));
+    fireEvent.change(screen.getByLabelText(/vagas/i), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: /^comissão$/i }));
+    fireEvent.change(screen.getByLabelText(/comissão \(%\)/i), { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: /salvar rascunho/i }));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        '/campaigns',
+        expect.objectContaining({
+          offerType: 'COMMISSION',
+          offerCommissionPercent: 10,
+          offerAmount: undefined,
+          offerDescription: undefined,
+        }),
+      );
+    });
+  });
+
+  it('não cria a comissão sem informar o percentual', async () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText(/título/i), { target: { value: 'Verão 2026' } });
+    fireEvent.change(screen.getByLabelText(/descrição/i), {
+      target: { value: 'Conteúdo mostrando o produto no treino' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^fitness$/i }));
+    fireEvent.change(screen.getByLabelText(/vagas/i), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: /^comissão$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /salvar rascunho/i }));
+
+    expect(await screen.findByText(/informe o percentual de comissão/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  // Regressão: "Inscrições até" não tinha nenhuma validação — dava pra
+  // cadastrar uma data passada. Validado 100% via zod (não via `min` nativo do
+  // <input type="date">) de propósito: o balão de validação nativo do browser
+  // não é estilizável e sai em inglês em boa parte dos browsers — a mensagem
+  // em pt-BR precisa aparecer no mesmo lugar que os outros erros do form.
+  it('não deixa cadastrar com "Inscrições até" no passado', async () => {
+    renderPage();
+
+    fillRequiredFields();
+    const deadline = screen.getByLabelText(/inscrições até/i) as HTMLInputElement;
+    fireEvent.change(deadline, { target: { value: '2020-01-01' } });
+    fireEvent.click(screen.getByRole('button', { name: /salvar rascunho/i }));
+
+    expect(await screen.findByText(/a data não pode ser no passado/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it('não envia nada sem nicho selecionado', async () => {
     renderPage();
 

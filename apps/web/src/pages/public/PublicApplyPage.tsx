@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Campaign } from '../../types/api';
-import { formatCurrency } from '../../utils/format';
+import { formatOffer } from '../../utils/format';
 import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
 import PlateField from '../../components/primitives/PlateField';
@@ -209,12 +209,10 @@ export default function PublicApplyPage() {
                     O que você recebe
                   </p>
                   <p className="font-display text-[26px] font-bold leading-[1.04] tracking-[-.045em] text-plate-ink">
-                    {campaign.offerType === 'CASH' && campaign.offerAmount != null
-                      ? formatCurrency(campaign.offerAmount)
-                      : (campaign.offerDescription ?? '—')}
+                    {formatOffer(campaign)}
                   </p>
                   <p className="mt-2.5 text-xs text-plate-muted">
-                    {campaign.offerType === 'CASH' ? 'por candidatura aprovada' : 'produto enviado para você'}
+                    {campaign.offerType === 'PRODUCT' ? 'produto enviado para você' : 'por candidatura aprovada'}
                   </p>
 
                   {campaign.offerDeadlineDays != null && (
@@ -228,7 +226,7 @@ export default function PublicApplyPage() {
                             </span>
                           </CountUp>
                           <p className="mt-3 text-xs text-plate-soft">
-                            {campaign.offerType === 'CASH' ? 'dias até o pagamento' : 'dias até o envio'}
+                            {campaign.offerType === 'PRODUCT' ? 'dias até o envio' : 'dias até o pagamento'}
                           </p>
                         </div>
                         <div>

@@ -23,6 +23,7 @@ export class CampaignsService {
 
   async create(userId: string, dto: CreateCampaignDto) {
     const brand = await this.findBrandOrFail(userId);
+    this.assertDeadlineNotPast(dto.deadline);
 
     return this.prisma.campaign.create({
       data: {
@@ -39,6 +40,7 @@ export class CampaignsService {
         offerAmount: dto.offerAmount,
         offerDeadlineDays: dto.offerDeadlineDays,
         offerDescription: dto.offerDescription,
+        offerCommissionPercent: dto.offerCommissionPercent,
         status: CampaignStatus.DRAFT,
       },
     });
@@ -160,6 +162,8 @@ export class CampaignsService {
       throw new BadRequestException('Only draft campaigns can be edited');
     }
 
+    this.assertDeadlineNotPast(dto.deadline);
+
     const { deadline, ...rest } = dto;
 
     return this.prisma.campaign.update({
@@ -208,6 +212,22 @@ export class CampaignsService {
   }
 
   // ─── Helpers privados ────────────────────────────────────────────────────────
+
+  /**
+   * `deadline` chega como data pura (yyyy-MM-dd, sem timezone) — comparar como
+   * string evita o off-by-one de converter pra Date e comparar contra horário
+   * UTC do servidor. "Hoje" é calculado no fuso do produto (America/Sao_Paulo,
+   * pt-BR only) pra não rejeitar/aceitar a data errada perto da virada do dia.
+   */
+  private assertDeadlineNotPast(deadline?: string) {
+    if (!deadline) return;
+    const todayStr = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+    }).format(new Date());
+    if (deadline.slice(0, 10) < todayStr) {
+      throw new BadRequestException('Deadline cannot be in the past');
+    }
+  }
 
   private async findBrandOrFail(userId: string) {
     const brand = await this.prisma.brand.findUnique({ where: { userId } });

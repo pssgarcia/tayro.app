@@ -33,6 +33,7 @@ enum RewardType {
 enum OfferType {
   CASH
   PRODUCT
+  COMMISSION
 }
 
 enum ApplicationStatus {
@@ -155,10 +156,11 @@ model Campaign {
   rewardValue String
 
   // Termos da oferta — fonte de verdade exibida à creator antes de candidatar
-  offerType         OfferType? // CASH | PRODUCT
-  offerAmount       Int?       // em centavos (ex: 30000 = R$300,00); nulo quando PRODUCT
-  offerDeadlineDays Int?       // dias corridos após aprovação de conteúdo para pagamento/envio
-  offerDescription  String?    // descrição livre (ex: "Kit Whey 900g + coqueteleira")
+  offerType             OfferType? // CASH | PRODUCT | COMMISSION
+  offerAmount           Int?       // em centavos (ex: 30000 = R$300,00); só quando CASH
+  offerDeadlineDays     Int?       // dias corridos após aprovação de conteúdo para pagamento/envio
+  offerDescription      String?    // descrição livre (ex: "Kit Whey 900g + coqueteleira"); só quando PRODUCT
+  offerCommissionPercent Float?    // percentual por venda via link/cupom da creator; só quando COMMISSION
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -27,7 +27,14 @@ function Section({
 function offerTypeLabel(type: Campaign['offerType']): string {
   if (type === 'CASH') return 'Pagamento';
   if (type === 'PRODUCT') return 'Produto';
+  if (type === 'COMMISSION') return 'Comissão';
   return '—';
+}
+
+function offerValueLabel(type: Campaign['offerType']): string {
+  if (type === 'PRODUCT') return 'Produto';
+  if (type === 'COMMISSION') return 'Comissão';
+  return 'Valor';
 }
 
 export default function CampaignOverviewTab({
@@ -84,10 +91,7 @@ export default function CampaignOverviewTab({
       <Section title="Oferta à creator" icon={<Gift size={16} />}>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <StatBlock label="Tipo" value={offerTypeLabel(campaign.offerType)} />
-          <StatBlock
-            label={campaign.offerType === 'PRODUCT' ? 'Produto' : 'Valor'}
-            value={formatOffer(campaign)}
-          />
+          <StatBlock label={offerValueLabel(campaign.offerType)} value={formatOffer(campaign)} />
           <StatBlock
             label="Prazo de pagamento"
             value={
