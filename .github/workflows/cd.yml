@@ -49,23 +49,37 @@ jobs:
       # Service ID (não o nome) — imutável e sem ambiguidade. Não é segredo
       # (aparece na URL do painel); o acesso é protegido pelo RAILWAY_TOKEN.
       #
-      # Retry: o CLI falha esporadicamente com "Failed to stream build logs" —
-      # visto 2x (2026-08-03) sempre ~65s após "CI mode enabled". Nas duas vezes
-      # o build/deploy no Railway completou normalmente; só o streaming de log
-      # do CLI que dá timeout e reporta exit 1 mesmo com o deploy ok. Retenta
-      # 1x antes de falhar o job de verdade.
+      # VERSÃO PINADA, NÃO TROCAR PARA @latest (mordeu 2026-08-15 a 2026-08-21).
+      # O CLI é dependência de terceiro que sai várias vezes por dia; com
+      # @latest, um release do Railway quebra o CD sem nenhuma mudança nossa —
+      # e foi exatamente o que houve. Correlação versão × resultado:
+      #   5.41.1 (latest até 15/08) → último CD verde (14/08)
+      #   5.41.2 (latest 15/08–21/08) → 4 falhas seguidas
+      #   5.42.1 (latest 21/08)      → falha
+      # A partir da 5.41.2, `up --ci` completa o build, publica a imagem e
+      # NUNCA RETORNA: fica pendurado até ser morto pelo `timeout`, com o
+      # deploy já no ar. Ou seja, CD vermelho com produção atualizada — o pior
+      # tipo de falso-negativo, porque mascara uma falha real (a migration, por
+      # exemplo, roda no step anterior). Subir de versão = PR próprio, olhando
+      # uma run verde antes de mergear.
       #
-      # Timeout por tentativa (achado 2026-08-19): o retry acima só dispara se
-      # o comando RETORNAR com erro — visto 1x o CLI travar sem nunca retornar
-      # (~40min, bem além dos 5-11min normais do job inteiro), enquanto o
-      # deploy real já tinha completado no Railway. `timeout` mata a tentativa
-      # travada e deixa o loop cair pra próxima; `timeout-minutes` do step é
-      # a rede de segurança se até o `timeout` falhar em matar o processo.
+      # Retry: mantido como rede de segurança pro flake histórico de
+      # "Failed to stream build logs" (2026-08-03, ~65s após "CI mode enabled",
+      # com o deploy completando normal). Note que ele NÃO salva do modo de
+      # falha acima: a 2ª tentativa re-sobe o mesmo snapshot, o Railway pula o
+      # build ("no changes detected in watch paths") e o CLI trava sem ter
+      # nenhum log pra transmitir. Se as duas tentativas baterem no `timeout`
+      # com o job durando ~10m30s certinho, suspeite do CLI antes do código.
+      #
+      # `timeout` por tentativa porque o retry só dispara se o comando RETORNAR
+      # com erro — sem ele o CLI travado segura o job por horas (visto 2026-08-19,
+      # run cancelada com 6h). `timeout-minutes` do step é a rede de segurança
+      # caso nem o `timeout` mate o processo.
       - name: Deploy API to Railway
         timeout-minutes: 12
         run: |
           for attempt in 1 2; do
-            if timeout 300 npx @railway/cli@latest up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209; then
+            if timeout 300 npx @railway/cli@5.41.1 up --ci --service f0afafae-1cd2-41e2-b462-8c413dd53209; then
               exit 0
             fi
             echo "Tentativa $attempt falhou (possível flake de log-streaming do Railway CLI, ou travou e foi morta pelo timeout)."
