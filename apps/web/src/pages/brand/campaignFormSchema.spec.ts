@@ -16,6 +16,13 @@ import { campaignFormSchema } from './campaignFormSchema';
 // `new Date().getDate()` responde 21 enquanto São Paulo ainda está no dia 20 —
 // é exatamente esse descompasso que o teste tranca.
 
+// `process` não existe nos tipos do app (tsconfig.app.json → types: ["vite/client"]),
+// e é assim de propósito: app de browser não deve enxergar global de Node, senão
+// código de produção passa a poder usar. O runner do vitest roda em Node, então o
+// objeto existe em tempo de execução — declaramos só o pedaço usado, aqui, em vez de
+// puxar @types/node pro projeto inteiro e afrouxar isso pra todo mundo.
+declare const process: { env: Record<string, string | undefined> };
+
 const INSTANTE_UTC = '2026-08-21T02:00:00Z'; // 2026-08-20 23:00 em São Paulo
 const HOJE_EM_SAO_PAULO = '2026-08-20';
 const ONTEM_EM_SAO_PAULO = '2026-08-19';
