@@ -43,3 +43,6 @@ Lembretes que este projeto já pagou caro pra aprender:
 Ao final, se o veredito mudar o roadmap ou registrar uma rejeição, **edite os arquivos**
 (`roadmap.md` / `decisions.md`) e diga o que você mudou. Marque como `PROPOSTA` até o Pedro
 ratificar. Nunca escreva em `customer-interviews.md`.
+
+Se o veredito for `AGORA`, o próximo passo é `/architect` — e este veredito (problema, persona,
+hipótese) vira a seção "Por que existe" quando ele criar `specs/<slug>/spec.md`.

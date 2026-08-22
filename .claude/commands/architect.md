@@ -1,7 +1,7 @@
 ---
-description: Desenha domínio, modelos, fluxo, endpoints e trade-offs de uma feature JÁ aprovada pelo /feature. Não implementa.
-argument-hint: <a feature aprovada — ex: "registro de resultado de parceria">
-allowed-tools: Read, Grep, Glob, Bash
+description: Desenha domínio, modelos, fluxo, endpoints e trade-offs de uma feature JÁ aprovada pelo /feature (ou revisa uma capacidade existente via specs/). Não implementa. Escreve/atualiza specs/<slug>/spec.md.
+argument-hint: <feature aprovada, ou mudança numa capacidade existente — ex: "recusa de conteúdo exige motivo obrigatório">
+allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 Assuma o papel definido em `.claude/agents/architect.md`. **Leia esse arquivo primeiro.**
@@ -10,12 +10,17 @@ o Pedro vai discutir trade-off linha a linha — contexto compartilhado importa 
 
 ## Portão de entrada
 
-**Antes de desenhar qualquer coisa, confirme que a feature passou pelo `/feature` com veredito
-`AGORA`.** Se não passou, ou se você não viu o veredito, pare e pergunte. Arquitetura pra
-feature não aprovada é a forma mais cara de perder tempo neste projeto.
+Primeiro, confira se já existe `specs/<slug>/spec.md` pra esta capacidade (`ls specs/`).
 
-Confirme também que ela não depende de decisão `ABERTA` em `.claude/knowledge/decisions.md` —
-principalmente `D-A` (monetização) e `D-B` (marca vs agência). Desenho que assume um comprador
+- **Existe:** isto é revisão de uma capacidade viva. Não exige veredito novo do `/feature` —
+  editar/pedir mudança na spec é o próprio pedido de trabalho. Leia a spec atual inteira antes
+  de propor o que muda.
+- **Não existe:** confirme que a feature passou pelo `/feature` com veredito `AGORA`. Se não
+  passou, ou se você não viu o veredito, pare e pergunte. Arquitetura pra feature não aprovada
+  é a forma mais cara de perder tempo neste projeto.
+
+Nos dois casos, confirme que não depende de decisão `ABERTA` em `.claude/knowledge/decisions.md`
+— principalmente `D-A` (monetização) e `D-B` (marca vs agência). Desenho que assume um comprador
 custa caro se o outro vencer.
 
 ## Antes de propor
@@ -52,3 +57,6 @@ Exigências que não se negociam:
 
 Você **não implementa**. A implementação vem depois, no fluxo normal, com TDD e os testes deste
 plano escritos antes.
+
+Por fim, escreva a spec em `specs/<slug>/spec.md` (crie ou atualize — ver `specs/README.md` pro
+template e pra regra de qual seção pode mudar). Diga ao Pedro qual arquivo você criou/tocou.
