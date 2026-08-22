@@ -124,8 +124,10 @@ fusos horários diferentes.
       calculados sem uma query por campanha (2 queries totais).
 - [ ] Toda transição de status tem teste de unidade cobrindo o caminho de sucesso e o de
       rejeição (ver Known Gaps — `close`/`remove` não têm).
-- [ ] A checagem de "`deadline` não pode estar no passado" do formulário concorda com a da API
-      pra qualquer fuso horário de navegador (ver Known Gaps — hoje não concorda).
+- [x] A checagem de "`deadline` não pode estar no passado" do formulário concorda com a da API
+      pra qualquer fuso horário de navegador — as duas fixam "hoje" em `America/Sao_Paulo`.
+      Coberto por `campaignFormSchema.spec.ts` com `TZ=UTC` na janela em que os fusos
+      discordam de dia.
 
 ## Error Scenarios
 - Criar/editar com `deadline` no passado → `400`, "Deadline cannot be in the past".
@@ -145,17 +147,8 @@ fusos horários diferentes.
   payload spam/DoS sem limite. Não corrigido neste retrofit, só documentado.
 - **`close()` e `remove()` não têm teste de unidade nem e2e** — confirmado por grep, nenhum
   arquivo `.spec.ts` cobre essas duas transições (as outras têm).
-- **Checagem de "`deadline` no passado" usa fuso diferente no cliente e no servidor**
-  (achado em revisão de código, 2026-08-21, fora deste retrofit). O backend
-  (`assertDeadlineNotPast`) fixa "hoje" em `America/Sao_Paulo` de propósito — o próprio comentário
-  do código diz que é pra evitar off-by-one perto da virada do dia. O formulário
-  (`campaignFormSchema.ts` → `todayStr()`) calcula "hoje" com `new Date().getFullYear()/
-  getMonth()/getDate()`, ou seja, no fuso **local do navegador**, não fixo em Brasil. Cenário
-  concreto: uma marca com o relógio/fuso do sistema fora de `America/Sao_Paulo` (fuso
-  configurado errado, VPN, viajando) pode ter o formulário recusando como "no passado" uma
-  data que a API aceitaria — ou o inverso, formulário aceita e a API devolve `400` — logo depois
-  de o comentário do backend dizer que esse exato tipo de erro foi pensado pra evitar. Não
-  corrigido; ver item de backlog em `CLAUDE.md` → "Bugs conhecidos".
+(O descompasso de fuso entre formulário e API, achado em revisão de código em 2026-08-21,
+foi **corrigido** — ver Change History.)
 
 ## Test Coverage
 Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
@@ -199,3 +192,9 @@ Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
 - 2026-08-21 · `/review` achou e registrou o descompasso de fuso horário entre a validação de
   `deadline` do formulário e da API (novo Known Gap + critério de aceitação `[ ]` + item em
   `CLAUDE.md` → "Bugs conhecidos"). Não corrigido nesta entrada, só documentado.
+- 2026-08-22 · descompasso de fuso **corrigido** (PR #126): `todayStr()` do formulário passou a
+  usar `Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })`, idêntico ao backend.
+  Coberto por `campaignFormSchema.spec.ts`, que força `TZ=UTC` e um instante às 02:00 UTC
+  (= 23:00 do dia anterior em São Paulo) — sem esse setup o teste passa mesmo com o bug, que é
+  como ele escapou (a máquina de dev roda em São Paulo, então as duas pontas concordavam por
+  acidente). Known Gap e item de `CLAUDE.md` removidos.
