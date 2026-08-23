@@ -141,7 +141,7 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
           label="Bio"
           value={watchedBio ?? ''}
           multiline
-          placeholder="Conte sobre sua marca para as creators."
+          placeholder="Conte sobre sua marca para quem for se candidatar."
           error={errors.bio?.message}
           onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
         />
@@ -211,7 +211,7 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-5xl px-6 pt-[14px]">
       <h1 className="font-display text-d-md text-foreground">Marca</h1>
       <p className="mb-[22px] mt-2 text-[13px] text-[#75756E]">
-        É o que a creator vê primeiro no seu link.
+        É a primeira coisa que aparece no seu link.
       </p>
 
       {isLoading && <Skeleton />}

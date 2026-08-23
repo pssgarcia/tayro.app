@@ -3,7 +3,7 @@ slug: campaign-lifecycle
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/api/prisma/schema.prisma (model Campaign, enum CampaignStatus, enum OfferType)
   - apps/api/src/modules/campaigns/presentation/campaigns.controller.ts
@@ -78,6 +78,21 @@ Não existe caminho de volta (`ACTIVE → DRAFT`) nem qualquer transição a par
 - A listagem pública (`GET /campaigns`) só retorna campanhas `ACTIVE`.
 - Toda visualização de campanha (lista e detalhe) é instrumentada para saber se o visitante
   está autenticado ou anônimo — é a única instrumentação de funil do produto hoje.
+- **Todo campo de texto livre tem teto de tamanho**, recusado na validação de entrada antes de
+  qualquer escrita no banco (regra geral de segurança do produto — defesa contra payload
+  spam/DoS). Os tetos valem igualmente na criação e na edição:
+
+| Campo | Teto |
+|---|---|
+| `title` | 100 caracteres |
+| `description` | 2000 caracteres |
+| `briefUrl` | 2048 caracteres |
+| `offerDescription` | 500 caracteres |
+| `niches[]` | 20 itens, 50 caracteres cada |
+| `rewardValue` (deprecated) | 500 caracteres |
+
+  O filtro `niches` da listagem pública (query string, não corpo) também tem teto (200
+  caracteres) — é texto livre de origem anônima e sem ele a string é fatiada sem limite.
 
 ## API / Interfaces
 
@@ -122,8 +137,10 @@ fusos horários diferentes.
 - [x] `GET /campaigns` nunca retorna campanha fora de `ACTIVE`.
 - [x] `GET /campaigns/mine` traz `approvedCount`/`pendingCount` corretos por campanha,
       calculados sem uma query por campanha (2 queries totais).
-- [ ] Toda transição de status tem teste de unidade cobrindo o caminho de sucesso e o de
-      rejeição (ver Known Gaps — `close`/`remove` não têm).
+- [x] Toda transição de status tem teste de unidade cobrindo o caminho de sucesso e o de
+      rejeição — `publish`, `close` e `remove` (sucesso, pré-condição violada, não-dono).
+- [x] Texto livre acima do teto é recusado na validação de entrada, com a campanha **não
+      criada** — vale para criação e edição (o DTO de edição herda as mesmas restrições).
 - [x] A checagem de "`deadline` não pode estar no passado" do formulário concorda com a da API
       pra qualquer fuso horário de navegador — as duas fixam "hoje" em `America/Sao_Paulo`.
       Coberto por `campaignFormSchema.spec.ts` com `TZ=UTC` na janela em que os fusos
@@ -141,14 +158,9 @@ fusos horários diferentes.
 - **`CampaignStatus.COMPLETED` é inalcançável.** Existe no enum e aparece (sempre zerado) em
   contadores de dashboard, mas nenhum código escreve essa transição. Não é bug — é lacuna de
   modelo conhecida, documentada também em `CLAUDE.md` → "Dívida de modelo de dados".
-- **`CreateCampaignDto` não tem `@MaxLength` em nenhum campo de texto livre** (`title`,
-  `description`, `briefUrl`, `offerDescription`, itens de `niches[]`). Contradiz a regra de
-  segurança geral do projeto ("`@MaxLength()` em todo campo de texto livre") — superfície de
-  payload spam/DoS sem limite. Não corrigido neste retrofit, só documentado.
-- **`close()` e `remove()` não têm teste de unidade nem e2e** — confirmado por grep, nenhum
-  arquivo `.spec.ts` cobre essas duas transições (as outras têm).
-(O descompasso de fuso entre formulário e API, achado em revisão de código em 2026-08-21,
-foi **corrigido** — ver Change History.)
+(Dois gaps desta seção foram **fechados em 2026-08-23** — ausência de `@MaxLength` nos campos
+de texto livre e ausência de teste em `close()`/`remove()`. O descompasso de fuso entre
+formulário e API foi corrigido em 2026-08-22. Ver Change History.)
 
 ## Test Coverage
 Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
@@ -159,8 +171,12 @@ Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
       `offerCommissionPercent` passa adiante.
 - [x] `update` — rejeita `deadline` passado, aceita `deadline` futuro.
 - [x] `findMine` — `approvedCount`/`pendingCount`, `403` sem perfil de marca.
-- [ ] `close` — nenhum teste.
-- [ ] `remove` — nenhum teste.
+- [x] `close` — transição válida, `400` se não-`ACTIVE`, `403` se não-dono, `404` inexistente.
+- [x] `remove` — apaga `DRAFT`, `400` se fora de `DRAFT` (e **nada é apagado**), `403` se
+      não-dono.
+- [x] Tetos de tamanho dos campos de texto livre — `create-campaign.dto.spec.ts` valida o DTO
+      real via `class-validator` (aceita no limite, recusa acima; cobre também o DTO de edição,
+      que herda as restrições via `PartialType`).
 
 ## Current Implementation
 - Módulo em `apps/api/src/modules/campaigns/` (Clean Architecture: `presentation/` controller,
@@ -198,3 +214,9 @@ Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
   (= 23:00 do dia anterior em São Paulo) — sem esse setup o teste passa mesmo com o bug, que é
   como ele escapou (a máquina de dev roda em São Paulo, então as duas pontas concordavam por
   acidente). Known Gap e item de `CLAUDE.md` removidos.
+- 2026-08-23 · `@MaxLength`/`@ArrayMaxSize` aplicados a todo campo de texto livre de
+  `CreateCampaignDto` (e, por herança, do de edição) e ao filtro `niches` da listagem —
+  fechando a contradição com a regra de segurança geral do projeto. Novos tetos registrados em
+  "Behavior". Teste de DTO novo.
+- 2026-08-23 · `close()` e `remove()` ganharam teste de unidade (sucesso, pré-condição violada,
+  não-dono, inexistente). Fecha o último `[ ]` de "toda transição tem teste".

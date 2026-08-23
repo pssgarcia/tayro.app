@@ -152,8 +152,13 @@ export class ApplicationsService {
           if (approvedCount >= maxSpots) {
             throw new BadRequestException('Campaign is full');
           }
+          // `status` no WHERE, não só `id`: a checagem de PENDING lá em cima
+          // vale pro instante da LEITURA. Sem isto, um reject concorrente que
+          // leu a mesma linha ainda pendente sobrescreve esta aprovação —
+          // e-mail de aprovação já enviado, status REJECTED na tela, vaga
+          // liberada em silêncio. P2025 = ninguém casou o filtro.
           return tx.application.update({
-            where: { id },
+            where: { id, status: ApplicationStatus.PENDING },
             data: {
               status: ApplicationStatus.APPROVED,
               reviewedAt: new Date(),
@@ -171,7 +176,7 @@ export class ApplicationsService {
       ) {
         throw new BadRequestException('Campaign is full');
       }
-      throw err;
+      throw this.asDecisionConflict(err);
     }
 
     // Best-effort: EmailService nunca lança — falha de e-mail não derruba o approve.
@@ -194,10 +199,17 @@ export class ApplicationsService {
       throw new BadRequestException('Application is not pending');
     }
 
-    const updated = await this.prisma.application.update({
-      where: { id },
-      data: { status: ApplicationStatus.REJECTED, reviewedAt: new Date() },
-    });
+    // Ver comentário em approve(): o status entra no WHERE pra que duas
+    // decisões concorrentes resolvam numa só.
+    let updated;
+    try {
+      updated = await this.prisma.application.update({
+        where: { id, status: ApplicationStatus.PENDING },
+        data: { status: ApplicationStatus.REJECTED, reviewedAt: new Date() },
+      });
+    } catch (err) {
+      throw this.asDecisionConflict(err);
+    }
 
     await this.emailService.sendApplicationRejected({
       to: application.influencer.user.email,
@@ -224,10 +236,31 @@ export class ApplicationsService {
       );
     }
 
-    return this.prisma.application.update({
-      where: { id },
-      data: { status: ApplicationStatus.WITHDRAWN },
-    });
+    try {
+      return await this.prisma.application.update({
+        where: { id, status: ApplicationStatus.PENDING },
+        data: { status: ApplicationStatus.WITHDRAWN },
+      });
+    } catch (err) {
+      throw this.asDecisionConflict(err);
+    }
+  }
+
+  /**
+   * Traduz o P2025 das escritas condicionais (`where: { id, status: PENDING }`)
+   * em 409 — a candidatura foi decidida por outra requisição entre a leitura e
+   * a escrita desta. Qualquer outro erro passa intacto.
+   */
+  private asDecisionConflict(err: unknown): unknown {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2025'
+    ) {
+      return new ConflictException(
+        'Esta candidatura já foi decidida — recarregue para ver o status atual',
+      );
+    }
+    return err;
   }
 
   /**

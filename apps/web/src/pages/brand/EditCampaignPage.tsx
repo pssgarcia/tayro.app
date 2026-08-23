@@ -54,8 +54,8 @@ export default function EditCampaignPage() {
         {!isLoading && !isError && campaign && campaign.status !== 'DRAFT' && (
           <div className="max-w-[520px]">
             <p className="text-sm text-[#8A8A85]">
-              Este programa já foi publicado e não pode mais ser editado. As creators que se
-              candidataram viram estes termos — mudá-los agora quebraria o combinado.
+              Este programa já foi publicado e não pode mais ser editado. Quem se candidatou
+              viu estes termos — mudá-los agora quebraria o combinado.
             </p>
             <button
               type="button"
