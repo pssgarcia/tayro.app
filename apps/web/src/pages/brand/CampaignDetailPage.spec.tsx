@@ -142,8 +142,8 @@ describe('CampaignDetailPage — aba Fila (pipeline + placa)', () => {
       expect(within(list).getByText(`Creator ${i}`)).toBeInTheDocument();
     }
     // decidida continua navegável (não é mais "some da fila" — regra nova)
-    expect(within(list).getByText('Approved')).toBeInTheDocument();
-    expect(within(list).getByText('Rejected')).toBeInTheDocument();
+    expect(within(list).getByText('Aprovada')).toBeInTheDocument();
+    expect(within(list).getByText('Recusada')).toBeInTheDocument();
   });
 
   it('a primeira candidatura da lista aparece selecionada na placa por padrão', async () => {

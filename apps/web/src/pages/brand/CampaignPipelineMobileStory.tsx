@@ -6,7 +6,12 @@ import {
   useRefreshApplicationIg,
   useRejectApplication,
 } from '../../hooks/useCampaignApplications';
-import { formatEngagement, formatNumberParts, formatOffer } from '../../utils/format';
+import {
+  creatorAvatarSrc,
+  formatEngagement,
+  formatNumberParts,
+  formatOffer,
+} from '../../utils/format';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
 
@@ -228,9 +233,7 @@ function CandidateStory({
 }) {
   const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
-  const avatarSrc = influencer.igProfilePicUrl
-    ? `/api/v1/ig/avatar/${influencer.id}`
-    : influencer.avatarUrl;
+  const avatarSrc = creatorAvatarSrc(influencer);
   const followers =
     influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
   const igLoading = influencer.igFetchStatus === 'PENDING';
@@ -329,7 +332,7 @@ function CandidateStory({
             {followers && (
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                  Followers
+                  Seguidores
                 </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-white">
                   {followers.value}
@@ -340,7 +343,7 @@ function CandidateStory({
             {influencer.igEngagementRate != null && (
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                  Engagement
+                  Engajamento
                 </p>
                 <p className="mt-1 text-3xl font-bold tracking-tight text-white">
                   {formatEngagement(influencer.igEngagementRate)}

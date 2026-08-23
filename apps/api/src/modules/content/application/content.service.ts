@@ -162,6 +162,7 @@ export class ContentService {
                 name: true,
                 instagramHandle: true,
                 avatarUrl: true,
+                igProfilePicUrl: true,
               },
             },
           },

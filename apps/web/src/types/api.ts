@@ -50,7 +50,10 @@ export interface SubmissionInfluencer {
   id: string;
   name: string;
   instagramHandle: string | null;
+  /** Preenchido à mão pela creator; hoje quase sempre vazio. Fallback só. */
   avatarUrl: string | null;
+  /** Existe quando o sync do IG trouxe a foto — é a fonte de verdade da foto. */
+  igProfilePicUrl: string | null;
 }
 
 export interface CampaignSubmission {
@@ -196,9 +199,11 @@ export interface CampaignReward {
   issuedAt: string | null;
   createdAt: string;
   influencer: {
+    id: string;
     name: string;
     avatarUrl: string | null;
     instagramHandle: string | null;
+    igProfilePicUrl: string | null;
   };
 }
 

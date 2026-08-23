@@ -107,8 +107,8 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     expect(pipeline.getByText('Bia')).toBeInTheDocument();
     expect(pipeline.getByText('Cris')).toBeInTheDocument();
     expect(pipeline.getByText('Dani')).toBeInTheDocument();
-    expect(pipeline.getByText('Approved')).toBeInTheDocument();
-    expect(pipeline.getByText('Withdrawn')).toBeInTheDocument();
+    expect(pipeline.getByText('Aprovada')).toBeInTheDocument();
+    expect(pipeline.getByText('Retirada')).toBeInTheDocument();
   });
 
   it('seleciona a primeira candidatura por padrão e troca ao clicar em outra linha', async () => {

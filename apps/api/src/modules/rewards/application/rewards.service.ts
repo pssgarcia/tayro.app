@@ -112,7 +112,13 @@ export class RewardsService {
       orderBy: { createdAt: 'desc' },
       include: {
         influencer: {
-          select: { name: true, avatarUrl: true, instagramHandle: true },
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            instagramHandle: true,
+            igProfilePicUrl: true,
+          },
         },
       },
     });

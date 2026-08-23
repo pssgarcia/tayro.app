@@ -8,6 +8,7 @@ import {
   useRequestRevision,
 } from '../../hooks/useCampaignApplications';
 import EmptyState from '../../components/primitives/EmptyState';
+import { creatorAvatarSrc } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -113,9 +114,9 @@ function SubmissionCard({
       {/* Header: creator + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          {submission.influencer.avatarUrl ? (
+          {creatorAvatarSrc(submission.influencer) ? (
             <img
-              src={submission.influencer.avatarUrl}
+              src={creatorAvatarSrc(submission.influencer) as string}
               alt={submission.influencer.name}
               className="h-8 w-8 shrink-0 rounded-full object-cover"
             />
