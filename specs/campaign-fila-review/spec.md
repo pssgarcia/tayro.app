@@ -3,7 +3,7 @@ slug: campaign-fila-review
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/web/src/pages/brand/CampaignFilaTab.tsx
   - apps/web/src/pages/brand/CampaignPipelineMobileStory.tsx
@@ -77,16 +77,39 @@ negócio separada da apresentação).
 - [x] "Fechar revisão" no mobile não dispara navegação de rota.
 
 ## Known Gaps
-- **Nenhum teste automatizado cobre esta capacidade.** Nem `CampaignFilaTab` nem
-  `CampaignPipelineMobileStory` têm spec — a lógica de polling (timeout, reset), navegação por
-  swipe e contagem de tally não têm proteção contra regressão; a validação registrada em
-  `CLAUDE.md` foi manual, rodando o app de verdade. Risco real: a lógica de timeout de polling
-  é a parte mais fácil de quebrar silenciosamente numa mudança futura, exatamente por não ter
-  teste.
+- **"Match Score" é placeholder** (hash determinístico do id da candidatura, sem cálculo real) —
+  já registrado em "Out of Scope" como decisão deliberada, repetido aqui porque um número de 70
+  a 95 na tela é indistinguível de métrica real pra quem olha. Não tem teste de propósito: o que
+  vale travar é que ele não finge vir do dado da creator, não o valor em si.
+(O gap "nenhum teste automatizado cobre esta capacidade", do retrofit de 2026-08-21, foi
+**fechado em 2026-08-23** — ver Test Coverage e Change History.)
 
 ## Test Coverage
-- [ ] `CampaignFilaTab.spec.tsx` — não existe.
-- [ ] `CampaignPipelineMobileStory.spec.tsx` — não existe.
+Fixtures compartilhadas pelos dois arquivos: `apps/web/src/test/fixtures/applications.ts`
+(mesmo formato de `GET /applications/campaign/:id`).
+
+`apps/web/src/pages/brand/CampaignFilaTab.spec.tsx` — query real (não mockada), só as mutations
+são dubladas:
+- [x] Pipeline lista candidatura de todo status; empty state.
+- [x] Seleção default (primeira) e troca de selecionada ao clicar na linha.
+- [x] Aprovar/descartar só aparecem em `PENDING` e disparam com o id da selecionada.
+- [x] Poll de 6s enquanto há `PENDING` com IG `PENDING`; nenhum poll quando não há.
+- [x] Candidatura já decidida com IG pendente **não** mantém o poll vivo.
+- [x] Poll para depois de 45s contínuos (verificado por mutação: desligar o teto no componente
+      faz este teste falhar).
+- [x] Cronômetro zera quando o IG chega — fila pendente futura volta a pollar do zero.
+
+`apps/web/src/pages/brand/CampaignPipelineMobileStory.spec.tsx` — componente controlado por
+props, nenhum hook mockado:
+- [x] Recorte da fila: só `PENDING`; sem pendente, cai direto no fim de fila; nada de fim de
+      fila prematuro durante o carregamento.
+- [x] Navegação: zonas de toque, limite no primeiro candidato, swipe horizontal, arraste curto
+      e arraste vertical ignorados.
+- [x] Painel de detalhes: abre em "Ver posts"; com ele aberto, o toque na lateral fecha em vez
+      de avançar (não perde a posição).
+- [x] Tally: só conta a decisão que o servidor confirmou; ações desabilitadas com decisão em voo.
+- [x] Estados de IG: OK, `FAILED`, `null` tratado como falha, cooldown 429 bloqueando o botão.
+- [x] Saída: "Fechar revisão" e "Voltar para a campanha" chamam `onExit`, sem navegação.
 
 ## Current Implementation
 - Constantes `POLL_INTERVAL_MS = 6_000` / `POLL_TIMEOUT_MS = 45_000`, definidas em
@@ -106,3 +129,7 @@ negócio separada da apresentação).
 - 2026-08-21 · reestruturado pro padrão SDD. Mudança conceitual: seção "API / Interfaces" foi
   omitida de propósito (capacidade sem endpoint próprio — os endpoints consumidos já estão
   documentados em `applications-pipeline`, listá-los de novo aqui seria duplicação).
+- 2026-08-23 · capacidade sai de zero cobertura automatizada: 30 testes novos nos dois
+  componentes, com a lógica de poll (intervalo, teto de 45s, reset do cronômetro) exercitada
+  contra a query real em vez de hook mockado. O teste do teto foi validado por mutação — sem
+  isso ele passaria mesmo com a proteção desligada.

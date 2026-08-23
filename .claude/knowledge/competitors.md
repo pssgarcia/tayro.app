@@ -56,6 +56,26 @@ A planilha está.
 
 ---
 
+## Brasil — investigados
+
+### Conty (appconty.com) `[FATO — ver fontes abaixo, acessado 2026-08-23]`
+
+| | |
+|---|---|
+| **O que é** | Marketplace/infra de creator economy brasileira: marca posta "missão patrocinada" (desafio de conteúdo pago, gamificado — creator ganha XP + pagamento), qualquer pessoa pode participar, sem exigência de audiência grande. Cobre UGC, "influencer", "clipping" e "ambassador" no mesmo produto. `[FATO — startups.com.br, 2026-04-02; administradores.com.br, acessado 2026-08-23]` |
+| **Para quem vende** | Marca (qualquer porte/nicho — clientes citados: iFood, Kaspersky, Atom Educação; nenhum de fitness/wellness). Fundação também tem lado "para creators", app próprio. `[FATO — startups.com.br, 2026-04-02]` |
+| **Fundação** | Fevereiro de 2025, fundador Pedro Del Valle (22 anos, ex-YouTuber de jogos/educação financeira). PMF alegado em julho de 2025. `[FATO — startups.com.br, 2026-04-02]` |
+| **Funding** | Rodada anjo de R$250 mil, valuation R$2,5 milhões, investidores Anderson Diehl (fundador do Angel Investor Club) e Ricardo Dias (co-fundador da AURA Beauty). Pré-seed de ~R$1 milhão planejada pra 2026 (ainda não captada até a data da fonte). `[FATO — startups.com.br, 2026-04-02; administradores.com.br, acessado 2026-08-23]` |
+| **Tração — INCONSISTENTE entre fontes, todas autodeclaradas** | Out/2025 (administradores.com.br): 800+ creators cadastradas, 20 marcas ativas, R$10 mil distribuídos, MRR de R$20 mil após 2 meses monetizando. Abr/2026 (startups.com.br): 50 mil+ creators, ~100 marcas clientes. Site institucional próprio (appconty.com, via busca): "+2.000 marcas e +60.000 creators". Nenhuma dessas fontes é auditoria independente — todas remontam à própria empresa/imprensa que a entrevistou. Não há ARR público, não há headcount público, não achamos página no Crunchbase acessível (403). |
+| **Preço** | Não encontrado publicamente (página `/para-marcas` retornou 403 em toda tentativa de fetch). Modelo descrito é por performance/métrica (CPM, comissão, valor fixo, pagamento mensal) — marca "só paga se o conteúdo entrega resultado" — não achamos tiers nem "fale com vendas" confirmado. |
+| **Geografia** | Brasil, produto em português. Nenhuma menção a operação fora do Brasil. |
+| **Nicho fitness/wellness** | Não encontrado. Marcas citadas nas fontes (iFood, Kaspersky, Atom Educação) são de food delivery, segurança digital e edtech — nenhuma de fitness/wellness. Produto se posiciona como genérico ("qualquer marca", "qualquer criador"), não vertical. |
+| **Reclame Aqui** | Empresa (`APP CONTY LTDA`) tem página, não verificada/sem selo, e sem reclamações suficientes pra calcular reputação no período fev–jul/2026 — sinal fraco (baixo volume/visibilidade), não prova de bom atendimento. |
+| **Sobreposição com TAYRO** | Ambos conectam marca e creator no Brasil e lidam com pagamento/recompensa. Onde diverge: Conty é fundamentalmente **discovery + marketplace de missões em escala** (marca busca creator por perfil/audiência/objetivo; qualquer pessoa participa, sem precisar de audiência grande) — é exatamente o jogo que o TAYRO define como fora de escopo (comparável a Modash, não ao nosso "depois da candidatura"). Não achamos evidência de media kit vivo, histórico de parceria verificado e portátil, ou "oferta definida antes da candidatura" — os 4 diferenciais que o TAYRO reivindica. Conty é generalista (qualquer nicho, qualquer marca) com growth via VC e mecânica gamificada de volume; TAYRO é vertical (fitness/wellness) e via avaliação individual de poucas creators. Autodescrição da empresa é "Uber da Creator Economy" — jogo de escala/marketplace, não de CRM de relacionamento. |
+| **A verificar** | Preço real (site bloqueou fetch — tentar via captura de tela ou contato direto); se algum plano/feature específico ataca fitness; headcount real (LinkedIn não retornou dado). |
+
+---
+
 ## Brasil — fila de investigação `[NENHUM VERIFICADO]`
 
 Nomes que aparecem no mercado brasileiro de marketing de influência. **Podem estar
@@ -90,3 +110,4 @@ só com escolher um cliente cuja dor já passou do limite.
 | Data | O que mudou | Fonte |
 |---|---|---|
 | 2026-08-06 | Arquivo criado, tudo não verificado | — |
+| 2026-08-23 | Adicionado Conty (appconty.com) como concorrente investigado — nota da pesquisa pra continuar orientando: não focado em fitness, é discovery+marketplace de missões (não CRM pós-candidatura), tração autodeclarada e inconsistente entre 3 fontes (não verificável) | ver relatório `researcher` 2026-08-23 |

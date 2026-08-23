@@ -170,6 +170,21 @@ export function useMarkRewardDelivered(campaignId: string) {
   });
 }
 
+/**
+ * Remove um registro de recompensa ainda PENDING.
+ * Existe porque mais de uma recompensa por creator/campanha é legítima
+ * (dinheiro + produto), então nada impede um registro duplicado por engano —
+ * e a partir de ISSUED a API recusa apagar (já foi anunciado à creator).
+ */
+export function useDeleteReward(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rewardId: string) => api.delete(`/rewards/${rewardId}`),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: rewardKeys.byCampaign(campaignId) }),
+  });
+}
+
 /** Extrai o waitMinutes de um erro 429 de refresh-ig */
 export function extractCooldownWait(error: unknown): number | null {
   if (

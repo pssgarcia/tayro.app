@@ -12,6 +12,10 @@ import { PublicApplyDto } from '../../modules/creators/application/dtos/public-a
 import { LoginDto } from '../../modules/auth/application/dtos/login.dto';
 import { RegisterBrandDto } from '../../modules/auth/application/dtos/register-brand.dto';
 import { RegisterInfluencerDto } from '../../modules/auth/application/dtos/register-influencer.dto';
+import { CreateCampaignDto } from '../../modules/campaigns/application/dtos/create-campaign.dto';
+import { UpdateCampaignDto } from '../../modules/campaigns/application/dtos/update-campaign.dto';
+import { ListCampaignsDto } from '../../modules/campaigns/application/dtos/list-campaigns.dto';
+import { CreateRewardDto } from '../../modules/rewards/application/dtos/create-reward.dto';
 
 const hasError = (errors: { property: string }[], property: string) =>
   errors.some((e) => e.property === property);
@@ -162,6 +166,150 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
         password: 'a'.repeat(73),
       });
       expect(hasError(errors, 'password')).toBe(true);
+    });
+  });
+
+  // Campos que a MARCA escreve — autenticada, mas ainda assim texto livre sem
+  // teto até 2026-08-23 (era o gap registrado em specs/campaign-lifecycle).
+  // Guard e role não limitam tamanho de corpo: uma conta legítima bastava pra
+  // gravar megabytes por campo.
+  describe('CreateCampaignDto', () => {
+    const valid = {
+      title: 'Campanha Verão',
+      description: 'Preciso de conteúdo mostrando o produto no treino.',
+      niches: ['fitness'],
+      maxSpots: 5,
+    };
+
+    it('aceita payload válido', async () => {
+      expect(await validateDto(CreateCampaignDto, valid)).toHaveLength(0);
+    });
+
+    it('aceita title exatamente no limite (100 chars)', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        title: 'a'.repeat(100),
+      });
+      expect(hasError(errors, 'title')).toBe(false);
+    });
+
+    it('rejeita title acima de 100 chars', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        title: 'a'.repeat(101),
+      });
+      expect(hasError(errors, 'title')).toBe(true);
+    });
+
+    it('rejeita description acima de 2000 chars', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        description: 'a'.repeat(2001),
+      });
+      expect(hasError(errors, 'description')).toBe(true);
+    });
+
+    it('rejeita briefUrl acima de 2048 chars', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        briefUrl: `https://x.com/${'a'.repeat(2048)}`,
+      });
+      expect(hasError(errors, 'briefUrl')).toBe(true);
+    });
+
+    it('rejeita offerDescription acima de 500 chars', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        offerDescription: 'a'.repeat(501),
+      });
+      expect(hasError(errors, 'offerDescription')).toBe(true);
+    });
+
+    it('rejeita rewardValue acima de 500 chars (campo deprecated ainda aceito)', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        rewardValue: 'a'.repeat(501),
+      });
+      expect(hasError(errors, 'rewardValue')).toBe(true);
+    });
+
+    it('rejeita mais de 20 niches', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        niches: Array.from({ length: 21 }, (_, i) => `n${i}`),
+      });
+      expect(hasError(errors, 'niches')).toBe(true);
+    });
+
+    it('rejeita niche individual acima de 50 chars', async () => {
+      const errors = await validateDto(CreateCampaignDto, {
+        ...valid,
+        niches: ['a'.repeat(51)],
+      });
+      expect(hasError(errors, 'niches')).toBe(true);
+    });
+  });
+
+  // UpdateCampaignDto = PartialType(CreateCampaignDto): os tetos precisam
+  // valer na edição também, senão o limite da criação seria contornável com
+  // um PATCH logo depois.
+  describe('UpdateCampaignDto (herda as restrições via PartialType)', () => {
+    it('aceita atualização parcial dentro dos limites', async () => {
+      expect(
+        await validateDto(UpdateCampaignDto, { title: 'Novo título' }),
+      ).toHaveLength(0);
+    });
+
+    it('rejeita title acima de 100 chars', async () => {
+      const errors = await validateDto(UpdateCampaignDto, {
+        title: 'a'.repeat(101),
+      });
+      expect(hasError(errors, 'title')).toBe(true);
+    });
+
+    it('rejeita description acima de 2000 chars', async () => {
+      const errors = await validateDto(UpdateCampaignDto, {
+        description: 'a'.repeat(2001),
+      });
+      expect(hasError(errors, 'description')).toBe(true);
+    });
+  });
+
+  // Filtro de nicho da vitrine pública: query string, origem anônima, e o
+  // service faz .split(',') em cima dela.
+  describe('ListCampaignsDto', () => {
+    it('aceita filtro de nichos normal', async () => {
+      expect(
+        await validateDto(ListCampaignsDto, { niches: 'fitness,wellness' }),
+      ).toHaveLength(0);
+    });
+
+    it('rejeita filtro de nichos acima de 200 chars', async () => {
+      const errors = await validateDto(ListCampaignsDto, {
+        niches: 'a'.repeat(201),
+      });
+      expect(hasError(errors, 'niches')).toBe(true);
+    });
+  });
+
+  describe('CreateRewardDto', () => {
+    const valid = {
+      influencerId: '11111111-1111-4111-8111-111111111111',
+      campaignId: '22222222-2222-4222-8222-222222222222',
+      type: 'MONETARY',
+      value: 'R$300',
+    };
+
+    it('aceita payload válido', async () => {
+      expect(await validateDto(CreateRewardDto, valid)).toHaveLength(0);
+    });
+
+    it('rejeita value acima de 100 chars', async () => {
+      const errors = await validateDto(CreateRewardDto, {
+        ...valid,
+        value: 'a'.repeat(101),
+      });
+      expect(hasError(errors, 'value')).toBe(true);
     });
   });
 });

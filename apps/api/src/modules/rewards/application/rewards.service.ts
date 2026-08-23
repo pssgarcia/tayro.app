@@ -76,6 +76,27 @@ export class RewardsService {
     });
   }
 
+  /**
+   * Remove um registro de recompensa ainda não emitido.
+   *
+   * Existe porque múltiplas recompensas por creator/campanha são legítimas
+   * (dinheiro + produto), então nada no dado impede um registro duplicado por
+   * engano — duplo clique ou retry de requisição que estourou o timeout. A
+   * partir de ISSUED não apaga: o pagamento/envio já foi declarado à creator, e
+   * apagar reescreveria o histórico dela.
+   */
+  async remove(id: string, userId: string) {
+    const reward = await this.findOwnedOrFail(id, userId);
+
+    if (reward.status !== RewardStatus.PENDING) {
+      throw new BadRequestException(
+        'Only pending rewards can be removed — an issued reward was already announced to the creator',
+      );
+    }
+
+    await this.prisma.reward.delete({ where: { id } });
+  }
+
   async findByCampaign(campaignId: string, userId: string) {
     const brand = await this.findBrandOrFail(userId);
 

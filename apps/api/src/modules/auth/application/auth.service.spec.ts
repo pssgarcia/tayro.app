@@ -328,17 +328,62 @@ describe('AuthService', () => {
   // ─── registerBrand ────────────────────────────────────────────────────────────
 
   describe('registerBrand', () => {
-    it('throws ConflictException when email already exists', async () => {
-      prisma.user.findUnique.mockResolvedValue(makeUser());
+    const dto = {
+      email: 'marca@example.com',
+      password: 'senhaSegura1',
+      brandName: 'Lilo',
+      niches: [],
+    };
 
-      await expect(
-        service.registerBrand({
-          email: 'creator@example.com',
-          password: 'pass',
-          brandName: 'Lilo',
-          niches: [],
-        }),
-      ).rejects.toThrow(ConflictException);
+    const p2002 = () =>
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '6.19.3',
+        meta: { target: 'User_email_key' },
+      });
+
+    it('creates the brand and returns tokens on success', async () => {
+      prisma.user.create.mockResolvedValue(makeUser({ role: UserRole.BRAND }));
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      const result = await service.registerBrand(dto);
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result.user.role).toBe(UserRole.BRAND);
+    });
+
+    // Regressão: até 2026-08-23 este fluxo fazia findUnique antes do create
+    // (check-then-act). Entre a consulta e a escrita cabia um segundo
+    // cadastro com o mesmo e-mail — e o P2002 resultante não era tratado,
+    // virando 500 genérico. Agora a constraint @unique é a única fonte de
+    // verdade, como no cadastro de creator.
+    it('throws ConflictException with field=email when the unique constraint fires', async () => {
+      prisma.user.create.mockRejectedValue(p2002());
+
+      const err = await service.registerBrand(dto).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ConflictException);
+      expect((err as ConflictException).getResponse()).toMatchObject({
+        statusCode: 409,
+        field: 'email',
+      });
+    });
+
+    it('does not consult the database before creating (no check-then-act)', async () => {
+      prisma.user.create.mockResolvedValue(makeUser({ role: UserRole.BRAND }));
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      await service.registerBrand(dto);
+
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('propagates a non-P2002 error instead of masking it as 409', async () => {
+      prisma.user.create.mockRejectedValue(new Error('connection lost'));
+
+      await expect(service.registerBrand(dto)).rejects.toThrow(
+        'connection lost',
+      );
     });
   });
 

@@ -2,10 +2,12 @@ import {
   IsString,
   IsOptional,
   IsArray,
+  ArrayMaxSize,
   IsInt,
   IsNumber,
   Min,
   Max,
+  MaxLength,
   IsEnum,
   IsDateString,
 } from 'class-validator';
@@ -15,22 +17,27 @@ import { OfferType, RewardType } from '@prisma/client';
 export class CreateCampaignDto {
   @ApiProperty({ example: 'Campanha Verão Fitness 2026' })
   @IsString()
+  @MaxLength(100)
   title: string;
 
   @ApiProperty({
     example: 'Preciso de conteúdo mostrando uso do produto no treino.',
   })
   @IsString()
+  @MaxLength(2000)
   description: string;
 
   @ApiPropertyOptional({ example: 'https://drive.google.com/brief.pdf' })
   @IsOptional()
   @IsString()
+  @MaxLength(2048)
   briefUrl?: string;
 
   @ApiProperty({ example: ['fitness', 'wellness'] })
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   niches: string[];
 
   @ApiProperty({ example: 5, description: 'Número máximo de vagas' })
@@ -71,6 +78,7 @@ export class CreateCampaignDto {
   @ApiPropertyOptional({ example: 'Kit Whey 900g + coqueteleira' })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   offerDescription?: string;
 
   @ApiPropertyOptional({
@@ -93,5 +101,6 @@ export class CreateCampaignDto {
   @ApiPropertyOptional({ example: '' })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   rewardValue?: string;
 }

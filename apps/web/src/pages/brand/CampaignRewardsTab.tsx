@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Gift, Plus, Banknote, Package, Tag, Truck } from 'lucide-react';
+import {
+  Gift,
+  Plus,
+  Banknote,
+  Package,
+  Tag,
+  Truck,
+  Trash2,
+  ArrowRight,
+} from 'lucide-react';
 import axios from 'axios';
 import type { CampaignReward, RewardStatus, RewardType } from '../../types/api';
 import {
@@ -7,9 +16,12 @@ import {
   useCreateReward,
   useMarkRewardIssued,
   useMarkRewardDelivered,
+  useDeleteReward,
   useApplications,
 } from '../../hooks/useCampaignApplications';
 import EmptyState from '../../components/primitives/EmptyState';
+import Plate from '../../components/primitives/Plate';
+import PlateActionBar from '../../components/primitives/PlateActionBar';
 import { cn } from '../../lib/utils';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -178,12 +190,14 @@ function RewardCard({
   reward,
   onIssue,
   onDeliver,
+  onRemove,
   isIssueing,
   isDelivering,
 }: {
   reward: CampaignReward;
   onIssue: () => void;
   onDeliver: () => void;
+  onRemove: () => void;
   isIssueing: boolean;
   isDelivering: boolean;
 }) {
@@ -242,15 +256,24 @@ function RewardCard({
       )}
 
       {/* Ações */}
+      {/* Remover só enquanto PENDING: a partir de ISSUED o pagamento/envio já
+          foi anunciado à creator, e apagar reescreveria o histórico dela. */}
       {reward.status === 'PENDING' && (
-        <div className="border-t border-border pt-3">
+        <div className="flex gap-2 border-t border-border pt-3">
           <button
             onClick={onIssue}
             disabled={isIssueing}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
           >
             <Truck size={13} />
             {isIssueing ? 'Processando...' : 'Marcar como emitida'}
+          </button>
+          <button
+            onClick={onRemove}
+            aria-label={`Remover recompensa de ${reward.influencer.name}`}
+            className="flex min-h-[36px] shrink-0 items-center justify-center rounded-lg border border-border px-3 text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+          >
+            <Trash2 size={13} />
           </button>
         </div>
       )}
@@ -271,17 +294,74 @@ function RewardCard({
   );
 }
 
+// ─── Confirmação de remoção ───────────────────────────────────────────────────
+// Diz a CONSEQUÊNCIA em vez de perguntar "tem certeza?" — mesmo padrão do
+// WithdrawModal: a ação é definitiva e o efeito não é óbvio pra quem clica.
+
+function RemoveRewardModal({
+  reward,
+  isPending,
+  isError,
+  onConfirm,
+  onClose,
+}: {
+  reward: CampaignReward;
+  isPending: boolean;
+  isError: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full sm:max-w-md">
+        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-[26px] pt-[30px]">
+            <p className="font-display text-d-xs text-plate-ink">
+              Remover esta recompensa?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+              O registro de{' '}
+              <span className="font-medium text-plate-body">{reward.value}</span> para{' '}
+              <span className="font-medium text-plate-body">
+                {reward.influencer.name}
+              </span>{' '}
+              some pra sempre, e some também da lista de recompensas dela. Não dá pra
+              desfazer — mas você pode registrar de novo.
+            </p>
+            {isError && (
+              <p className="mt-3 text-[13px] text-destructive">
+                Não foi possível remover. Tente novamente.
+              </p>
+            )}
+          </div>
+          <PlateActionBar
+            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
+            primary={{
+              label: isPending ? 'Removendo…' : 'Remover',
+              onClick: onConfirm,
+              disabled: isPending,
+              icon: <ArrowRight size={16} />,
+            }}
+          />
+        </Plate>
+      </div>
+    </div>
+  );
+}
+
 // ─── Aba principal ────────────────────────────────────────────────────────────
 
 export default function CampaignRewardsTab({ campaignId }: { campaignId: string }) {
   const [filter, setFilter] = useState<'ALL' | RewardStatus>('ALL');
   const [showCreate, setShowCreate] = useState(false);
+  const [removing, setRemoving] = useState<CampaignReward | null>(null);
 
   const { data: rewards = [], isLoading } = useCampaignRewards(campaignId);
   const { data: applications = [] } = useApplications(campaignId);
   const create = useCreateReward(campaignId);
   const issue = useMarkRewardIssued(campaignId);
   const deliver = useMarkRewardDelivered(campaignId);
+  const remove = useDeleteReward(campaignId);
 
   const approvedCreators = applications
     .filter((a) => a.status === 'APPROVED')
@@ -373,6 +453,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
               reward={reward}
               onIssue={() => issue.mutate(reward.id)}
               onDeliver={() => deliver.mutate(reward.id)}
+              onRemove={() => setRemoving(reward)}
               isIssueing={issue.isPending && issue.variables === reward.id}
               isDelivering={deliver.isPending && deliver.variables === reward.id}
             />
@@ -396,6 +477,22 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
             create.mutate(data, { onSuccess: () => setShowCreate(false) });
           }}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {/* Confirmação de remoção — fica aberta no erro, pra dar retry */}
+      {removing && (
+        <RemoveRewardModal
+          reward={removing}
+          isPending={remove.isPending}
+          isError={remove.isError}
+          onConfirm={() =>
+            remove.mutate(removing.id, { onSuccess: () => setRemoving(null) })
+          }
+          onClose={() => {
+            remove.reset();
+            setRemoving(null);
+          }}
         />
       )}
     </div>
