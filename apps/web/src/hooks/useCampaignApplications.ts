@@ -24,10 +24,7 @@ export function useCampaign(campaignId: string) {
   });
 }
 
-export function useApplications(
-  campaignId: string,
-  options?: { refetchInterval?: number | false | ((query: { state: { data: unknown } }) => number | false) },
-) {
+export function useApplications(campaignId: string) {
   return useQuery({
     queryKey: applicationKeys.byCampaign(campaignId),
     queryFn: () =>
@@ -35,7 +32,6 @@ export function useApplications(
         .get<Application[]>(`/applications/campaign/${campaignId}`)
         .then((r) => r.data),
     enabled: !!campaignId,
-    ...options,
   });
 }
 

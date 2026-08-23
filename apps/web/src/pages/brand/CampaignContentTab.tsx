@@ -281,7 +281,7 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
           }
           description={
             filter === 'ALL'
-              ? 'Os conteúdos aparecem aqui quando as creators aprovadas os enviarem.'
+              ? 'Os conteúdos aparecem aqui assim que forem enviados.'
               : undefined
           }
         />

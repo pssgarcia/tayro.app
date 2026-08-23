@@ -7,10 +7,12 @@
  * está oferecendo antes de publicar.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CampaignForm from './CampaignForm';
 import type { CampaignFormValues } from './campaignFormSchema';
+import type { CreateCampaignPayload } from '../../hooks/useCampaigns';
 
 const baseValues: CampaignFormValues = {
   title: 'Campanha Verão',
@@ -26,8 +28,8 @@ const baseValues: CampaignFormValues = {
   offerCommissionPercent: undefined,
 };
 
-let onSubmit: ReturnType<typeof vi.fn>;
-let onCancel: ReturnType<typeof vi.fn>;
+let onSubmit: Mock<(payload: CreateCampaignPayload) => Promise<void>>;
+let onCancel: Mock<() => void>;
 
 function renderForm(overrides: Partial<CampaignFormValues> | null = {}, props: any = {}) {
   return render(

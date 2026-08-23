@@ -439,9 +439,9 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
           }
           description={
             filter === 'ALL' && approvedCreators.length > 0
-              ? 'Registre as recompensas para as creators aprovadas nessa campanha.'
+              ? 'Registre as recompensas das candidaturas aprovadas nessa campanha.'
               : filter === 'ALL'
-              ? 'Recompensas ficam disponíveis quando houver creators aprovadas.'
+              ? 'Recompensas ficam disponíveis quando houver candidatura aprovada.'
               : undefined
           }
         />

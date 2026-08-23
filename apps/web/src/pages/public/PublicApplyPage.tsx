@@ -200,7 +200,7 @@ export default function PublicApplyPage() {
                       analisar seu perfil do Instagram.
                     </p>
                     <p>Você recebe a decisão por e-mail.</p>
-                    <p>Se aprovada, os detalhes da parceria chegam por lá.</p>
+                    <p>Se a candidatura for aprovada, os detalhes da parceria chegam por lá.</p>
                   </div>
                 </>
               ) : (
