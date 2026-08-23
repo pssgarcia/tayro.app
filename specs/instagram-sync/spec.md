@@ -3,7 +3,7 @@ slug: instagram-sync
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/api/src/modules/instagram/instagram-sync.service.ts
   - apps/api/src/modules/instagram/instagram.module.ts
@@ -110,16 +110,26 @@ cliente) — ver "Error Scenarios".
   `applications-pipeline`, não aqui).
 
 ## Known Gaps
+- **Imagem some depois de um tempo — URL de CDN expirada, não falha de busca.**
+  `[FATO — verificado 2026-08-23]` O que é guardado no banco é a **URL assinada** da CDN
+  (`igProfilePicUrl`, e o `thumbnail` de cada item de `igRecentPosts`), não a imagem. Essas URLs
+  carregam assinatura com validade; passado o prazo, a CDN responde 403 e a foto desaparece da
+  tela — para a foto de perfil via o proxy (que devolve 404 e renderiza vazio) e, mais visível
+  ainda, para as thumbnails do feed, que o frontend carrega direto da CDN sem proxy.
+  A renovação só acontece em dois momentos: na candidatura (fire-and-forget) e no botão
+  "Atualizar" manual. **Não existe nenhuma renovação agendada** — confirmado por grep: os únicos
+  chamadores de `refresh()` são `CreatorsService.findOrCreateInfluencer` e
+  `ApplicationsService.refreshInfluencerIg`. Logo, candidatura antiga que ninguém reabre fica
+  com imagem quebrada por tempo indeterminado, e o período de validade de 24h nunca é avaliado
+  porque nada dispara a avaliação.
+  **Trocar de provedor não resolve isto:** a API oficial do Instagram também entrega URL de
+  mídia temporária. O que resolve é deixar de guardar URL e passar a guardar a imagem (ou
+  cachear os bytes no primeiro acesso do proxy) — decisão de arquitetura ainda não tomada,
+  passar pelo `/architect`.
 - **Fila assíncrona (`D-16`) ainda não existe.** O disparo hoje é fire-and-forget síncrono, sem
-  retry automático além do cooldown manual. Ligado ao bug conhecido em `CLAUDE.md` → "Bugs
-  conhecidos": dados do Instagram às vezes não vêm completos na primeira candidatura, exigindo
-  atualização manual.
-- **Sem teste de unidade próprio para `InstagramSyncService`.** Staleness, preservação de valor
-  em falha e o carimbo de horário mesmo em falha — o núcleo do contrato de cooldown/staleness —
-  não têm teste isolado, só são exercitados indiretamente por quem chama o serviço.
-- **Sem teste dedicado para o intervalo mínimo entre tentativas manuais** em
-  `applications-pipeline` — o único spec daquele módulo que toca concorrência cobre outro
-  assunto (corrida de aprovação).
+  retry automático além do cooldown manual.
+(Os dois gaps de cobertura de teste desta seção foram **fechados em 2026-08-23** — ver Test
+Coverage e Change History.)
 
 ## Test Coverage
 - `apps/api/src/modules/instagram/engagement.utils.spec.ts` — [x] cálculo de taxa de
@@ -128,8 +138,15 @@ cliente) — ver "Error Scenarios".
   permitida, resposta 404.
 - `apps/api/src/modules/instagram/providers/rapidapi.instagram.provider.spec.ts` — [x] fluxo de
   2 passos, novas tentativas do perfil, feed best-effort, fallback da foto de perfil.
-- [ ] `instagram-sync.service.spec.ts` — não existe.
-- [ ] Teste dedicado do intervalo mínimo entre tentativas manuais — não existe.
+- `apps/api/src/modules/instagram/instagram-sync.service.spec.ts` —
+  [x] não chama o provedor sem influencer ou sem handle; [x] pula busca com dado fresco + `OK`;
+  [x] rebusca fora da janela; [x] `FAILED` nunca conta como fresco; [x] janela configurável;
+  [x] `force` ignora a janela; [x] marca `PENDING` antes de buscar; [x] grava seguidores/foto/
+  posts/engajamento e carimba `OK`; [x] normaliza `@` no handle; [x] falha não propaga,
+  carimba `FAILED` + horário, e **preserva** seguidores/foto/posts; [x] loga o motivo real.
+- [x] Intervalo mínimo entre tentativas manuais — coberto em
+      `applications.service.decision.spec.ts` (`429` com `waitMinutes`, fora do cooldown,
+      não-dono, influencer inexistente).
 
 ## Current Implementation
 - `InstagramProvider` (interface `fetchProfile(handle)`) + token de injeção
@@ -146,8 +163,14 @@ cliente) — ver "Error Scenarios".
   dado inserido fora do fluxo padrão (ex.: edição direta no banco) com `@` prefixado.
 - Proxy: allow-list por sufixo de host (`.cdninstagram.com`, `.fbcdn.net`) + protocolo `https:`
   obrigatório, timeout de 8s, resposta cacheada 1 dia no navegador (`Cache-Control: public,
-  max-age=86400`) — a URL do Instagram expira em ~2 semanas e o sync a renova antes disso.
-- `calcEngagementRate(posts, followers) = (likes+comments)/followers × 100` — função pura.
+  max-age=86400`). O proxy **refaz o fetch na CDN a cada requisição** — não guarda os bytes.
+  (Até 2026-08-23 esta linha afirmava que "o sync renova a URL antes de expirar"; é falso, não
+  existe renovação agendada — ver Known Gaps.)
+- `calcEngagementRate(posts, followers)`: soma `likes + comments` de todos os posts, divide
+  pelo NÚMERO DE POSTS (média por post), divide por `followers`, multiplica por 100 e arredonda
+  a 1 casa decimal. Função pura. `null` quando não há posts ou `followers = 0`.
+  (Até 2026-08-23 esta linha dizia `(likes+comments)/followers × 100`, omitindo a média por
+  post — a fórmula descrita dava o dobro do valor real.)
 
 ## Change History
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0+.
@@ -155,3 +178,12 @@ cliente) — ver "Error Scenarios".
   descrita como "footgun" só na seção de implementação) foi promovida a `Domain`/`Behavior` —
   é uma restrição externa que qualquer redesenho futuro do proxy precisa continuar respeitando,
   não um detalhe de código a esquecer.
+- 2026-08-23 · corrigida afirmação falsa em "Current Implementation" (o sync **não** renova a
+  URL antes de expirar — não há renovação agendada) e reclassificado o item que estava em
+  `CLAUDE.md` → "Bugs conhecidos" como "IG não vem completo na 1ª candidatura": o relato real do
+  Pedro é que os dados **chegam certos** na primeira candidatura e as imagens **expiram depois**.
+  Causa e consequência registradas em Known Gaps; correção ainda não desenhada.
+- 2026-08-23 · `InstagramSyncService` saiu de zero cobertura: staleness, `force`, preservação
+  do último valor bom em falha e o carimbo de horário mesmo em falha (o que sustenta o cooldown
+  do refresh manual) passaram a ter teste. Corrigida junto a descrição de `calcEngagementRate`,
+  que omitia a média por post e descrevia uma fórmula com o dobro do valor real.

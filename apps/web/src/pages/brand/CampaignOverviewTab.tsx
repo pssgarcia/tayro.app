@@ -88,7 +88,7 @@ export default function CampaignOverviewTab({
       </Section>
 
       {/* Oferta */}
-      <Section title="Oferta à creator" icon={<Gift size={16} />}>
+      <Section title="Oferta do programa" icon={<Gift size={16} />}>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <StatBlock label="Tipo" value={offerTypeLabel(campaign.offerType)} />
           <StatBlock label={offerValueLabel(campaign.offerType)} value={formatOffer(campaign)} />

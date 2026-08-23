@@ -1,4 +1,11 @@
-import { IsOptional, IsInt, Min, IsEnum, IsString } from 'class-validator';
+import {
+  IsOptional,
+  IsInt,
+  Min,
+  MaxLength,
+  IsEnum,
+  IsString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { RewardType } from '@prisma/client';
@@ -24,6 +31,7 @@ export class ListCampaignsDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   niches?: string;
 
   @ApiPropertyOptional({ enum: RewardType })

@@ -13,6 +13,7 @@ vi.mock('../../hooks/useCampaignApplications', async (importOriginal) => {
     useCreateReward: vi.fn(),
     useMarkRewardIssued: vi.fn(),
     useMarkRewardDelivered: vi.fn(),
+    useDeleteReward: vi.fn(),
     useApplications: vi.fn(),
   };
 });
@@ -34,8 +35,19 @@ const baseReward: CampaignReward = {
   },
 };
 
+/** Sobrescrito por teste que precisa inspecionar a remoção. */
+let deleteMutation: any;
+
 function mockHooks(rewards: CampaignReward[] = [], approvedCount = 0) {
   const noop = { mutate: vi.fn(), isPending: false, variables: undefined };
+  deleteMutation = {
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    isError: false,
+    variables: undefined,
+  };
+  vi.mocked(hooks.useDeleteReward).mockReturnValue(deleteMutation);
   vi.mocked(hooks.useCampaignRewards).mockReturnValue({ data: rewards, isLoading: false } as any);
   vi.mocked(hooks.useCreateReward).mockReturnValue(noop as any);
   vi.mocked(hooks.useMarkRewardIssued).mockReturnValue(noop as any);
@@ -117,5 +129,87 @@ describe('CampaignRewardsTab', () => {
     expect(screen.getAllByText('Ana Creator')).toHaveLength(1);
     // "Emitida" aparece no filtro ativo e no badge do card
     expect(screen.getAllByText('Emitida').length).toBeGreaterThanOrEqual(1);
+  });
+
+  // ─── Remover registro (só PENDING) ──────────────────────────────────────────
+  // Múltiplas recompensas por creator/campanha são legítimas (dinheiro +
+  // produto), então nada no dado impede um registro duplicado por engano.
+
+  describe('remover recompensa', () => {
+    const abrirModal = () => {
+      fireEvent.click(screen.getByRole('button', { name: /remover recompensa/i }));
+    };
+
+    it('oferece remover em recompensa PENDING', () => {
+      mockHooks([baseReward]);
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      expect(
+        screen.getByRole('button', { name: /remover recompensa de ana creator/i }),
+      ).toBeInTheDocument();
+    });
+
+    it.each(['ISSUED', 'DELIVERED'] as const)(
+      'não oferece remover em recompensa %s (já anunciada à creator)',
+      (status) => {
+        mockHooks([{ ...baseReward, status }]);
+        render(<CampaignRewardsTab campaignId="camp-1" />);
+
+        expect(
+          screen.queryByRole('button', { name: /remover recompensa/i }),
+        ).not.toBeInTheDocument();
+      },
+    );
+
+    // Confirmação diz a consequência em vez de perguntar "tem certeza?"
+    it('pede confirmação antes de apagar, e não apaga nada até confirmar', () => {
+      mockHooks([baseReward]);
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      abrirModal();
+
+      expect(screen.getByText(/remover esta recompensa\?/i)).toBeInTheDocument();
+      expect(screen.getByText(/some pra sempre/i)).toBeInTheDocument();
+      expect(deleteMutation.mutate).not.toHaveBeenCalled();
+    });
+
+    it('apaga ao confirmar', () => {
+      mockHooks([baseReward]);
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      abrirModal();
+      fireEvent.click(screen.getByRole('button', { name: /^remover$/i }));
+
+      expect(deleteMutation.mutate).toHaveBeenCalledWith(
+        'rew-1',
+        expect.anything(),
+      );
+    });
+
+    it('cancelar fecha o modal sem apagar', () => {
+      mockHooks([baseReward]);
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      abrirModal();
+      fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
+
+      expect(screen.queryByText(/remover esta recompensa\?/i)).not.toBeInTheDocument();
+      expect(deleteMutation.mutate).not.toHaveBeenCalled();
+    });
+
+    // Fechar no erro perderia o contexto do que a marca estava tentando fazer.
+    it('mantém o modal aberto e explica quando a remoção falha', () => {
+      mockHooks([baseReward]);
+      vi.mocked(hooks.useDeleteReward).mockReturnValue({
+        ...deleteMutation,
+        isError: true,
+      });
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      abrirModal();
+
+      expect(screen.getByText(/não foi possível remover/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /^remover$/i })).toBeEnabled();
+    });
   });
 });

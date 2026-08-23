@@ -3,7 +3,7 @@ slug: content-submissions
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/api/src/modules/content/presentation/content.controller.ts
   - apps/api/src/modules/content/application/content.service.ts
@@ -105,6 +105,14 @@ existir.
 - **`GET /submissions/application/:applicationId` não tem consumidor no frontend** — confirmado
   por grep, nenhum arquivo em `apps/web` chama esta rota. Endpoint funciona e é testado
   indiretamente pela ownership dupla, mas está morto no produto hoje.
+- **Revisão de conteúdo escreve sem filtrar por status.** `approve`, `reject` e
+  `requestRevision` verificam `PENDING` na leitura e depois atualizam por `id` apenas. Duas
+  revisões concorrentes (dois usuários da mesma marca, ou retry de requisição cujo timeout
+  venceu) resolvem em "a última escrita vence", sem erro. É a mesma classe de defeito corrigida
+  em `applications-pipeline` em 2026-08-23 — aqui **não** foi corrigido: mudaria o contrato de
+  erro da API (novo `409`) e por isso precisa entrar como pedido de mudança próprio, não como
+  efeito colateral de uma release de robustez. Consequência hoje é menor que na candidatura
+  (sem e-mail e sem vaga em jogo), mas o histórico de revisão fica inconsistente.
 - **Assimetria de validação entre `reject` e `request-revision`** (recusar não exige motivo,
   pedir revisão exige) é comportamento atual deliberado (documentado acima em "Behavior"), não
   um gap — registrado aqui só pra não ser confundido com inconsistência acidental por quem ler
@@ -114,14 +122,26 @@ existir.
 Backend: `apps/api/src/modules/content/application/content.service.spec.ts`.
 - [x] `findByCampaign` — retorno com influencer, `404` campanha inexistente, `403` não-dono,
       lista vazia, teto de 2 queries (sem N+1).
-- [ ] `submit`, `approve`, `reject`, `requestRevision`, `findByApplication` — **sem teste de
-      unidade**. Só o caminho de leitura da marca (`findByCampaign`) está coberto.
+Backend (revisão e envio): `apps/api/src/modules/content/application/content.service.review.spec.ts`.
+- [x] `submit` — cria com candidatura `APPROVED`; recusa em `PENDING`/`REJECTED`/`WITHDRAWN`
+      sem criar nada; `403` candidatura de outra creator; `403` sem perfil de creator; `404`
+      candidatura inexistente.
+- [x] `findMine` — filtra pela própria creator, ordena por envio mais recente, traz
+      campanha/marca na mesma query, `403` sem perfil.
+- [x] `findByApplication` — ownership dupla (creator dona **e** marca dona enxergam), `403`
+      pra terceiro, `404` inexistente.
+- [x] `approve`/`reject` — transição a partir de `PENDING` com carimbo de revisão, `403`
+      não-dono, `400` em conteúdo já revisado (nos 3 estados terminais), `404` inexistente.
+- [x] `requestRevision` — exige feedback (recusa `undefined`, `''` e só espaços sem escrever
+      nada), checa posse antes do feedback, transição válida.
 
 Frontend: `apps/web/src/pages/brand/CampaignContentTab.spec.tsx`.
 - [x] Empty state, card por tipo de mídia, botões de ação só em `PENDING`, ausência de ação em
       `APPROVED`, modal de revisão exige feedback, filtro por status.
-- [ ] `SubmissionsPage.tsx` (creator) — **sem arquivo de teste** (confirmado por Glob,
-      `apps/web/src/pages/influencer/SubmissionsPage.spec.tsx` não existe).
+- [x] `SubmissionsPage.tsx` (creator) — estados de carga/erro/vazio, cascata da placa em
+      destaque (ajuste pedido > aprovado > só em análise), modal de envio (abre por botão e por
+      `?apply=`, só lista candidaturas `APPROVED`, explica quando não há nenhuma), validação de
+      URL e de candidatura antes da API, e as respostas `400`/`403`/genérica.
 
 ## Current Implementation
 - Módulo em `apps/api/src/modules/content/` (Clean Architecture).
@@ -139,3 +159,8 @@ Frontend: `apps/web/src/pages/brand/CampaignContentTab.spec.tsx`.
   Implementation) — sem mudança de comportamento. Correção de precisão: `SubmissionsPage.tsx`
   (creator) confirmado sem arquivo de teste (antes descrito como "não lido em detalhe", agora
   verificado por Glob e registrado como lacuna real).
+- 2026-08-23 · cobertura de teste do serviço passou de 1 método (`findByCampaign`) para os 7:
+  novo `content.service.review.spec.ts` com o gate de candidatura aprovada, a ownership dupla e
+  os três caminhos de revisão. Registrado também um Known Gap novo, achado ao escrever os
+  testes: a revisão escreve sem filtrar por status (mesma classe do que foi corrigido em
+  `applications-pipeline` no mesmo dia), deliberadamente não corrigido aqui.

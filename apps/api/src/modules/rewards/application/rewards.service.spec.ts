@@ -39,6 +39,7 @@ describe('RewardsService', () => {
       reward: {
         create: jest.fn(),
         update: jest.fn(),
+        delete: jest.fn(),
         findUnique: jest.fn(),
         findMany: jest.fn(),
       },
@@ -103,6 +104,57 @@ describe('RewardsService', () => {
       prisma.campaign.findUnique.mockResolvedValue(null);
 
       await expect(service.create('user-brand-1', dto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  // ─── remove ───────────────────────────────────────────────────────────────────
+  // Existe porque múltiplas recompensas por creator/campanha são legítimas
+  // (dinheiro + produto): nada no dado impede um registro duplicado por engano.
+  // A partir de ISSUED não apaga — já foi anunciado à creator.
+
+  describe('remove', () => {
+    it('apaga a recompensa quando ainda está PENDING', async () => {
+      prisma.brand.findUnique.mockResolvedValue(makeBrand());
+      prisma.reward.findUnique.mockResolvedValue(makeReward());
+      prisma.reward.delete.mockResolvedValue(undefined);
+
+      await service.remove('rew-1', 'user-brand-1');
+
+      expect(prisma.reward.delete).toHaveBeenCalledWith({
+        where: { id: 'rew-1' },
+      });
+    });
+
+    it.each([RewardStatus.ISSUED, RewardStatus.DELIVERED])(
+      'recusa apagar recompensa em %s — nada é apagado',
+      async (status) => {
+        prisma.brand.findUnique.mockResolvedValue(makeBrand());
+        prisma.reward.findUnique.mockResolvedValue(makeReward({ status }));
+
+        await expect(service.remove('rew-1', 'user-brand-1')).rejects.toThrow(
+          BadRequestException,
+        );
+        expect(prisma.reward.delete).not.toHaveBeenCalled();
+      },
+    );
+
+    it('403 ao apagar recompensa de campanha de outra marca — nada é apagado', async () => {
+      prisma.brand.findUnique.mockResolvedValue(makeBrand({ id: 'brand-2' }));
+      prisma.reward.findUnique.mockResolvedValue(makeReward());
+
+      await expect(service.remove('rew-1', 'user-brand-2')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prisma.reward.delete).not.toHaveBeenCalled();
+    });
+
+    it('404 quando a recompensa não existe', async () => {
+      prisma.brand.findUnique.mockResolvedValue(makeBrand());
+      prisma.reward.findUnique.mockResolvedValue(null);
+
+      await expect(service.remove('ghost', 'user-brand-1')).rejects.toThrow(
         NotFoundException,
       );
     });

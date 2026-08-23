@@ -13,8 +13,12 @@ interface Tab<T extends string> {
 interface Props<T extends string> {
   /** Aceita array readonly — TABS costuma ser declarado com `as const`. */
   tabs: readonly Tab<T>[];
-  active: T;
-  onChange: (id: T) => void;
+  /** `NoInfer` nos dois: T sai só de `tabs`. Sem isso, passar o setter de um
+   * `useState` em `onChange` (Dispatch<SetStateAction<T>>) entra na inferência
+   * e alarga T pra `string` — quebrando os três call sites com um erro que só
+   * o build via, nunca o typecheck. */
+  active: NoInfer<T>;
+  onChange: (id: NoInfer<T>) => void;
   className?: string;
 }
 

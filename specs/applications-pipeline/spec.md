@@ -3,7 +3,7 @@ slug: applications-pipeline
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/api/prisma/schema.prisma (model Application, enum ApplicationStatus)
   - apps/api/src/modules/applications/presentation/applications.controller.ts
@@ -60,6 +60,15 @@ manual dos dados de Instagram da creator a partir de uma candidatura.
 - **Duas aprovações concorrentes não podem, juntas, ultrapassar `maxSpots`.** Se a última vaga
   for disputada por dois approves simultâneos, exatamente um deve ter sucesso; o outro recebe o
   mesmo erro "campanha cheia" que teria fora de concorrência (não um erro técnico de banco).
+- **Uma candidatura só pode ser decidida uma vez.** Toda transição para fora de `PENDING`
+  (aprovar, recusar, retirar) exige que a candidatura **ainda esteja `PENDING` no instante da
+  escrita**, não apenas no instante da leitura. Se duas decisões chegarem concorrentemente
+  (dois dispositivos, ou o retry de uma requisição cujo timeout venceu), exatamente uma
+  prevalece e a outra é recusada explicitamente — nunca sobrescreve a primeira em silêncio.
+  Isso importa porque cada decisão tem efeito colateral já disparado: aprovar consome vaga e
+  envia e-mail de aprovação. Uma recusa que sobrescrevesse uma aprovação deixaria a creator com
+  o e-mail de "aprovada" no inbox, o status `REJECTED` na tela e a vaga liberada sem ninguém
+  perceber.
 - **Envio de e-mail de decisão (aprovação/rejeição) é best-effort:** uma falha ao enviar o
   e-mail não desfaz nem impede a transição de status, que já foi persistida antes do envio.
 - **Retirar candidatura (`withdraw`) é definitivo.** Não existe transição de volta a `PENDING`
@@ -105,6 +114,9 @@ reaplicar) em vez de perguntar "tem certeza?", e fica aberto em caso de erro pra
 - [x] Atualizar IG dentro do cooldown retorna `429` com os minutos restantes, mesmo que a
       última tentativa tenha sido `FAILED`.
 - [ ] Existe alguma forma de reverter um `WITHDRAWN` indevido (ver Known Gaps — não existe hoje).
+- [x] Aprovar e recusar a mesma candidatura concorrentemente resolve numa decisão só: a segunda
+      recebe conflito e **não** sobrescreve o status já gravado pela primeira.
+- [x] O mesmo vale para retirar concorrente com uma decisão da marca.
 
 ## Error Scenarios
 - Candidatar campanha inexistente → `404`.
@@ -135,8 +147,10 @@ Arquivo: `apps/api/src/modules/applications/application/applications.service.rac
       concorrência (`P2034` → `400`).
 - [x] `reject()` — transição válida + guardas de dono/status.
 - [x] `findByCampaign()` — shape da resposta (influencer + contagem de submissions).
-- [ ] `withdraw()` — sem teste de unidade dedicado.
-- [ ] `refreshInfluencerIg()` — sem teste de unidade dedicado (cooldown, `429`, `waitMinutes`).
+- [x] `withdraw()` — dono, status inválido, e escrita condicional sob concorrência.
+- [x] `refreshInfluencerIg()` — cooldown ativo (`429` com `waitMinutes`), fora do cooldown,
+      não-dono, candidatura inexistente.
+- [x] Guarda de decisão única em `approve`/`reject`/`withdraw` (P2025 → `409`).
 
 ## Current Implementation
 - Módulo em `apps/api/src/modules/applications/` (Clean Architecture).

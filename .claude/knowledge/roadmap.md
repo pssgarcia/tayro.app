@@ -1,22 +1,40 @@
 # Roadmap — TAYRO
 
-> Atualizado: 2026-08-06 · Dono: agente `product` · Revisar a cada release.
+> Atualizado: 2026-08-23 · Dono: agente `product` · Revisar a cada release.
 > Ordenado por **valor de aprendizado**, não por facilidade. Não é lista de desejos:
 > item que entra aqui empurra outro pra baixo.
 
-## Onde estamos (2026-08-06)
+## Onde estamos (2026-08-23)
 
-- **v0.32.0** em andamento na branch `feature/register-flow-redesign` (perfil público `/c/:handle`)
-- 32 releases · CI/CD verde · API no Railway · Web na Vercel · Neon (dev + prod)
-- ~137 testes API + ~130 web
+- **v0.43.0** em produção (`#129`, 2026-08-22) — 43 releases
+- CI/CD verde e **sem falso-negativo crônico** desde a v0.43.0 (o CD travava no `railway up --ci`;
+  agora é `--detach` + poll, com teste próprio do step)
+- 177 testes API · 238 web
+- 13 capacidades de domínio com spec viva em `specs/` (SDD desde a v0.42.0)
 - **Marcas pagantes: 0 · Usuários reais: 0 · Entrevistas: 0**
 
-Diagnóstico honesto: **a engenharia está muito à frente da validação.** O produto tem
-infraestrutura de startup com tração e evidência de projeto de faculdade. O gargalo não é código.
+Diagnóstico honesto, **inalterado desde 2026-08-06**: a engenharia está muito à frente da
+validação. Em 17 dias saíram 11 releases e o número de entrevistas continua zero. O gargalo
+nunca foi código — e cada release nova aumenta a distância, não diminui.
 
 ---
 
 ## AGORA — o que destrava tudo
+
+### 0. Ligar o e-mail e rodar o funil com UMA marca real 🔴 não é feature
+`[Veredito do /feature, 2026-08-23 — ver D-17]` O ciclo de candidatura espontânea está
+**construído e cortado em produção**: com `EMAIL_PROVIDER=stub`, a creator se candidata, a conta
+CLAIMABLE é criada e o link de acesso **nunca chega**; a marca aprova e ela **nunca fica sabendo**.
+"Conectar creator e marca" não é trabalho de código pendente — é um domínio de ~R$40/ano.
+
+O experimento, inteiro: (1) comprar domínio + ligar Resend (~30min); (2) uma marca real da rede
+da Thais publica **um** programa; (3) ela posta o link `/apply/:id` no story; (4) observar por
+2 semanas, sem tocar em código.
+
+Mede o que 43 releases não mediram: quantas creators se candidatam · **quantas completam o
+claim** (é o teste do risco da P2 em `personas.md`: "pode simplesmente não querer mais uma
+plataforma") · quanto tempo a marca leva por decisão · quantas voltam depois.
+> Custo: zero release. É o item de maior aprendizado por real gasto de toda esta lista.
 
 ### 1. Cinco entrevistas com marca (P1) 🔴 não é código
 Destrava `D-A` (monetização), `D-B` (marca vs agência) e o posicionamento inteiro.
@@ -37,8 +55,17 @@ no perfil da creator e pra ela.
 `EMAIL_PROVIDER=stub` significa que **nenhum e-mail chega pra ninguém** hoje: aprovação, recusa,
 link de claim. Uma creator real que se candidatar nunca recebe nada.
 É gate de lançamento, não feature. Depende de comprar o domínio (`D-13`).
+**Destrava também o item 3.1 abaixo** — sem e-mail, "esqueci a senha" não tem como existir.
 
-### 4. Navegar campanhas sem login — `IMPLEMENTADO 2026-08-11 (PROPOSTA — aguardando ratificação do Pedro)`
+### 3.1 Trocar e recuperar senha 🔴 gate de lançamento
+`[FATO — verificado 2026-08-23]` O controller `auth` expõe `register/brand`,
+`register/influencer`, `claim`, `claim/:token`, `login`, `refresh`, `logout` — e nada mais.
+Não existe troca de senha logada nem recuperação. `POST /auth/claim` define a senha **uma vez**;
+quem esquece (ou tem a senha vazada) fica fora do produto para sempre, sem caminho de volta.
+É **segurança antes de LGPD** e o item de código mais urgente da lista. O botão "Esqueci" já foi
+removido do Login (v0.37.0) justamente por não ter para onde levar.
+
+### 4. Navegar campanhas sem login — `ENTREGUE em produção na v0.34.0 (#96)`
 Ataca o risco não testado da P2 em `personas.md` ("pode simplesmente não querer mais uma
 plataforma"). Desenho em `/architect` 2026-08-10: em vez de reconstruir uma tela de detalhe
 pública, `/apply/:id` **já fazia esse papel** (oferta completa + form, cria conta ao
@@ -46,7 +73,10 @@ candidatar) — só faltava ser encontrável. Escopo final: `/programs` (vitrine
 guard) linkando pro que já existia; `GET /campaigns` ganhou `OptionalJwtAuthGuard` (mesmo
 padrão de `:id`) só pra logar `anonymous=true|false` — o contador cru que era condição de
 admissão. Nenhuma tela de detalhe pública nova, nenhuma mudança no fluxo de candidatura.
-Detalhe em `CLAUDE.md` → Feito, v0.34.0. Falta: Pedro ratificar e isso entrar num release.
+Detalhe em `CLAUDE.md` → Feito, v0.34.0. **Em produção desde então** — sai do AGORA na próxima
+revisão deste arquivo; fica aqui só como registro do desenho. O contador `anonymous=true|false`
+que foi condição de admissão está gravando em log e **nunca foi lido por ninguém** — ler esse
+número é trabalho de 10 minutos e é a única evidência de funil que o produto tem.
 
 ---
 
@@ -99,9 +129,16 @@ exclusão (depois de `D-E`).
   **via Fable** (`D-15`)
 - **Monitoramento de erros (Sentry)** — hoje um erro em produção só se descobre por reclamação,
   e não há de quem reclamar ainda. Vira urgente no minuto em que houver usuário real
-- **Bug conhecido: IG incompleto na 1ª candidatura** — a marca vê "dados indisponíveis" no
-  primeiro contato com a plataforma. É a pior primeira impressão possível, no exato momento em
-  que a gente promete resolver a avaliação. Investigar logs do Railway **antes** de mexer no código
+- **Imagem do IG expira depois de um tempo** — `[FATO — verificado 2026-08-23]` rediagnosticado:
+  o registro anterior ("IG incompleto na 1ª candidatura") estava errado. Os dados chegam certos
+  na candidatura; o que quebra é a imagem com o tempo, porque guardamos a **URL assinada** da
+  CDN em vez da imagem, e nada renova essa URL depois (não existe refresh agendado — só o apply
+  e o botão manual). Efeito: perfil de creator antiga fica sem foto e com o feed furado.
+  **Migrar pra API oficial do Instagram não corrige isso** — a API oficial também devolve URL de
+  mídia temporária; a correção é guardar/cachear a imagem. A API oficial tem outros méritos
+  (ToS, consentimento explícito da creator — que é exatamente o Bloco 3 do LGPD acima — e acesso
+  a métricas reais de alcance, que alimentariam o item 2 do AGORA): merece `/feature` próprio,
+  mas não como conserto de bug. Detalhe em `specs/instagram-sync/spec.md` → Known Gaps
 
 ---
 

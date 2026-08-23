@@ -25,25 +25,45 @@ export class AuthService {
   ) {}
 
   async registerBrand(dto: RegisterBrandDto) {
-    await this.assertEmailAvailable(dto.email);
-
     const hash = await bcrypt.hash(dto.password, 12);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hash,
-        role: UserRole.BRAND,
-        brand: {
-          create: {
-            name: dto.brandName,
-            niches: dto.niches ?? [],
-            website: dto.website,
+
+    // Sem check-then-act: confiamos na constraint @unique de email, igual ao
+    // cadastro de creator. O findUnique prévio que existia aqui abria uma
+    // janela de corrida entre dois cadastros simultâneos com o mesmo e-mail —
+    // o segundo estourava P2002 sem tratamento (500 genérico) em vez de 409.
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hash,
+          role: UserRole.BRAND,
+          brand: {
+            create: {
+              name: dto.brandName,
+              niches: dto.niches ?? [],
+              website: dto.website,
+            },
           },
         },
-      },
-    });
+      });
 
-    return this.buildAuthResponse(user);
+      return this.buildAuthResponse(user);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        // Mesmo formato do cadastro de creator ({ ..., field }) — é o que
+        // permite ao front marcar o erro inline no campo certo.
+        throw new ConflictException({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'Este e-mail já está em uso',
+          field: 'email',
+        });
+      }
+      throw err;
+    }
   }
 
   async registerInfluencer(dto: RegisterInfluencerDto) {
@@ -209,11 +229,6 @@ export class AuthService {
       where: { id: userId },
       data: { refreshTokenHash: null },
     });
-  }
-
-  private async assertEmailAvailable(email: string) {
-    const exists = await this.prisma.user.findUnique({ where: { email } });
-    if (exists) throw new ConflictException('Email already in use');
   }
 
   private async buildAuthResponse(user: AuthUser) {

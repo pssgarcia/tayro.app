@@ -3,9 +3,12 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RewardsService } from '../application/rewards.service';
@@ -70,5 +73,16 @@ export class RewardsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.rewardsService.markAsDelivered(id, user.id);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('BRAND')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remover registro de recompensa ainda PENDING (Brand)',
+  })
+  remove(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.rewardsService.remove(id, user.id);
   }
 }

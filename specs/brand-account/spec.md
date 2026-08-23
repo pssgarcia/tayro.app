@@ -3,7 +3,7 @@ slug: brand-account
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/api/src/modules/auth/presentation/auth.controller.ts (POST /auth/register/brand)
   - apps/api/src/modules/auth/application/auth.service.ts (registerBrand)
@@ -43,7 +43,10 @@ com `User.email` (`@unique`).
 ## Behavior
 - Cadastro cria `User(role=BRAND)` e `Brand` como uma única operação atômica.
 - E-mail já usado por outra conta bloqueia o cadastro — nenhum `User`/`Brand` é criado nesse
-  cenário.
+  cenário. A garantia vem da unicidade do próprio dado, não de uma consulta prévia: duas
+  tentativas simultâneas com o mesmo e-mail produzem uma conta e um conflito explícito
+  (`409`, com o campo em falta identificado), nunca duas contas nem erro genérico de servidor.
+  Mesma garantia do cadastro de creator.
 - Nenhum campo de `Brand` é imutável: qualquer campo do perfil pode ser editado a qualquer
   momento pelo dono.
 - `email` nunca é editável por este fluxo (não há campo de e-mail no update de perfil).
@@ -73,8 +76,10 @@ validado no frontend (Zod) — a API aceita qualquer string ≤2048 caracteres.
 - [x] Cadastro com sucesso retorna token de acesso e autentica a marca imediatamente.
 - [x] Editar o perfil sem enviar todos os campos não apaga os campos omitidos.
 - [x] `GET /brands/me` sem `Brand` associado ao usuário autenticado retorna `403`.
-- [ ] Duas tentativas de cadastro simultâneas com o mesmo e-mail nunca produzem erro genérico
-      de servidor (ver Known Gaps — hoje pode acontecer).
+- [x] Duas tentativas de cadastro simultâneas com o mesmo e-mail nunca produzem erro genérico
+      de servidor: a segunda recebe `409` com `field: 'email'`.
+- [x] O conflito de e-mail no cadastro de marca responde no mesmo formato do cadastro de
+      creator (`{ statusCode, error, message, field }`), permitindo erro inline no campo certo.
 
 ## Error Scenarios
 - E-mail já cadastrado → `409`.
@@ -83,25 +88,28 @@ validado no frontend (Zod) — a API aceita qualquer string ≤2048 caracteres.
 - Excesso de tentativas de cadastro pelo mesmo IP → `429` (throttle de `/auth/*`).
 
 ## Known Gaps
-- **Checagem de e-mail é check-then-act, não atômica.** `registerBrand` faz um `findUnique` por
-  e-mail antes do `create` (em vez de confiar só no `@unique` do banco, como o fluxo de creator
-  faz). Numa corrida entre dois cadastros simultâneos com o mesmo e-mail, o segundo pode cair no
-  erro genérico de conflito de banco (`P2002` não tratado) em vez do `409` esperado. Janela
-  estreita, não corrigida neste retrofit.
+- **Sem troca de e-mail nem de senha pela conta logada.** `email` não aparece em nenhum DTO de
+  update e não existe endpoint de troca/recuperação de senha — quem perde a senha fica fora do
+  produto. É gap de produto compartilhado com `creator-account`, listado em
+  `.claude/knowledge/roadmap.md` (bloco LGPD, item 1).
+(O check-then-act na verificação de e-mail, registrado no retrofit de 2026-08-21, foi
+**corrigido em 2026-08-23** — ver Change History.)
 
 ## Test Coverage
 - `apps/api/src/modules/brands/application/brands.service.spec.ts` — `- [x]` `getMe`/`updateMe`.
 - `apps/api/src/modules/auth/application/auth.service.spec.ts` → `describe('registerBrand')` —
-  `- [x]` conflito de e-mail. `- [ ]` caminho de sucesso de `registerBrand` não tem teste próprio
-  neste describe.
+  `- [x]` caminho de sucesso (cria e devolve token), `- [x]` conflito de e-mail vindo da
+  constraint do banco (`P2002`) com `field: 'email'`, `- [x]` erro que não é `P2002` propaga
+  sem virar `409`.
 - `apps/web/src/pages/auth/RegisterBrandPage.spec.tsx` — `- [x]` existe.
 - `apps/web/src/pages/brand/ProfilePage.spec.tsx` — `- [x]` existe.
 
 ## Current Implementation
 - `registerBrand`: `prisma.user.create` com `brand: { create: {...} }` aninhado — atômico por
   construção do Prisma (não precisa de `$transaction` explícito porque é uma única árvore de
-  criação relacional).
-- `assertEmailAvailable` (privado em `AuthService`) roda o `findUnique` mencionado em Known Gaps.
+  criação relacional). O conflito de e-mail é tratado no `catch` de
+  `Prisma.PrismaClientKnownRequestError` com `code === 'P2002'`, sem consulta prévia — mesmo
+  formato de resposta usado por `registerInfluencer`.
 - `PATCH /brands/me`: `P2025` (linha não encontrada na hora de atualizar) é mapeado pra `403`,
   mesmo padrão do "404 vira 403" usado no `GET`.
 
@@ -110,3 +118,7 @@ validado no frontend (Zod) — a API aceita qualquer string ≤2048 caracteres.
 - 2026-08-21 · reestruturado pro padrão SDD — sem mudança de comportamento; a checagem de
   e-mail não-atômica, antes narrada dentro de "Endpoints", agora é `Known Gap` explícito com
   critério de aceitação correspondente ainda em aberto.
+- 2026-08-23 · check-then-act de e-mail **removido**: `registerBrand` passou a confiar na
+  constraint `@unique` e traduzir `P2002` em `409` com `field`, como o cadastro de creator já
+  fazia. Fecha o Known Gap de corrida e o critério de aceitação correspondente; o corpo do erro
+  ficou mais informativo (antes era a string genérica "Email already in use").

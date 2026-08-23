@@ -143,6 +143,29 @@ Só reemite se a creator se candidatar de novo.
 **Motivo:** gate de lançamento definido pelo Pedro. Não é substituível por auto-revisão.
 **Status:** `FIRME`
 
+### D-17 · 2026-08-23 · Candidatura espontânea é o produto — e ele já está construído
+**Status:** `PROPOSTA` — ratificação do Pedro em 2026-08-23, aguarda ratificação da Thais.
+**Decisão:** o TAYRO ataca **avaliação e gestão de candidatura espontânea de micro-creator**,
+e o que existe hoje em produção já É essa aposta — não falta capacidade, falta usuário.
+Nenhuma feature nova é admitida com a justificativa de "resolver candidatura espontânea":
+a resposta correta a esse pedido é ligar o e-mail e rodar o funil com uma marca real.
+**Motivo:** avaliado no `/feature` de 2026-08-23. A dor descrita ("candidatura espontânea,
+conectar de forma simples") é o `positioning.md` reescrito — `/apply/:id`, `/programs`, aba
+Fila e oferta-antes já entregam os quatro pedaços. Não se conseguiu descrever a dor sem
+descrever o produto, que é o teste de "solução procurando justificativa".
+**Contexto que gerou:** pesquisa do Conty (2026-08-23) mostrou que o concorrente citado é
+marketplace de missão gamificada com discovery — **não** disputa este espaço. A pergunta nº 1
+do `competitors.md` ("ninguém ataca avaliação de candidatura espontânea de micro-creator")
+segue aberta, e isso é evidência fraca a favor da aposta, não confirmação dela.
+**O que fica de fato bloqueando:** `D-13` (e-mail em stub — o ciclo está cortado em produção:
+a creator se candidata, cria conta e nunca recebe o link de acesso; a marca aprova e ela nunca
+fica sabendo) e `D-C` (não existe plano de como a 1ª marca chega).
+**Leitura descartada nesta rodada:** "candidatura a uma MARCA sem programa aberto" (creator se
+candidata sem existir campanha). Pedro confirmou que não era isso. Se voltar, é capacidade nova
+e exige `/feature` próprio — risco conhecido: vira caixa de entrada de spam pra marca.
+**Gatilho de revisão:** primeiras 5 entrevistas. Se marca nenhuma citar candidatura espontânea
+como dor real, esta decisão cai e o posicionamento inteiro é reaberto.
+
 ### D-16 · ~2026-08 · Instagram: fila assíncrona (BullMQ+Redis) é o alvo, ainda não implementado
 **Motivo:** buscar dado do IG é lento, instável e rate-limited; síncrono quebra UX.
 Também é veículo declarado de aprendizado (filas, observabilidade).
@@ -164,5 +187,12 @@ Também é veículo declarado de aprendizado (filas, observabilidade).
 
 ## Registro de propostas rejeitadas
 
-*(vazio — usar quando o `/feature` matar uma ideia. Ideia morta com motivo registrado
-vale tanto quanto feature entregue: evita ressuscitar a mesma coisa em novembro.)*
+### 2026-08-23 · "Resolver candidatura espontânea / conectar de forma simples" como feature
+**Veredito:** `NÃO — não é feature, é ratificação de estratégia.` Ver `D-17`.
+**Motivo em uma frase:** a dor não pôde ser descrita sem descrever o produto que já existe —
+falhou nos critérios 4 (não cabe em release, não tem escopo) e 5 (não dá pra dizer o que se
+aprende) da regra de admissão.
+**O que substituiu:** ligar o e-mail (`D-13`) e rodar o funil de uma marca real por 2 semanas,
+medindo candidaturas recebidas, taxa de claim concluído e tempo de decisão da marca.
+**Não ressuscitar** sem uma dessas duas coisas: entrevista de marca dizendo que a avaliação
+continua manual **apesar** do TAYRO, ou dado do funil real mostrando onde ele quebra.

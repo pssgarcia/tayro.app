@@ -249,6 +249,153 @@ describe('CampaignsService', () => {
     });
   });
 
+  // ─── close ────────────────────────────────────────────────────────────────────
+
+  describe('close', () => {
+    it('transitions ACTIVE → CLOSED', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.ACTIVE,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+      prisma.campaign.update.mockResolvedValue(
+        makeCampaign({ status: CampaignStatus.CLOSED }),
+      );
+
+      const result = await service.close('camp-1', 'user-1');
+
+      expect(prisma.campaign.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: CampaignStatus.CLOSED } }),
+      );
+      expect(result.status).toBe(CampaignStatus.CLOSED);
+    });
+
+    it('throws BadRequestException when campaign is still DRAFT', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+
+      await expect(service.close('camp-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.campaign.update).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when campaign is already CLOSED', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.CLOSED,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+
+      await expect(service.close('camp-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.campaign.update).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when user does not own the campaign', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.ACTIVE,
+          brand: makeBrand({ userId: 'owner' }),
+        }),
+      );
+
+      await expect(service.close('camp-1', 'attacker')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prisma.campaign.update).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when campaign does not exist', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(null);
+
+      await expect(service.close('ghost', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  // ─── remove ───────────────────────────────────────────────────────────────────
+
+  describe('remove', () => {
+    it('deletes a DRAFT campaign', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+      prisma.campaign.delete.mockResolvedValue(undefined);
+
+      await service.remove('camp-1', 'user-1');
+
+      expect(prisma.campaign.delete).toHaveBeenCalledWith({
+        where: { id: 'camp-1' },
+      });
+    });
+
+    // Apagar campanha ACTIVE/CLOSED não existe como caminho: o jeito de tirar
+    // uma campanha publicada do ar é encerrar. Se esta guarda cair, candidatura
+    // e recompensa de creator vão junto com a campanha.
+    it('refuses to delete an ACTIVE campaign — nothing is deleted', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.ACTIVE,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+
+      await expect(service.remove('camp-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.campaign.delete).not.toHaveBeenCalled();
+    });
+
+    it('refuses to delete a CLOSED campaign — nothing is deleted', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.CLOSED,
+          brand: makeBrand({ userId: 'user-1' }),
+        }),
+      );
+
+      await expect(service.remove('camp-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(prisma.campaign.delete).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when user does not own the campaign', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(
+        makeCampaign({
+          status: CampaignStatus.DRAFT,
+          brand: makeBrand({ userId: 'owner' }),
+        }),
+      );
+
+      await expect(service.remove('camp-1', 'attacker')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prisma.campaign.delete).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when campaign does not exist', async () => {
+      prisma.campaign.findUnique.mockResolvedValue(null);
+
+      await expect(service.remove('ghost', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(prisma.campaign.delete).not.toHaveBeenCalled();
+    });
+  });
+
   // ─── create ───────────────────────────────────────────────────────────────────
 
   describe('create', () => {

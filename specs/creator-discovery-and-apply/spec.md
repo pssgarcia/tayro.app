@@ -3,7 +3,7 @@ slug: creator-discovery-and-apply
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 implements:
   - apps/api/src/modules/campaigns/presentation/campaigns.controller.ts
   - apps/api/src/modules/campaigns/application/campaigns.service.ts
@@ -130,9 +130,9 @@ spec `applications-pipeline`, não duplicado aqui.
 - Mais de 5 tentativas de candidatura pública por IP em 60s → `429`.
 
 ## Known Gaps
-- **Sem teste de frontend para `PublicApplyPage`** — é a superfície de maior risco desta
-  capacidade (cria conta, único ponto sem guard de autenticação nenhum) e não tem
-  `.spec.tsx` dedicado.
+(O gap "sem teste de frontend para `PublicApplyPage`" foi **fechado em 2026-08-23** — a
+superfície de maior risco da capacidade, única sem guard e que cria conta, passou a ter
+cobertura. Ver Test Coverage.)
 - **Branch "preenche o handle de uma conta existente sem handle" sem teste dedicado** —
   implementado (`creators.service.ts`, dentro de `findOrCreateInfluencer`), mas nenhum dos
   specs existentes exercita esse caminho especificamente.
@@ -150,7 +150,13 @@ spec `applications-pipeline`, não duplicado aqui.
   e reenvia, [x] reapply já claimado não reemite nem reenvia.
 - Frontend: `BrowseProgramsPage.spec.tsx`, `ProgramsList.spec.tsx`, `ProgramCard.spec.tsx`,
   `ProgramDetailPage.spec.tsx`, `ApplyModal.spec.tsx`, `BrowseProgramsPublicPage.spec.tsx`.
-- [ ] `PublicApplyPage.spec.tsx` — não existe.
+- `apps/web/src/pages/public/PublicApplyPage.spec.tsx` —
+  [x] carga da campanha (oferta + marca), [x] campanha inexistente mostra "programa não
+  encontrado", [x] `DRAFT`/`CLOSED`/`COMPLETED` não mostram formulário, [x] payload enviado à
+  rota pública, [x] normalização de `@` e caixa alta antes do envio, [x] confirmação na própria
+  placa sem navegar, [x] handle e e-mail inválidos barrados antes da API, [x] respostas
+  `409` (com e sem mensagem usável), `429` e `500`, [x] formulário continua disponível pra nova
+  tentativa após erro.
 - [ ] Branch de preenchimento de handle em conta existente — não existe teste dedicado.
 
 ## Current Implementation
@@ -175,3 +181,6 @@ spec `applications-pipeline`, não duplicado aqui.
   `creators.service.race.spec.ts` já cobre validações sequenciais (404/400/409) e
   `creators.service.claim.spec.ts` cobre o caminho de emissão/reemissão de claim. O gap real e
   específico é mais estreito: só o branch de preenchimento de handle numa conta existente.
+- 2026-08-23 · `PublicApplyPage` ganhou cobertura de teste (15 casos): contrato de envio,
+  normalização do handle e as quatro respostas de erro da API. Era a única tela do produto sem
+  guard nenhum e sem teste.

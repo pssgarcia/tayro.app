@@ -24,10 +24,7 @@ export function useCampaign(campaignId: string) {
   });
 }
 
-export function useApplications(
-  campaignId: string,
-  options?: { refetchInterval?: number | false | ((query: { state: { data: unknown } }) => number | false) },
-) {
+export function useApplications(campaignId: string) {
   return useQuery({
     queryKey: applicationKeys.byCampaign(campaignId),
     queryFn: () =>
@@ -35,7 +32,6 @@ export function useApplications(
         .get<Application[]>(`/applications/campaign/${campaignId}`)
         .then((r) => r.data),
     enabled: !!campaignId,
-    ...options,
   });
 }
 
@@ -165,6 +161,21 @@ export function useMarkRewardDelivered(campaignId: string) {
   return useMutation({
     mutationFn: (rewardId: string) =>
       api.patch(`/rewards/${rewardId}/deliver`).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: rewardKeys.byCampaign(campaignId) }),
+  });
+}
+
+/**
+ * Remove um registro de recompensa ainda PENDING.
+ * Existe porque mais de uma recompensa por creator/campanha é legítima
+ * (dinheiro + produto), então nada impede um registro duplicado por engano —
+ * e a partir de ISSUED a API recusa apagar (já foi anunciado à creator).
+ */
+export function useDeleteReward(campaignId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rewardId: string) => api.delete(`/rewards/${rewardId}`),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: rewardKeys.byCampaign(campaignId) }),
   });

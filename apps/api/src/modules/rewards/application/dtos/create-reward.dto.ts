@@ -23,6 +23,7 @@ export class CreateRewardDto {
 
   @ApiProperty({ example: 'R$300' })
   @IsString()
+  @MaxLength(100)
   value: string;
 
   @ApiPropertyOptional({ example: 'Pix enviado em 04/06/2026' })
