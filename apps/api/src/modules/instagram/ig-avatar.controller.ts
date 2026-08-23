@@ -69,17 +69,23 @@ export class IgAvatarController {
       return;
     }
 
-    await this.serve(res, influencerId, IgImageKind.POST, position, async () => {
-      const influencer = await this.prisma.influencer.findUnique({
-        where: { id: influencerId },
-        select: { igRecentPosts: true },
-      });
-      const posts = influencer?.igRecentPosts as
-        | { thumbnail?: string }[]
-        | null
-        | undefined;
-      return posts?.[position]?.thumbnail ?? null;
-    });
+    await this.serve(
+      res,
+      influencerId,
+      IgImageKind.POST,
+      position,
+      async () => {
+        const influencer = await this.prisma.influencer.findUnique({
+          where: { id: influencerId },
+          select: { igRecentPosts: true },
+        });
+        const posts = influencer?.igRecentPosts as
+          | { thumbnail?: string }[]
+          | null
+          | undefined;
+        return posts?.[position]?.thumbnail ?? null;
+      },
+    );
   }
 
   /**

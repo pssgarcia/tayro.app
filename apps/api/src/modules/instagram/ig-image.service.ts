@@ -151,7 +151,12 @@ export class IgImageService {
     if (stored) return stored;
     if (!sourceUrl) return null;
 
-    const ok = await this.fetchAndStore(influencerId, kind, position, sourceUrl);
+    const ok = await this.fetchAndStore(
+      influencerId,
+      kind,
+      position,
+      sourceUrl,
+    );
     return ok ? this.find(influencerId, kind, position) : null;
   }
 
