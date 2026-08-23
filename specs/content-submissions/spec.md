@@ -101,6 +101,10 @@ existir.
 - `request-revision` sem feedback → `400`, "Feedback is required when requesting revision".
 - Marca que não é dona da campanha tenta revisar → `403`, "Not your campaign".
 
+(A foto da creator nesta tela passou a ser a do Instagram em 2026-08-23 — antes lia só
+`avatarUrl`, campo manual que na prática está sempre vazio, e por isso mostrava iniciais para
+praticamente todo mundo. Ver `instagram-sync` → "Identidade visual da creator".)
+
 ## Known Gaps
 - **`GET /submissions/application/:applicationId` não tem consumidor no frontend** — confirmado
   por grep, nenhum arquivo em `apps/web` chama esta rota. Endpoint funciona e é testado

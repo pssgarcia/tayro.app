@@ -11,7 +11,7 @@ import {
 } from '../../hooks/useCampaignApplications';
 import CountUp from '../../components/primitives/CountUp';
 import CampaignPipelineMobileStory from './CampaignPipelineMobileStory';
-import { formatEngagement, formatNumberParts } from '../../utils/format';
+import { creatorAvatarSrc, formatEngagement, formatNumberParts } from '../../utils/format';
 import { cn } from '../../lib/utils';
 import type { Application, ApplicationStatus, Campaign } from '../../types/api';
 
@@ -39,10 +39,10 @@ function placeholderMatchScore(id: string): number {
 }
 
 const pipelineStatusWord: Record<ApplicationStatus, string> = {
-  PENDING: 'Pending',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
-  WITHDRAWN: 'Withdrawn',
+  PENDING: 'Pendente',
+  APPROVED: 'Aprovada',
+  REJECTED: 'Recusada',
+  WITHDRAWN: 'Retirada',
 };
 
 // ─── Lista Pipeline ────────────────────────────────────────────────────────────
@@ -57,9 +57,7 @@ function PipelineRow({
   onSelect: () => void;
 }) {
   const { influencer, status } = application;
-  const avatarSrc = influencer.igProfilePicUrl
-    ? `/api/v1/ig/avatar/${influencer.id}`
-    : influencer.avatarUrl;
+  const avatarSrc = creatorAvatarSrc(influencer);
 
   return (
     <li>
@@ -120,9 +118,7 @@ function ProfilePlate({
 }) {
   const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
-  const avatarSrc = influencer.igProfilePicUrl
-    ? `/api/v1/ig/avatar/${influencer.id}`
-    : influencer.avatarUrl;
+  const avatarSrc = creatorAvatarSrc(influencer);
   const followers =
     influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
   const cooldownWait = extractCooldownWait(refreshIgError);
@@ -212,7 +208,7 @@ function ProfilePlate({
               {followers && (
                 <div>
                   <p className="mb-1 font-mono text-xs uppercase tracking-widest text-gray-500">
-                    Followers
+                    Seguidores
                   </p>
                   <CountUp>
                     <span className="text-4xl font-bold tracking-tighter">
@@ -226,7 +222,7 @@ function ProfilePlate({
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <p className="font-mono text-xs uppercase tracking-widest text-gray-500">
-                      Engagement
+                      Engajamento
                     </p>
                     <button
                       type="button"
@@ -252,7 +248,7 @@ function ProfilePlate({
         {message && (
           <div className="mb-6">
             <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-gray-500">
-              Bio Note
+              Mensagem da candidatura
             </h3>
             <p className="text-sm leading-relaxed text-gray-800">&ldquo;{message}&rdquo;</p>
           </div>
@@ -260,7 +256,7 @@ function ProfilePlate({
 
         <div>
           <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-gray-500">
-            Recent Feed
+            Posts recentes
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {posts.map((post, i) =>
@@ -411,7 +407,7 @@ export default function CampaignFilaTab({ campaign, campaignId, onExitMobile }: 
 
         <aside className="flex min-h-0 flex-col lg:col-span-4 lg:h-full">
           <h3 className="mb-4 shrink-0 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
-            Pipeline
+            Candidaturas
           </h3>
           {appsLoading ? (
             <div className="h-40 animate-pulse rounded bg-kinetic-dark" />

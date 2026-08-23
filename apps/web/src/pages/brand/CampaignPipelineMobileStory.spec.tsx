@@ -243,7 +243,7 @@ describe('CampaignPipelineMobileStory — estados do Instagram', () => {
   it('mostra métricas quando o IG veio (OK)', () => {
     renderStory([makeApplication('a', { igFetchStatus: 'OK' })]);
 
-    expect(screen.getByText(/followers/i)).toBeInTheDocument();
+    expect(screen.getByText(/seguidores/i)).toBeInTheDocument();
     expect(screen.queryByText(/dados do instagram indisponíveis/i)).not.toBeInTheDocument();
   });
 

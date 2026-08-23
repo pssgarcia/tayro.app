@@ -1,7 +1,11 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { usePublicCreatorProfile } from '../../hooks/usePublicCreatorProfile';
-import { formatEngagement, formatNumberParts } from '../../utils/format';
+import {
+  creatorAvatarSrc,
+  formatEngagement,
+  formatNumberParts,
+} from '../../utils/format';
 import Plate from '../../components/primitives/Plate';
 import StatBlock from '../../components/primitives/StatBlock';
 import ThumbGrid from '../../components/primitives/ThumbGrid';
@@ -91,9 +95,7 @@ export default function PublicCreatorProfilePage() {
   const { data: profile, isLoading, isError } = usePublicCreatorProfile(handle);
 
   const igHandle = profile?.handle?.replace(/^@+/, '');
-  const avatarSrc = profile?.igProfilePicUrl
-    ? `/api/v1/ig/avatar/${profile.id}`
-    : profile?.avatarUrl;
+  const avatarSrc = profile ? creatorAvatarSrc(profile) : null;
   const initials = (profile?.name ?? '')
     .trim()
     .split(/\s+/)

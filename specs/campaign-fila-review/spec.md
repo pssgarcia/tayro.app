@@ -38,7 +38,11 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
 ## Behavior
 
 ### Duas superfícies, mesmo dado
-- **Desktop/telas largas (`lg:` e acima):** lista "Pipeline" com **toda** candidatura da
+- **Todo texto visível é em português.** Vale para rótulo estrutural também (a lista de
+  candidaturas, seguidores, engajamento, a mensagem da candidatura, os posts recentes) e para o
+  status de cada candidatura na lista. Até 2026-08-23 esses rótulos eram em inglês por decisão
+  de design registrada; a decisão foi revertida.
+- **Desktop/telas largas (`lg:` e acima):** lista de candidaturas com **toda** candidatura da
   campanha, qualquer status (não só `PENDING`) — diferente do carrossel que esta tela substituiu,
   que só mostrava quem esperava decisão. Uma placa de detalhe mostra a candidatura selecionada.
 - **Mobile/tablet (abaixo de `lg:`):** revisão em formato Story do Instagram — um candidato
@@ -77,6 +81,10 @@ negócio separada da apresentação).
 - [x] "Fechar revisão" no mobile não dispara navegação de rota.
 
 ## Known Gaps
+- **"Match Score" é placeholder E continua em inglês de propósito.** Foi o único rótulo deixado
+  de fora da tradução de 2026-08-23: traduzi-lo daria aparência de métrica nativa a um número
+  que não é calculado, o que agrava a contradição com `vision.md` nº 5 em vez de só mantê-la.
+  Decisão sobre remover ou manter está com o Pedro.
 - **"Match Score" é placeholder** (hash determinístico do id da candidatura, sem cálculo real) —
   já registrado em "Out of Scope" como decisão deliberada, repetido aqui porque um número de 70
   a 95 na tela é indistinguível de métrica real pra quem olha. Não tem teste de propósito: o que

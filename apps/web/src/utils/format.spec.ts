@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  creatorAvatarSrc,
   formatNumber,
   formatNumberParts,
   formatEngagement,
@@ -160,5 +161,49 @@ describe('formatOfferWhole', () => {
         offerCommissionPercent: 7.5,
       }),
     ).toEqual({ value: '7,5%' });
+  });
+});
+
+// ─── creatorAvatarSrc ─────────────────────────────────────────────────────────
+// A regra "a foto do TAYRO é a do Instagram" mora aqui, num lugar só — estava
+// copiada em 5 telas e faltando em outras 2.
+
+describe('creatorAvatarSrc', () => {
+  it('aponta pro nosso domínio quando há foto do Instagram', () => {
+    expect(
+      creatorAvatarSrc({ id: 'inf-1', igProfilePicUrl: 'https://cdn/x.jpg' }),
+    ).toBe('/api/v1/ig/avatar/inf-1');
+  });
+
+  // O Instagram bloqueia <img> cross-origin em foto de PERFIL (footgun CORP):
+  // a URL da CDN nunca pode ir direto pro src.
+  it('nunca devolve a URL da CDN direto', () => {
+    const src = creatorAvatarSrc({
+      id: 'inf-1',
+      igProfilePicUrl: 'https://scontent.cdninstagram.com/x.jpg',
+    });
+
+    expect(src).not.toContain('cdninstagram');
+  });
+
+  it('cai no avatarUrl manual quando não há foto do Instagram', () => {
+    expect(
+      creatorAvatarSrc({ id: 'inf-1', igProfilePicUrl: null, avatarUrl: 'https://x/y.png' }),
+    ).toBe('https://x/y.png');
+  });
+
+  it('prefere a foto do Instagram ao avatarUrl manual', () => {
+    expect(
+      creatorAvatarSrc({
+        id: 'inf-1',
+        igProfilePicUrl: 'https://cdn/x.jpg',
+        avatarUrl: 'https://x/y.png',
+      }),
+    ).toBe('/api/v1/ig/avatar/inf-1');
+  });
+
+  it('devolve null sem foto nenhuma (quem chama mostra as iniciais)', () => {
+    expect(creatorAvatarSrc({ id: 'inf-1' })).toBeNull();
+    expect(creatorAvatarSrc({ id: 'inf-1', igProfilePicUrl: null, avatarUrl: null })).toBeNull();
   });
 });
