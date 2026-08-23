@@ -5,6 +5,7 @@ import { PrismaService } from '../../shared/infrastructure/database/prisma.servi
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
 import type { InstagramProvider } from './instagram.types';
 import { calcEngagementRate } from './engagement.utils';
+import { IgImageService } from './ig-image.service';
 
 @Injectable()
 export class InstagramSyncService {
@@ -14,6 +15,7 @@ export class InstagramSyncService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     @Inject(INSTAGRAM_PROVIDER) private readonly provider: InstagramProvider,
+    private readonly igImages: IgImageService,
   ) {}
 
   /**
@@ -77,6 +79,15 @@ export class InstagramSyncService {
           igFetchStatus: IgFetchStatus.OK,
         },
       });
+
+      // Guardar as imagens é best-effort e vem DEPOIS de gravar os dados: se
+      // falhar, o sync continua OK e a imagem anterior permanece. As URLs da
+      // CDN expiram — é por guardar os bytes que a foto para de sumir (D-18).
+      await this.igImages.storeFromProfile(
+        influencerId,
+        profile.profilePicUrl,
+        profile.recentPosts.map((post) => post.thumbnail),
+      );
     } catch (err) {
       // Mantém valores anteriores; igFetchedAt=now para o cooldown do refresh manual
       await this.prisma.influencer.update({

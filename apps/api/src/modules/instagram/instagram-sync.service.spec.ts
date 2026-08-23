@@ -16,6 +16,7 @@ import { IgFetchStatus } from '@prisma/client';
 import { InstagramSyncService } from './instagram-sync.service';
 import { PrismaService } from '../../shared/infrastructure/database/prisma.service';
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
+import { IgImageService } from './ig-image.service';
 
 const perfil = {
   followers: 10_000,
@@ -30,6 +31,7 @@ describe('InstagramSyncService', () => {
   let service: InstagramSyncService;
   let prisma: jest.Mocked<any>;
   let provider: { fetchProfile: jest.Mock };
+  let igImages: { storeFromProfile: jest.Mock };
   let config: { get: jest.Mock };
   const agora = new Date('2026-08-23T12:00:00.000Z');
 
@@ -55,6 +57,7 @@ describe('InstagramSyncService', () => {
       },
     };
     provider = { fetchProfile: jest.fn().mockResolvedValue(perfil) };
+    igImages = { storeFromProfile: jest.fn().mockResolvedValue(undefined) };
     config = { get: jest.fn((_k: string, def: string) => def) };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -63,6 +66,9 @@ describe('InstagramSyncService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: config },
         { provide: INSTAGRAM_PROVIDER, useValue: provider },
+        // Guardar imagem é best-effort e tem testes próprios — aqui só não
+        // pode atrapalhar o contrato de staleness/falha do sync.
+        { provide: IgImageService, useValue: igImages },
       ],
     }).compile();
 

@@ -6,6 +6,7 @@ import { InstagramSyncService } from './instagram-sync.service';
 import { StubInstagramProvider } from './providers/stub.instagram.provider';
 import { RapidApiInstagramProvider } from './providers/rapidapi.instagram.provider';
 import { IgAvatarController } from './ig-avatar.controller';
+import { IgImageService } from './ig-image.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -21,7 +22,8 @@ import { IgAvatarController } from './ig-avatar.controller';
       inject: [ConfigService],
     },
     InstagramSyncService,
+    IgImageService,
   ],
-  exports: [INSTAGRAM_PROVIDER, InstagramSyncService],
+  exports: [INSTAGRAM_PROVIDER, InstagramSyncService, IgImageService],
 })
 export class InstagramModule {}
