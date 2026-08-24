@@ -102,6 +102,9 @@ reaplicar) em vez de perguntar "tem certeza?", e fica aberto em caso de erro pra
 — existe porque a versão anterior disparava o withdraw num único clique, sem aviso.
 
 ## Acceptance Criteria
+- [x] Criar candidatura dispara a sincronização do Instagram da creator (ver `instagram-sync`):
+      ninguém chega à fila da marca sem que uma tentativa de busca tenha existido.
+- [x] Candidatura recusada (campanha inexistente, não-`ACTIVE` ou cheia) **não** dispara busca.
 - [x] Candidatar-se a uma campanha não-`ACTIVE` retorna erro; nenhuma `Application` é criada.
 - [x] Candidatar-se quando `maxSpots` já foi atingido por candidaturas `APPROVED` retorna erro.
 - [x] Candidatar-se novamente à mesma campanha (qualquer status anterior, inclusive
@@ -168,6 +171,10 @@ Arquivo: `apps/api/src/modules/applications/application/applications.service.rac
 - `useWithdrawApplication` é o hook que chama `PATCH /applications/:id/withdraw`.
 
 ## Change History
+- 2026-08-24 · `POST /applications` passou a disparar a sincronização do Instagram. A creator já
+  existia, então nenhum dos dois lados assumia a atualização do perfil dela — candidatura
+  autenticada chegava na fila com dado velho, ou sem dado nenhum se a creator tinha entrado pelo
+  cadastro. Ver `instagram-sync` → Change History.
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD. Mudança conceitual: "sem rota pra desfazer
   WITHDRAWN" estava classificado como "fora de escopo deliberado" — reclassificado pra `Known

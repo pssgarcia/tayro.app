@@ -33,11 +33,15 @@ const feedResponse = {
 };
 
 // ConfigService falso — só responde as 4 chaves que o provider lê no construtor.
+// A chave é FALSA de propósito: nenhum teste aqui faz rede (o `fetch` é
+// mockado), então uma chave real não acrescentaria nada — e uma vez commitada,
+// vaza para sempre no histórico do git. Aconteceu: a chave de produção esteve
+// neste arquivo até 2026-08-24 e precisou ser rotacionada.
 function makeConfig(): ConfigService {
   return {
     getOrThrow: (key: string) =>
       ({
-        RAPIDAPI_KEY: 'ca1ad4e75mshe6fe7ff3e6c1114p138a27jsn83a27e01f026',
+        RAPIDAPI_KEY: 'chave-falsa-de-teste',
         RAPIDAPI_HOST: 'instagram-best-experience.p.rapidapi.com',
         RAPIDAPI_BASE_URL: 'https://instagram-best-experience.p.rapidapi.com',
       })[key],

@@ -19,6 +19,28 @@ export class InstagramSyncService {
   ) {}
 
   /**
+   * Dispara uma sincronização em background e retorna na hora.
+   *
+   * Usado por todo caminho em que uma creator entra no sistema ou se candidata
+   * — a resposta HTTP dela não pode esperar uma API externa. Falha aqui é
+   * logada e morre aqui: quem agendou nunca é derrubado.
+   *
+   * `refresh` respeita o período de validade (24h), então chamar isto de
+   * vários pontos não multiplica consumo de cota — candidatura de creator com
+   * dado fresco sai sem tocar no provedor.
+   */
+  scheduleRefresh(influencerId: string): void {
+    setImmediate(() => {
+      this.refresh(influencerId).catch((err: unknown) => {
+        const reason = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Sync agendado falhou para influencer ${influencerId}: ${reason}`,
+        );
+      });
+    });
+  }
+
+  /**
    * Atualiza dados do Instagram de um influencer.
    * force=false  → pula se dados estiverem frescos (IG_FETCH_STALENESS_HOURS).
    * force=true   → sempre busca; usado por endpoint manual (o cooldown fica na
