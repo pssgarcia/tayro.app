@@ -130,3 +130,15 @@ export function creatorAvatarSrc(influencer: {
   if (influencer.igProfilePicUrl) return `/api/v1/ig/avatar/${influencer.id}`;
   return influencer.avatarUrl ?? null;
 }
+
+/**
+ * Endereço de uma thumbnail do feed recente, servida pelo nosso domínio.
+ *
+ * Mesma razão do `creatorAvatarSrc`: as URLs da CDN do Instagram são assinadas
+ * e expiram, e até 2026-08-23 o navegador as carregava direto — por isso o
+ * feed da Fila ia sumindo com o tempo (D-18). `position` é o índice do post na
+ * grade (0..5).
+ */
+export function creatorPostSrc(influencerId: string, position: number): string {
+  return `/api/v1/ig/post/${influencerId}/${position}`;
+}

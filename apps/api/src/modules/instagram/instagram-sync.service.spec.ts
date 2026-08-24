@@ -220,6 +220,52 @@ describe('InstagramSyncService', () => {
     });
   });
 
+  // ─── Persistência de imagem (D-18) ────────────────────────────────────────
+
+  describe('guardar as imagens', () => {
+    beforeEach(() => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        influencerNoBanco({ igFetchStatus: null }),
+      );
+    });
+
+    it('guarda foto de perfil e thumbnails após sync bem-sucedido', async () => {
+      await service.refresh('inf-1');
+
+      expect(igImages.storeFromProfile).toHaveBeenCalledWith(
+        'inf-1',
+        perfil.profilePicUrl,
+        ['t1', 't2'],
+      );
+    });
+
+    // Best-effort: a foto é acessório, o número é o que a marca usa pra decidir.
+    // Asserção olha TODAS as escritas: com o storeFromProfile dentro do try do
+    // sync, uma falha de imagem gerava uma terceira escrita marcando FAILED —
+    // apagando um sync que tinha dado certo. Olhar só a escrita de sucesso
+    // deixava o teste passar com o bug presente.
+    it('falha ao guardar imagem NÃO derruba o sync nem marca FAILED', async () => {
+      igImages.storeFromProfile.mockRejectedValue(new Error('storage fora'));
+
+      await expect(service.refresh('inf-1')).resolves.toBeUndefined();
+
+      expect(prisma.influencer.update).toHaveBeenCalledTimes(2);
+      const statusEscritos = prisma.influencer.update.mock.calls.map(
+        (c: [{ data: { igFetchStatus?: string } }]) => c[0].data.igFetchStatus,
+      );
+      expect(statusEscritos).not.toContain(IgFetchStatus.FAILED);
+      expect(statusEscritos).toContain(IgFetchStatus.OK);
+    });
+
+    it('não tenta guardar imagem quando a busca falhou', async () => {
+      provider.fetchProfile.mockRejectedValue(new Error('RapidAPI 503'));
+
+      await service.refresh('inf-1');
+
+      expect(igImages.storeFromProfile).not.toHaveBeenCalled();
+    });
+  });
+
   // ─── Falha ────────────────────────────────────────────────────────────────
 
   describe('falha do provedor', () => {

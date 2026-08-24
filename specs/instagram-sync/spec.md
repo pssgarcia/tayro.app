@@ -133,19 +133,19 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
 | `PATCH` | `/applications/:id/refresh-ig` | `BRAND` + limite de taxa | Força nova busca, sujeito ao intervalo mínimo entre tentativas. Contrato pertence à spec `applications-pipeline`. |
 
 ## Acceptance Criteria
-- [ ] Após uma sincronização bem-sucedida, a foto de perfil e as thumbnails continuam
+- [x] Após uma sincronização bem-sucedida, a foto de perfil e as thumbnails continuam
       aparecendo **mesmo depois de o endereço original ter expirado**.
-- [ ] Falha ao guardar imagem não marca a sincronização como falha nem apaga a imagem anterior.
-- [ ] Re-sincronizar substitui a imagem da mesma posição, sem acumular duplicatas.
-- [ ] Imagem acima do teto de tamanho ou com tipo de mídia não permitido é descartada, e a
+- [x] Falha ao guardar imagem não marca a sincronização como falha nem apaga a imagem anterior.
+- [x] Re-sincronizar substitui a imagem da mesma posição, sem acumular duplicatas.
+- [x] Imagem acima do teto de tamanho ou com tipo de mídia não permitido é descartada, e a
       anterior permanece.
-- [ ] A imagem é servida com o tipo de mídia **guardado**, nunca com o declarado pelo servidor
+- [x] A imagem é servida com o tipo de mídia **guardado**, nunca com o declarado pelo servidor
       de origem no momento da entrega.
-- [ ] Creator que se candidatou antes desta capacidade passa a ter imagem guardada no primeiro
+- [x] Creator que se candidatou antes desta capacidade passa a ter imagem guardada no primeiro
       acesso, sem migração de dados.
-- [ ] Nenhuma listagem de candidatura traz os bytes das imagens — só a rota que serve a imagem
+- [x] Nenhuma listagem de candidatura traz os bytes das imagens — só a rota que serve a imagem
       os consulta.
-- [ ] A foto que a marca vê na fila é a mesma que aparece em conteúdos, recompensas, perfil
+- [x] A foto que a marca vê na fila é a mesma que aparece em conteúdos, recompensas, perfil
       público e no perfil da própria creator.
 - [x] Busca com perfil indisponível falha a sincronização inteira e marca status de falha.
 - [x] Busca com feed indisponível ou conta privada preserva o perfil já obtido; feed fica vazio.
@@ -155,7 +155,7 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
 - [x] A foto de perfil é obtida a partir de uma URL persistida no banco, nunca fornecida pelo
       cliente da rota de exibição.
 - [x] A rota de exibição da foto só busca hosts numa lista permitida.
-- [ ] O núcleo do contrato (staleness, preservação em falha, carimbo em falha) tem teste de
+- [x] O núcleo do contrato (staleness, preservação em falha, carimbo em falha) tem teste de
       unidade dedicado — hoje só é exercitado indiretamente por quem chama o serviço (ver Known
       Gaps).
 
@@ -186,10 +186,9 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
 - **`avatarUrl` continua editável à mão** no perfil da creator, o que cria uma segunda fonte de
   verdade para a foto — contradiz "a foto do TAYRO é a do Instagram". Destino do campo ainda não
   decidido; ver `creator-account`.
-- **Imagem some depois de um tempo — URL de CDN expirada, não falha de busca.**
-  `DESENHO PRONTO EM 2026-08-23, NADA IMPLEMENTADO` — a correção (guardar os bytes) está
-  descrita em "Behavior → Persistência de imagem" e decidida em `D-18`. Continua sendo gap
-  aberto até o código existir e os critérios de aceitação correspondentes virarem `[x]`.
+(O gap "Imagem some depois de um tempo — URL de CDN expirada" foi **fechado em 2026-08-23**:
+o sistema passa a guardar os bytes, e o endereço da CDN vira só origem de backfill. Ver Change
+History.)
   `[FATO — verificado 2026-08-23]` O que é guardado no banco é a **URL assinada** da CDN
   (`igProfilePicUrl`, e o `thumbnail` de cada item de `igRecentPosts`), não a imagem. Essas URLs
   carregam assinatura com validade; passado o prazo, a CDN responde 403 e a foto desaparece da
@@ -228,22 +227,22 @@ Coverage e Change History.)
       não-dono, influencer inexistente).
 
 Persistência de imagem (a escrever **antes** do código):
-- [ ] Sincronização bem-sucedida guarda foto de perfil e thumbnails.
-- [ ] Falha ao baixar imagem: sincronização continua `OK`, imagem anterior preservada.
-- [ ] Re-sincronização substitui a mesma posição (idempotente), sem duplicar.
-- [ ] Descarta imagem acima do teto de tamanho.
-- [ ] Descarta tipo de mídia fora da lista permitida.
-- [ ] Rota de imagem serve o que está guardado.
-- [ ] Rota de imagem grava no primeiro acesso quando ainda não há imagem (adoção gradual).
-- [ ] Rota de imagem devolve `404` sem imagem e sem endereço.
-- [ ] Host fora da lista permitida: `404` e **nenhuma requisição externa** (regressão do teste
+- [x] Sincronização bem-sucedida guarda foto de perfil e thumbnails.
+- [x] Falha ao baixar imagem: sincronização continua `OK`, imagem anterior preservada.
+- [x] Re-sincronização substitui a mesma posição (idempotente), sem duplicar.
+- [x] Descarta imagem acima do teto de tamanho.
+- [x] Descarta tipo de mídia fora da lista permitida.
+- [x] Rota de imagem serve o que está guardado.
+- [x] Rota de imagem grava no primeiro acesso quando ainda não há imagem (adoção gradual).
+- [x] Rota de imagem devolve `404` sem imagem e sem endereço.
+- [x] Host fora da lista permitida: `404` e **nenhuma requisição externa** (regressão do teste
       de requisição forjada que já existe).
-- [ ] Posição de post fora da faixa: `404` sem consulta ao banco.
-- [ ] Tipo de mídia devolvido é o guardado, não o declarado pela origem.
-- [ ] **Trava de regressão de performance:** as listagens de candidatura não trazem bytes de
+- [x] Posição de post fora da faixa: `404` sem consulta ao banco.
+- [x] Tipo de mídia devolvido é o guardado, não o declarado pela origem.
+- [x] **Trava de regressão de performance:** as listagens de candidatura não trazem bytes de
       imagem — o teste falha se alguém acrescentar o campo a um `select`.
-- [ ] Frontend: conteúdos e recompensas passam a exibir a foto do Instagram; caem nas iniciais
-      quando não há imagem; a grade de posts aponta para o TAYRO, não para a CDN.
+- [x] Frontend: conteúdos e recompensas exibem a foto do Instagram e caem nas iniciais sem
+      imagem; a grade de posts aponta para o TAYRO, não para a CDN.
 
 ## Current Implementation
 - `InstagramProvider` (interface `fetchProfile(handle)`) + token de injeção
@@ -261,7 +260,7 @@ Persistência de imagem (a escrever **antes** do código):
 - Proxy: allow-list por sufixo de host (`.cdninstagram.com`, `.fbcdn.net`) + protocolo `https:`
   obrigatório, timeout de 8s, resposta cacheada 1 dia no navegador (`Cache-Control: public,
   max-age=86400`).
-- **Desenho de 2026-08-23, ainda não implementado:** modelo `IgImage`
+- Modelo `IgImage`
   (`influencerId`, `kind: PROFILE|POST`, `position`, `mimeType`, `byteSize`, `data: Bytes`,
   `sourceUrl`, `fetchedAt`), com `@@unique([influencerId, kind, position])` — o unique é o que
   torna o upsert do sync idempotente sem check-then-act, dispensando `$transaction`. Relação com
@@ -299,3 +298,10 @@ Persistência de imagem (a escrever **antes** do código):
   avaliada e **recusada** no mesmo dia (quebraria a candidatura espontânea sem conta e não
   resolveria a expiração) — registrado em "Out of Scope". Nada implementado ainda: todos os
   critérios novos estão `- [ ]`.
+- 2026-08-23 · **implementado**: `IgImage` (migration aditiva), `IgImageService` (allow-list de
+  host, teto de 2 MB, allow-list de `Content-Type`, upsert idempotente pelo `@@unique`), rota
+  `/ig/post/:influencerId/:position`, backfill no primeiro acesso e frontend consumindo as duas
+  rotas. Achado ao escrever os testes: guardar imagem estava **dentro do `try` do sync**, então
+  uma falha de imagem marcaria `FAILED` um sync que deu certo, apagando dado bom por causa de
+  uma foto — corrigido com `catch` próprio, e o teste foi validado por mutação (sem a correção,
+  ele falha). Known Gap da imagem que expirava fechado.

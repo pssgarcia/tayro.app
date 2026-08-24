@@ -212,7 +212,7 @@ export default function PublicCreatorProfilePage() {
                 <h2 className="mb-5 mt-9 font-display text-d-xs text-foreground">
                   Conteúdo recente
                 </h2>
-                <ThumbGrid posts={profile.igRecentPosts} />
+                <ThumbGrid posts={profile.igRecentPosts} influencerId={profile.id} />
               </>
             )}
 

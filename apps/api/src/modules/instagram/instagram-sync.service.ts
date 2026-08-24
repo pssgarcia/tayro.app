@@ -80,14 +80,23 @@ export class InstagramSyncService {
         },
       });
 
-      // Guardar as imagens é best-effort e vem DEPOIS de gravar os dados: se
-      // falhar, o sync continua OK e a imagem anterior permanece. As URLs da
-      // CDN expiram — é por guardar os bytes que a foto para de sumir (D-18).
-      await this.igImages.storeFromProfile(
-        influencerId,
-        profile.profilePicUrl,
-        profile.recentPosts.map((post) => post.thumbnail),
-      );
+      // Guardar as imagens é best-effort e tem `catch` PRÓPRIO: se ficasse no
+      // try de fora, uma falha aqui cairia no catch do sync e marcaria FAILED
+      // um sync que deu certo — apagando dado bom por causa de uma foto. As
+      // URLs da CDN expiram; é por guardar os bytes que a foto para de sumir
+      // (D-18).
+      try {
+        await this.igImages.storeFromProfile(
+          influencerId,
+          profile.profilePicUrl,
+          profile.recentPosts.map((post) => post.thumbnail),
+        );
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `Sync OK, mas falhou ao guardar imagens de ${influencerId}: ${reason}`,
+        );
+      }
     } catch (err) {
       // Mantém valores anteriores; igFetchedAt=now para o cooldown do refresh manual
       await this.prisma.influencer.update({

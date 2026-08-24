@@ -11,7 +11,12 @@ import {
 } from '../../hooks/useCampaignApplications';
 import CountUp from '../../components/primitives/CountUp';
 import CampaignPipelineMobileStory from './CampaignPipelineMobileStory';
-import { creatorAvatarSrc, formatEngagement, formatNumberParts } from '../../utils/format';
+import {
+  creatorAvatarSrc,
+  creatorPostSrc,
+  formatEngagement,
+  formatNumberParts,
+} from '../../utils/format';
 import { cn } from '../../lib/utils';
 import type { Application, ApplicationStatus, Campaign } from '../../types/api';
 
@@ -77,7 +82,10 @@ function PipelineRow({
             {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
           </div>
           <span
-            className={cn('truncate text-sm font-medium', selected ? 'text-white' : 'text-kinetic-text')}
+            className={cn(
+              'truncate text-sm font-medium',
+              selected ? 'text-white' : 'text-kinetic-text',
+            )}
           >
             {influencer.name}
           </span>
@@ -144,9 +152,7 @@ function ProfilePlate({
         <div className="mb-6 flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-300">
-              {avatarSrc && (
-                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-              )}
+              {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-2xl font-bold tracking-tight">{influencer.name}</h2>
@@ -263,7 +269,7 @@ function ProfilePlate({
               post ? (
                 <div key={i} className="aspect-square overflow-hidden bg-gray-200">
                   <img
-                    src={post.thumbnail}
+                    src={creatorPostSrc(influencer.id, i)}
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover"
@@ -329,9 +335,7 @@ export default function CampaignFilaTab({ campaign, campaignId, onExitMobile }: 
     refetchInterval: (query) => {
       if (pollTimedOut) return false;
       const data = query.state.data as Application[] | undefined;
-      return data?.some(
-        (a) => a.status === 'PENDING' && a.influencer.igFetchStatus === 'PENDING',
-      )
+      return data?.some((a) => a.status === 'PENDING' && a.influencer.igFetchStatus === 'PENDING')
         ? POLL_INTERVAL_MS
         : false;
     },
