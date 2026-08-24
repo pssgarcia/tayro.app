@@ -1,5 +1,6 @@
 import { IgAvatarController } from './ig-avatar.controller';
 import { PrismaService } from '../../shared/infrastructure/database/prisma.service';
+import { IgImageService } from './ig-image.service';
 import type { Response } from 'express';
 
 // Response fake — captura status/headers/body sem um servidor HTTP real.
@@ -31,7 +32,28 @@ function makeController(igProfilePicUrl: string | null) {
         Promise.resolve(igProfilePicUrl ? { igProfilePicUrl } : null),
     },
   } as unknown as PrismaService;
-  return new IgAvatarController(prisma);
+  // IgImageService real, com um "banco" de imagens em memória: os testes de
+  // SSRF e de upstream continuam exercitando a allow-list e o fetch de
+  // verdade, agora por dentro do serviço de imagem. O armazenamento precisa
+  // ter estado pra que o backfill (grava e serve no mesmo pedido) funcione.
+  const guardadas = new Map<string, { data: Buffer; mimeType: string }>();
+  const chave = (w: { influencerId_kind_position: Record<string, unknown> }) =>
+    JSON.stringify(w.influencerId_kind_position);
+  const igImages = new IgImageService({
+    igImage: {
+      findUnique: ({ where }: { where: never }) =>
+        Promise.resolve(guardadas.get(chave(where)) ?? null),
+      upsert: ({ where, create }: { where: never; create: never }) => {
+        const { data, mimeType } = create as unknown as {
+          data: Buffer;
+          mimeType: string;
+        };
+        guardadas.set(chave(where), { data, mimeType });
+        return Promise.resolve(undefined);
+      },
+    },
+  } as unknown as PrismaService);
+  return new IgAvatarController(prisma, igImages);
 }
 
 describe('IgAvatarController', () => {
