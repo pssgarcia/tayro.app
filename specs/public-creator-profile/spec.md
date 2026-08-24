@@ -29,6 +29,14 @@ métricas de Instagram e histórico de parcerias visível.
   Known Gaps.
 - Edição do próprio perfil pela creator — isso é `creator-account`.
 
+**Endereço público:** o domínio nunca é literal no código. Todo endereço que sai do produto —
+o link do perfil da creator e o link de candidatura que a marca divulga — é montado a partir da
+origem em que a aplicação está rodando, então vale em desenvolvimento, em preview e em produção,
+e continua correto no dia em que um domínio próprio for apontado. `[CORRIGIDO 2026-08-24]` Até
+essa data o código montava `https://tayro.app/...`, um domínio **inexistente** (NXDOMAIN):
+todo link copiado desde a v0.29.0 estava morto. Nenhum teste pegou porque nenhum teste sai da
+máquina — a proteção agora é travar a origem como fonte, não o domínio como valor.
+
 ## Domain
 Sem modelo próprio — é uma projeção de leitura de `Influencer` + `Application` (`APPROVED`) +
 `ContentSubmission` (`APPROVED`) + `PartnershipResult`. Não escreve nada.
@@ -116,6 +124,8 @@ marca.
   `avatarUrl` são nulos.
 
 ## Change History
+- 2026-08-24 · o endereço público deixou de ser literal e passou a derivar da origem
+  (`publicUrl`/`publicUrlLabel` em `utils/format.ts`). Ver "Out of Scope → Endereço público".
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0+.
 - 2026-08-21 · reestruturado pro padrão SDD (Objective/Scope/Domain/Behavior/API/UI
   Behavior/Acceptance Criteria/Error Scenarios/Known Gaps/Test Coverage/Current
