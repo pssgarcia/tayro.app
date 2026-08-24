@@ -41,7 +41,10 @@ describe('CreatorsService — emissão de claim token', () => {
     };
 
     sendClaimAccount = jest.fn().mockResolvedValue(undefined);
-    const instagramSync = { refresh: jest.fn().mockResolvedValue(undefined) };
+    const instagramSync = {
+      refresh: jest.fn().mockResolvedValue(undefined),
+      scheduleRefresh: jest.fn(),
+    };
     const emailService = { sendClaimAccount };
     const config = {
       getOrThrow: jest.fn().mockReturnValue('http://localhost:5173'),

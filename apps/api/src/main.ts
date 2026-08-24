@@ -5,8 +5,14 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { resolveAllowedOrigins } from './shared/config/cors';
+import { assertRequiredEnv } from './shared/config/required-env';
 
 async function bootstrap() {
+  // ANTES de subir o servidor: variáveis lidas em tempo de request não falham
+  // no boot por conta própria — sem esta checagem, a ausência de uma delas só
+  // aparece como 500 na cara do usuário (mordeu em 2026-08-24, ver required-env.ts).
+  assertRequiredEnv(process.env);
+
   const app = await NestFactory.create(AppModule);
 
   // Security headers

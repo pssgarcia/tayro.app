@@ -84,7 +84,7 @@ function IgStats({
 }
 
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Media kit vivo — perfil público auto-gerado da creator (tayro.app/c/:handle).
+// Media kit vivo — perfil público auto-gerado da creator (rota /c/:handle).
 // Standalone, sem PublicLayout (mesmo padrão do PublicApplyPage): página
 // isolada demais pra justificar um layout compartilhado ainda.
 

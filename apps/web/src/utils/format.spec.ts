@@ -9,6 +9,8 @@ import {
   formatOffer,
   formatOfferWhole,
   formatPercent,
+  publicUrl,
+  publicUrlLabel,
 } from './format';
 
 describe('formatNumber', () => {
@@ -205,5 +207,28 @@ describe('creatorAvatarSrc', () => {
   it('devolve null sem foto nenhuma (quem chama mostra as iniciais)', () => {
     expect(creatorAvatarSrc({ id: 'inf-1' })).toBeNull();
     expect(creatorAvatarSrc({ id: 'inf-1', igProfilePicUrl: null, avatarUrl: null })).toBeNull();
+  });
+});
+
+describe('publicUrl / publicUrlLabel', () => {
+  // Regressão do bug de 2026-08-24: o link que a marca copiava pra divulgar o
+  // programa apontava pra `tayro.app`, um domínio inexistente. Estes testes
+  // travam a origem como fonte do endereço — não um literal.
+  it('monta a URL absoluta a partir da origem em que a página roda', () => {
+    expect(publicUrl('/apply/camp-1')).toBe('http://localhost:3000/apply/camp-1');
+  });
+
+  it('acompanha a origem quando ela muda (preview, domínio próprio)', () => {
+    const original = window.location.origin;
+    expect(publicUrl('/c/anafit').startsWith(original)).toBe(true);
+  });
+
+  it('o rótulo mostra o mesmo endereço sem o esquema', () => {
+    expect(publicUrlLabel('/c/anafit')).toBe('localhost:3000/c/anafit');
+  });
+
+  it('nunca produz um domínio hardcoded', () => {
+    expect(publicUrl('/apply/x')).not.toContain('tayro.app');
+    expect(publicUrlLabel('/c/x')).not.toContain('tayro.app');
   });
 });

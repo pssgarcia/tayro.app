@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Copy } from 'lucide-react';
 import { useCreateCampaign, usePublishCampaign } from '../../hooks/useCampaigns';
 import type { Campaign } from '../../types/api';
+import { publicUrl } from '../../utils/format';
 import Plate from '../../components/primitives/Plate';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
 import CampaignForm from './CampaignForm';
@@ -12,7 +13,7 @@ import CampaignForm from './CampaignForm';
 function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
   const navigate = useNavigate();
   const publish = usePublishCampaign();
-  const applyUrl = `https://tayro.app/apply/${campaign.id}`;
+  const applyUrl = publicUrl(`/apply/${campaign.id}`);
   const [copied, setCopied] = useState(false);
 
   async function handlePublish() {

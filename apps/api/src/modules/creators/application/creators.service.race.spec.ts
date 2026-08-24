@@ -73,7 +73,10 @@ describe('CreatorsService — race conditions', () => {
 
     counter.wrap(prisma);
 
-    const instagramSync = { refresh: jest.fn().mockResolvedValue(undefined) };
+    const instagramSync = {
+      refresh: jest.fn().mockResolvedValue(undefined),
+      scheduleRefresh: jest.fn(),
+    };
     const emailService = {
       sendClaimAccount: jest.fn().mockResolvedValue(undefined),
     };

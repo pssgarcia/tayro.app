@@ -157,14 +157,14 @@ describe('Creator ProfilePage', () => {
   });
 });
 
-// A tela prometia "tayro.app/c/{handle}" como texto puro desde a v0.9.0; a rota
+// A tela prometia o endereço público como texto puro desde a v0.9.0; a rota
 // existe desde a v0.32.0 e mesmo assim continuou sem ser clicável.
 describe('Creator ProfilePage — link do perfil público', () => {
   it('com perfil público ativo, o endereço vira link de verdade', () => {
     mockHooks({ data: { ...baseProfile, publicProfileEnabled: true } });
     render(<ProfilePage />);
 
-    const link = screen.getByRole('link', { name: /tayro\.app\/c\/anafit/i });
+    const link = screen.getByRole('link', { name: /\/c\/anafit/i });
     expect(link).toHaveAttribute('href', '/c/anafit');
     // Aba nova: a creator pode estar no meio de uma edição do formulário.
     expect(link).toHaveAttribute('target', '_blank');
@@ -179,7 +179,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /copiar link/i }));
 
-    expect(writeText).toHaveBeenCalledWith('https://tayro.app/c/anafit');
+    expect(writeText).toHaveBeenCalledWith('http://localhost:3000/c/anafit');
     expect(await screen.findByText(/copiado!/i)).toBeInTheDocument();
   });
 
@@ -189,7 +189,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
     mockHooks({ data: { ...baseProfile, publicProfileEnabled: false } });
     render(<ProfilePage />);
 
-    expect(screen.queryByRole('link', { name: /tayro\.app\/c\//i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /\/c\//i })).not.toBeInTheDocument();
     expect(screen.getByText(/ative para as marcas encontrarem você/i)).toBeInTheDocument();
   });
 
@@ -201,7 +201,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
 
     fireEvent.click(screen.getByRole('switch', { name: /tornar meu perfil público/i }));
 
-    expect(screen.queryByRole('link', { name: /tayro\.app\/c\//i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /\/c\//i })).not.toBeInTheDocument();
   });
 
   it('sem handle do Instagram não promete endereço nenhum', () => {
@@ -210,7 +210,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
     });
     render(<ProfilePage />);
 
-    expect(screen.queryByRole('link', { name: /tayro\.app\/c\//i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /\/c\//i })).not.toBeInTheDocument();
     expect(screen.getByText(/adicione seu @ do instagram/i)).toBeInTheDocument();
   });
 });

@@ -81,6 +81,23 @@ recusa e a imagem some da tela. É por isso que o sistema guarda os bytes, e nã
 - A foto de perfil usada é a de maior resolução disponível; se essa não vier no retorno do
   provedor, cai para a foto padrão disponível; se nenhuma vier, fica sem foto.
 
+### Quando a sincronização é disparada
+Toda porta pela qual uma creator entra no sistema ou se candidata dispara a sincronização —
+essa é a regra, e ela vale para as três:
+- **cadastro de creator** (com senha): ao criar a conta, que já nasce com status "em busca";
+- **candidatura pública** (sem login): ao criar a candidatura;
+- **candidatura autenticada** (creator já logada): ao criar a candidatura.
+
+O disparo é sempre em background: a resposta HTTP nunca espera a API externa, e uma falha na
+busca nunca derruba a ação que a originou. Como o disparo respeita o período de validade, um
+ponto a mais chamando não multiplica consumo de cota — creator com dado fresco não toca no
+provedor.
+
+**Nenhuma creator deve chegar à fila da marca sem que ao menos uma tentativa de busca tenha
+existido.** O status "em busca" desde a criação da conta é parte disso: a ausência de status é
+lida como falha pela interface, então deixar o campo vazio faz a creator aparecer como "dados
+indisponíveis" antes mesmo de alguém ter tentado buscar.
+
 ### Staleness e atualização manual
 - Uma busca só é refeita automaticamente se os dados salvos tiverem mais que um período de
   validade configurado — dentro desse período, uma nova tentativa de busca é pulada e os dados
@@ -147,6 +164,14 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
       os consulta.
 - [x] A foto que a marca vê na fila é a mesma que aparece em conteúdos, recompensas, perfil
       público e no perfil da própria creator.
+- [x] Cadastro de creator cria a conta já com status "em busca" e dispara a sincronização.
+- [x] Candidatura autenticada dispara a sincronização da creator.
+- [x] Candidatura pública dispara a sincronização, mesmo quando o envio do link de definição de
+      senha falha.
+- [x] O disparo retorna antes de a busca rodar — nenhuma resposta HTTP espera a API externa.
+- [x] Falha na busca disparada em background é registrada e não vira exceção para quem disparou.
+- [x] Candidatura recusada (programa inexistente, encerrado ou lotado) **não** dispara busca —
+      não se queima cota de API por candidatura que não existiu.
 - [x] Busca com perfil indisponível falha a sincronização inteira e marca status de falha.
 - [x] Busca com feed indisponível ou conta privada preserva o perfil já obtido; feed fica vazio.
 - [x] Dentro do período de validade, uma nova busca automática é pulada.
@@ -194,18 +219,21 @@ History.)
   carregam assinatura com validade; passado o prazo, a CDN responde 403 e a foto desaparece da
   tela — para a foto de perfil via o proxy (que devolve 404 e renderiza vazio) e, mais visível
   ainda, para as thumbnails do feed, que o frontend carrega direto da CDN sem proxy.
-  A renovação só acontece em dois momentos: na candidatura (fire-and-forget) e no botão
-  "Atualizar" manual. **Não existe nenhuma renovação agendada** — confirmado por grep: os únicos
-  chamadores de `refresh()` são `CreatorsService.findOrCreateInfluencer` e
-  `ApplicationsService.refreshInfluencerIg`. Logo, candidatura antiga que ninguém reabre fica
-  com imagem quebrada por tempo indeterminado, e o período de validade de 24h nunca é avaliado
-  porque nada dispara a avaliação.
+  A renovação só acontece por ação de alguém — nunca sozinha. **Não existe renovação agendada**;
+  candidatura antiga que ninguém reabre fica com imagem quebrada por tempo indeterminado, e o
+  período de validade de 24h nunca chega a ser avaliado porque nada dispara a avaliação.
+  `[CORRIGIDO 2026-08-24]` Este parágrafo dizia que a candidatura era um dos dois pontos de
+  disparo. Era pior do que isso: **só a candidatura pública** disparava. Cadastro de creator e
+  candidatura autenticada não disparavam nada — ver "Behavior → Quando a sincronização é
+  disparada" e Change History.
   **Trocar de provedor não resolve isto:** a API oficial do Instagram também entrega URL de
   mídia temporária. O que resolve é deixar de guardar URL e passar a guardar a imagem (ou
   cachear os bytes no primeiro acesso do proxy) — decisão de arquitetura ainda não tomada,
   passar pelo `/architect`.
-- **Fila assíncrona (`D-16`) ainda não existe.** O disparo hoje é fire-and-forget síncrono, sem
-  retry automático além do cooldown manual.
+- **Fila assíncrona (`D-16`) ainda não existe.** O disparo hoje é fire-and-forget em memória,
+  sem retry automático além do cooldown manual. Consequência que continua aberta: uma busca em
+  andamento quando o processo reinicia (deploy, por exemplo) some sem deixar rastro, e a creator
+  fica com o status "em busca" até que alguém acione a atualização manual.
 (Os dois gaps de cobertura de teste desta seção foram **fechados em 2026-08-23** — ver Test
 Coverage e Change History.)
 
@@ -276,6 +304,16 @@ Persistência de imagem (a escrever **antes** do código):
   post — a fórmula descrita dava o dobro do valor real.)
 
 ## Change History
+- 2026-08-24 · **corrigido o furo estrutural de disparo.** Só a candidatura pública sincronizava;
+  cadastro de creator e candidatura autenticada não disparavam nada. Como `igFetchStatus` é
+  anulável e a interface lê ausência como falha, toda creator que entrava pelo cadastro aparecia
+  para a marca como "Dados do Instagram indisponíveis" desde o primeiro segundo — sem nunca ter
+  havido uma tentativa. Sintoma relatado: "tem hora que vem de primeira e tem hora que não" —
+  dependia de por qual porta a creator tinha entrado, não de instabilidade da API externa (a
+  RapidAPI foi verificada sã no mesmo dia: perfil e feed respondendo 200). O disparo virou
+  `InstagramSyncService.scheduleRefresh`, método público deste serviço, e os três caminhos
+  passam a chamá-lo — antes era um helper privado do `CreatorsService`, o que é justamente o que
+  permitiu que dois caminhos esquecessem dele.
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0+.
 - 2026-08-21 · reestruturado pro padrão SDD. A restrição de origem cruzada do Instagram (antes
   descrita como "footgun" só na seção de implementação) foi promovida a `Domain`/`Behavior` —

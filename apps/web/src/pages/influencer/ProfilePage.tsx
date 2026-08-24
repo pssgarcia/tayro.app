@@ -10,7 +10,12 @@ import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
 import PlateEditField from '../../components/primitives/PlateEditField';
 import PlateEditNiches from '../../components/primitives/PlateEditNiches';
-import { formatEngagement, formatNumberParts } from '../../utils/format';
+import {
+  formatEngagement,
+  formatNumberParts,
+  publicUrl,
+  publicUrlLabel,
+} from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -54,18 +59,19 @@ function PublicProfileLink({
   if (!handle) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
-        Adicione seu @ do Instagram para ganhar um endereço em tayro.app/c/.
+        Adicione seu @ do Instagram para ganhar um endereço em{' '}
+        {publicUrlLabel('/c/')}.
       </p>
     );
   }
 
   const path = `/c/${handle}`;
-  const shareUrl = `https://tayro.app${path}`;
+  const shareUrl = publicUrl(path);
 
   if (!enabled) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
-        Ative para as marcas encontrarem você em tayro.app{path}.
+        Ative para as marcas encontrarem você em {publicUrlLabel(path)}.
       </p>
     );
   }
@@ -86,7 +92,7 @@ function PublicProfileLink({
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-xs text-lime underline-offset-2 hover:underline"
       >
-        tayro.app{path}
+        {publicUrlLabel(path)}
         <ExternalLink size={11} className="shrink-0" />
       </a>
       <button

@@ -7,7 +7,7 @@ import CountUp from '../../components/primitives/CountUp';
 import SegmentBar from '../../components/primitives/SegmentBar';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
 import StatusPill from '../../components/primitives/StatusPill';
-import { daysUntil } from '../../utils/format';
+import { daysUntil, publicUrl } from '../../utils/format';
 
 // ─── Row (padrão "Programas") ─────────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
   const pending = campaign.pendingCount ?? 0;
 
   function handleCopy() {
-    navigator.clipboard.writeText(`https://tayro.app/apply/${campaign.id}`);
+    navigator.clipboard.writeText(publicUrl(`/apply/${campaign.id}`));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }

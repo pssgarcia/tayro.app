@@ -78,6 +78,13 @@ Não introduz modelo próprio. Opera sobre `Campaign` (ver `campaign-lifecycle`)
    candidatura.
 9. A busca de dados do Instagram da pessoa é disparada em paralelo e não atrasa nem condiciona
    a resposta da candidatura (best-effort, ver `instagram-sync`).
+10. **Nada acessório derruba a candidatura.** A candidatura é o evento de conversão do produto
+   — o único momento em que uma creator sem conta entra no funil. Emitir o token de claim,
+   montar o link, enviar o e-mail e disparar a busca do Instagram são todos efeitos colaterais:
+   qualquer um deles falhando (config ausente, provedor fora do ar, erro de escrita do token) é
+   registrado e a candidatura segue. Só falha de verdade o que impede a candidatura de existir:
+   campanha inválida, conta de outro papel, duplicidade e falha ao gravar a própria
+   `Application`.
 
 Candidatura autenticada (creator já logada, via modal no detalhe do programa) segue as mesmas
 regras 1 e 8, sem os passos de resolução/criação de conta (a sessão já identifica a pessoa).
@@ -118,6 +125,11 @@ spec `applications-pipeline`, não duplicado aqui.
 - [x] Reaplicar com conta ainda não reivindicada reemite e reenvia o link de definição de senha.
 - [x] Reaplicar com conta já reivindicada **não** reemite nem reenvia o link.
 - [x] Candidatura pública não espera a busca de dados do Instagram responder para retornar.
+- [x] Falha ao montar ou enviar o link de definição de senha (incluindo configuração de
+      ambiente ausente) **não** impede a criação da candidatura.
+- [x] Falha ao emitir o link de definição de senha não impede a busca de dados do Instagram de
+      ser disparada — os dois efeitos colaterais são independentes entre si.
+- [x] Falha ao gravar a própria candidatura continua propagando como erro.
 - [ ] Conta de creator existente sem handle de Instagram tem o handle preenchido ao se
       candidatar por este fluxo — comportamento implementado, sem teste dedicado (ver Known Gaps).
 
@@ -166,13 +178,21 @@ cobertura. Ver Test Coverage.)
   rebuscando via `findExistingInfluencer` em vez de deixar vazar `500`.
 - Criação de conta nova: `bcrypt.hash(randomUUID())` como senha, token de claim gerado por
   `randomBytes(32)` com hash SHA-256 persistido (`claimTokenHash`) e o token cru só no e-mail.
-- Envio do e-mail de claim é `await`ado antes de retornar (não é fire-and-forget); a busca de
-  dados do Instagram (`scheduleIgFetch`) é que roda via `setImmediate`, fora do ciclo da
-  resposta HTTP.
+- Envio do e-mail de claim é `await`ado antes de retornar (não é fire-and-forget), mas passa por
+  `offerAccountClaim`/`sendClaimEmailBestEffort`, que capturam qualquer falha e apenas logam. A
+  busca de dados do Instagram roda via `InstagramSyncService.scheduleRefresh` (`setImmediate`),
+  fora do ciclo da resposta HTTP.
 - `hrefBuilder` em `ProgramsList`/`BrowseProgramsPublicPage` decide o destino do card lendo o
   estado de auth do Zustand store no momento do render.
 
 ## Change History
+- 2026-08-24 · **bug de produção corrigido**: a 1ª candidatura de toda creator nova respondia
+  `500` e só a 2ª passava. `FRONTEND_URL` estava ausente no Railway; o `getOrThrow` que monta o
+  link do claim rodava DEPOIS de `user.create` já ter commitado a conta e ANTES de
+  `application.create`, então a conta nascia sem candidatura e sem busca de Instagram agendada.
+  Reproduzido na produção antes e depois da correção da variável (`500` → `201` na 1ª
+  tentativa). Regra 10 de Behavior e os critérios novos existem para que a causa estrutural
+  (efeito colateral acessório com poder de derrubar a conversão) não volte por outro caminho.
 - 2026-08-21 · retrofit inicial a partir do código em produção (v0.36.0+, branch
   `feature/commission-offer-and-deadline-validation` incluída na leitura do
   `campaigns.service.ts`).

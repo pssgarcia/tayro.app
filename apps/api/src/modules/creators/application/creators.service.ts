@@ -56,7 +56,7 @@ export class CreatorsService {
         data: { campaignId, influencerId: influencer.id, message: dto.message },
       });
 
-      this.scheduleIgFetch(influencer.id);
+      this.instagramSync.scheduleRefresh(influencer.id);
 
       return { applicationId: application.id, status: application.status };
     } catch (err) {
@@ -189,16 +189,6 @@ export class CreatorsService {
 
   // ─── Helpers privados ─────────────────────────────────────────────────────────
 
-  private scheduleIgFetch(influencerId: string): void {
-    setImmediate(() => {
-      this.instagramSync
-        .refresh(influencerId)
-        .catch((err: unknown) =>
-          this.logger.error('scheduleIgFetch failed', err),
-        );
-    });
-  }
-
   private async findOrCreateInfluencer(dto: PublicApplyDto) {
     const byHandle = await this.prisma.influencer.findUnique({
       where: { instagramHandle: dto.igHandle },
@@ -220,7 +210,7 @@ export class CreatorsService {
       // preenchido, a creator nunca definiu senha. O link antigo pode ter
       // expirado (ela reaplicando dias depois); reemite e reenvia.
       if (userByEmail.claimTokenHash && existing) {
-        await this.issueClaimToken(userByEmail.id, dto.email, existing.name);
+        await this.offerAccountClaim(userByEmail.id, dto.email, existing.name);
       }
 
       if (existing) {
@@ -255,7 +245,7 @@ export class CreatorsService {
         include: { influencer: true },
       });
 
-      await this.sendClaimEmail(
+      await this.sendClaimEmailBestEffort(
         dto.email,
         user.influencer!.name,
         claimToken.rawToken,
@@ -319,6 +309,32 @@ export class CreatorsService {
     await this.sendClaimEmail(email, creatorName, rawToken);
   }
 
+  /**
+   * Oferece o claim (emitir token + mandar o link) sem NUNCA derrubar quem
+   * chamou. A candidatura é o evento de conversão do produto; o link de senha
+   * é conveniência que a creator reobtém na próxima candidatura — inverter
+   * essa prioridade custou 500 em toda primeira candidatura em produção
+   * (2026-08-24, `FRONTEND_URL` ausente no Railway).
+   *
+   * Deliberadamente amplo: o que não pode acontecer é a candidatura morrer por
+   * causa de um e-mail, seja a causa config ausente, provedor fora do ar ou
+   * falha ao gravar o token.
+   */
+  private async offerAccountClaim(
+    userId: string,
+    email: string,
+    creatorName: string,
+  ): Promise<void> {
+    try {
+      await this.issueClaimToken(userId, email, creatorName);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `Candidatura seguiu, mas o link de claim não foi emitido para ${email}: ${reason}`,
+      );
+    }
+  }
+
   private async sendClaimEmail(
     email: string,
     creatorName: string,
@@ -330,5 +346,21 @@ export class CreatorsService {
       creatorName,
       claimUrl: `${frontendUrl}/claim?token=${rawToken}`,
     });
+  }
+
+  /** Mesma garantia do `offerAccountClaim`, para quem já gravou o token. */
+  private async sendClaimEmailBestEffort(
+    email: string,
+    creatorName: string,
+    rawToken: string,
+  ): Promise<void> {
+    try {
+      await this.sendClaimEmail(email, creatorName, rawToken);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `Candidatura seguiu, mas o link de claim não foi enviado para ${email}: ${reason}`,
+      );
+    }
   }
 }
