@@ -14,8 +14,12 @@ import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { EmailService } from '../../email/email.service';
 import { CreateApplicationDto } from './dtos/create-application.dto';
 
-// Campos de IG incluídos em todas as respostas de application que expõem o influencer
-const influencerSelect = {
+// Campos de IG incluídos em todas as respostas de application que expõem o influencer.
+//
+// Exportado só pra ser TESTÁVEL: os bytes das imagens (IgImage) não podem
+// entrar aqui — este select roda em toda listagem da Fila, e arrastar imagem
+// em cada consulta é o motivo de elas viverem em tabela separada (D-18).
+export const influencerSelect = {
   id: true,
   name: true,
   avatarUrl: true,

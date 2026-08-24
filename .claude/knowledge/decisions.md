@@ -143,6 +143,27 @@ Só reemite se a creator se candidatar de novo.
 **Motivo:** gate de lançamento definido pelo Pedro. Não é substituível por auto-revisão.
 **Status:** `FIRME`
 
+### D-18 · 2026-08-23 · Imagens do Instagram ficam no nosso banco, não em storage externo
+**Status:** `PROPOSTA` — desenhado no `/architect`, aguarda implementação.
+**Decisão:** guardar os **bytes** da foto de perfil e das thumbnails do feed numa tabela
+dedicada (`IgImage`) no próprio Postgres, em vez de guardar só a URL assinada da CDN (que
+expira) ou de subir as imagens para storage externo.
+**Motivo:** as duas decisões abertas empurram para cá. Storage externo (Vercel Blob/S3) traria
+fornecedor novo, credencial nova e custo recorrente com **`D-A` aberta** — e, pior, transformaria
+exclusão de conta em rotina de limpeza manual com **`D-E` aberta**. A tabela no banco resolve
+exclusão de graça por `onDelete: Cascade`.
+**Alternativas descartadas:** (a) `Bytes` na própria `Influencer` — resolveria só a foto de
+perfil e deixaria uma armadilha permanente de `select` numa linha lida em toda listagem;
+(b) storage externo — ver acima; (c) remendo de re-sincronizar quando a CDN recusa — queima cota
+da RapidAPI por visualização, esbarra no cooldown de 15min e não resolve as thumbnails, que o
+navegador busca direto na CDN.
+**Gatilho de revisão:** o campo `byteSize` existe pra isso. Quando `IgImage` passar a dominar o
+tamanho do backup, migrar para storage externo — o endpoint que serve a imagem não muda, então a
+migração é barata por construção.
+**Ligado a:** decisão de NÃO migrar para a API oficial do Instagram, tomada no mesmo dia (ela
+exigiria OAuth da creator e quebraria a candidatura espontânea sem conta — `D-17`; e não
+resolveria expiração, porque também entrega URL temporária).
+
 ### D-17 · 2026-08-23 · Candidatura espontânea é o produto — e ele já está construído
 **Status:** `PROPOSTA` — ratificação do Pedro em 2026-08-23, aguarda ratificação da Thais.
 **Decisão:** o TAYRO ataca **avaliação e gestão de candidatura espontânea de micro-creator**,

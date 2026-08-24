@@ -69,22 +69,27 @@ enum IgFetchStatus {
   FAILED
 }
 
+enum IgImageKind {
+  PROFILE
+  POST
+}
+
 // ─── Core Entities ────────────────────────────────────────────────────────────
 
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  password      String
-  role          UserRole
-  isActive          Boolean        @default(true)
-  refreshTokenHash  String?
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  password            String
+  role                UserRole
+  isActive            Boolean   @default(true)
+  refreshTokenHash    String?
   // Conta CLAIMABLE (criada via /apply/:id, senha aleatória) — presente até
   // a creator definir a senha real via POST /auth/claim. Null = já claimada
   // ou conta criada por registro normal (sempre teve senha usável).
   claimTokenHash      String?   @unique
   claimTokenExpiresAt DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   brand         Brand?
   influencer    Influencer?
@@ -94,15 +99,15 @@ model User {
 }
 
 model Brand {
-  id        String     @id @default(uuid())
-  userId    String     @unique
+  id        String   @id @default(uuid())
+  userId    String   @unique
   name      String
   logoUrl   String?
   niches    String[]
   website   String?
   bio       String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   campaigns Campaign[]
@@ -111,32 +116,62 @@ model Brand {
 }
 
 model Influencer {
-  id               String         @id @default(uuid())
-  userId           String         @unique
-  name             String
-  avatarUrl        String?
-  bio              String?
-  instagramHandle  String?        @unique
-  tiktokHandle     String?
-  followersCount   Int?
-  niches           String[]
-  city             String?
+  id                   String         @id @default(uuid())
+  userId               String         @unique
+  name                 String
+  avatarUrl            String?
+  bio                  String?
+  instagramHandle      String?        @unique
+  tiktokHandle         String?
+  followersCount       Int?
+  niches               String[]
+  city                 String?
   // Cache do Instagram — atualizado assincronamente pelo InstagramProvider
-  igEngagementRate    Float?
-  igRecentPosts       Json?          // [{ url, thumbnail, likes, comments }]
-  igProfilePicUrl     String?
-  igFetchedAt         DateTime?
-  igFetchStatus       IgFetchStatus?
+  igEngagementRate     Float?
+  igRecentPosts        Json? // [{ url, thumbnail, likes, comments }]
+  igProfilePicUrl      String?
+  igFetchedAt          DateTime?
+  igFetchStatus        IgFetchStatus?
   // Opt-in LGPD — perfil público só é exibido quando true
-  publicProfileEnabled Boolean       @default(false)
-  createdAt            DateTime      @default(now())
-  updatedAt        DateTime       @updatedAt
+  publicProfileEnabled Boolean        @default(false)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications Application[]
   rewards      Reward[]
+  igImages     IgImage[]
 
   @@map("influencers")
+}
+
+/// Imagens do Instagram guardadas por nós.
+///
+/// Existe porque as URLs da CDN do Instagram são ASSINADAS E TEMPORÁRIAS:
+/// guardar o endereço não é guardar a imagem, e passado o prazo a foto some da
+/// tela (ver D-18). Tabela separada de propósito — `influencerSelect` é usado
+/// em toda listagem de candidatura, e `Bytes` na linha da Influencer seria
+/// arrastado em cada consulta da Fila.
+model IgImage {
+  id           String      @id @default(uuid())
+  influencerId String
+  kind         IgImageKind
+  /// 0 no PROFILE; 0..5 nos POST (posição no feed recente)
+  position     Int
+  mimeType     String
+  /// Tamanho em bytes — é o alarme pra decidir quando migrar pra storage externo
+  byteSize     Int
+  data         Bytes
+  /// URL da CDN de onde veio, só pra auditoria. Nunca é a fonte da exibição.
+  sourceUrl    String
+  fetchedAt    DateTime    @default(now())
+
+  influencer Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  /// Torna o upsert do sync idempotente sem check-then-act
+  @@unique([influencerId, kind, position])
+  @@index([influencerId])
+  @@map("ig_images")
 }
 
 model Campaign {
@@ -156,11 +191,11 @@ model Campaign {
   rewardValue String
 
   // Termos da oferta — fonte de verdade exibida à creator antes de candidatar
-  offerType             OfferType? // CASH | PRODUCT | COMMISSION
-  offerAmount           Int?       // em centavos (ex: 30000 = R$300,00); só quando CASH
-  offerDeadlineDays     Int?       // dias corridos após aprovação de conteúdo para pagamento/envio
-  offerDescription      String?    // descrição livre (ex: "Kit Whey 900g + coqueteleira"); só quando PRODUCT
-  offerCommissionPercent Float?    // percentual por venda via link/cupom da creator; só quando COMMISSION
+  offerType              OfferType? // CASH | PRODUCT | COMMISSION
+  offerAmount            Int? // em centavos (ex: 30000 = R$300,00); só quando CASH
+  offerDeadlineDays      Int? // dias corridos após aprovação de conteúdo para pagamento/envio
+  offerDescription       String? // descrição livre (ex: "Kit Whey 900g + coqueteleira"); só quando PRODUCT
+  offerCommissionPercent Float? // percentual por venda via link/cupom da creator; só quando COMMISSION
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -229,14 +264,14 @@ model Reward {
 }
 
 model PartnershipResult {
-  id               String      @id @default(uuid())
-  applicationId    String      @unique
+  id               String   @id @default(uuid())
+  applicationId    String   @unique
   reach            Int?
   impressions      Int?
   couponsUsed      Int?
   note             String?
-  visibleToCreator Boolean     @default(false)
-  createdAt        DateTime    @default(now())
+  visibleToCreator Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
