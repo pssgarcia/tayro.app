@@ -48,6 +48,11 @@ mesmo padrão do refresh token.
    senha, um token novo é gerado, sobrescreve o anterior no banco, e um novo e-mail é enviado.
    O token antigo passa a não bater com nada salvo (fica órfão), mas não existe um passo
    explícito de "invalidar" — é consequência da sobrescrita.
+   **Emitir e enviar são best-effort:** falhar em qualquer ponto (configuração ausente, provedor
+   de e-mail fora do ar, erro ao gravar o token) é registrado e a candidatura segue. O claim é
+   conveniência recuperável — a creator reobtém o link na próxima candidatura —, enquanto a
+   candidatura é o evento de conversão do produto e não pode ser perdida por causa de um e-mail.
+   Ver `creator-discovery-and-apply` → Behavior, regra 10.
 3. **Consumido** — com token válido e não expirado: senha é definida, o par
    `claimTokenHash`/`claimTokenExpiresAt` é zerado, e a creator é autenticada automaticamente
    (mesmo mecanismo de sessão do login normal).
@@ -121,6 +126,10 @@ e-mail) e o título da candidatura mais recente. Sucesso no submit autentica e n
   `avatarUrl` bruto — mesmo mecanismo descrito em `instagram-sync` (footgun CORP).
 
 ## Change History
+- 2026-08-24 · a emissão e o envio do link viraram explicitamente best-effort. Antes, montar o
+  link lia uma variável de ambiente com `getOrThrow` no meio do fluxo: com a variável ausente em
+  produção, a conta era criada e a candidatura morria em `500`. Ver
+  `creator-discovery-and-apply` → Change History.
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD — sem mudança de comportamento; ciclo de vida do
   token movido de "Máquina de estados (implícita)" pra `Behavior`, mantendo o mesmo conteúdo.

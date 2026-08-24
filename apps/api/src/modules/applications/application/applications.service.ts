@@ -65,13 +65,21 @@ export class ApplicationsService {
     }
 
     try {
-      return await this.prisma.application.create({
+      const application = await this.prisma.application.create({
         data: {
           campaignId: dto.campaignId,
           influencerId: influencer.id,
           message: dto.message,
         },
       });
+
+      // A creator já existe, mas o perfil dela pode estar velho — ou nunca ter
+      // sido buscado, se ela entrou pelo cadastro. Ninguém deve chegar na Fila
+      // da marca sem ao menos uma tentativa. Respeita o staleness de 24h, então
+      // candidatura com dado fresco não toca no provedor.
+      this.instagramSync.scheduleRefresh(influencer.id);
+
+      return application;
     } catch (err) {
       if (
         err instanceof Prisma.PrismaClientKnownRequestError &&

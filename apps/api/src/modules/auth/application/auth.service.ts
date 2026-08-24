@@ -7,8 +7,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { Prisma, UserRole } from '@prisma/client';
+import { IgFetchStatus, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
+import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { RegisterBrandDto } from './dtos/register-brand.dto';
 import { RegisterInfluencerDto } from './dtos/register-influencer.dto';
 import { LoginDto } from './dtos/login.dto';
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly instagramSync: InstagramSyncService,
   ) {}
 
   async registerBrand(dto: RegisterBrandDto) {
@@ -83,10 +85,22 @@ export class AuthService {
               name: dto.name,
               instagramHandle: dto.instagramHandle,
               niches: dto.niches ?? [],
+              // PENDING desde o nascimento: o front trata null como falha, e
+              // sem isto a creator cadastrada por aqui aparecia para a marca
+              // como "Dados do Instagram indisponíveis" antes mesmo de existir
+              // uma tentativa de busca (2026-08-24).
+              igFetchStatus: IgFetchStatus.PENDING,
             },
           },
         },
+        include: { influencer: true },
       });
+
+      // Mesma promessa da candidatura pública: quem entra no sistema com um @
+      // tem os dados buscados. Em background — o cadastro não espera a API.
+      if (user.influencer) {
+        this.instagramSync.scheduleRefresh(user.influencer.id);
+      }
 
       return this.buildAuthResponse(user);
     } catch (err) {

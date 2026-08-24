@@ -79,7 +79,10 @@ describe('ApplicationsService — race conditions', () => {
 
     counter.wrap(prisma);
 
-    const instagramSync = { refresh: jest.fn().mockResolvedValue(undefined) };
+    const instagramSync = {
+      refresh: jest.fn().mockResolvedValue(undefined),
+      scheduleRefresh: jest.fn(),
+    };
     const config = { get: jest.fn().mockReturnValue('15') };
     const emailService = {
       sendApplicationApproved: jest.fn().mockResolvedValue(undefined),

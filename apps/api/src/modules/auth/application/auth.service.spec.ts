@@ -4,9 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { Prisma, UserRole } from '@prisma/client';
+import { IgFetchStatus, Prisma, UserRole } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
+import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 
 const makeUser = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'user-abc',
@@ -22,6 +23,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let prisma: jest.Mocked<any>;
   let jwt: jest.Mocked<JwtService>;
+  let scheduleRefresh: jest.Mock;
 
   beforeEach(async () => {
     prisma = {
@@ -33,6 +35,7 @@ describe('AuthService', () => {
     };
 
     jwt = { sign: jest.fn().mockReturnValue('mocked-token') } as any;
+    scheduleRefresh = jest.fn();
 
     const config = {
       getOrThrow: jest.fn().mockReturnValue('test-secret'),
@@ -44,6 +47,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: config },
+        { provide: InstagramSyncService, useValue: { scheduleRefresh } },
       ],
     }).compile();
 
@@ -415,6 +419,44 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result.user.role).toBe(UserRole.INFLUENCER);
+    });
+
+    // ─── Sync do Instagram ─────────────────────────────────────────────────
+    // Até 2026-08-24 este caminho não marcava status nem disparava busca:
+    // a creator que se cadastrava com senha nascia com igFetchStatus = null e
+    // a marca via "Dados do Instagram indisponíveis" para sempre, porque o
+    // front trata null igual a falha. Só a candidatura pública sincronizava.
+
+    it('nasce com igFetchStatus PENDING', async () => {
+      prisma.user.create.mockResolvedValue(
+        makeUser({ role: UserRole.INFLUENCER, influencer: { id: 'inf-1' } }),
+      );
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      await service.registerInfluencer(dto);
+
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            influencer: expect.objectContaining({
+              create: expect.objectContaining({
+                igFetchStatus: IgFetchStatus.PENDING,
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('agenda a busca do Instagram do influencer recém-criado', async () => {
+      prisma.user.create.mockResolvedValue(
+        makeUser({ role: UserRole.INFLUENCER, influencer: { id: 'inf-1' } }),
+      );
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      await service.registerInfluencer(dto);
+
+      expect(scheduleRefresh).toHaveBeenCalledWith('inf-1');
     });
 
     it('throws ConflictException with field=instagramHandle when handle is taken', async () => {

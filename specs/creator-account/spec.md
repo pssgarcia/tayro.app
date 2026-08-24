@@ -49,6 +49,10 @@ de cache de Instagram (`followersCount`, `igEngagementRate`, `igFetchStatus`, et
   nas pontas) antes de ser validado como único.
 - `publicProfileEnabled` nasce `false` (`D-06`) — a marca só descobre o perfil público de uma
   creator quando ela liga esse toggle.
+- A conta nasce com o status de busca do Instagram em **"em busca"**, e o cadastro dispara a
+  sincronização em background (ver `instagram-sync`). Deixar o status vazio não é neutro: a
+  interface da marca lê ausência de status como falha, então a creator apareceria como "dados
+  indisponíveis" antes de qualquer tentativa ter existido.
 - E-mail **ou** handle do Instagram já em uso bloqueiam o cadastro, cada um com seu próprio
   motivo de erro.
 - `email` nunca é editável por este fluxo.
@@ -82,6 +86,8 @@ de cache de Instagram (`followersCount`, `igEngagementRate`, `igFetchStatus`, et
       (`instagramHandle`) e não cria `User` nem `Influencer`.
 - [x] `PATCH /influencers/me` nunca altera `instagramHandle`, mesmo se o campo for enviado no
       corpo da requisição.
+- [x] Cadastro cria a creator já com status de busca "em busca", nunca sem status.
+- [x] Cadastro dispara a sincronização do Instagram da creator recém-criada.
 - [x] Perfil recém-cadastrado tem `publicProfileEnabled = false`.
 - [x] Editar o perfil sem enviar todos os campos não apaga os campos omitidos.
 
@@ -119,6 +125,10 @@ de cache de Instagram (`followersCount`, `igEngagementRate`, `igFetchStatus`, et
   tenha sempre o mesmo shape do `GET`.
 
 ## Change History
+- 2026-08-24 · cadastro passou a nascer com status "em busca" e a disparar a sincronização do
+  Instagram. Até então este caminho não fazia nem uma coisa nem outra, e a creator cadastrada
+  por aqui chegava à fila da marca como "Dados do Instagram indisponíveis" permanentemente. Ver
+  `instagram-sync` → Change History.
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD — sem mudança de comportamento; conflito de e-mail
   e de handle viraram critérios de aceitação separados e verificáveis.
