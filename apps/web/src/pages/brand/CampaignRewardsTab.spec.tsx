@@ -29,9 +29,11 @@ const baseReward: CampaignReward = {
   issuedAt: null,
   createdAt: '2026-06-10T10:00:00.000Z',
   influencer: {
+    id: 'inf-1',
     name: 'Ana Creator',
     instagramHandle: 'ana.creator',
     avatarUrl: null,
+    igProfilePicUrl: null,
   },
 };
 
@@ -210,6 +212,32 @@ describe('CampaignRewardsTab', () => {
 
       expect(screen.getByText(/não foi possível remover/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /^remover$/i })).toBeEnabled();
+    });
+  });
+
+  // Mesmo caso de Entregas — e aqui era pior: o endpoint nem devolvia o `id`
+  // da creator, então o front não teria como pedir a foto nem se quisesse.
+  describe('foto da creator', () => {
+    it('usa a foto do Instagram quando existe', () => {
+      mockHooks([
+        {
+          ...baseReward,
+          influencer: { ...baseReward.influencer, igProfilePicUrl: 'https://cdn/x.jpg' },
+        },
+      ]);
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      expect(screen.getByRole('img', { name: 'Ana Creator' })).toHaveAttribute(
+        'src',
+        '/api/v1/ig/avatar/inf-1',
+      );
+    });
+
+    it('cai nas iniciais quando não há foto nenhuma', () => {
+      mockHooks([baseReward]);
+      render(<CampaignRewardsTab campaignId="camp-1" />);
+
+      expect(screen.queryByRole('img', { name: 'Ana Creator' })).not.toBeInTheDocument();
     });
   });
 });

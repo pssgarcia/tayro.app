@@ -6,7 +6,13 @@ import {
   useRefreshApplicationIg,
   useRejectApplication,
 } from '../../hooks/useCampaignApplications';
-import { formatEngagement, formatNumberParts, formatOffer } from '../../utils/format';
+import {
+  creatorAvatarSrc,
+  creatorPostSrc,
+  formatEngagement,
+  formatNumberParts,
+  formatOffer,
+} from '../../utils/format';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
 
@@ -120,70 +126,77 @@ export default function CampaignPipelineMobileStory({
           isso o hero em tela cheia esticaria feio numa viewport de ~800px;
           "use seu julgamento" era literalmente o pedido do Pedro pro tablet. */}
       <div className="flex min-h-0 w-full max-w-[480px] flex-col">
-      {/* Header — progresso Story + fechar */}
-      <div className="shrink-0 px-4" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-        {!done && queue.length > 0 && (
-          <div className="mb-3 flex gap-1">
-            {queue.map((app, i) => (
-              <span
-                key={app.id}
-                className={cn(
-                  'h-[3px] flex-1 rounded-full transition-colors',
-                  i < clampedIndex ? 'bg-white/70' : i === clampedIndex ? 'bg-lime' : 'bg-white/20',
-                )}
-              />
-            ))}
-          </div>
-        )}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onExit}
-            aria-label="Fechar revisão"
-            className="-ml-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-          >
-            <X size={18} />
-          </button>
+        {/* Header — progresso Story + fechar */}
+        <div
+          className="shrink-0 px-4"
+          style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
+        >
           {!done && queue.length > 0 && (
-            <span className="font-mono text-xs uppercase tracking-widest text-kinetic-muted">
-              {clampedIndex + 1} / {queue.length}
-            </span>
+            <div className="mb-3 flex gap-1">
+              {queue.map((app, i) => (
+                <span
+                  key={app.id}
+                  className={cn(
+                    'h-[3px] flex-1 rounded-full transition-colors',
+                    i < clampedIndex
+                      ? 'bg-white/70'
+                      : i === clampedIndex
+                        ? 'bg-lime'
+                        : 'bg-white/20',
+                  )}
+                />
+              ))}
+            </div>
           )}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onExit}
+              aria-label="Fechar revisão"
+              className="-ml-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <X size={18} />
+            </button>
+            {!done && queue.length > 0 && (
+              <span className="font-mono text-xs uppercase tracking-widest text-kinetic-muted">
+                {clampedIndex + 1} / {queue.length}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {appsLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-lime border-t-transparent" />
-        </div>
-      ) : done || !current ? (
-        <CompletionState
-          approved={tally.approved}
-          rejected={tally.rejected}
-          remaining={queue.length}
-          onBack={onExit}
-        />
-      ) : (
-        <CandidateStory
-          key={current.id}
-          application={current}
-          campaign={campaign}
-          sheetOpen={sheetOpen}
-          onOpenSheet={() => setSheetOpen(true)}
-          onCloseSheet={() => setSheetOpen(false)}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onPrev={goPrev}
-          onNext={goNext}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          isApproving={approve.isPending && approve.variables === current.id}
-          isRejecting={reject.isPending && reject.variables === current.id}
-          isRefreshingIg={refreshIg.isPending && refreshIg.variables === current.id}
-          refreshIgError={refreshIg.variables === current.id ? refreshIg.error : null}
-          onRefreshIg={() => refreshIg.mutate(current.id)}
-        />
-      )}
+        {appsLoading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-lime border-t-transparent" />
+          </div>
+        ) : done || !current ? (
+          <CompletionState
+            approved={tally.approved}
+            rejected={tally.rejected}
+            remaining={queue.length}
+            onBack={onExit}
+          />
+        ) : (
+          <CandidateStory
+            key={current.id}
+            application={current}
+            campaign={campaign}
+            sheetOpen={sheetOpen}
+            onOpenSheet={() => setSheetOpen(true)}
+            onCloseSheet={() => setSheetOpen(false)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onPrev={goPrev}
+            onNext={goNext}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            isApproving={approve.isPending && approve.variables === current.id}
+            isRejecting={reject.isPending && reject.variables === current.id}
+            isRefreshingIg={refreshIg.isPending && refreshIg.variables === current.id}
+            refreshIgError={refreshIg.variables === current.id ? refreshIg.error : null}
+            onRefreshIg={() => refreshIg.mutate(current.id)}
+          />
+        )}
       </div>
     </div>
   );
@@ -228,9 +241,7 @@ function CandidateStory({
 }) {
   const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
-  const avatarSrc = influencer.igProfilePicUrl
-    ? `/api/v1/ig/avatar/${influencer.id}`
-    : influencer.avatarUrl;
+  const avatarSrc = creatorAvatarSrc(influencer);
   const followers =
     influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
   const igLoading = influencer.igFetchStatus === 'PENDING';
@@ -297,72 +308,74 @@ function CandidateStory({
 
         {/* Métricas + oferta — flui logo abaixo da foto, mesmo scroll */}
         <div className="px-5 py-5">
-        {igLoading ? (
-          <div className="flex animate-pulse gap-8">
-            <div className="h-10 w-16 rounded bg-kinetic-dark" />
-            <div className="h-10 w-16 rounded bg-kinetic-dark" />
-          </div>
-        ) : igFailed ? (
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono text-xs text-kinetic-muted">Dados do Instagram indisponíveis</span>
-            <button
-              type="button"
-              onClick={onRefreshIg}
-              disabled={isRefreshingIg || cooldownWait !== null}
-              className={cn(
-                'flex shrink-0 items-center gap-1.5 font-mono text-xs uppercase tracking-widest transition-colors',
-                isRefreshingIg || cooldownWait !== null
-                  ? 'cursor-not-allowed text-kinetic-muted'
-                  : 'text-kinetic-text hover:text-white',
+          {igLoading ? (
+            <div className="flex animate-pulse gap-8">
+              <div className="h-10 w-16 rounded bg-kinetic-dark" />
+              <div className="h-10 w-16 rounded bg-kinetic-dark" />
+            </div>
+          ) : igFailed ? (
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-xs text-kinetic-muted">
+                Dados do Instagram indisponíveis
+              </span>
+              <button
+                type="button"
+                onClick={onRefreshIg}
+                disabled={isRefreshingIg || cooldownWait !== null}
+                className={cn(
+                  'flex shrink-0 items-center gap-1.5 font-mono text-xs uppercase tracking-widest transition-colors',
+                  isRefreshingIg || cooldownWait !== null
+                    ? 'cursor-not-allowed text-kinetic-muted'
+                    : 'text-kinetic-text hover:text-white',
+                )}
+              >
+                <RefreshCw size={12} className={cn(isRefreshingIg && 'animate-spin')} />
+                {isRefreshingIg
+                  ? 'Atualizando…'
+                  : cooldownWait !== null
+                    ? `${cooldownWait} min`
+                    : 'Atualizar'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-8">
+              {followers && (
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+                    Seguidores
+                  </p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-white">
+                    {followers.value}
+                    {followers.suffix}
+                  </p>
+                </div>
               )}
-            >
-              <RefreshCw size={12} className={cn(isRefreshingIg && 'animate-spin')} />
-              {isRefreshingIg
-                ? 'Atualizando…'
-                : cooldownWait !== null
-                  ? `${cooldownWait} min`
-                  : 'Atualizar'}
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-8">
-            {followers && (
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                  Followers
-                </p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-                  {followers.value}
-                  {followers.suffix}
-                </p>
-              </div>
-            )}
-            {influencer.igEngagementRate != null && (
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                  Engagement
-                </p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-white">
-                  {formatEngagement(influencer.igEngagementRate)}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+              {influencer.igEngagementRate != null && (
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+                    Engajamento
+                  </p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-white">
+                    {formatEngagement(influencer.igEngagementRate)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
-        <p className="mb-1 mt-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          Oferta da campanha
-        </p>
-        <p className="text-lg font-semibold leading-snug text-white">{formatOffer(campaign)}</p>
+          <p className="mb-1 mt-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+            Oferta da campanha
+          </p>
+          <p className="text-lg font-semibold leading-snug text-white">{formatOffer(campaign)}</p>
 
-        <button
-          type="button"
-          onClick={onOpenSheet}
-          className="mt-5 flex w-full flex-col items-center gap-1 py-2 text-kinetic-muted transition-colors hover:text-white"
-        >
-          <ChevronUp size={16} />
-          <span className="font-mono text-[10px] uppercase tracking-widest">Ver posts</span>
-        </button>
+          <button
+            type="button"
+            onClick={onOpenSheet}
+            className="mt-5 flex w-full flex-col items-center gap-1 py-2 text-kinetic-muted transition-colors hover:text-white"
+          >
+            <ChevronUp size={16} />
+            <span className="font-mono text-[10px] uppercase tracking-widest">Ver posts</span>
+          </button>
         </div>
       </div>
 
@@ -425,7 +438,9 @@ function CandidateStory({
               <p className="mb-2 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
                 Nota da candidatura
               </p>
-              <p className="text-[15px] leading-relaxed text-kinetic-text">&ldquo;{message}&rdquo;</p>
+              <p className="text-[15px] leading-relaxed text-kinetic-text">
+                &ldquo;{message}&rdquo;
+              </p>
             </div>
           )}
           {influencer.niches.length > 0 && (
@@ -454,7 +469,7 @@ function CandidateStory({
                 post ? (
                   <img
                     key={i}
-                    src={post.thumbnail}
+                    src={creatorPostSrc(influencer.id, i)}
                     alt=""
                     loading="lazy"
                     className="aspect-square w-full rounded object-cover"

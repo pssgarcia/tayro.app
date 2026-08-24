@@ -31,6 +31,7 @@ const baseSubmission: CampaignSubmission = {
     name: 'Ana Creator',
     instagramHandle: 'ana.creator',
     avatarUrl: null,
+    igProfilePicUrl: null,
   },
 };
 
@@ -117,5 +118,33 @@ describe('CampaignContentTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^aprovados$/i }));
     expect(screen.getAllByText('Ana Creator')).toHaveLength(1);
+  });
+
+  // Até 2026-08-23 esta tela lia só `avatarUrl` — campo que só a própria
+  // creator digita e que na prática está sempre vazio. Resultado: iniciais
+  // pra praticamente todo mundo, enquanto a Fila mostrava a foto do Instagram.
+  describe('foto da creator', () => {
+    it('usa a foto do Instagram quando existe', () => {
+      mockHooks([
+        {
+          ...baseSubmission,
+          influencer: { ...baseSubmission.influencer, igProfilePicUrl: 'https://cdn/x.jpg' },
+        },
+      ]);
+      render(<CampaignContentTab campaignId="camp-1" />);
+
+      expect(screen.getByRole('img', { name: 'Ana Creator' })).toHaveAttribute(
+        'src',
+        '/api/v1/ig/avatar/inf-1',
+      );
+    });
+
+    it('cai nas iniciais quando não há foto nenhuma', () => {
+      mockHooks([baseSubmission]);
+      render(<CampaignContentTab campaignId="camp-1" />);
+
+      expect(screen.queryByRole('img', { name: 'Ana Creator' })).not.toBeInTheDocument();
+      expect(screen.getByText('A')).toBeInTheDocument();
+    });
   });
 });

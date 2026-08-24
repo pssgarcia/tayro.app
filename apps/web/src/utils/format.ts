@@ -105,3 +105,40 @@ export function formatRelativeDays(iso: string): string {
   if (days === 1) return 'há 1 dia';
   return `há ${days} dias`;
 }
+
+/**
+ * Fonte da foto de uma creator, em ordem de verdade:
+ *   1. a foto do Instagram, servida pelo nosso domínio (o Instagram bloqueia
+ *      `<img>` cross-origin em foto de PERFIL — ver footgun CORP no CLAUDE.md);
+ *   2. `avatarUrl`, campo que só a própria creator digita e que na prática
+ *      está sempre vazio — fallback, nunca a regra;
+ *   3. `null` → quem chama mostra as iniciais.
+ *
+ * Existe pra que "a foto do TAYRO é a do Instagram" seja UMA regra, num lugar
+ * só. Estava copiada em 5 telas e faltando em outras 2 (Entregas e
+ * Recompensas), que por isso mostravam iniciais pra praticamente todo mundo.
+ *
+ * `ClaimAccountPage` fica de fora de propósito: o preview do claim não expõe a
+ * URL da CDN, só um booleano `hasIgAvatar` — um DTO mais fechado que os
+ * outros. Encaixá-lo aqui exigiria vazar a URL, o que seria piorar.
+ */
+export function creatorAvatarSrc(influencer: {
+  id: string;
+  igProfilePicUrl?: string | null;
+  avatarUrl?: string | null;
+}): string | null {
+  if (influencer.igProfilePicUrl) return `/api/v1/ig/avatar/${influencer.id}`;
+  return influencer.avatarUrl ?? null;
+}
+
+/**
+ * Endereço de uma thumbnail do feed recente, servida pelo nosso domínio.
+ *
+ * Mesma razão do `creatorAvatarSrc`: as URLs da CDN do Instagram são assinadas
+ * e expiram, e até 2026-08-23 o navegador as carregava direto — por isso o
+ * feed da Fila ia sumindo com o tempo (D-18). `position` é o índice do post na
+ * grade (0..5).
+ */
+export function creatorPostSrc(influencerId: string, position: number): string {
+  return `/api/v1/ig/post/${influencerId}/${position}`;
+}

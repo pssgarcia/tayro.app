@@ -22,6 +22,7 @@ import {
 import EmptyState from '../../components/primitives/EmptyState';
 import Plate from '../../components/primitives/Plate';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
+import { creatorAvatarSrc } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -209,9 +210,9 @@ function RewardCard({
       {/* Header: creator + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          {reward.influencer.avatarUrl ? (
+          {creatorAvatarSrc(reward.influencer) ? (
             <img
-              src={reward.influencer.avatarUrl}
+              src={creatorAvatarSrc(reward.influencer) as string}
               alt={reward.influencer.name}
               className="h-8 w-8 shrink-0 rounded-full object-cover"
             />

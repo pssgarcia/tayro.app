@@ -16,6 +16,7 @@ import { IgFetchStatus } from '@prisma/client';
 import { InstagramSyncService } from './instagram-sync.service';
 import { PrismaService } from '../../shared/infrastructure/database/prisma.service';
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
+import { IgImageService } from './ig-image.service';
 
 const perfil = {
   followers: 10_000,
@@ -30,6 +31,7 @@ describe('InstagramSyncService', () => {
   let service: InstagramSyncService;
   let prisma: jest.Mocked<any>;
   let provider: { fetchProfile: jest.Mock };
+  let igImages: { storeFromProfile: jest.Mock };
   let config: { get: jest.Mock };
   const agora = new Date('2026-08-23T12:00:00.000Z');
 
@@ -55,6 +57,7 @@ describe('InstagramSyncService', () => {
       },
     };
     provider = { fetchProfile: jest.fn().mockResolvedValue(perfil) };
+    igImages = { storeFromProfile: jest.fn().mockResolvedValue(undefined) };
     config = { get: jest.fn((_k: string, def: string) => def) };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -63,6 +66,9 @@ describe('InstagramSyncService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: config },
         { provide: INSTAGRAM_PROVIDER, useValue: provider },
+        // Guardar imagem é best-effort e tem testes próprios — aqui só não
+        // pode atrapalhar o contrato de staleness/falha do sync.
+        { provide: IgImageService, useValue: igImages },
       ],
     }).compile();
 
@@ -211,6 +217,52 @@ describe('InstagramSyncService', () => {
       await service.refresh('inf-1');
 
       expect(provider.fetchProfile).toHaveBeenCalledWith('anafit');
+    });
+  });
+
+  // ─── Persistência de imagem (D-18) ────────────────────────────────────────
+
+  describe('guardar as imagens', () => {
+    beforeEach(() => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        influencerNoBanco({ igFetchStatus: null }),
+      );
+    });
+
+    it('guarda foto de perfil e thumbnails após sync bem-sucedido', async () => {
+      await service.refresh('inf-1');
+
+      expect(igImages.storeFromProfile).toHaveBeenCalledWith(
+        'inf-1',
+        perfil.profilePicUrl,
+        ['t1', 't2'],
+      );
+    });
+
+    // Best-effort: a foto é acessório, o número é o que a marca usa pra decidir.
+    // Asserção olha TODAS as escritas: com o storeFromProfile dentro do try do
+    // sync, uma falha de imagem gerava uma terceira escrita marcando FAILED —
+    // apagando um sync que tinha dado certo. Olhar só a escrita de sucesso
+    // deixava o teste passar com o bug presente.
+    it('falha ao guardar imagem NÃO derruba o sync nem marca FAILED', async () => {
+      igImages.storeFromProfile.mockRejectedValue(new Error('storage fora'));
+
+      await expect(service.refresh('inf-1')).resolves.toBeUndefined();
+
+      expect(prisma.influencer.update).toHaveBeenCalledTimes(2);
+      const statusEscritos = prisma.influencer.update.mock.calls.map(
+        (c: [{ data: { igFetchStatus?: string } }]) => c[0].data.igFetchStatus,
+      );
+      expect(statusEscritos).not.toContain(IgFetchStatus.FAILED);
+      expect(statusEscritos).toContain(IgFetchStatus.OK);
+    });
+
+    it('não tenta guardar imagem quando a busca falhou', async () => {
+      provider.fetchProfile.mockRejectedValue(new Error('RapidAPI 503'));
+
+      await service.refresh('inf-1');
+
+      expect(igImages.storeFromProfile).not.toHaveBeenCalled();
     });
   });
 

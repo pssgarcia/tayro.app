@@ -107,6 +107,10 @@ próprias recompensas com tipo, valor, status e data de emissão.
 - `issue` fora de `PENDING` → `400`, "Reward is already issued or delivered".
 - `deliver` fora de `ISSUED` → `400`, "Reward must be issued before marking as delivered".
 
+(A foto da creator nesta tela passou a ser a do Instagram em 2026-08-23. Além de ler só
+`avatarUrl`, a listagem de recompensas nem devolvia o identificador da creator — não havia como
+pedir a foto nem se a tela quisesse. Ver `instagram-sync` → "Identidade visual da creator".)
+
 ## Known Gaps
 - **`Reward.value` é string livre, não inteiro em centavos.** Quebra a convenção de dinheiro do
   resto do produto (`Campaign.offerAmount` é `Int` em centavos). Aqui é texto descritivo da

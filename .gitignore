@@ -66,3 +66,8 @@ CLAUDE.local.md
 
 # ─── Design handoffs — material de referência, não vai pro repo ───────────────
 apps/web/design_handoff_tayro_2a/
+
+# Cache local da ferramenta impeccable — inclui estado de máquina
+# (live/server.json, questions/*.state.json). Entrou no repo por engano em
+# 2026-08-23 num `git add -A`; não versionar.
+apps/web/.impeccable/
