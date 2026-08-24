@@ -142,3 +142,25 @@ export function creatorAvatarSrc(influencer: {
 export function creatorPostSrc(influencerId: string, position: number): string {
   return `/api/v1/ig/post/${influencerId}/${position}`;
 }
+
+/**
+ * URL absoluta de uma rota pública, no domínio em que a aplicação está rodando.
+ *
+ * É o endereço que a marca copia pra divulgar o programa e que a creator manda
+ * pras marcas — ou seja, sai do produto e vai pro mundo. Por isso ele não pode
+ * ser um literal: até 2026-08-24 o código montava `https://tayro.app/...`, um
+ * domínio que **nunca existiu** (NXDOMAIN). Todo link copiado desde a v0.29.0
+ * estava morto, e ninguém percebeu porque nenhum teste sai da máquina.
+ *
+ * Derivar da origem resolve os três ambientes de uma vez (localhost, preview da
+ * Vercel, produção) e continua certo no dia em que um domínio próprio for
+ * comprado e apontado — sem tocar em código.
+ */
+export function publicUrl(path: string): string {
+  return `${window.location.origin}${path}`;
+}
+
+/** Mesmo endereço do `publicUrl`, sem o esquema — para exibir, não para copiar. */
+export function publicUrlLabel(path: string): string {
+  return `${window.location.host}${path}`;
+}

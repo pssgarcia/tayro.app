@@ -137,7 +137,7 @@ describe('CampaignCard — copiar link público', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /copiar link/i }));
 
-    expect(writeText).toHaveBeenCalledWith('https://tayro.app/apply/camp-1');
+    expect(writeText).toHaveBeenCalledWith('http://localhost:3000/apply/camp-1');
   });
 
   it('confirma a cópia e volta ao rótulo original depois de 2s', () => {
