@@ -1,3 +1,7 @@
+// PRIMEIRA linha do processo — antes de qualquer @nestjs/*. O Sentry precisa
+// aplicar os patches de auto-instrumentação (http/express/prisma) antes dos
+// módulos carregarem. Sem DSN, o init não roda e isto é inerte.
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
