@@ -358,6 +358,106 @@ describe('CampaignPipelineMobileStory — estados do Instagram', () => {
   });
 });
 
+describe('CampaignPipelineMobileStory — modo "Todas" (paridade com o desktop)', () => {
+  const mix = () => [
+    makeApplication('a', { status: 'PENDING', name: 'Ana Pendente' }),
+    makeApplication('b', { status: 'APPROVED', name: 'Bia Aprovada' }),
+    makeApplication('c', { status: 'REJECTED', name: 'Cris Recusada' }),
+    makeApplication('d', { status: 'WITHDRAWN', name: 'Dani Retirada' }),
+  ];
+
+  it('lista toda candidatura com o rótulo de status em português', () => {
+    renderStory(mix());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+
+    expect(screen.getByText('Ana Pendente')).toBeInTheDocument();
+    expect(screen.getByText('Bia Aprovada')).toBeInTheDocument();
+    expect(screen.getByText('Cris Recusada')).toBeInTheDocument();
+    expect(screen.getByText('Dani Retirada')).toBeInTheDocument();
+    expect(screen.getByText('Aprovada')).toBeInTheDocument();
+    expect(screen.getByText('Recusada')).toBeInTheDocument();
+    expect(screen.getByText('Retirada')).toBeInTheDocument();
+  });
+
+  it('mostra as decididas mesmo quando não há nenhuma PENDING (o modo Revisar cai no fim de fila)', () => {
+    renderStory([
+      makeApplication('b', { status: 'APPROVED', name: 'Bia Aprovada' }),
+      makeApplication('c', { status: 'REJECTED', name: 'Cris Recusada' }),
+    ]);
+
+    // modo Revisar (default) não tem o que revisar
+    expect(screen.getByText(/fila em dia/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    expect(screen.getByText('Bia Aprovada')).toBeInTheDocument();
+    expect(screen.getByText('Cris Recusada')).toBeInTheDocument();
+  });
+
+  it('estado vazio quando a campanha não tem candidatura nenhuma', () => {
+    renderStory([]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    expect(screen.getByText(/nenhuma candidatura/i)).toBeInTheDocument();
+  });
+
+  it('tocar numa linha abre o detalhe da candidatura, sem sair da revisão', () => {
+    const onExit = vi.fn();
+    renderStory(mix(), { onExit });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    fireEvent.click(screen.getByText('Bia Aprovada'));
+
+    // detalhe: métricas de IG da creator
+    expect(screen.getByText(/seguidores/i)).toBeInTheDocument();
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  it('detalhe de candidatura já decidida não oferece Aprovar/Descartar', () => {
+    renderStory(mix());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    fireEvent.click(screen.getByText('Bia Aprovada'));
+
+    expect(screen.queryByRole('button', { name: /aprovar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /descartar/i })).not.toBeInTheDocument();
+  });
+
+  it('detalhe de candidatura PENDENTE em "Todas" ainda decide', () => {
+    const approve = makeMutation({ mutate: vi.fn() });
+    renderStory(mix(), { approve });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    fireEvent.click(screen.getByText('Ana Pendente'));
+    fireEvent.click(screen.getByRole('button', { name: /aprovar/i }));
+
+    expect(approve.mutate).toHaveBeenCalledWith('a');
+  });
+
+  it('"Voltar" no detalhe retorna à lista, não sai da revisão', () => {
+    const onExit = vi.fn();
+    renderStory(mix(), { onExit });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    fireEvent.click(screen.getByText('Cris Recusada'));
+    fireEvent.click(screen.getByRole('button', { name: /voltar à lista/i }));
+
+    expect(screen.getByText('Ana Pendente')).toBeInTheDocument();
+    expect(screen.getByText('Bia Aprovada')).toBeInTheDocument();
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  it('alterna de volta pra "Revisar" e volta ao Story da fila pendente', () => {
+    renderStory(mix());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar' }));
+
+    expect(screen.getByText('Ana Pendente')).toBeInTheDocument();
+    expect(screen.getByText('1 / 1')).toBeInTheDocument();
+  });
+});
+
 describe('CampaignPipelineMobileStory — saída', () => {
   it('"Fechar revisão" chama onExit e não navega de rota', () => {
     const onExit = vi.fn();

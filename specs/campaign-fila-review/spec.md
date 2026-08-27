@@ -3,11 +3,12 @@ slug: campaign-fila-review
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-23
+last_updated: 2026-08-27
 implements:
   - apps/web/src/pages/brand/CampaignFilaTab.tsx
   - apps/web/src/pages/brand/CampaignPipelineMobileStory.tsx
-related_decisions: []
+related_decisions:
+  - "decisions.md 2026-08-27 (propostas rejeitadas) — cadastro manual de creator = NÃO; paridade mobile da Fila = implementar"
 ---
 
 # Campaign fila review ("Kinetic Editorial")
@@ -45,11 +46,21 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
 - **Desktop/telas largas (`lg:` e acima):** lista de candidaturas com **toda** candidatura da
   campanha, qualquer status (não só `PENDING`) — diferente do carrossel que esta tela substituiu,
   que só mostrava quem esperava decisão. Uma placa de detalhe mostra a candidatura selecionada.
-- **Mobile/tablet (abaixo de `lg:`):** revisão em formato Story do Instagram — um candidato
-  `PENDING` por vez, em tela cheia, cobrindo a navegação inferior do layout de marca. Navegação
-  por toque nas laterais ou swipe horizontal. Aprovar ou rejeitar avança automaticamente pro
-  próximo candidato pendente. Barra de progresso em segmentos; tela de fim de fila mostra a
-  contagem de aprovados/rejeitados da sessão.
+- **Mobile/tablet (abaixo de `lg:`):** tem **dois modos**, alternados por um controle no
+  cabeçalho, espelhando o que o desktop mostra lado a lado:
+  - **"Revisar"** (padrão): revisão em formato Story do Instagram — um candidato `PENDING` por
+    vez, em tela cheia, cobrindo a navegação inferior do layout de marca. Navegação por toque nas
+    laterais ou swipe horizontal. Aprovar ou rejeitar avança automaticamente pro próximo
+    candidato pendente. Barra de progresso em segmentos; tela de fim de fila mostra a contagem de
+    aprovados/rejeitados da sessão.
+  - **"Todas"**: lista de **toda** candidatura da campanha, qualquer status, com o rótulo de
+    status em português (fonte única `applicationStatusWord` em `utils/format.ts`, compartilhada
+    com a lista Pipeline do desktop). Tocar numa linha abre o **mesmo** detalhe usado no modo
+    Revisar (`CandidateStory`) — com "Voltar à lista" no cabeçalho. Aprovar/descartar só
+    aparecem quando a candidatura ainda está `PENDING`; decidida abre em modo leitura (mesma
+    regra da placa do desktop). Estado vazio quando a campanha não tem candidatura nenhuma.
+    Fecha o buraco de o celular não ter superfície nenhuma pra ver quem já foi aprovado ou
+    recusado — assimetria com o desktop que feria `D-10` (mobile-first).
 - Swipe pra cima (ou "Ver posts") abre um painel com a mensagem da candidatura e o feed de
   Instagram, sem perder a posição na fila.
 - Nas duas superfícies o `@handle` da creator é um link pro perfil dela no Instagram
@@ -76,8 +87,12 @@ negócio separada da apresentação).
 
 ## Acceptance Criteria
 - [x] Desktop mostra toda candidatura da campanha, qualquer status.
-- [x] Mobile mostra só candidaturas `PENDING`, uma por vez.
-- [x] Aprovar ou rejeitar no modo mobile avança automaticamente pro próximo pendente.
+- [x] Mobile "Revisar" (modo padrão) mostra só candidaturas `PENDING`, uma por vez.
+- [x] Mobile "Todas" mostra toda candidatura da campanha, qualquer status, com rótulo de status;
+      tocar numa linha abre o detalhe; decidida abre sem Aprovar/Descartar; `PENDING` ainda decide.
+- [x] Alternar entre "Revisar" e "Todas" não sai do modo imersivo nem navega de rota; "Voltar à
+      lista" a partir de um detalhe de "Todas" volta pra lista, não pra fora da revisão.
+- [x] Aprovar ou rejeitar no modo mobile "Revisar" avança automaticamente pro próximo pendente.
 - [x] O polling de 6s roda somente enquanto houver candidatura `PENDING` com IG também
       `PENDING`; para depois de 45s contínuos nessa condição.
 - [x] O cronômetro de 45s reinicia se, a qualquer momento, deixar de haver alguém pendente.
@@ -112,8 +127,12 @@ são dubladas:
 
 `apps/web/src/pages/brand/CampaignPipelineMobileStory.spec.tsx` — componente controlado por
 props, nenhum hook mockado:
-- [x] Recorte da fila: só `PENDING`; sem pendente, cai direto no fim de fila; nada de fim de
-      fila prematuro durante o carregamento.
+- [x] Recorte da fila (modo "Revisar"): só `PENDING`; sem pendente, cai direto no fim de fila;
+      nada de fim de fila prematuro durante o carregamento.
+- [x] Modo "Todas": lista toda candidatura com o rótulo de status; mostra as decididas mesmo sem
+      nenhuma `PENDING`; estado vazio; tocar numa linha abre o detalhe sem sair da revisão;
+      detalhe de decidida não oferece Aprovar/Descartar; detalhe de `PENDING` ainda decide;
+      "Voltar à lista" retorna sem sair; alternar de volta pra "Revisar" volta ao Story.
 - [x] Navegação: zonas de toque, limite no primeiro candidato, swipe horizontal, arraste curto
       e arraste vertical ignorados.
 - [x] Painel de detalhes: abre em "Ver posts"; com ele aberto, o toque na lateral fecha em vez
@@ -128,6 +147,10 @@ props, nenhum hook mockado:
 - Constantes `POLL_INTERVAL_MS = 6_000` / `POLL_TIMEOUT_MS = 45_000`, definidas em
   `CampaignFilaTab.tsx`. O timeout de 45s é controlado por um `useEffect` com `pollStartRef`
   contando o tempo contínuo em condição de pendência.
+- Modo mobile: estado `mode: 'review' | 'all'` + `allSelectedId` em `CampaignPipelineMobileStory`.
+  `CandidateStory` é o mesmo componente nos dois modos; a barra de ação é gateada por
+  `application.status === 'PENDING'`. O rótulo de status (`applicationStatusWord`) foi extraído
+  de `CampaignFilaTab` pra `utils/format.ts` — desktop e mobile leem do mesmo lugar.
 - `matchScore` (placeholder, ver "Out of Scope"): `hash = hash*31 + charCode` sobre
   `application.id`, depois `70 + hash % 26`.
 - "Bio Note" na UI mostra `application.message` (dado real da creator) — apesar do nome sugerir
@@ -157,3 +180,9 @@ props, nenhum hook mockado:
   antes de a anterior liquidar. Reescrito pra derivar da lista revalidada cruzada com um mapa de
   intenções por id. As decisões em si (approve/reject) sempre funcionaram — só a contagem
   estava quebrada.
+- 2026-08-27 · paridade mobile: a Fila mobile só tinha o Story `PENDING` — nenhuma superfície pra
+  ver aprovadas/recusadas no celular, assimetria com o desktop que feria `D-10`. Ratificado pelo
+  `/feature` como conserto de paridade (não tela nova; o cadastro manual de creator avaliado
+  junto foi rejeitado — ver `decisions.md`). Adicionado o modo "Todas" (lista de toda candidatura
+  + detalhe reusando `CandidateStory` em modo leitura pra decididas). `applicationStatusWord`
+  movido pra `utils/format.ts`. 8 testes novos.

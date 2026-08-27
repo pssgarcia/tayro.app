@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ChevronUp, ExternalLink, MapPin, RefreshCw, X } from 'lucide-react';
+import { ChevronLeft, ChevronUp, ExternalLink, MapPin, RefreshCw, X } from 'lucide-react';
 import {
   extractCooldownWait,
   useApproveApplication,
@@ -7,6 +7,7 @@ import {
   useRejectApplication,
 } from '../../hooks/useCampaignApplications';
 import {
+  applicationStatusWord,
   creatorAvatarSrc,
   creatorPostSrc,
   formatEngagement,
@@ -20,15 +21,22 @@ import type { Application, Campaign } from '../../types/api';
 // NÃO é o desktop espremido — fluxo próprio pra celular, um candidato por vez
 // em tela cheia, navegação por toque/arraste (pedido explícito do Pedro:
 // "Instagram Stories + revisão de creator premium + identidade Kinetic
-// Editorial", desktop fica exatamente como está). Só a fila PENDING entra
-// aqui — mesmo recorte da aba "Fila" do desktop: decidido sai da fila, o
-// próximo candidato ocupa a mesma posição sozinho quando a query revalida
-// (sem precisar avançar o index manualmente).
+// Editorial", desktop fica exatamente como está).
+//
+// Dois modos, mesmo dado (paridade com o desktop, que tem placa de decisão +
+// lista Pipeline lado a lado):
+//   • "Revisar" — a fila PENDING, um candidato por vez, aprovar/descartar.
+//   • "Todas"   — lista de TODA candidatura da campanha (qualquer status), com
+//                 o rótulo de status; tocar numa linha abre o mesmo detalhe.
+//                 Fecha o buraco de o celular não ter nenhuma superfície pra
+//                 ver quem já foi aprovado/recusado (mobile-first, D-10).
 //
 // Fotos aqui ficam a cores, igual ao desktop (o p&b da placa clara "Kinetic"
 // foi removido — ver CampaignFilaTab.tsx).
 
 const SWIPE_THRESHOLD = 56;
+
+type Mode = 'review' | 'all';
 
 interface Props {
   campaign: Campaign;
@@ -55,7 +63,9 @@ export default function CampaignPipelineMobileStory({
 }: Props) {
   const queue = useMemo(() => applications.filter((a) => a.status === 'PENDING'), [applications]);
 
+  const [mode, setMode] = useState<Mode>('review');
   const [index, setIndex] = useState(0);
+  const [allSelectedId, setAllSelectedId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   // Intenção de decisão desta sessão, chaveada por id da candidatura — gravada
   // no clique. NÃO usar o onSuccess com escopo do `mutate` pra contar: ele é
@@ -78,13 +88,42 @@ export default function CampaignPipelineMobileStory({
     return { approved, rejected };
   }, [applications, decided]);
 
+  // ── Modo Revisar ──
   const clampedIndex = Math.min(index, queue.length);
-  const current = queue[clampedIndex] ?? null;
-  const done = clampedIndex >= queue.length;
+  const reviewCurrent = queue[clampedIndex] ?? null;
+  const reviewDone = clampedIndex >= queue.length;
+
+  // ── Modo Todas ──
+  const allIndex =
+    mode === 'all' && allSelectedId != null
+      ? applications.findIndex((a) => a.id === allSelectedId)
+      : -1;
+  const allCurrent = allIndex >= 0 ? applications[allIndex] : null;
+
+  // O candidato em detalhe agora — o mesmo `CandidateStory` serve os dois modos.
+  const active = mode === 'review' ? (reviewDone ? null : reviewCurrent) : allCurrent;
+  const showCompletion = mode === 'review' && (reviewDone || !reviewCurrent);
+  const inAllDetail = mode === 'all' && allCurrent != null;
+
+  function changeMode(next: Mode) {
+    setMode(next);
+    setAllSelectedId(null);
+    setSheetOpen(false);
+  }
+
+  function selectFromList(id: string) {
+    setAllSelectedId(id);
+    setSheetOpen(false);
+  }
 
   function goNext() {
     if (sheetOpen) {
       setSheetOpen(false);
+      return;
+    }
+    if (mode === 'all') {
+      const next = allIndex >= 0 ? applications[allIndex + 1] : undefined;
+      if (next) setAllSelectedId(next.id);
       return;
     }
     setIndex((i) => Math.min(i + 1, queue.length));
@@ -95,19 +134,23 @@ export default function CampaignPipelineMobileStory({
       setSheetOpen(false);
       return;
     }
+    if (mode === 'all') {
+      if (allIndex >= 1) setAllSelectedId(applications[allIndex - 1].id);
+      return;
+    }
     setIndex((i) => Math.max(i - 1, 0));
   }
 
   function handleApprove() {
-    if (!current) return;
-    setDecided((d) => ({ ...d, [current.id]: 'approved' }));
-    approve.mutate(current.id);
+    if (!active) return;
+    setDecided((d) => ({ ...d, [active.id]: 'approved' }));
+    approve.mutate(active.id);
   }
 
   function handleReject() {
-    if (!current) return;
-    setDecided((d) => ({ ...d, [current.id]: 'rejected' }));
-    reject.mutate(current.id);
+    if (!active) return;
+    setDecided((d) => ({ ...d, [active.id]: 'rejected' }));
+    reject.mutate(active.id);
   }
 
   function handleTouchStart(e: React.TouchEvent) {
@@ -134,6 +177,8 @@ export default function CampaignPipelineMobileStory({
     }
   }
 
+  const showReviewCounter = mode === 'review' && !reviewDone && queue.length > 0;
+
   return (
     // z-50: cobre a bottom tab bar do BrandLayout (z-40) — takeover
     // imersivo de verdade, sem a nav do app espiando embaixo.
@@ -142,12 +187,12 @@ export default function CampaignPipelineMobileStory({
           isso o hero em tela cheia esticaria feio numa viewport de ~800px;
           "use seu julgamento" era literalmente o pedido do Pedro pro tablet. */}
       <div className="flex min-h-0 w-full max-w-[480px] flex-col">
-        {/* Header — progresso Story + fechar */}
+        {/* Header — progresso Story + fechar + alternador de modo */}
         <div
           className="shrink-0 px-4"
           style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
         >
-          {!done && queue.length > 0 && (
+          {showReviewCounter && (
             <div className="mb-3 flex gap-1">
               {queue.map((app, i) => (
                 <span
@@ -164,19 +209,36 @@ export default function CampaignPipelineMobileStory({
               ))}
             </div>
           )}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={onExit}
               aria-label="Fechar revisão"
-              className="-ml-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <X size={18} />
             </button>
-            {!done && queue.length > 0 && (
-              <span className="font-mono text-xs uppercase tracking-widest text-kinetic-muted">
+
+            {inAllDetail ? (
+              <button
+                type="button"
+                onClick={() => setAllSelectedId(null)}
+                aria-label="Voltar à lista"
+                className="flex items-center gap-1 font-mono text-xs uppercase tracking-widest text-kinetic-text transition-colors hover:text-white"
+              >
+                <ChevronLeft size={14} />
+                Voltar
+              </button>
+            ) : (
+              <ModeToggle mode={mode} onChange={changeMode} />
+            )}
+
+            {showReviewCounter ? (
+              <span className="shrink-0 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
                 {clampedIndex + 1} / {queue.length}
               </span>
+            ) : (
+              <span className="h-11 w-11 shrink-0" aria-hidden />
             )}
           </div>
         </div>
@@ -185,17 +247,17 @@ export default function CampaignPipelineMobileStory({
           <div className="flex flex-1 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-lime border-t-transparent" />
           </div>
-        ) : done || !current ? (
+        ) : showCompletion ? (
           <CompletionState
             approved={tally.approved}
             rejected={tally.rejected}
             remaining={queue.length}
             onBack={onExit}
           />
-        ) : (
+        ) : active ? (
           <CandidateStory
-            key={current.id}
-            application={current}
+            key={active.id}
+            application={active}
             campaign={campaign}
             sheetOpen={sheetOpen}
             onOpenSheet={() => setSheetOpen(true)}
@@ -206,15 +268,97 @@ export default function CampaignPipelineMobileStory({
             onNext={goNext}
             onApprove={handleApprove}
             onReject={handleReject}
-            isApproving={approve.isPending && approve.variables === current.id}
-            isRejecting={reject.isPending && reject.variables === current.id}
-            isRefreshingIg={refreshIg.isPending && refreshIg.variables === current.id}
-            refreshIgError={refreshIg.variables === current.id ? refreshIg.error : null}
-            onRefreshIg={() => refreshIg.mutate(current.id)}
+            isApproving={approve.isPending && approve.variables === active.id}
+            isRejecting={reject.isPending && reject.variables === active.id}
+            isRefreshingIg={refreshIg.isPending && refreshIg.variables === active.id}
+            refreshIgError={refreshIg.variables === active.id ? refreshIg.error : null}
+            onRefreshIg={() => refreshIg.mutate(active.id)}
           />
+        ) : (
+          <AllList applications={applications} onSelect={selectFromList} />
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Alternador de modo ────────────────────────────────────────────────────────
+
+function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
+  return (
+    <div className="flex rounded-full border border-kinetic-border p-0.5 font-mono text-[11px] uppercase tracking-widest">
+      {(['review', 'all'] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => onChange(m)}
+          aria-pressed={mode === m}
+          className={cn(
+            'rounded-full px-3 py-1 transition-colors',
+            mode === m ? 'bg-lime text-black' : 'text-kinetic-muted hover:text-white',
+          )}
+        >
+          {m === 'review' ? 'Revisar' : 'Todas'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Modo Todas — lista de toda candidatura ────────────────────────────────────
+
+function AllList({
+  applications,
+  onSelect,
+}: {
+  applications: Application[];
+  onSelect: (id: string) => void;
+}) {
+  if (applications.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center px-8">
+        <p className="font-mono text-sm text-kinetic-muted">Nenhuma candidatura ainda.</p>
+      </div>
+    );
+  }
+
+  return (
+    <ul
+      className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3"
+      style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+    >
+      {applications.map((app) => {
+        const avatarSrc = creatorAvatarSrc(app.influencer);
+        return (
+          <li key={app.id}>
+            <button
+              type="button"
+              onClick={() => onSelect(app.id)}
+              className="flex w-full items-center justify-between gap-3 rounded p-3 text-left transition-colors hover:bg-kinetic-dark"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-kinetic-gray">
+                  {avatarSrc && (
+                    <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                  )}
+                </span>
+                <span className="truncate text-sm font-medium text-kinetic-light">
+                  {app.influencer.name}
+                </span>
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 font-mono text-xs',
+                  app.status === 'PENDING' ? 'text-lime' : 'text-kinetic-muted',
+                )}
+              >
+                {applicationStatusWord[app.status]}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -264,6 +408,9 @@ function CandidateStory({
   const igFailed = influencer.igFetchStatus === 'FAILED' || influencer.igFetchStatus === null;
   const cooldownWait = extractCooldownWait(refreshIgError);
   const posts = Array.from({ length: 6 }, (_, i) => influencer.igRecentPosts?.[i] ?? null);
+  // Aprovar/descartar só faz sentido em candidatura pendente — decidida abre em
+  // modo leitura (mesma regra da placa do desktop, ProfilePlate).
+  const canDecide = application.status === 'PENDING';
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col animate-tayro-count motion-reduce:animate-none">
@@ -407,28 +554,30 @@ function CandidateStory({
 
       {/* Ações — fora do container de scroll, nunca sobrepõe o conteúdo:
           espaço reservado pelo próprio flexbox (irmã do scroll, não
-          fixed/absolute por cima dele). */}
-      <div
-        className="flex shrink-0 gap-3 px-5 pt-3"
-        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
-      >
-        <button
-          type="button"
-          onClick={onReject}
-          disabled={isApproving || isRejecting}
-          className="min-h-[56px] flex-1 border border-kinetic-border font-mono text-sm font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-[#555] disabled:cursor-not-allowed disabled:opacity-40"
+          fixed/absolute por cima dele). Some em candidatura já decidida. */}
+      {canDecide && (
+        <div
+          className="flex shrink-0 gap-3 px-5 pt-3"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
         >
-          {isRejecting ? 'Descartando…' : 'Descartar'}
-        </button>
-        <button
-          type="button"
-          onClick={onApprove}
-          disabled={isApproving || isRejecting}
-          className="min-h-[56px] flex-[1.4] bg-lime font-mono text-sm font-semibold uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isApproving ? 'Aprovando…' : 'Aprovar'}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onReject}
+            disabled={isApproving || isRejecting}
+            className="min-h-[56px] flex-1 border border-kinetic-border font-mono text-sm font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-[#555] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isRejecting ? 'Descartando…' : 'Descartar'}
+          </button>
+          <button
+            type="button"
+            onClick={onApprove}
+            disabled={isApproving || isRejecting}
+            className="min-h-[56px] flex-[1.4] bg-lime font-mono text-sm font-semibold uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isApproving ? 'Aprovando…' : 'Aprovar'}
+          </button>
+        </div>
+      )}
 
       {/* Fundo pra fechar o painel tocando fora dele */}
       {sheetOpen && (
