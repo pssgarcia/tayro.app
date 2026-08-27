@@ -23,13 +23,15 @@ export default function EditCampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Logo escondido no mobile: o BrandLayout já mostra o logo + sair no
+          header mobile — sem isso apareciam dois "tayro" empilhados. */}
       <header className="flex h-[60px] items-center justify-between px-6">
-        <span className="font-display text-[19px] font-bold tracking-[-.05em] text-foreground">
+        <span className="hidden font-display text-[19px] font-bold tracking-[-.05em] text-foreground md:inline-block">
           tay<span className="text-lime">ro</span>
         </span>
         <Link
           to={`/brand/campaigns/${id}`}
-          className="flex items-center gap-[7px] text-[13px] text-[#75756E] transition-colors hover:text-foreground"
+          className="ml-auto flex items-center gap-[7px] text-[13px] text-[#75756E] transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
           Voltar
