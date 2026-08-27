@@ -3,8 +3,11 @@ import type {
   InstagramProvider,
   InstagramProfile,
   IgPost,
+  FetchProfileOptions,
+  HandleCheckResult,
 } from '../instagram.types';
 import { InstagramFetchError } from './instagram-fetch.error';
+import { IgProfileCache } from '../ig-profile-cache';
 
 // ---------------------------------------------------------------------------
 // Shapes brutos da API (instagram-best-experience).
@@ -45,8 +48,12 @@ export class RapidApiInstagramProvider implements InstagramProvider {
   private readonly apiHost: string;
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly handleCheckTimeoutMs: number;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly cache: IgProfileCache,
+  ) {
     this.apiKey = config.getOrThrow<string>('RAPIDAPI_KEY');
     this.apiHost = config.getOrThrow<string>('RAPIDAPI_HOST');
     this.baseUrl = config.getOrThrow<string>('RAPIDAPI_BASE_URL');
@@ -54,18 +61,89 @@ export class RapidApiInstagramProvider implements InstagramProvider {
       config.get<string>('IG_FETCH_TIMEOUT_MS', '10000'),
       10,
     );
+    // Menor que o timeout da sincronização de propósito: aqui tem gente
+    // esperando na tela, ali é fire-and-forget em background.
+    this.handleCheckTimeoutMs = parseInt(
+      config.get<string>('IG_HANDLE_CHECK_TIMEOUT_MS', '5000'),
+      10,
+    );
   }
 
-  async fetchProfile(handle: string): Promise<InstagramProfile> {
-    // 1) /profile → followers + pk (numérico, exigido pelo /feed)
-    const profile = await this.getProfile(handle);
+  async fetchProfile(
+    handle: string,
+    { allowCached = true }: FetchProfileOptions = {},
+  ): Promise<InstagramProfile> {
+    // 1) /profile → followers + pk (numérico, exigido pelo /feed). Pode vir
+    //    do cache (verificação recente do mesmo @, ou sync anterior).
+    const profile = await this.getProfileForSync(handle, allowCached);
     // 2) /feed → posts recentes. Best-effort: conta privada/erro → sem posts,
     //    mas ainda retornamos os followers (não jogamos a busca inteira fora).
+    //    Sempre buscado de verdade — o reaproveitamento vale só pro perfil.
     const feed = await this.getFeed(profile.pk);
     return this.toProfile(profile, feed);
   }
 
+  /**
+   * Verificação leve de existência: uma tentativa só (sem retry — tem gente
+   * esperando na tela), sem devolver dado de perfil. Reaproveita o cache nos
+   * dois sentidos (perfil OU not_found já conhecidos evitam nova chamada).
+   */
+  async checkHandle(handle: string): Promise<HandleCheckResult> {
+    const cached = this.cache.get(handle);
+    if (cached?.kind === 'profile') return 'FOUND';
+    if (cached?.kind === 'not_found') return 'NOT_FOUND';
+
+    const url = `${this.baseUrl}/profile?username=${encodeURIComponent(handle)}`;
+    try {
+      const res = await this.fetchRaw(url, this.handleCheckTimeoutMs);
+      if (res.status === 404) {
+        this.cache.set(handle, { kind: 'not_found' });
+        return 'NOT_FOUND';
+      }
+      if (!res.ok) return 'UNKNOWN';
+
+      const data = (await res.json()) as RawProfile;
+      // Sem pk numérico não temos confirmação — resposta ambígua, não afirma nada.
+      if (typeof data.pk !== 'number') return 'UNKNOWN';
+
+      this.cache.set(handle, { kind: 'profile', data });
+      return 'FOUND';
+    } catch {
+      // timeout (AbortController) ou falha de rede — indeterminado, nunca "não existe".
+      return 'UNKNOWN';
+    }
+  }
+
   // ─── Internos ────────────────────────────────────────────────────────────────
+
+  /**
+   * Passo de perfil usado pela sincronização (não pela verificação leve).
+   * allowCached=true reaproveita um perfil OU um veredito not_found recentes
+   * (checkHandle ou fetchProfile anterior) sem tocar a rede. not_found em
+   * cache lança direto — sincronizar um @ já confirmado inexistente não
+   * consulta o provedor de novo, só encerra como falha (como qualquer outra).
+   * allowCached=false (refresh manual) ignora o cache de propósito.
+   */
+  private async getProfileForSync(
+    handle: string,
+    allowCached: boolean,
+  ): Promise<RawProfile> {
+    if (allowCached) {
+      const cached = this.cache.get(handle);
+      if (cached?.kind === 'not_found') {
+        throw new InstagramFetchError(
+          `@${handle} não existe no Instagram (confirmado por verificação recente)`,
+        );
+      }
+      if (cached?.kind === 'profile') {
+        return cached.data as RawProfile;
+      }
+    }
+
+    const profile = await this.getProfile(handle);
+    this.cache.set(handle, { kind: 'profile', data: profile });
+    return profile;
+  }
 
   /** Profile é obrigatório: 3 tentativas com backoff, depois lança (sem vazar detalhe interno). */
   private async getProfile(handle: string): Promise<RawProfile> {
@@ -112,11 +190,21 @@ export class RapidApiInstagramProvider implements InstagramProvider {
 
   /** GET autenticado com timeout via AbortController. Lança se !res.ok. */
   private async fetchJson(url: string): Promise<unknown> {
+    const res = await this.fetchRaw(url, this.timeoutMs);
+    if (!res.ok) {
+      throw new InstagramFetchError(`API returned HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  /** GET autenticado com timeout via AbortController. Devolve a Response crua
+   *  (sem lançar em !res.ok) — quem chama decide o que fazer com o status. */
+  private async fetchRaw(url: string, timeoutMs: number): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const res = await fetch(url, {
+      return await fetch(url, {
         headers: {
           'x-rapidapi-key': this.apiKey,
           'x-rapidapi-host': this.apiHost,
@@ -124,12 +212,6 @@ export class RapidApiInstagramProvider implements InstagramProvider {
         },
         signal: controller.signal,
       });
-
-      if (!res.ok) {
-        throw new InstagramFetchError(`API returned HTTP ${res.status}`);
-      }
-
-      return res.json();
     } finally {
       clearTimeout(timer);
     }

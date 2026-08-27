@@ -7,12 +7,13 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { INSTAGRAM_HANDLE_FORMAT } from '../../../../shared/validation/instagram-handle';
 
 export class PublicApplyDto {
   @ApiProperty({ example: 'anafitness' })
   @IsString()
   @MaxLength(30)
-  @Matches(/^[a-zA-Z0-9_.]{1,30}$/, {
+  @Matches(INSTAGRAM_HANDLE_FORMAT, {
     message:
       'Handle inválido — sem @, apenas letras, números, pontos e underscores',
   })

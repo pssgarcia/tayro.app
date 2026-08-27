@@ -3,8 +3,9 @@ slug: creator-discovery-and-apply
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 implements:
+  - apps/web/src/hooks/useInstagramHandleCheck.ts
   - apps/api/src/modules/campaigns/presentation/campaigns.controller.ts
   - apps/api/src/modules/campaigns/application/campaigns.service.ts
   - apps/api/src/modules/creators/presentation/programs-public.controller.ts
@@ -86,8 +87,29 @@ Não introduz modelo próprio. Opera sobre `Campaign` (ver `campaign-lifecycle`)
    campanha inválida, conta de outro papel, duplicidade e falha ao gravar a própria
    `Application`.
 
+11. **O @ digitado é verificado antes do envio.** O handle é o único dado da candidatura pública
+   que a marca usa pra decidir, e é digitado à mão por quem está com pressa, no celular. Um @
+   errado cria uma creator fantasma: conta criada, candidatura na fila da marca e nenhum dado de
+   Instagram, para sempre. Então o formulário verifica se o @ existe (ver `instagram-sync`) e
+   **não deixa enviar** enquanto o desfecho for "não existe" — a pessoa corrige ali, com o campo
+   na frente dela.
+   - Desfecho **indeterminado** (provedor fora do ar, tempo esgotado, teto atingido) **não
+     bloqueia**: a candidatura segue. Deixar de converter uma creator legítima porque uma API de
+     terceiro piscou é exatamente o que a regra 10 existe pra impedir.
+   - A verificação é do **dado de entrada**, não um efeito colateral: acontece enquanto a pessoa
+     preenche o formulário, antes do envio. A regra 10 continua valendo inteira para o que vem
+     depois (token de claim, e-mail, sincronização) — nada disso ganhou poder de derrubar a
+     candidatura.
+   - O endpoint de candidatura **não** repete a verificação. A garantia é do formulário, não do
+     contrato da API: pôr uma chamada externa síncrona no caminho da conversão é o desenho que
+     `decisions.md` recusou em 2026-08-26, e ela nunca protegeu contra ninguém — não é regra de
+     segurança, é ajuda a quem digita.
+
 Candidatura autenticada (creator já logada, via modal no detalhe do programa) segue as mesmas
 regras 1 e 8, sem os passos de resolução/criação de conta (a sessão já identifica a pessoa).
+**Ela não verifica handle nenhum**, e isso é deliberado: não existe campo de handle nesse fluxo —
+o @ vem da conta, definido no cadastro. O ponto certo de verificar ali é o cadastro
+(ver `creator-account`), não a candidatura.
 
 ## API / Interfaces
 
@@ -100,6 +122,9 @@ regras 1 e 8, sem os passos de resolução/criação de conta (a sessão já ide
 Candidatura autenticada usa `POST /applications` (guard `INFLUENCER`) — contrato pertence à
 spec `applications-pipeline`, não duplicado aqui.
 
+A verificação do @ usa `GET /ig/handle/:handle` (pública, com limite próprio) — contrato pertence
+à spec `instagram-sync`, não duplicado aqui.
+
 ## UI Behavior
 - `/influencer/browse` (autenticado): card só navega, nunca abre modal.
 - `/programs` (público): mesmo componente de listagem; o link de cada card muda conforme há ou
@@ -110,6 +135,23 @@ spec `applications-pipeline`, não duplicado aqui.
   botão que abre o modal de candidatura autenticada.
 - `/apply/:id` (público, sem layout compartilhado): formulário com handle do Instagram,
   e-mail, nome opcional e mensagem opcional.
+- **Verificação do @ no formulário público**, na ordem em que as coisas acontecem:
+  1. Enquanto a pessoa digita, nada é verificado — verificar a cada tecla consulta um monte de
+     prefixos que por acaso são o @ de outra pessoa (e responderiam "existe", dando um verde
+     falso) e queima cota à toa.
+  2. Ao sair do campo, se o formato for válido e o valor tiver mudado desde a última
+     verificação, o @ é verificado. Enquanto isso, o campo mostra que está verificando.
+  3. Ao enviar, se o @ atual ainda não tem desfecho, a verificação acontece antes do envio e o
+     botão diz que está verificando. Um mesmo @ nunca é verificado duas vezes na mesma sessão da
+     tela.
+  4. Desfecho "não existe" bloqueia o envio e mostra o motivo **no campo do @**, não num aviso
+     genérico no rodapé — o erro é daquele campo e é ali que ele se corrige.
+  5. Desfecho "existe" mostra uma confirmação discreta no campo, sem número de seguidores nem
+     foto (o TAYRO não promete nada sobre o perfil nesse momento, só que o @ existe).
+  6. Desfecho "indeterminado" mostra um aviso neutro de que não deu pra conferir agora e
+     **libera** o envio.
+  7. Corrigir o @ depois de um bloqueio limpa o desfecho anterior — o botão volta a funcionar
+     assim que houver um desfecho que não seja "não existe".
 
 ## Acceptance Criteria
 - [x] Candidatura pública a campanha inexistente ou não-`ACTIVE` é recusada e nenhuma conta ou
@@ -133,6 +175,20 @@ spec `applications-pipeline`, não duplicado aqui.
 - [ ] Conta de creator existente sem handle de Instagram tem o handle preenchido ao se
       candidatar por este fluxo — comportamento implementado, sem teste dedicado (ver Known Gaps).
 
+Verificação do @ no formulário público:
+- [x] @ com desfecho "não existe" não envia a candidatura — nenhuma requisição de candidatura
+      sai do navegador.
+- [x] @ com desfecho "indeterminado" **envia** normalmente.
+- [x] Enviar com um @ ainda não verificado dispara a verificação antes e só então envia.
+- [x] O mesmo @ não é verificado duas vezes seguidas na mesma tela (sair do campo e depois
+      enviar consulta uma vez só).
+- [x] Digitar não dispara verificação; só sair do campo ou enviar.
+- [x] @ de formato inválido é barrado pela validação do formulário e não chega a ser verificado.
+- [x] O motivo do bloqueio aparece no campo do @.
+- [x] Corrigir o @ após um bloqueio destrava o envio.
+- [x] A candidatura continua sendo aceita pela API sem nenhuma verificação de handle — o
+      endpoint não ganhou dependência externa nova.
+
 ## Error Scenarios
 - Campanha inexistente → `404` (candidatura autenticada) / recusa `400` explicitando o motivo
   (candidatura pública, mesma mensagem para "não existe" e "não está ativa" — não distingue os
@@ -140,6 +196,14 @@ spec `applications-pipeline`, não duplicado aqui.
 - E-mail pertencente a conta que não é de creator → `409`, sem detalhar de quem é a conta.
 - Candidatura duplicada → `409`.
 - Mais de 5 tentativas de candidatura pública por IP em 60s → `429`.
+- @ que não existe no Instagram → o formulário bloqueia o envio e explica no campo do @;
+  nenhuma conta e nenhuma candidatura são criadas, porque nada é enviado.
+- Verificação do @ falha (provedor fora do ar, `429` da rota de verificação, rede) → tratada
+  como "indeterminado": aviso neutro e **envio liberado**. Uma verificação que não responde
+  nunca vira uma candidatura perdida.
+- @ que existe no Instagram mas já pertence a outra conta do TAYRO → segue sendo o `409` de
+  sempre, no envio. São dois erros diferentes, em dois momentos diferentes: existir no Instagram
+  e estar livre no TAYRO não são a mesma pergunta.
 
 ## Known Gaps
 (O gap "sem teste de frontend para `PublicApplyPage`" foi **fechado em 2026-08-23** — a
@@ -171,6 +235,19 @@ cobertura. Ver Test Coverage.)
   tentativa após erro.
 - [ ] Branch de preenchimento de handle em conta existente — não existe teste dedicado.
 
+Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage — verificação do @ do Instagram')`:
+- [x] Desfecho "não existe" bloqueia: a rota de candidatura não é chamada.
+- [x] Desfecho "indeterminado" não bloqueia: a rota de candidatura é chamada.
+- [x] Envio com @ não verificado verifica primeiro e depois envia (a ordem é garantida por
+      `await handleCheck.check(...)` acontecer antes do `try`/`api.post` no `onSubmit`; testado
+      indiretamente pelos dois casos acima, que só fazem sentido se a ordem for essa).
+- [x] Sair do campo e depois enviar o mesmo @ = uma verificação só.
+- [x] Digitar sem sair do campo não verifica.
+- [x] Mensagem de bloqueio renderiza no campo do @ (via `errors.igHandle`, mesmo mecanismo dos
+      demais erros de campo desta tela — `PlateField` não usa `aria-describedby`, então
+      "associado" aqui é o mesmo padrão de erro por campo já usado no resto da tela).
+- [x] Trocar o @ após bloqueio permite enviar de novo.
+
 ## Current Implementation
 - `CreatorsService.applyPublic` → `findOrCreateInfluencer` (resolve por
   `instagramHandle` `@unique`, depois por `email` `@unique` do `User`) → cria `Application`.
@@ -184,8 +261,28 @@ cobertura. Ver Test Coverage.)
   fora do ciclo da resposta HTTP.
 - `hrefBuilder` em `ProgramsList`/`BrowseProgramsPublicPage` decide o destino do card lendo o
   estado de auth do Zustand store no momento do render.
+- Verificação do @: hook dedicado `useInstagramHandleCheck` (`apps/web/src/hooks/`), compartilhado
+  com `RegisterInfluencerPage` (ver `creator-account`). Expõe uma verificação imperativa (`check`,
+  disparada por blur/submit, não é query declarativa), o `checking` em voo e o `{checkedHandle,
+  result}` da última verificação — guarda internamente um `Map<handle, desfecho>` pra nunca repetir
+  chamada do mesmo @; falha de rede vira `UNKNOWN` e **não entra no cache** (uma tentativa seguinte
+  pode ter sorte). `PublicApplyPage` normaliza o handle antes de verificar com a mesma função usada
+  no `.transform()` do schema zod (`@` removido, minúsculas, trim) — um só lugar pra essa regra,
+  não duas cópias divergindo.
 
 ## Change History
+- 2026-08-27 · **implementada** a regra 11 desenhada em 2026-08-26 (ver entrada abaixo). Bloqueio
+  acontece em `onSubmit` (reaproveita o desfecho do blur via `handleCheck.check`, que dedupe
+  internamente); mensagem manual via `setError('igHandle', { type: 'manual', ... })`, limpa no
+  próximo `onChange` do campo. Todos os critérios novos das seções anteriores viraram `- [x]`.
+- 2026-08-26 · `/architect` acrescentou a **regra 11**: o @ digitado no formulário público é
+  verificado contra o Instagram e "não existe" bloqueia o envio. O `/feature` tinha recusado a
+  versão ampla disso em 2026-08-26 (bloquear a candidatura por um efeito acessório fere a regra
+  10); o Pedro corrigiu o escopo na mesma data e o que entrou é mais estreito — validação do
+  **campo que a pessoa está preenchendo**, antes do envio. A regra 10 fica intacta: nada depois
+  do envio ganhou poder de derrubar a candidatura, e desfecho indeterminado libera o envio de
+  propósito. O endpoint de candidatura continua sem chamada externa síncrona; a garantia é do
+  formulário.
 - 2026-08-24 · **bug de produção corrigido**: a 1ª candidatura de toda creator nova respondia
   `500` e só a 2ª passava. `FRONTEND_URL` estava ausente no Railway; o `getOrThrow` que monta o
   link do claim rodava DEPOIS de `user.create` já ter commitado a conta e ANTES de
