@@ -1,5 +1,6 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as Sentry from '@sentry/nestjs';
 import { IgFetchStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/infrastructure/database/prisma.service';
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
@@ -36,6 +37,13 @@ export class InstagramSyncService {
         this.logger.error(
           `Sync agendado falhou para influencer ${influencerId}: ${reason}`,
         );
+        // Falha de API externa esperada é tratada dentro de `refresh` (persiste
+        // FAILED, não relança). Cair aqui é erro INESPERADO num caminho que roda
+        // depois da resposta HTTP — invisível sem isto (só existia como log).
+        Sentry.captureException(err, {
+          tags: { area: 'instagram-sync', trigger: 'scheduleRefresh' },
+          extra: { influencerId },
+        });
       });
     });
   }
