@@ -304,3 +304,15 @@ export interface Campaign {
   /** Só em GET /campaigns/mine — total de candidaturas PENDING (na fila). */
   pendingCount?: number;
 }
+
+/**
+ * Desfecho de GET /ig/handle/:handle. Só três, de propósito: "não existe"
+ * só é afirmado com resposta conclusiva — qualquer ambiguidade vira
+ * indeterminado. Nunca vem junto com dado de perfil. Ver specs/instagram-sync.
+ */
+export type HandleCheckResult = 'FOUND' | 'NOT_FOUND' | 'UNKNOWN';
+
+export interface HandleCheckResponse {
+  handle: string;
+  result: HandleCheckResult;
+}

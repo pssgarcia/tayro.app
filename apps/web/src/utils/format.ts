@@ -1,3 +1,14 @@
+/**
+ * Alfabeto aceito pro handle do Instagram: letras, números, ponto e
+ * underscore, sem @, até 30 caracteres.
+ *
+ * Fonte única do formato — até 2026-08-27 essa regex vivia copiada em
+ * `PublicApplyPage` e `RegisterInfluencerPage`. Mudar o alfabeto aceito
+ * exigia lembrar de todos os lugares; agora exige mudar aqui e no
+ * equivalente do backend (`shared/validation/instagram-handle.ts`).
+ */
+export const INSTAGRAM_HANDLE_FORMAT = /^[a-zA-Z0-9_.]{1,30}$/;
+
 /** 8200 → "8.2k" | 1500000 → "1.5M" | 800 → "800" */
 export function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;

@@ -14,8 +14,20 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 vi.mock('../../services/api', () => ({
-  api: { post: vi.fn() },
+  api: { post: vi.fn(), get: vi.fn() },
 }));
+
+/** Sem isso, todo teste que passa por um handle no passo 1 chamaria
+ * `api.get` de verdade (undefined mock) e derrubaria o teste — os testes
+ * abaixo que não são sobre a verificação em si não precisam de um desfecho
+ * específico, só de uma resposta que não trave o fluxo. */
+function mockHandleCheckFound() {
+  vi.mocked(api.get).mockImplementation((url: string) =>
+    Promise.resolve({
+      data: { handle: url.replace('/ig/handle/', ''), result: 'FOUND' },
+    } as any),
+  );
+}
 
 vi.mock('../../hooks/useStepGuard', () => ({
   useStepGuard: vi.fn(() => false),
@@ -53,6 +65,8 @@ async function fillAllSteps({ instagramHandle }: { instagramHandle?: string } = 
 beforeEach(() => {
   navigateMock.mockClear();
   vi.mocked(api.post).mockReset();
+  vi.mocked(api.get).mockReset();
+  mockHandleCheckFound();
   vi.mocked(useStepGuard).mockReturnValue(false);
   useAuthStore.setState({ accessToken: null, user: null, isInitialized: true });
 });
@@ -189,5 +203,123 @@ describe('RegisterInfluencerPage', () => {
 
     expect(await screen.findByText(/sem conexão com o servidor/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
+  it('@ com desfecho "não existe" impede avançar do passo de identidade, e a conta não é criada', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      Promise.resolve({
+        data: { handle: url.replace('/ig/handle/', ''), result: 'NOT_FOUND' },
+      } as any),
+    );
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText(/instagram/i), {
+      target: { value: 'perfilinexistente' },
+    });
+    continueStep();
+
+    expect(
+      await screen.findByText(/usuário não encontrado/i),
+    ).toBeInTheDocument();
+    // Não avançou: o campo de e-mail (passo 2) não existe na tela.
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('@ com desfecho "indeterminado" NÃO impede o cadastro', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      Promise.resolve({
+        data: { handle: url.replace('/ig/handle/', ''), result: 'UNKNOWN' },
+      } as any),
+    );
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        accessToken: 'tok-1',
+        user: { id: 'u1', email: 'ana@exemplo.com', role: 'INFLUENCER' },
+      },
+    } as any);
+    renderPage();
+
+    await fillAllSteps({ instagramHandle: 'anafit' });
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalled());
+  });
+
+  it('campo de @ vazio não dispara verificação e não impede o cadastro', async () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    continueStep();
+
+    await screen.findByLabelText('E-mail');
+    expect(api.get).not.toHaveBeenCalled();
+  });
+
+  it('avançar com @ ainda não verificado (sem blur) verifica antes de avançar', async () => {
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: 'anafit' } });
+    continueStep();
+
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/ig/handle/anafit'));
+    await screen.findByLabelText('E-mail');
+  });
+
+  it('não verifica o mesmo @ duas vezes na mesma tela (sair do campo e depois avançar)', async () => {
+    renderPage();
+
+    const campo = screen.getByLabelText(/instagram/i);
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(campo, { target: { value: 'anafit' } });
+    fireEvent.blur(campo);
+
+    await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+
+    continueStep();
+    await screen.findByLabelText('E-mail');
+
+    expect(api.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('o motivo do bloqueio aparece no campo do @, no passo em que ele está', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      Promise.resolve({
+        data: { handle: url.replace('/ig/handle/', ''), result: 'NOT_FOUND' },
+      } as any),
+    );
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: 'naoexiste' } });
+    continueStep();
+
+    const mensagem = await screen.findByText(/usuário não encontrado/i);
+    expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
+    expect(mensagem).toBeInTheDocument();
+  });
+
+  it('o endpoint de cadastro continua aceitando handle de formato válido sem depender da verificação ter rodado', async () => {
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        accessToken: 'tok-1',
+        user: { id: 'u1', email: 'ana@exemplo.com', role: 'INFLUENCER' },
+      },
+    } as any);
+    renderPage();
+
+    await fillAllSteps({ instagramHandle: 'anafit' });
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        '/auth/register/influencer',
+        expect.objectContaining({ instagramHandle: 'anafit' }),
+      ),
+    );
   });
 });

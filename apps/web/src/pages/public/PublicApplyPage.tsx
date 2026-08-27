@@ -7,11 +7,16 @@ import { z } from 'zod';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Campaign } from '../../types/api';
-import { formatOffer } from '../../utils/format';
+import { formatOffer, INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
 import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
 import PlateField from '../../components/primitives/PlateField';
 import PlateTextarea from '../../components/primitives/PlateTextarea';
+import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
+
+function normalizeHandle(v: string): string {
+  return v.replace(/^@+/, '').toLowerCase().trim();
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,12 +35,12 @@ const schema = z.object({
   igHandle: z
     .string()
     .min(1, 'Informe seu @ do Instagram')
-    .transform((v) => v.replace(/^@+/, '').toLowerCase().trim())
+    .transform(normalizeHandle)
     .pipe(
       z
         .string()
         .max(30, 'Handle muito longo')
-        .regex(/^[a-zA-Z0-9_.]{1,30}$/, 'Handle inválido — só letras, números, . e _'),
+        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido — só letras, números, . e _'),
     ),
   email: z.string().email('E-mail inválido'),
   name: z.string().optional(),
@@ -94,11 +99,63 @@ export default function PublicApplyPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    getValues,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
+  const handleCheck = useInstagramHandleCheck();
+  const igHandleField = register('igHandle');
+
+  // Editar o @ depois de um bloqueio ("não existe") limpa a mensagem na
+  // hora — o desfecho antigo era de outro valor, não faz sentido continuar
+  // mostrando. O próximo submit verifica o novo valor do zero.
+  function handleIgHandleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    igHandleField.onChange(e);
+    if (errors.igHandle?.type === 'manual') clearErrors('igHandle');
+  }
+
+  // Verifica ao sair do campo — nunca enquanto digita (prefixo de handle
+  // costuma ser o @ de outra pessoa, verificar a cada tecla dava falso
+  // positivo e queimava cota à toa). Formato inválido nem chega a verificar:
+  // a mensagem de "handle inválido" do zod já cobre isso no submit.
+  async function handleIgHandleBlur(e: React.FocusEvent<HTMLInputElement>) {
+    igHandleField.onBlur(e);
+    const normalized = normalizeHandle(getValues('igHandle') ?? '');
+    if (!INSTAGRAM_HANDLE_FORMAT.test(normalized)) return;
+    if (handleCheck.checkedHandle === normalized) return; // já verificado
+    await handleCheck.check(normalized);
+  }
+
+  const rawHandle = watch('igHandle') ?? '';
+  const normalizedHandle = normalizeHandle(rawHandle);
+  const handleAlreadyChecked = handleCheck.checkedHandle === normalizedHandle;
+  const handleHint = errors.igHandle
+    ? undefined
+    : handleCheck.checking
+      ? 'Verificando…'
+      : handleAlreadyChecked && handleCheck.result === 'FOUND'
+        ? 'Perfil encontrado no Instagram'
+        : handleAlreadyChecked && handleCheck.result === 'UNKNOWN'
+          ? 'Não deu para confirmar agora — você pode continuar'
+          : undefined;
+
   async function onSubmit(values: FormValues) {
     setSubmitState({ kind: 'idle' });
+
+    // Reaproveita o desfecho do blur quando já existe; senão verifica agora,
+    // antes de enviar. O mesmo @ nunca é verificado 2x (dedupe é do hook).
+    const outcome = await handleCheck.check(values.igHandle);
+    if (outcome === 'NOT_FOUND') {
+      setError('igHandle', {
+        type: 'manual',
+        message: 'Usuário não encontrado no Instagram — confira o @',
+      });
+      return;
+    }
+
     try {
       await api.post(`/programs/${id}/apply/public`, {
         igHandle: values.igHandle,
@@ -290,7 +347,10 @@ export default function PublicApplyPage() {
                         autoCapitalize="none"
                         autoCorrect="off"
                         error={errors.igHandle?.message}
-                        {...register('igHandle')}
+                        hint={handleHint}
+                        {...igHandleField}
+                        onBlur={handleIgHandleBlur}
+                        onChange={handleIgHandleChange}
                       />
                       <PlateField
                         label="E-mail"
@@ -334,7 +394,11 @@ export default function PublicApplyPage() {
                       disabled={isSubmitting}
                       className="mt-[30px] min-h-[52px] w-full rounded-lg bg-lime text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isSubmitting ? 'Enviando…' : 'Quero participar'}
+                      {isSubmitting
+                        ? handleCheck.checking
+                          ? 'Verificando…'
+                          : 'Enviando…'
+                        : 'Quero participar'}
                     </button>
 
                     <p className="mt-4 text-center text-[11px] leading-[1.5] text-[#6E6E68]">

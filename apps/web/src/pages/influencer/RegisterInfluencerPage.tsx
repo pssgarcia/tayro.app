@@ -8,11 +8,13 @@ import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useStepGuard } from '../../hooks/useStepGuard';
+import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
 import Plate from '../../components/primitives/Plate';
 import PlateField from '../../components/primitives/PlateField';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
 import NicheSelector from '../../components/primitives/NicheSelector';
 import { cn } from '../../lib/utils';
+import { INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
@@ -73,20 +75,75 @@ export default function RegisterInfluencerPage() {
     handleSubmit,
     trigger,
     setError,
+    clearErrors,
+    getValues,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { niches: [] },
   });
 
+  const handleCheck = useInstagramHandleCheck();
+  const instagramHandleField = register('instagramHandle');
+
   if (accessToken && user) {
     return <Navigate to="/influencer" replace />;
   }
 
+  // Verifica ao sair do campo — nunca enquanto digita. Campo vazio (handle é
+  // opcional aqui) não verifica nada. Mesmo desfecho é reaproveitado se
+  // "Continuar" for clicado sem passar pelo blur (o dedupe é do hook).
+  async function handleInstagramHandleBlur(e: React.FocusEvent<HTMLInputElement>) {
+    instagramHandleField.onBlur(e);
+    const handle = cleanHandle(getValues('instagramHandle'));
+    if (!handle || !INSTAGRAM_HANDLE_FORMAT.test(handle)) return;
+    if (handleCheck.checkedHandle === handle) return;
+    await handleCheck.check(handle);
+  }
+
+  function handleInstagramHandleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    instagramHandleField.onChange(e);
+    if (errors.instagramHandle?.type === 'manual') clearErrors('instagramHandle');
+  }
+
   async function next() {
     const valid = await trigger(STEP_FIELDS[step]);
-    if (valid) setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    if (!valid) return;
+
+    // O bloqueio de handle inexistente acontece aqui, saindo do passo de
+    // Identidade — é onde o campo está na tela, e o handle é imutável depois
+    // do cadastro (um @ errado aqui é permanente, diferente da candidatura).
+    if (step === 0) {
+      const handle = cleanHandle(getValues('instagramHandle'));
+      if (handle) {
+        const outcome = await handleCheck.check(handle);
+        if (outcome === 'NOT_FOUND') {
+          setError('instagramHandle', {
+            type: 'manual',
+            message: 'Usuário não encontrado no Instagram — confira o @',
+          });
+          return;
+        }
+      }
+    }
+
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
+
+  const rawInstagramHandle = watch('instagramHandle') ?? '';
+  const normalizedInstagramHandle = cleanHandle(rawInstagramHandle);
+  const instagramHandleAlreadyChecked =
+    !!normalizedInstagramHandle && handleCheck.checkedHandle === normalizedInstagramHandle;
+  const instagramHandleHint = errors.instagramHandle
+    ? undefined
+    : handleCheck.checking
+      ? 'Verificando…'
+      : instagramHandleAlreadyChecked && handleCheck.result === 'FOUND'
+        ? 'Perfil encontrado no Instagram'
+        : instagramHandleAlreadyChecked && handleCheck.result === 'UNKNOWN'
+          ? 'Não deu para confirmar agora — você pode continuar'
+          : undefined;
 
   function back() {
     setStep((s) => Math.max(s - 1, 0));
@@ -177,7 +234,10 @@ export default function RegisterInfluencerPage() {
                   autoCapitalize="none"
                   autoCorrect="off"
                   error={errors.instagramHandle?.message}
-                  {...register('instagramHandle')}
+                  hint={instagramHandleHint}
+                  {...instagramHandleField}
+                  onBlur={handleInstagramHandleBlur}
+                  onChange={handleInstagramHandleChange}
                 />
               </>
             )}
@@ -237,10 +297,11 @@ export default function RegisterInfluencerPage() {
             primary={
               step < STEPS.length - 1
                 ? {
-                    label: 'Continuar',
+                    label:
+                      step === 0 && handleCheck.checking ? 'Verificando…' : 'Continuar',
                     type: 'button',
                     onClick: next,
-                    disabled: isStepGuarded,
+                    disabled: isStepGuarded || (step === 0 && handleCheck.checking),
                     icon: <ArrowRight size={16} />,
                   }
                 : {

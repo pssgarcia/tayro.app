@@ -9,7 +9,7 @@
  * não pode nem mostrar o formulário.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -52,6 +52,21 @@ function renderPage(campaign: Partial<Campaign> = {}) {
     data: { ...campanhaPublica, ...campaign },
   } as any);
 
+  return renderInRoute(makeClient());
+}
+
+/** Diferencia a campanha (GET /campaigns/:id) da verificação de handle
+ * (GET /ig/handle/:handle) pela URL — necessário pra testar o desfecho da
+ * verificação sem que a resposta mockada da campanha vaze pra ela. */
+function renderPageComHandleCheck(result: 'FOUND' | 'NOT_FOUND' | 'UNKNOWN') {
+  vi.mocked(api.get).mockImplementation((url: string) => {
+    if (url.startsWith('/ig/handle/')) {
+      return Promise.resolve({
+        data: { handle: url.replace('/ig/handle/', ''), result },
+      } as any);
+    }
+    return Promise.resolve({ data: campanhaPublica } as any);
+  });
   return renderInRoute(makeClient());
 }
 
@@ -237,5 +252,113 @@ describe('PublicApplyPage — respostas de erro da API', () => {
     expect(
       screen.getByRole('button', { name: /quero participar/i }),
     ).toBeEnabled();
+  });
+});
+
+describe('PublicApplyPage — verificação do @ do Instagram', () => {
+  it('desfecho "não existe" bloqueia o envio: a rota de candidatura não é chamada', async () => {
+    const user = userEvent.setup();
+    renderPageComHandleCheck('NOT_FOUND');
+    await screen.findByText('Lilo');
+
+    await preencherEEnviar(user);
+
+    expect(
+      await screen.findByText(/usuário não encontrado/i),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('desfecho "indeterminado" NÃO bloqueia: a candidatura é enviada normalmente', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as any);
+    renderPageComHandleCheck('UNKNOWN');
+    await screen.findByText('Lilo');
+
+    await preencherEEnviar(user);
+
+    await waitFor(() => expect(api.post).toHaveBeenCalled());
+    expect(
+      screen.queryByText(/usuário não encontrado/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('sair do campo e depois enviar o mesmo @ verifica uma vez só', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as any);
+    renderPageComHandleCheck('FOUND');
+    await screen.findByText('Lilo');
+
+    await preencherEEnviar(user); // digitar handle blura ao pular pro campo de e-mail, depois envia
+
+    await waitFor(() => expect(api.post).toHaveBeenCalled());
+    const chamadasDeVerificacao = vi
+      .mocked(api.get)
+      .mock.calls.filter(([url]) => (url as string).startsWith('/ig/handle/'));
+    expect(chamadasDeVerificacao).toHaveLength(1);
+  });
+
+  it('digitar sem sair do campo não dispara verificação', async () => {
+    const user = userEvent.setup();
+    renderPageComHandleCheck('FOUND');
+    await screen.findByText('Lilo');
+
+    await user.type(screen.getByLabelText(/@ do instagram/i), 'anafit');
+
+    const chamadasDeVerificacao = vi
+      .mocked(api.get)
+      .mock.calls.filter(([url]) => (url as string).startsWith('/ig/handle/'));
+    expect(chamadasDeVerificacao).toHaveLength(0);
+  });
+
+  it('envio com @ ainda não verificado (sem blur) verifica antes de enviar', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as any);
+    renderPageComHandleCheck('FOUND');
+    await screen.findByText('Lilo');
+
+    // Preenche via fireEvent (não userEvent) pra não passar pelo campo de
+    // e-mail e não blurar o handle antes do clique — cobre o caso em que o
+    // handle chega ao submit sem passar pelo blur.
+    fireEvent.change(screen.getByLabelText(/@ do instagram/i), {
+      target: { value: 'anafit' },
+    });
+    fireEvent.change(screen.getByLabelText(/e-mail/i), {
+      target: { value: 'ana@email.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /quero participar/i }));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalled());
+    expect(api.get).toHaveBeenCalledWith('/ig/handle/anafit');
+  });
+
+  it('corrigir o @ depois de um bloqueio permite enviar de novo', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url.startsWith('/ig/handle/anafit')) {
+        return Promise.resolve({
+          data: { handle: 'anafit', result: 'NOT_FOUND' },
+        } as any);
+      }
+      if (url.startsWith('/ig/handle/')) {
+        return Promise.resolve({
+          data: { handle: url.replace('/ig/handle/', ''), result: 'FOUND' },
+        } as any);
+      }
+      return Promise.resolve({ data: campanhaPublica } as any);
+    });
+    vi.mocked(api.post).mockResolvedValue({ data: {} } as any);
+    renderInRoute(makeClient());
+    await screen.findByText('Lilo');
+
+    await preencherEEnviar(user, { handle: 'anafit' });
+    expect(await screen.findByText(/usuário não encontrado/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+
+    const campo = screen.getByLabelText(/@ do instagram/i);
+    await user.clear(campo);
+    await user.type(campo, 'outrohandle');
+    await user.click(screen.getByRole('button', { name: /quero participar/i }));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalled());
   });
 });
