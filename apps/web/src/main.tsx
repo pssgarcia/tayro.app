@@ -1,3 +1,5 @@
+// Primeira linha — inicializa o Sentry antes do React montar. Inerte sem DSN.
+import './instrument';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

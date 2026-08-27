@@ -118,6 +118,11 @@ deliberado.
   informada de que o handle dela é enviado a um terceiro, nem por quanto tempo o dado fica. Art. 9
   (informação sobre compartilhamento). Resolve-se junto com a política de privacidade — mas é
   conteúdo separado, não parágrafo genérico.
+- **Sentry (região EU) é o 2º sub-processador de dado pessoal** desde `D-20` — recebe stack trace,
+  breadcrumbs e contexto de request de erros em produção. Já mitigado no código (`sendDefaultPii:
+  false` — sem IP; corpo de `/auth/*` e headers de auth removidos no `beforeSend`; Session Replay
+  desligado). Precisa aparecer nominalmente na política de privacidade e no texto de consentimento
+  dos 3 fluxos de entrada, junto com a RapidAPI.
 
 Ordem sugerida: trocar senha → política + consentimento (quando houver texto) → e-mail → export →
 exclusão (depois de `D-E`).
@@ -127,8 +132,13 @@ exclusão (depois de `D-E`).
 - **Checklist de lançamento** (`prelaunch`): HTTPS · env vars revisadas · política de privacidade
   e termos (ver bloco LGPD acima) · backup do banco · auditoria de segurança e arquitetura
   **via Fable** (`D-15`)
-- **Monitoramento de erros (Sentry)** — hoje um erro em produção só se descobre por reclamação,
-  e não há de quem reclamar ainda. Vira urgente no minuto em que houver usuário real
+- **Monitoramento de erros (Sentry)** — `[EM ANDAMENTO — `D-20`, 2026-08-27]` puxado do
+  checklist pra agora (custo zero, janela sem dado sensível, aprendizado). Implementado nas
+  branches `feature/observabilidade-sentry-{api,web}`, inerte até as env vars serem setadas,
+  aguardando ratificação do Pedro. Escopo: erro não tratado + tracing 10%, sem Session Replay.
+  Falta: setar `SENTRY_DSN`/`VITE_SENTRY_DSN` (região EU) no Railway/Vercel + o auth token de
+  build no Vercel, e o smoke test em produção (rota de erro temporária → conferir evento com
+  stack legível e tags `environment`/`release`)
 - **Imagem do IG expira depois de um tempo** — `[FATO — verificado 2026-08-23]` rediagnosticado:
   o registro anterior ("IG incompleto na 1ª candidatura") estava errado. Os dados chegam certos
   na candidatura; o que quebra é a imagem com o tempo, porque guardamos a **URL assinada** da
