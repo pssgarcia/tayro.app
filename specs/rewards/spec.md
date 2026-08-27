@@ -77,8 +77,10 @@ Controller `rewards`, prefixo `/api/v1`, atrás de `JwtAuthGuard`.
 | DELETE | `/rewards/:id` | BRAND | remove — só enquanto `PENDING`, `204` sem corpo |
 
 ## UI Behavior
-`CampaignRewardsTab` (marca): modal de registro de recompensa por candidatura aprovada; ações
-de emitir/entregar disponíveis conforme o status atual. Recompensa `PENDING` também oferece
+`CampaignRewardsTab` (marca): modal de registro de recompensa por candidatura aprovada; o
+seletor de `type` (Monetária/Produto/Desconto) quebra em várias linhas quando não cabe (mobile)
+e o placeholder do campo de valor acompanha o tipo selecionado (`R$300,00` / `Kit Whey 900g` /
+`Cupom AMANDA20`). Ações de emitir/entregar disponíveis conforme o status atual. Recompensa `PENDING` também oferece
 "Remover", que **pede confirmação dizendo a consequência** antes de apagar (mesmo padrão do
 `WithdrawModal`: a ação é definitiva e não é óbvio pra quem clica) — a partir de `ISSUED` a
 ação some. `RewardsPage` (creator): lista das

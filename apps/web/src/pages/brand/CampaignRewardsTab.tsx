@@ -33,10 +33,17 @@ const STATUS_CONFIG: Record<RewardStatus, { label: string; className: string }> 
   DELIVERED: { label: 'Entregue', className: 'bg-lime/10 text-lime border-lime/20' },
 };
 
-const TYPE_CONFIG: Record<RewardType, { label: string; icon: React.ReactNode }> = {
-  MONETARY: { label: 'Monetária', icon: <Banknote size={13} /> },
-  PRODUCT: { label: 'Produto', icon: <Package size={13} /> },
-  DISCOUNT: { label: 'Desconto', icon: <Tag size={13} /> },
+const TYPE_CONFIG: Record<
+  RewardType,
+  { label: string; icon: React.ReactNode; placeholder: string }
+> = {
+  MONETARY: { label: 'Monetária', icon: <Banknote size={13} />, placeholder: 'Ex: R$300,00' },
+  PRODUCT: { label: 'Produto', icon: <Package size={13} />, placeholder: 'Ex: Kit Whey 900g' },
+  DISCOUNT: {
+    label: 'Desconto',
+    icon: <Tag size={13} />,
+    placeholder: 'Ex: Cupom AMANDA20 (20% off)',
+  },
 };
 
 const FILTERS: { value: 'ALL' | RewardStatus; label: string }[] = [
@@ -101,7 +108,7 @@ function CreateRewardModal({
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
               Tipo
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(Object.keys(TYPE_CONFIG) as RewardType[]).map((t) => (
                 <button
                   key={t}
@@ -130,7 +137,7 @@ function CreateRewardModal({
               type="text"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder={type === 'MONETARY' ? 'Ex: R$300,00' : 'Ex: Kit Whey 900g'}
+              placeholder={TYPE_CONFIG[type].placeholder}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-lime focus:outline-none"
             />
           </div>

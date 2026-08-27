@@ -167,6 +167,17 @@ describe('CampaignPipelineMobileStory — navegação', () => {
   });
 });
 
+describe('CampaignPipelineMobileStory — identidade', () => {
+  it('o @handle é um link pro Instagram da creator (abre em aba nova)', () => {
+    renderStory([makeApplication('a', { name: 'Ana' })]);
+
+    const link = screen.getByRole('link', { name: /@creatora/i });
+    expect(link).toHaveAttribute('href', 'https://instagram.com/creatora');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+});
+
 describe('CampaignPipelineMobileStory — painel de detalhes', () => {
   it('abre com "Ver posts"; com ele aberto, o toque na lateral fecha em vez de avançar', () => {
     renderStory([
@@ -187,47 +198,116 @@ describe('CampaignPipelineMobileStory — painel de detalhes', () => {
 });
 
 describe('CampaignPipelineMobileStory — decisão e tally', () => {
-  const mutationComSucesso = () =>
-    makeMutation({
-      mutate: vi.fn((_id: string, opts?: { onSuccess?: () => void }) =>
-        opts?.onSuccess?.(),
-      ),
-    });
-
   /** No fim de fila, o número fica no irmão anterior ao rótulo. */
   const contador = (rotulo: string) =>
     screen.getByText(rotulo).previousElementSibling;
 
-  it('aprova a candidatura atual e conta no resumo do fim de fila', () => {
-    const approve = mutationComSucesso();
-    renderStory([makeApplication('a', { name: 'Ana' })], { approve });
+  it('conta no resumo do fim de fila a decisão que o servidor confirmou', () => {
+    const approve = makeMutation({ mutate: vi.fn() });
+    const { rerender, props } = renderStory([makeApplication('a', { name: 'Ana' })], { approve });
 
     fireEvent.click(screen.getByRole('button', { name: /aprovar/i }));
-    expect(approve.mutate).toHaveBeenCalledWith('a', expect.anything());
+    expect(approve.mutate).toHaveBeenCalledWith('a');
 
-    fireEvent.click(screen.getByLabelText('Próximo candidato'));
+    // revalidação da lista traz 'a' já como APPROVED → sai da fila, tally conta
+    rerender(
+      <CampaignPipelineMobileStory
+        {...props}
+        applications={[makeApplication('a', { name: 'Ana', status: 'APPROVED' })]}
+      />,
+    );
+
+    expect(screen.getByText(/fila em dia/i)).toBeInTheDocument();
     expect(contador('Aprovadas')).toHaveTextContent('1');
   });
 
   it('não conta no tally quando a decisão não confirma no servidor', () => {
-    const approve = makeMutation({ mutate: vi.fn() }); // nunca chama onSuccess
+    const approve = makeMutation({ mutate: vi.fn() });
     renderStory([makeApplication('a')], { approve });
 
     fireEvent.click(screen.getByRole('button', { name: /aprovar/i }));
+    // sem revalidação: 'a' continua PENDING na lista → não entra na contagem
     fireEvent.click(screen.getByLabelText('Próximo candidato'));
 
     expect(contador('Aprovadas')).toHaveTextContent('0');
   });
 
-  it('descarta a candidatura atual e conta como recusada', () => {
-    const reject = mutationComSucesso();
-    renderStory([makeApplication('a')], { reject });
+  it('não conta a mesma candidatura duas vezes se decidida de novo', () => {
+    const reject = makeMutation({ mutate: vi.fn() });
+    const { rerender, props } = renderStory([makeApplication('a', { name: 'Ana' })], { reject });
 
     fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
-    expect(reject.mutate).toHaveBeenCalledWith('a', expect.anything());
+    const confirmada = [makeApplication('a', { name: 'Ana', status: 'REJECTED' })];
+    rerender(<CampaignPipelineMobileStory {...props} applications={confirmada} />);
+    rerender(<CampaignPipelineMobileStory {...props} applications={confirmada} />);
 
-    fireEvent.click(screen.getByLabelText('Próximo candidato'));
     expect(contador('Recusadas')).toHaveTextContent('1');
+  });
+
+  it('descarta a candidatura atual e conta como recusada', () => {
+    const reject = makeMutation({ mutate: vi.fn() });
+    const { rerender, props } = renderStory([makeApplication('a')], { reject });
+
+    fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+    expect(reject.mutate).toHaveBeenCalledWith('a');
+
+    rerender(
+      <CampaignPipelineMobileStory
+        {...props}
+        applications={[makeApplication('a', { status: 'REJECTED' })]}
+      />,
+    );
+    expect(contador('Recusadas')).toHaveTextContent('1');
+  });
+
+  // Regressão: o resumo mostrava sempre 0 / 0 / 0 porque cada decisão nova,
+  // tomada antes de a anterior liquidar, sobrescrevia o callback do mutate.
+  it('soma várias decisões seguidas conforme o servidor confirma cada uma', () => {
+    const approve = makeMutation({ mutate: vi.fn() });
+    const reject = makeMutation({ mutate: vi.fn() });
+    const trio = [
+      makeApplication('a', { name: 'Ana' }),
+      makeApplication('b', { name: 'Bia' }),
+      makeApplication('c', { name: 'Cris' }),
+    ];
+    const { rerender, props } = renderStory(trio, { approve, reject });
+
+    fireEvent.click(screen.getByRole('button', { name: /aprovar/i }));
+    rerender(
+      <CampaignPipelineMobileStory
+        {...props}
+        applications={[{ ...trio[0], status: 'APPROVED' }, trio[1], trio[2]]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+    rerender(
+      <CampaignPipelineMobileStory
+        {...props}
+        applications={[
+          { ...trio[0], status: 'APPROVED' },
+          { ...trio[1], status: 'REJECTED' },
+          trio[2],
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /aprovar/i }));
+    rerender(
+      <CampaignPipelineMobileStory
+        {...props}
+        applications={[
+          { ...trio[0], status: 'APPROVED' },
+          { ...trio[1], status: 'REJECTED' },
+          { ...trio[2], status: 'APPROVED' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText(/fila em dia/i)).toBeInTheDocument();
+    expect(contador('Aprovadas')).toHaveTextContent('2');
+    expect(contador('Recusadas')).toHaveTextContent('1');
+    expect(contador('Pendentes')).toHaveTextContent('0');
   });
 
   it('desabilita as duas ações enquanto uma decisão está em voo', () => {
