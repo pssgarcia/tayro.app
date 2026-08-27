@@ -131,7 +131,24 @@ describe('InstagramSyncService', () => {
 
       await service.refresh('inf-1');
 
-      expect(provider.fetchProfile).toHaveBeenCalledWith('anafit');
+      expect(provider.fetchProfile).toHaveBeenCalledWith('anafit', {
+        allowCached: true,
+      });
+    });
+
+    it('força reaproveitamento desligado quando force=true (refresh manual não usa cache)', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        influencerNoBanco({
+          igFetchStatus: IgFetchStatus.OK,
+          igFetchedAt: new Date(agora.getTime() - 60_000), // fresco, mas force ignora
+        }),
+      );
+
+      await service.refresh('inf-1', { force: true });
+
+      expect(provider.fetchProfile).toHaveBeenCalledWith('anafit', {
+        allowCached: false,
+      });
     });
 
     // FAILED nunca é "fresco": senão uma falha recente bloquearia a próxima
@@ -216,7 +233,9 @@ describe('InstagramSyncService', () => {
 
       await service.refresh('inf-1');
 
-      expect(provider.fetchProfile).toHaveBeenCalledWith('anafit');
+      expect(provider.fetchProfile).toHaveBeenCalledWith('anafit', {
+        allowCached: true,
+      });
     });
   });
 
