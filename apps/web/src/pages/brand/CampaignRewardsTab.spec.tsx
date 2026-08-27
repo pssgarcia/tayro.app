@@ -120,6 +120,23 @@ describe('CampaignRewardsTab', () => {
     expect(screen.getByText(/registrar recompensa/i, { selector: 'h3' })).toBeInTheDocument();
   });
 
+  it('adapta o placeholder do valor ao tipo selecionado', () => {
+    mockHooks([], 1);
+    render(<CampaignRewardsTab campaignId="camp-1" />);
+    fireEvent.click(screen.getByRole('button', { name: /registrar recompensa/i }));
+
+    // MONETARY é o default
+    expect(screen.getByPlaceholderText('Ex: R$300,00')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^produto$/i }));
+    expect(screen.getByPlaceholderText('Ex: Kit Whey 900g')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^desconto$/i }));
+    expect(screen.getByPlaceholderText(/cupom/i)).toBeInTheDocument();
+    // não deixa o placeholder de produto vazar pro desconto
+    expect(screen.queryByPlaceholderText('Ex: Kit Whey 900g')).not.toBeInTheDocument();
+  });
+
   it('filtra recompensas por status', () => {
     const issued: CampaignReward = { ...baseReward, id: 'rew-2', status: 'ISSUED' };
     mockHooks([baseReward, issued]);
