@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pwaOptions } from './vite.config';
+import viteConfig, { pwaOptions } from './vite.config';
 
 /**
  * Regra inviolável (CLAUDE.md): o service worker NUNCA pode cachear /auth/*
@@ -72,5 +72,17 @@ describe('pwaOptions — manifest e atualização', () => {
 
   it('atualiza sozinho (autoUpdate) — sem prompt de UI nesta v1', () => {
     expect(pwaOptions.registerType).toBe('autoUpdate');
+  });
+});
+
+describe('vite.config — sourcemap do Sentry', () => {
+  const config =
+    typeof viteConfig === 'function' ? undefined : (viteConfig as { build?: { sourcemap?: unknown } });
+
+  it("build.sourcemap é 'hidden' — .map emitido mas não referenciado no JS", () => {
+    // 'hidden' + filesToDeleteAfterUpload no plugin = nada de sourcemap servido
+    // publicamente nem no precache do PWA. Se alguém trocar pra true/'inline',
+    // o .map vaza pro dist e o Workbox o pré-cacheia.
+    expect(config?.build?.sourcemap).toBe('hidden');
   });
 });

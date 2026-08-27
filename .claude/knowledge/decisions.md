@@ -214,6 +214,48 @@ bloquear no próprio endpoint de candidatura — ver "garantia do formulário" a
 **Ligado a:** `Regra 10` de `creator-discovery-and-apply`, `D-16` (fila assíncrona — destino do
 cache quando existir Redis), `D-18` (mesmo padrão de "não pagar a API duas vezes").
 
+### D-20 · 2026-08-27 · Adotar Sentry para observabilidade (API + Web)
+**Status:** `PROPOSTA` — implementado nas branches `feature/observabilidade-sentry-api` e
+`feature/observabilidade-sentry-web` (2026-08-27), **aguardando ratificação do Pedro** antes do
+merge. O código fica inerte sem DSN, então nada muda em produção até as env vars serem setadas.
+**Decisão:** `@sentry/nestjs` na API e `@sentry/react` na web. Escopo: captura de erro não
+tratado + tracing de performance amostrado a 10% (`tracesSampleRate` 0.1). **Session Replay
+fica de fora.** Projeto na região **EU** (DSN `ingest.de.sentry.io`). `SENTRY_DSN` é
+obrigatório em produção na API — sem ele o boot falha (`resolveSentryConfig` lança, mesma regra
+do `resolveAllowedOrigins`).
+**Motivo:** hoje um erro em produção só se descobre por reclamação (e não há de quem reclamar
+ainda). O pior caso concreto é o `instagram-sync` fire-and-forget: `setImmediate` que falha
+**depois** da resposta HTTP — nem o Nest nem ninguém vê, só existe como uma linha de
+`logger.error` que "nunca foi lida por ninguém". A API também não tinha exception filter global
+nem o front tinha error boundary — os dois furos que este trabalho fecha de qualquer forma.
+Puxado do checklist de pré-lançamento pra agora de propósito: custo zero, 0 usuários reais
+(janela ideal pra configurar scrubbing antes de haver dado sensível), e é aprendizado explícito
+de observabilidade (mesma justificativa de `D-16`).
+**Objeção "fornecedor novo, credencial nova, custo recorrente" (precedente `D-18`, orçamento
+`D-12`):** custo — free tier (Developer), ~5k erros/mês, 1 usuário, sem cartão; com scrubbing e
+0 usuários, folgado, e estourar 5k erros/mês é sinal de problema real, não de custo. Credencial
+— 1 DSN (público por design no client) + 1 auth token de build no env do projeto Vercel;
+**nada novo no GitHub Secrets**. Lock-in — Sentry é self-hostável; a saída é trocar o DSN.
+**LGPD (`vision.md` nº 3 — "nunca expor dado de creator sem consentimento"):** Sentry passa a
+ser o **2º processador externo de dado pessoal** (junto com a RapidAPI). Mitigações no código:
+`sendDefaultPii: false` (sem IP), `beforeSend` remove corpo de `/auth/*` e headers de auth,
+Session Replay desligado, região EU. Entra como sub-processador na futura política de
+privacidade (item LGPD aberto no `roadmap.md`) e no texto de consentimento dos 3 fluxos de
+entrada, junto com a divulgação da RapidAPI.
+**Alternativas descartadas:** (a) só logging estruturado + métricas próprias (Prometheus/
+Grafana) — mais infra pra manter, sem o agrupamento por fingerprint e o contexto de request
+que é o valor real agora; (b) self-hosted Sentry — precisa de ~4GB RAM e docker-compose, caro
+demais pro estágio; (c) esperar o lançamento — o roadmap dizia isso, mas rodar cego em prod
+com os primeiros usuários é o risco maior, e a janela sem dado sensível é agora.
+**Não fez parte:** upload de sourcemap da API (o `node --enable-source-maps` + os `.js.map` do
+tsc já dão stack legível), tunnel anti-ad-blocker (0 usuários), boundary por layout no front
+(um no topo agora; por layout é follow-up não-bloqueante).
+**Flags para ratificação do Pedro:** (a) região EU vs US — escolhida EU; (b) `SENTRY_DSN`
+obrigatório no boot em produção — escolhido sim; (c) adotar antes da política de privacidade —
+escolhido sim, com scrubbing e Replay off.
+**Ligado a:** `D-16` (fila assíncrona — o mesmo `instagram-sync` que este trabalho instrumenta),
+`D-18` (mesma disciplina de "não adicionar infra permanente de leve"), item LGPD do `roadmap.md`.
+
 ### D-17 · 2026-08-23 · Candidatura espontânea é o produto — e ele já está construído
 **Status:** `PROPOSTA` — ratificação do Pedro em 2026-08-23, aguarda ratificação da Thais.
 **Decisão:** o TAYRO ataca **avaliação e gestão de candidatura espontânea de micro-creator**,
