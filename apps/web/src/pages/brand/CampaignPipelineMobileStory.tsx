@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ChevronUp, MapPin, RefreshCw, X } from 'lucide-react';
+import { ChevronUp, ExternalLink, MapPin, RefreshCw, X } from 'lucide-react';
 import {
   extractCooldownWait,
   useApproveApplication,
@@ -287,7 +287,17 @@ function CandidateStory({
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white">
               {influencer.name}
             </h2>
-            {handle && <p className="mt-1 font-mono text-sm text-kinetic-text">@{handle}</p>}
+            {handle && (
+              <a
+                href={`https://instagram.com/${handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pointer-events-auto mt-1 flex w-fit items-center gap-1 font-mono text-sm text-kinetic-text transition-colors hover:text-white"
+              >
+                @{handle}
+                <ExternalLink size={12} className="shrink-0" />
+              </a>
+            )}
             {(influencer.city || influencer.niches.length > 0) && (
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-kinetic-text">
                 {influencer.city && (

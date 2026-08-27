@@ -167,6 +167,17 @@ describe('CampaignPipelineMobileStory — navegação', () => {
   });
 });
 
+describe('CampaignPipelineMobileStory — identidade', () => {
+  it('o @handle é um link pro Instagram da creator (abre em aba nova)', () => {
+    renderStory([makeApplication('a', { name: 'Ana' })]);
+
+    const link = screen.getByRole('link', { name: /@creatora/i });
+    expect(link).toHaveAttribute('href', 'https://instagram.com/creatora');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+});
+
 describe('CampaignPipelineMobileStory — painel de detalhes', () => {
   it('abre com "Ver posts"; com ele aberto, o toque na lateral fecha em vez de avançar', () => {
     renderStory([

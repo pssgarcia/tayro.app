@@ -52,6 +52,9 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
   contagem de aprovados/rejeitados da sessão.
 - Swipe pra cima (ou "Ver posts") abre um painel com a mensagem da candidatura e o feed de
   Instagram, sem perder a posição na fila.
+- Nas duas superfícies o `@handle` da creator é um link pro perfil dela no Instagram
+  (`https://instagram.com/<handle>`, `target="_blank"`) — a marca abre o Instagram real se
+  quiser antes de decidir.
 - "Fechar revisão" no modo mobile não navega pra outra rota — só sai do modo imersivo de volta
   pro corpo normal da aba (a Fila já é a rota atual).
 - A escolha entre as duas superfícies é só o breakpoint — não há um terceiro layout
