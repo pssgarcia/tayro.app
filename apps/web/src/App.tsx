@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { api } from './services/api';
+import SentryFallback from './components/SentryFallback';
 import { useAuthStore, type AuthUser } from './stores/auth.store';
 import AuthLayout from './components/layouts/AuthLayout';
 import BrandGuard from './components/guards/BrandGuard';
@@ -28,6 +30,10 @@ import ProgramDetailPage from './pages/influencer/ProgramDetailPage';
 import InfluencerDashboardPage from './pages/influencer/DashboardPage';
 import SubmissionsPage from './pages/influencer/SubmissionsPage';
 import RewardsPage from './pages/influencer/RewardsPage';
+
+// Envolve <Routes> pra instrumentar navegação (traces por rota). Inerte
+// enquanto tracesSampleRate estiver baixo, mas já fica cabeado.
+const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 function BootSpinner() {
   return (
@@ -63,7 +69,7 @@ function AppShell() {
   if (!isInitialized) return <BootSpinner />;
 
   return (
-    <Routes>
+    <SentryRoutes>
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Rotas de autenticação — sem sidebar */}
@@ -122,10 +128,16 @@ function AppShell() {
       <Route path="/c/:handle" element={<PublicCreatorProfilePage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </SentryRoutes>
   );
 }
 
 export default function App() {
-  return <AppShell />;
+  return (
+    <Sentry.ErrorBoundary
+      fallback={({ resetError }) => <SentryFallback onReset={resetError} />}
+    >
+      <AppShell />
+    </Sentry.ErrorBoundary>
+  );
 }

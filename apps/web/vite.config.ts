@@ -1,7 +1,19 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA, type VitePWAOptions } from 'vite-plugin-pwa';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import path from 'path';
+
+// Commit que está sendo publicado. Vercel/GitHub Actions injetam; local = 'dev'.
+// Vira env var VITE_* (o Vite injeta em import.meta.env) pra o config/sentry.ts
+// ler pelo objeto, e é a MESMA string passada ao plugin — os dois têm que
+// bater pro Sentry casar o evento com o sourcemap.
+const sentryRelease =
+  process.env.VITE_SENTRY_RELEASE ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  'dev';
+process.env.VITE_SENTRY_RELEASE = sentryRelease;
 
 // Exportado à parte pra ser testável sem precisar montar o Vite inteiro
 // (vite.config.test.ts trava a regra de nunca cachear /api/).
@@ -42,7 +54,25 @@ export const pwaOptions: Partial<VitePWAOptions> = {
 };
 
 export default defineConfig({
-  plugins: [react(), VitePWA(pwaOptions)],
+  // 'hidden' emite os .map mas NÃO deixa o comentário //# no JS. O plugin do
+  // Sentry sobe os .map e depois os apaga do dist — nada de sourcemap servido
+  // publicamente nem entrando no precache do PWA.
+  build: { sourcemap: 'hidden' },
+  plugins: [
+    react(),
+    VitePWA(pwaOptions),
+    // Sobe sourcemap + cria a release no Sentry. Sem SENTRY_AUTH_TOKEN (dev,
+    // CI, PR) é inerte — o build passa igual.
+    sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      disable: !process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+      release: { name: sentryRelease },
+      sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
