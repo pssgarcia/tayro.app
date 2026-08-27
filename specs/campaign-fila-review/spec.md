@@ -118,7 +118,9 @@ props, nenhum hook mockado:
       e arraste vertical ignorados.
 - [x] Painel de detalhes: abre em "Ver posts"; com ele aberto, o toque na lateral fecha em vez
       de avançar (não perde a posição).
-- [x] Tally: só conta a decisão que o servidor confirmou; ações desabilitadas com decisão em voo.
+- [x] Tally: conta cada candidatura cuja decisão o servidor confirmou (o status na lista
+      revalidada virou `APPROVED`/`REJECTED`), chaveada por id — decidir a mesma de novo não
+      conta em dobro. Ações desabilitadas com decisão em voo.
 - [x] Estados de IG: OK, `FAILED`, `null` tratado como falha, cooldown 429 bloqueando o botão.
 - [x] Saída: "Fechar revisão" e "Voltar para a campanha" chamam `onExit`, sem navegação.
 
@@ -134,6 +136,12 @@ props, nenhum hook mockado:
 - Estado (query + mutations `useApproveApplication`/`useRejectApplication`/
   `useRefreshApplicationIg`) vive em `CampaignFilaTab` e é passado como props pro componente
   mobile.
+- Tally mobile: `CampaignPipelineMobileStory` guarda `decided: Record<id, 'approved'|'rejected'>`
+  (a intenção, gravada no clique) e deriva a contagem cruzando esse mapa com o `status` real de
+  cada candidatura na lista revalidada — só entra no número quem o servidor confirmou. **Não usa
+  o `onSuccess` com escopo do `mutate`**: ele é sobrescrito quando a decisão seguinte sai antes
+  de a anterior liquidar (o `invalidateQueries` do hook ainda revalidando mantém `isPending`,
+  mas a candidatura já avançou e o botão reabilita), e o tally vinha zerado por isso.
 
 ## Change History
 - 2026-08-21 · retrofit inicial a partir do código em produção.
@@ -144,3 +152,8 @@ props, nenhum hook mockado:
   componentes, com a lógica de poll (intervalo, teto de 45s, reset do cronômetro) exercitada
   contra a query real em vez de hook mockado. O teste do teto foi validado por mutação — sem
   isso ele passaria mesmo com a proteção desligada.
+- 2026-08-27 · bug: o resumo de fim de fila do mobile mostrava sempre `0 / 0 / 0`. O tally
+  dependia do `onSuccess` com escopo do `mutate`, que é sobrescrito a cada nova decisão tomada
+  antes de a anterior liquidar. Reescrito pra derivar da lista revalidada cruzada com um mapa de
+  intenções por id. As decisões em si (approve/reject) sempre funcionaram — só a contagem
+  estava quebrada.

@@ -57,8 +57,26 @@ export default function CampaignPipelineMobileStory({
 
   const [index, setIndex] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [tally, setTally] = useState({ approved: 0, rejected: 0 });
+  // Intenção de decisão desta sessão, chaveada por id da candidatura — gravada
+  // no clique. NÃO usar o onSuccess com escopo do `mutate` pra contar: ele é
+  // sobrescrito quando a decisão seguinte sai antes de a anterior liquidar
+  // (o invalidateQueries do hook ainda revalidando segura o isPending, mas a
+  // candidatura já avançou e o botão reabilita) — era por isso que o resumo
+  // vinha sempre 0 / 0 / 0. A contagem final cruza esse mapa com o status
+  // real na lista revalidada, então só entra quem o servidor confirmou.
+  const [decided, setDecided] = useState<Record<string, 'approved' | 'rejected'>>({});
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const tally = useMemo(() => {
+    const statusById = new Map(applications.map((a) => [a.id, a.status]));
+    let approved = 0;
+    let rejected = 0;
+    for (const [id, intent] of Object.entries(decided)) {
+      if (intent === 'approved' && statusById.get(id) === 'APPROVED') approved += 1;
+      else if (intent === 'rejected' && statusById.get(id) === 'REJECTED') rejected += 1;
+    }
+    return { approved, rejected };
+  }, [applications, decided]);
 
   const clampedIndex = Math.min(index, queue.length);
   const current = queue[clampedIndex] ?? null;
@@ -82,16 +100,14 @@ export default function CampaignPipelineMobileStory({
 
   function handleApprove() {
     if (!current) return;
-    approve.mutate(current.id, {
-      onSuccess: () => setTally((t) => ({ ...t, approved: t.approved + 1 })),
-    });
+    setDecided((d) => ({ ...d, [current.id]: 'approved' }));
+    approve.mutate(current.id);
   }
 
   function handleReject() {
     if (!current) return;
-    reject.mutate(current.id, {
-      onSuccess: () => setTally((t) => ({ ...t, rejected: t.rejected + 1 })),
-    });
+    setDecided((d) => ({ ...d, [current.id]: 'rejected' }));
+    reject.mutate(current.id);
   }
 
   function handleTouchStart(e: React.TouchEvent) {
