@@ -325,6 +325,28 @@ fere `Regra 10` é diferenciar "handle não encontrado" de "falha temporária" d
 **Não ressuscitar** sem: (a) o item #0 do roadmap rodando com marca real, e (b) evidência de que
 handle inválido realmente chega na fila e é confundido com falha temporária pela marca.
 
+### 2026-08-27 · "Cadastro manual de creator pela marca" + "tela dedicada de creators aprovadas"
+**Status:** ratificado pelo Pedro em 2026-08-27. A paridade mobile da Fila (gap concreto abaixo)
+foi puxada pra implementação imediata na branch `feature/fila-mobile-paridade-status`; o cadastro
+manual de creator segue `NÃO` até `D-B`.
+**Veredito:** cadastro manual de creator = `NÃO — destravar D-B primeiro`; tela dedicada de
+aprovadas = `DEPOIS` (polimento de capacidade já construída, sem marca real pra observar o gap).
+**Motivo em uma frase:** cadastrar creator pela marca cria registro de terceiro **sem
+consentimento** (`vision.md` nº 3), **adiciona** trabalho manual à marca em vez de tirar (falha
+a regra de admissão nº 1 ao contrário), e é a pergunta de estratégia *"o TAYRO gerencia relações
+trazidas de fora da plataforma?"* — adjacente a `D-B` (marca vs agência) e `D-17` — disfarçada de
+feature; ver quem já foi aprovado **já é possível** na aba Fila do desktop (`CampaignFilaTab`
+lista toda candidatura de qualquer status), o que falta é recorte/paridade, não capacidade.
+**Gap real e concreto (não a feature):** a Fila **mobile** (`CampaignPipelineMobileStory`) filtra
+`status === 'PENDING'` e **não mostra aprovadas/recusadas de jeito nenhum** — assimetria com o
+desktop que fere `D-10` (mobile-first). É conserto barato de paridade, não tela nova; entra no
+`roadmap.md` como polimento, driver da versão mínima da "Ideia 1".
+**O que substitui:** rodar `roadmap.md` AGORA #0 (ligar e-mail + funil de uma marca real) e ouvir
+nas entrevistas P1 (perguntas 1–3 do roteiro) se a marca descreve espontaneamente uma carteira
+de creators **pré-existente**, trazida de fora, que ela quer gerir no TAYRO.
+**Não ressuscitar o cadastro manual** sem: (a) `D-B` decidida de propósito, ou (b) ≥3 de 5
+entrevistas P1 citando gestão de creators trazidas de fora como dor real.
+
 **Correção do Pedro, mesma data:** o pedido real é mais estreito do que o avaliado acima e o
 veredito muda. Não é "bloquear a candidatura até confirmar contra a API" como efeito acessório —
 é validar o **dado de entrada** (o handle existe?) no próprio formulário, antes do submit,

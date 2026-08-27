@@ -12,13 +12,14 @@ import {
 import CountUp from '../../components/primitives/CountUp';
 import CampaignPipelineMobileStory from './CampaignPipelineMobileStory';
 import {
+  applicationStatusWord,
   creatorAvatarSrc,
   creatorPostSrc,
   formatEngagement,
   formatNumberParts,
 } from '../../utils/format';
 import { cn } from '../../lib/utils';
-import type { Application, ApplicationStatus, Campaign } from '../../types/api';
+import type { Application, Campaign } from '../../types/api';
 
 // ─── Aba Fila — identidade "Kinetic Editorial" (aprovada 2026-08-16) ─────────
 // Substitui o carrossel antigo (QueueTab/ApplicationCard). Desktop: lista
@@ -42,13 +43,6 @@ function placeholderMatchScore(id: string): number {
   }
   return 70 + (hash % 26); // 70–95, só pra dar variedade visual entre cards
 }
-
-const pipelineStatusWord: Record<ApplicationStatus, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovada',
-  REJECTED: 'Recusada',
-  WITHDRAWN: 'Retirada',
-};
 
 // ─── Lista Pipeline ────────────────────────────────────────────────────────────
 
@@ -96,7 +90,7 @@ function PipelineRow({
             status === 'PENDING' ? 'text-lime' : 'text-kinetic-muted',
           )}
         >
-          {pipelineStatusWord[status]}
+          {applicationStatusWord[status]}
         </span>
       </button>
     </li>
