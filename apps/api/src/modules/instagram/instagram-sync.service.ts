@@ -84,7 +84,9 @@ export class InstagramSyncService {
     });
 
     try {
-      const profile = await this.provider.fetchProfile(handle);
+      const profile = await this.provider.fetchProfile(handle, {
+        allowCached: !force,
+      });
       const igEngagementRate = calcEngagementRate(
         profile.recentPosts,
         profile.followers,

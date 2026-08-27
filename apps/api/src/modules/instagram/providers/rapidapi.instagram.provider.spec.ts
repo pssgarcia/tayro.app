@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { RapidApiInstagramProvider } from './rapidapi.instagram.provider';
 import { InstagramFetchError } from './instagram-fetch.error';
+import { IgProfileCache } from '../ig-profile-cache';
 
 // ─── Fixtures ───────────────────────────────────────────────────────────────────
 // Versões enxutas das respostas REAIS da API (instagram-best-experience).
@@ -49,6 +50,16 @@ function makeConfig(): ConfigService {
   } as unknown as ConfigService;
 }
 
+// Cache novo a cada chamada — testes de fetchProfile/checkHandle "puros" (que
+// não testam reaproveitamento) não devem se afetar por estado de um teste
+// anterior. Testes de reaproveitamento passam o cache deles explicitamente.
+function makeProvider(
+  config: ConfigService,
+  cache = new IgProfileCache(config),
+): RapidApiInstagramProvider {
+  return new RapidApiInstagramProvider(config, cache);
+}
+
 describe('RapidApiInstagramProvider', () => {
   let fetchMock: jest.Mock;
 
@@ -68,7 +79,7 @@ describe('RapidApiInstagramProvider', () => {
         json: () => Promise.resolve(feedResponse),
       });
 
-    const provider = new RapidApiInstagramProvider(makeConfig());
+    const provider = makeProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
 
     expect(result).toEqual({
@@ -96,7 +107,7 @@ describe('RapidApiInstagramProvider', () => {
         json: () => Promise.resolve(feedResponse),
       });
 
-    const provider = new RapidApiInstagramProvider(makeConfig());
+    const provider = makeProvider(makeConfig());
     await provider.fetchProfile('pitringym');
 
     const firstUrl = fetchMock.mock.calls[0][0] as string;
@@ -114,7 +125,7 @@ describe('RapidApiInstagramProvider', () => {
       })
       .mockResolvedValueOnce({ ok: false, status: 500 });
 
-    const provider = new RapidApiInstagramProvider(makeConfig());
+    const provider = makeProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
 
     expect(result).toEqual({
@@ -135,7 +146,7 @@ describe('RapidApiInstagramProvider', () => {
         json: () => Promise.resolve({ items: [] }),
       });
 
-    const provider = new RapidApiInstagramProvider(makeConfig());
+    const provider = makeProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
 
     expect(result).toEqual({
@@ -165,7 +176,7 @@ describe('RapidApiInstagramProvider', () => {
         json: () => Promise.resolve({ items: [] }),
       });
 
-    const provider = new RapidApiInstagramProvider(makeConfig());
+    const provider = makeProvider(makeConfig());
     const result = await provider.fetchProfile('pitringym');
 
     expect(result.profilePicUrl).toBe('https://cdn.example/pic_150.jpg');
@@ -179,7 +190,7 @@ describe('RapidApiInstagramProvider', () => {
         .mockResolvedValueOnce({ ok: false, status: 500 })
         .mockResolvedValueOnce({ ok: false, status: 500 });
 
-      const provider = new RapidApiInstagramProvider(makeConfig());
+      const provider = makeProvider(makeConfig());
 
       // Anexa a assertion IMEDIATAMENTE (antes de avançar os timers), senão a
       // rejeição fica sem handler por um instante e o Jest acusa unhandled rejection.
@@ -211,7 +222,7 @@ describe('RapidApiInstagramProvider', () => {
           json: () => Promise.resolve(feedResponse),
         });
 
-      const provider = new RapidApiInstagramProvider(makeConfig());
+      const provider = makeProvider(makeConfig());
 
       const assertion = expect(
         provider.fetchProfile('pitringym'),
@@ -224,5 +235,198 @@ describe('RapidApiInstagramProvider', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  describe('checkHandle', () => {
+    it('devolve FOUND numa resposta conclusiva com pk', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(profileResponse),
+      });
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('pitringym')).resolves.toBe('FOUND');
+    });
+
+    it('devolve NOT_FOUND numa resposta 404 conclusiva', async () => {
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('naoexiste')).resolves.toBe(
+        'NOT_FOUND',
+      );
+    });
+
+    it('devolve UNKNOWN em erro do provedor (5xx) — nunca NOT_FOUND', async () => {
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 500 });
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('pitringym')).resolves.toBe('UNKNOWN');
+    });
+
+    it('devolve UNKNOWN quando o fetch lança (timeout/rede) — nunca NOT_FOUND', async () => {
+      fetchMock.mockRejectedValueOnce(new Error('aborted'));
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('pitringym')).resolves.toBe('UNKNOWN');
+    });
+
+    it('devolve UNKNOWN numa resposta ok sem pk numérico — ambíguo não afirma nada', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ username: 'pitringym' }),
+      });
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('pitringym')).resolves.toBe('UNKNOWN');
+    });
+
+    it('não faz retry — uma tentativa só, mesmo em falha', async () => {
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 500 });
+
+      const provider = makeProvider(makeConfig());
+      await provider.checkHandle('pitringym');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('verificar o mesmo @ duas vezes seguidas consulta o provedor uma vez só', async () => {
+      const config = makeConfig();
+      const cache = new IgProfileCache(config);
+      const provider = makeProvider(config, cache);
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(profileResponse),
+      });
+      const primeira = await provider.checkHandle('pitringym');
+      const segunda = await provider.checkHandle('pitringym');
+
+      expect(primeira).toBe('FOUND');
+      expect(segunda).toBe('FOUND');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('verificar o mesmo @ conclusivamente inexistente duas vezes seguidas também consulta uma vez só', async () => {
+      const config = makeConfig();
+      const cache = new IgProfileCache(config);
+      const provider = makeProvider(config, cache);
+
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+      const primeira = await provider.checkHandle('naoexiste');
+      const segunda = await provider.checkHandle('naoexiste');
+
+      expect(primeira).toBe('NOT_FOUND');
+      expect(segunda).toBe('NOT_FOUND');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('reaproveitamento entre checkHandle e fetchProfile', () => {
+    it('sincronizar logo após verificar o mesmo @ NÃO repete a chamada de perfil — só o feed é buscado', async () => {
+      const config = makeConfig();
+      const cache = new IgProfileCache(config);
+      const provider = makeProvider(config, cache);
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(profileResponse),
+      });
+      await expect(provider.checkHandle('pitringym')).resolves.toBe('FOUND');
+      expect(fetchMock).toHaveBeenCalledTimes(1); // só o /profile da verificação
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(feedResponse),
+      });
+      const result = await provider.fetchProfile('pitringym');
+
+      // Prova a economia por mutação: se o reaproveitamento fosse removido
+      // (fetchProfile sempre buscando o perfil de novo), este total subiria
+      // pra 4 (1 verificação + 3 tentativas de perfil + 1 feed), não 2.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.followers).toBe(990);
+    });
+
+    it('atualização manual (force) ignora o reaproveitamento e busca o perfil de novo', async () => {
+      const config = makeConfig();
+      const cache = new IgProfileCache(config);
+      const provider = makeProvider(config, cache);
+
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(profileResponse),
+      });
+      await provider.checkHandle('pitringym');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(profileResponse),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(feedResponse),
+        });
+      await provider.fetchProfile('pitringym', { allowCached: false });
+
+      // 1 (verificação) + 1 (perfil forçado) + 1 (feed) — o cache foi ignorado.
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('sincronizar um @ que a verificação confirmou inexistente termina em falha sem tocar o provedor de novo', async () => {
+      const config = makeConfig();
+      const cache = new IgProfileCache(config);
+      const provider = makeProvider(config, cache);
+
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+      await expect(provider.checkHandle('naoexiste')).resolves.toBe(
+        'NOT_FOUND',
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      await expect(provider.fetchProfile('naoexiste')).rejects.toThrow(
+        InstagramFetchError,
+      );
+      // Nenhuma chamada nova — nem tentativa de perfil, nem de feed.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('entrada expirada do cache não é reaproveitada', async () => {
+      jest.useFakeTimers().setSystemTime(0);
+      try {
+        const config = makeConfig(); // TTL default 15min
+        const cache = new IgProfileCache(config);
+        const provider = makeProvider(config, cache);
+
+        fetchMock.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(profileResponse),
+        });
+        await provider.checkHandle('pitringym');
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        jest.setSystemTime(16 * 60_000); // passa do TTL de 15min
+
+        fetchMock.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(profileResponse),
+        });
+        await provider.checkHandle('pitringym');
+
+        // Expirou: a segunda verificação teve que consultar o provedor de novo.
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 });
