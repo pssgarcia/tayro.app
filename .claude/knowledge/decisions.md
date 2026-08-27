@@ -164,6 +164,56 @@ migração é barata por construção.
 exigiria OAuth da creator e quebraria a candidatura espontânea sem conta — `D-17`; e não
 resolveria expiração, porque também entrega URL temporária).
 
+### D-19 · 2026-08-26 · Verificar existência do handle do Instagram: no formulário, fail-open, cache em memória
+**Status:** `FIRME` — implementado na branch `feature/validar-handle-instagram-no-apply`
+(2026-08-27), aguardando commit/PR/merge pra `develop`. Pedro ratificou o desenho ("Pode") antes
+da implementação; o risco aberto abaixo foi fechado por `curl` real antes do merge.
+**Decisão:** a candidatura pública e o cadastro de creator ganham uma verificação síncrona de
+que o @ digitado existe de verdade (`GET /ig/handle/:handle`, três desfechos: `FOUND` /
+`NOT_FOUND` / `UNKNOWN`), disparada no blur do campo e de novo no submit se ainda não houver
+desfecho — nunca durante a digitação. Só `NOT_FOUND` bloqueia; `UNKNOWN` (provedor fora do ar,
+timeout, teto de cota) deixa passar. `ApplyModal` (candidatura autenticada) fica de fora — não
+existe campo de handle nesse fluxo, o @ vem da conta.
+**Motivo:** supera o `NÃO` inicial do `/feature` (mesma data, ver acima) — aquele veredito
+avaliou "bloquear a candidatura por causa de um efeito colateral acessório", o que de fato fere
+a Regra 10 de `creator-discovery-and-apply`. O pedido real, esclarecido pelo Pedro, é validar o
+**dado de entrada** antes do envio, reaproveitando uma chamada que o sync faria de qualquer
+forma — não é o mesmo risco, e a Regra 10 continua protegendo os efeitos colaterais de verdade
+(e-mail, claim, sync de feed).
+**Por que fail-open em `UNKNOWN`:** acusar o @ de uma creator legítima de inexistente porque a
+RapidAPI piscou custa mais caro (perde a candidatura) do que deixar passar um typo ocasional
+(vira `FAILED` na Fila como hoje, com retry manual). A alternativa (bloquear na dúvida)
+transformaria indisponibilidade de terceiro em candidatura perdida.
+**Por que cache em memória (TTL 15min), não tabela nova:** evita pagar a RapidAPI duas vezes
+pelo mesmo handle (verificação + sync pós-criação) sem introduzir um conceito de domínio
+permanente pra um dado que vale 15 minutos. Degrada (não quebra) se houver mais de uma instância
+ou restart entre verificar e enviar — nesse caso paga-se o profile de novo, não há erro visível.
+Muda de casa pra Redis de graça quando `D-16` sair do papel.
+**Por que a garantia é do formulário, não da API:** `POST /programs/:id/apply/public` continua
+aceitando qualquer handle de formato válido — quem chamar por fora do formulário (curl, etc.)
+passa. Pôr a verificação no servidor, bloqueando o próprio endpoint de candidatura, reintroduziria
+latência síncrona (até 5s) no evento de conversão mais importante do funil — exatamente o que o
+`/feature` recusou. A verificação é ajuda a quem está digitando, não proteção contra abuso.
+**Teto de cota:** throttle 10/60s por IP na rota de verificação (mais apertado que o padrão
+global) + teto global de consultas ao provedor por minuto (`IG_HANDLE_CHECK_BUDGET_PER_MINUTE`,
+default 60) — ao estourar, devolve `UNKNOWN` sem chamar o provedor. Necessário porque throttle
+por IP sozinho não segura rotação de IP numa rota pública que gasta dinheiro por chamada.
+**Risco fechado (2026-08-27):** confirmado por `curl` real contra a RapidAPI com a chave do `.env`
+local. Handle inexistente de formato válido (`naoexistetayro99zzz`, 19 chars) → `404` com corpo
+`{"status":"error","error":"We're sorry, we couldn't find that."}` — bate exatamente com o
+mapeamento implementado (`404` → `NOT_FOUND`). **Achado no caminho:** a 1ª tentativa usou um
+handle de 38 caracteres (acima do limite de 30 do Instagram) e também voltou `400` — não `404` —
+o que teria sido um falso sinal se aceito sem reteste; formato inválido e "não existe" não são a
+mesma resposta na API real. Falta ainda repetir a checagem uma vez em produção (`IG_HANDLE_CHECK_BUDGET_PER_MINUTE`
+e o resto do fluxo rodando com tráfego real), não porque haja dúvida sobre o mapeamento, mas
+porque nenhuma chamada real em prod tinha acontecido até este ponto.
+**Alternativas descartadas:** (a) verificar durante a digitação (debounce) — prefixo de handle
+costuma ser handle real de outra pessoa, dá falso-positivo e queima cota a cada pausa; (b) tabela
+`IgHandleCheck` dedicada — conceito novo permanente pra cache de 15min, não compensa; (c)
+bloquear no próprio endpoint de candidatura — ver "garantia do formulário" acima.
+**Ligado a:** `Regra 10` de `creator-discovery-and-apply`, `D-16` (fila assíncrona — destino do
+cache quando existir Redis), `D-18` (mesmo padrão de "não pagar a API duas vezes").
+
 ### D-17 · 2026-08-23 · Candidatura espontânea é o produto — e ele já está construído
 **Status:** `PROPOSTA` — ratificação do Pedro em 2026-08-23, aguarda ratificação da Thais.
 **Decisão:** o TAYRO ataca **avaliação e gestão de candidatura espontânea de micro-creator**,
@@ -217,3 +267,28 @@ aprende) da regra de admissão.
 medindo candidaturas recebidas, taxa de claim concluído e tempo de decisão da marca.
 **Não ressuscitar** sem uma dessas duas coisas: entrevista de marca dizendo que a avaliação
 continua manual **apesar** do TAYRO, ou dado do funil real mostrando onde ele quebra.
+
+### 2026-08-26 · `PROPOSTA` — Validar handle do Instagram em tempo real antes de aceitar candidatura
+**Veredito:** `NÃO — contradiz Regra 10 de creator-discovery-and-apply, resolve problema com zero evidência.`
+**Motivo em uma frase:** bloquear o submit até confirmar o handle contra a API do Instagram
+reabre o risco que a `Regra 10` da spec (nenhum efeito acessório derruba a candidatura — o
+evento de conversão) foi escrita e testada pra fechar, no ponto mais frágil do funil (o mesmo
+`/apply/:id` que quebrou 2x em produção nos últimos 2 dias antes desta data), pra corrigir um
+problema que nenhuma marca real relatou — `EMAIL_PROVIDER` ainda em stub, zero candidatura real
+processada.
+**O que substituiu:** rodar o item #0 do roadmap (ligar e-mail, funil real com uma marca) antes.
+Se handle inválido aparecer de fato na fila e incomodar a marca, a correção barata e que não
+fere `Regra 10` é diferenciar "handle não encontrado" de "falha temporária" dentro do estado
+`FAILED` já existente — sem tocar no caminho síncrono do submit.
+**Não ressuscitar** sem: (a) o item #0 do roadmap rodando com marca real, e (b) evidência de que
+handle inválido realmente chega na fila e é confundido com falha temporária pela marca.
+
+**Correção do Pedro, mesma data:** o pedido real é mais estreito do que o avaliado acima e o
+veredito muda. Não é "bloquear a candidatura até confirmar contra a API" como efeito acessório —
+é validar o **dado de entrada** (o handle existe?) no próprio formulário, antes do submit,
+reaproveitando a mesma chamada que o sync já faria de qualquer forma. Isso não fere `Regra 10`
+(que protege a candidatura de efeito colateral acessório — claim, e-mail, sync pós-criação —
+não de validação do próprio campo que a pessoa está preenchendo). Pedro ratificou seguir com
+essa versão escopada em 2026-08-26. **Vai para `/architect`** — decidir: throttle/custo de cota
+na validação síncrona (rota pública sem auth), e evitar pagar a RapidAPI duas vezes (validação
+no submit + `scheduleRefresh` que dispara ao criar a candidatura).

@@ -3,13 +3,15 @@ slug: instagram-sync
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-23
+last_updated: 2026-08-26
 implements:
   - apps/api/src/modules/instagram/instagram-sync.service.ts
   - apps/api/src/modules/instagram/instagram.module.ts
   - apps/api/src/modules/instagram/providers/rapidapi.instagram.provider.ts
   - apps/api/src/modules/instagram/providers/stub.instagram.provider.ts
   - apps/api/src/modules/instagram/ig-avatar.controller.ts
+  - apps/api/src/modules/instagram/ig-handle.controller.ts (GET /ig/handle/:handle)
+  - apps/api/src/modules/instagram/ig-profile-cache.ts
   - apps/api/src/modules/instagram/ig-image.service.ts
   - apps/api/prisma/schema.prisma#IgImage
   - apps/api/src/modules/instagram/engagement.utils.ts
@@ -33,6 +35,11 @@ violar a política de origem cruzada do Instagram.
 
 Inclui a **persistência das próprias imagens** (foto de perfil e thumbnails do feed), não
 apenas dos endereços delas — ver "Behavior → Persistência de imagem".
+
+Inclui também a **verificação de existência de um @** — responder se um handle digitado por
+alguém existe no Instagram, antes de esse handle virar conta ou candidatura. Quem consome essa
+resposta (e o que faz com ela) é de outra capacidade: ver `creator-discovery-and-apply` e
+`creator-account`.
 
 ## Out of Scope
 - **Fila assíncrona (BullMQ + Redis)** é o alvo declarado (`D-16`, `PROPOSTA`), ainda não
@@ -68,6 +75,11 @@ mesmo sendo uma URL pública e válida. Essa política não se aplica às thumbn
 (mesmo provedor, media diferente). Nenhuma configuração do lado do navegador contorna isso; a
 única forma de exibir a foto de perfil é servi-la a partir do próprio domínio.
 
+A **verificação de existência de um @** é a única operação desta capacidade que não pertence a
+uma creator: ela responde sobre um handle que talvez nunca vire conta. O resultado tem três
+desfechos possíveis e só três — **existe**, **não existe**, **indeterminado** — e nunca carrega
+dado de perfil junto.
+
 **Segunda restrição externa, descoberta em 2026-08-23:** as URLs da CDN do Instagram são
 **assinadas e temporárias**. Guardar o endereço não é guardar a imagem — passado o prazo, a CDN
 recusa e a imagem some da tela. É por isso que o sistema guarda os bytes, e não o endereço.
@@ -80,6 +92,38 @@ recusa e a imagem some da tela. É por isso que o sistema guarda os bytes, e nã
   descarta o perfil já obtido — o resultado nesse caso é perfil salvo, feed vazio.
 - A foto de perfil usada é a de maior resolução disponível; se essa não vier no retorno do
   provedor, cai para a foto padrão disponível; se nenhuma vier, fica sem foto.
+
+### Verificação de existência de um @
+- O sistema sabe responder, sob demanda, se um @ existe no Instagram. São três desfechos e só
+  três: **existe**, **não existe** e **indeterminado** ("não deu pra saber agora").
+- **"Não existe" só é afirmado com resposta conclusiva do provedor.** Provedor fora do ar, tempo
+  esgotado, resposta ambígua ou teto de consumo atingido resultam em **indeterminado**, nunca em
+  "não existe". Acusar o @ de alguém de inexistente porque o provedor está instável barra uma
+  creator legítima, e esse erro custa mais que deixar passar um @ errado.
+- A verificação **nunca consulta dados do TAYRO e nunca devolve dado de perfil** (seguidores,
+  foto, feed). A resposta é o desfecho e nada mais. Ela também não diz se o @ já pertence a
+  alguma conta do TAYRO — isso é outra pergunta, respondida no envio do cadastro/candidatura
+  (ver `creator-account` e `creator-discovery-and-apply`).
+- Um @ com formato impossível (fora do alfabeto que o Instagram aceita, ou longo demais) é
+  recusado **sem consultar o provedor** — não se paga consulta externa por algo que não pode
+  existir.
+- A verificação é uma operação **cara e pública**: tem limite por origem e um **teto global de
+  consultas ao provedor por minuto**. Atingido o teto global, o desfecho é indeterminado, sem
+  fila de espera e sem erro na cara de quem perguntou.
+- Verificar o mesmo @ de novo dentro de um período curto não consulta o provedor: o desfecho
+  anterior é reaproveitado, inclusive o "não existe".
+
+### Reaproveitamento da consulta de perfil
+- A consulta de perfil feita numa verificação recente **serve** à sincronização que vem logo em
+  seguida. Candidatura e cadastro não pagam duas vezes pela mesma informação: o custo por creator
+  nova continua sendo o de sempre — um perfil e um feed.
+- O reaproveitamento vale por um período curto e só para o passo de perfil; o feed é sempre
+  buscado.
+- A **atualização manual** (a marca pedindo dados novos) ignora o reaproveitamento — o propósito
+  dela é justamente ir buscar de novo.
+- Sincronizar um @ que a verificação apontou como conclusivamente inexistente não consulta o
+  provedor de novo: a sincronização termina como falha, preservando os dados anteriores, como
+  qualquer outra falha.
 
 ### Quando a sincronização é disparada
 Toda porta pela qual uma creator entra no sistema ou se candidata dispara a sincronização —
@@ -147,6 +191,7 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
 |---|---|---|---|
 | `GET` | `/ig/avatar/:influencerId` | nenhum (rota pública, sem limite de taxa) | Foto de perfil servida do próprio domínio. `404` quando não há imagem nem endereço de origem. |
 | `GET` | `/ig/post/:influencerId/:position` | nenhum (rota pública, sem limite de taxa) | Thumbnail de um post recente. `position` fora da faixa válida → `404`, sem consulta ao banco. |
+| `GET` | `/ig/handle/:handle` | nenhum (rota pública, documentada) + limite de taxa próprio, mais restrito que o padrão | Responde só o desfecho da verificação: `FOUND` \| `NOT_FOUND` \| `UNKNOWN`, com o handle normalizado. `200` nos três desfechos — indisponibilidade do provedor é `UNKNOWN`, não erro. `400` para handle de formato inválido, **sem** consultar o provedor. `429` no excesso por origem. Nunca devolve dado de perfil nem informação sobre contas do TAYRO. |
 | `PATCH` | `/applications/:id/refresh-ig` | `BRAND` + limite de taxa | Força nova busca, sujeito ao intervalo mínimo entre tentativas. Contrato pertence à spec `applications-pipeline`. |
 
 ## Acceptance Criteria
@@ -184,6 +229,26 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
       unidade dedicado — hoje só é exercitado indiretamente por quem chama o serviço (ver Known
       Gaps).
 
+Verificação de existência de @:
+- [x] Handle de formato inválido é recusado sem nenhuma consulta ao provedor.
+- [x] Resposta conclusiva de inexistência vira desfecho "não existe".
+- [x] Provedor indisponível, tempo esgotado ou resposta ambígua viram "indeterminado" — nunca
+      "não existe".
+- [x] A resposta da verificação não contém seguidores, foto, feed, nem qualquer sinal de que o @
+      já tem conta no TAYRO.
+- [x] Verificar o mesmo @ duas vezes seguidas consulta o provedor uma vez só.
+- [x] Excedido o limite por origem, a rota responde `429`; excedido o teto global por minuto, ela
+      responde "indeterminado" sem consultar o provedor.
+- [x] Sincronização disparada logo após uma verificação bem-sucedida do mesmo @ **não** repete a
+      consulta de perfil (só o feed é buscado).
+- [x] Atualização manual forçada ignora o reaproveitamento e consulta o provedor.
+- [x] Sincronização de um @ conclusivamente inexistente não consulta o provedor e termina como
+      falha, preservando os dados anteriores.
+- [x] O provedor de desenvolvimento (determinístico) sabe produzir os três desfechos, para que o
+      fluxo inteiro seja exercitável sem consumir cota real.
+- [x] O mapeamento da resposta do provedor real para "não existe" está confirmado contra a API
+      real (2026-08-27) — ver Known Gaps (a entrada foi resolvida, não removida).
+
 ## Error Scenarios
 - Perfil não obtido após as tentativas configuradas → sincronização marcada como falha; dados
   anteriores preservados.
@@ -201,8 +266,29 @@ perfil dela mesma. Não há montagem manual de foto como parte deste fluxo.
   feita** (proteção contra requisição forjada pelo servidor).
 - Servidor de origem recusa ou expira durante a gravação → a imagem anterior permanece intacta;
   nada parcial é gravado.
+- Verificação com handle de formato inválido → `400`, **sem** consulta externa.
+- Verificação acima do limite por origem → `429`.
+- Provedor fora do ar, lento ou respondendo algo inesperado durante uma verificação → `200` com
+  desfecho "indeterminado". Erro de terceiro nunca vira `5xx` nosso nem stack trace na resposta.
+- Teto global de consultas por minuto atingido → `200` com "indeterminado"; nenhuma requisição
+  externa é feita.
 
 ## Known Gaps
+- **(RESOLVIDO 2026-08-27) Mapeamento do provedor real pra "não existe" estava sem observação —
+  agora está confirmado.** Testado com `curl` direto contra a RapidAPI (chave do `.env` local):
+  um @ inexistente de formato válido (≤30 chars) devolve `404` com corpo
+  `{"status":"error","error":"We're sorry, we couldn't find that."}`, batendo com o mapeamento
+  implementado (`404` → `NOT_FOUND`). **Achado no processo:** a 1ª tentativa usou um handle de
+  38 caracteres (acima do limite de 30 do Instagram) e voltou `400` — formato inválido, não
+  inexistência — o que teria sido um sinal falso se aceito sem reteste com um handle de tamanho
+  válido. Falta ainda repetir a checagem uma vez em produção com tráfego real (não por dúvida
+  sobre o mapeamento, mas porque nenhuma chamada real em prod tinha acontecido até aqui) — ver
+  `decisions.md` `D-19`.
+- **O reaproveitamento da consulta de perfil vive na memória do processo.** Se a API rodar em mais
+  de uma instância, ou reiniciar entre a verificação e a candidatura, o reaproveitamento
+  simplesmente não acontece e paga-se o perfil duas vezes. É degradação silenciosa, sem quebra
+  funcional — e some quando existir infraestrutura compartilhada (`D-16`). Mesmo motivo pelo qual
+  o teto global de consultas por minuto também é por processo: ele reduz o dano, não o elimina.
 - **Contagem de "seguindo" não existe no dado.** O provedor mapeia apenas seguidores; não há
   campo de *following* na interface do provedor, no modelo nem na resposta da API. Pedido pelo
   Pedro em 2026-08-23 para a placa de perfil — **não implementado de propósito**: exibir sem ter
@@ -272,6 +358,36 @@ Persistência de imagem (a escrever **antes** do código):
 - [x] Frontend: conteúdos e recompensas exibem a foto do Instagram e caem nas iniciais sem
       imagem; a grade de posts aponta para o TAYRO, não para a CDN.
 
+Verificação de existência de @:
+- [x] Provedor real: `404` conclusivo → "não existe"; `5xx`, tempo esgotado e corpo sem
+      identificador de perfil → "indeterminado".
+      (`rapidapi.instagram.provider.spec.ts` → `describe('checkHandle')`)
+- [x] Provedor real: nenhuma nova tentativa em cadeia na verificação (diferente da busca de
+      perfil da sincronização, que tem retentativas) — a pessoa está esperando na tela.
+      (`rapidapi.instagram.provider.spec.ts` → "não faz retry — uma tentativa só, mesmo em falha")
+- [x] Rota: formato inválido → `400` e o provedor não é chamado (validado por mock, não por
+      inspeção). (`ig-handle.controller.spec.ts`)
+- [x] Rota: corpo da resposta contém apenas handle + desfecho. (`ig-handle.controller.spec.ts`)
+- [x] Rota: segunda verificação do mesmo @ dentro do período não chama o provedor — a garantia é
+      do cache do provedor (`ig-profile-cache.ts`), não da rota; testado em
+      `rapidapi.instagram.provider.spec.ts` → "verificar o mesmo @ duas vezes seguidas...".
+- [x] Rota: teto global atingido → "indeterminado" sem chamada externa. (`ig-handle.controller.spec.ts`
+      → `describe('teto global de consultas por minuto')`)
+- [x] Reaproveitamento: sincronização logo após verificação chama só o feed. **Validado por
+      mutação** — o teste conta as chamadas de `fetch` e comenta explicitamente o total que
+      apareceria se o reaproveitamento fosse removido (4, não 2).
+      (`rapidapi.instagram.provider.spec.ts` → `describe('reaproveitamento entre checkHandle e
+      fetchProfile')`)
+- [x] Reaproveitamento: `force` (atualização manual) ignora o cache. (idem, "atualização manual
+      (force) ignora o reaproveitamento...")
+- [x] Reaproveitamento: entrada expirada não é usada. (`ig-profile-cache.spec.ts` e
+      `rapidapi.instagram.provider.spec.ts` → "entrada expirada do cache não é reaproveitada")
+- [x] Cache não cresce sem limite com handles distintos (teto de entradas). (`ig-profile-cache.spec.ts`)
+- [x] Provedor de desenvolvimento produz os três desfechos de forma determinística.
+      (`stub.instagram.provider.spec.ts`)
+- [x] Frontend: `PublicApplyPage` e `RegisterInfluencerPage` — ver as specs
+      `creator-discovery-and-apply` e `creator-account`.
+
 ## Current Implementation
 - `InstagramProvider` (interface `fetchProfile(handle)`) + token de injeção
   `INSTAGRAM_PROVIDER`, resolvido em `InstagramModule` por variável de ambiente
@@ -297,6 +413,25 @@ Persistência de imagem (a escrever **antes** do código):
   Alternativas descartadas e o porquê ficam em `decisions.md` (`D-18`), não aqui.
   (Até 2026-08-23 esta seção afirmava que "o sync renova a URL antes de expirar"; era falso —
   não existe renovação agendada.)
+- Verificação de handle: `InstagramProvider` ganha `checkHandle(handle)` devolvendo
+  `'FOUND' | 'NOT_FOUND' | 'UNKNOWN'` (só o passo de perfil, **sem** feed e **sem** retentativas),
+  e `fetchProfile(handle, { allowCached })` passa a aceitar a opção de reaproveitamento (default
+  `true`; `InstagramSyncService.refresh` repassa `allowCached: !force`). `IgProfileCache` (mapa em
+  memória, TTL curto + teto de entradas via poda FIFO na escrita) fica entre o provedor RapidAPI e
+  o passo de perfil, guardando tanto o perfil bruto quanto o veredito `NOT_FOUND`. Novo controller
+  `IgHandleController` (`GET ig/handle/:handle`) com `@Throttle` próprio (10/60s por IP, mais
+  restrito que o padrão global de 60/60s) — o handle é normalizado e validado por regex **dentro
+  do próprio controller** (mesmo alfabeto do `PublicApplyDto`, mas sem DTO — é um param de rota,
+  não um body), o que garante o `400` antes de qualquer chamada externa. Teto global por minuto
+  também vive no controller, como contador simples de janela deslizante (campo de instância, sem
+  Redis — degrada por processo, ver Known Gaps). Variáveis novas: `IG_HANDLE_CHECK_TIMEOUT_MS`
+  (default 5000, menor que o da sincronização porque tem gente esperando na tela),
+  `IG_PROFILE_CACHE_TTL_MINUTES` (default 15), `IG_HANDLE_CHECK_BUDGET_PER_MINUTE` (default 60).
+  Nenhuma delas é lida em request com `getOrThrow` — todas têm default, então não entram em
+  `REQUIRED_ENV_IN_PRODUCTION`. `StubInstagramProvider` decide o desfecho por substring reservada
+  no próprio handle (`STUB_HANDLE_NOT_FOUND_MARKER`/`STUB_HANDLE_UNKNOWN_MARKER`), mantendo o
+  determinismo que já tinha; espelha a falha real também em `fetchProfile` (handle marcado como
+  inexistente rejeita, igual ao provedor real com cache `not_found`).
 - `calcEngagementRate(posts, followers)`: soma `likes + comments` de todos os posts, divide
   pelo NÚMERO DE POSTS (média por post), divide por `followers`, multiplica por 100 e arredonda
   a 1 casa decimal. Função pura. `null` quando não há posts ou `followers = 0`.
@@ -304,6 +439,23 @@ Persistência de imagem (a escrever **antes** do código):
   post — a fórmula descrita dava o dobro do valor real.)
 
 ## Change History
+- 2026-08-27 · **implementada** a verificação de existência de um @ desenhada em 2026-08-26 (ver
+  entrada abaixo pro desenho). `GET /ig/handle/:handle`, `IgProfileCache`, `checkHandle` nos dois
+  providers, `InstagramSyncService.refresh` repassando `allowCached: !force`. Mapeamento
+  `404 → NOT_FOUND` **confirmado contra a API real** via `curl` antes do merge (ver `decisions.md`
+  `D-19`, agora `FIRME`) — achado no processo: um handle de teste com 38 caracteres (acima do
+  limite de 30 do Instagram) devolveu `400`, não `404`; teria sido um sinal falso se aceito sem
+  reteste com um handle de tamanho válido. Todos os critérios novos das seções anteriores viraram
+  `- [x]`.
+- 2026-08-26 · `/architect` acrescentou a **verificação de existência de um @** a esta capacidade
+  (pedido do Pedro, registrado em `decisions.md` na entrada de 2026-08-26 e na correção logo
+  abaixo dela). Três decisões que moldam o desenho: (1) o desfecho "não existe" só é afirmado com
+  resposta conclusiva do provedor — qualquer ambiguidade vira "indeterminado", porque barrar
+  creator legítima por instabilidade de terceiro é o erro caro; (2) a consulta de perfil da
+  verificação é **reaproveitada** pela sincronização que vem logo depois, então o custo de cota
+  por creator nova continua o mesmo de hoje (um perfil + um feed); (3) sendo rota pública sobre
+  API paga, ganha limite por origem **e** teto global por minuto, com o teto degradando para
+  "indeterminado" em vez de erro.
 - 2026-08-24 · **corrigido o furo estrutural de disparo.** Só a candidatura pública sincronizava;
   cadastro de creator e candidatura autenticada não disparavam nada. Como `igFetchStatus` é
   anulável e a interface lê ausência como falha, toda creator que entrava pelo cadastro aparecia
