@@ -19,7 +19,7 @@ export default function BrowseProgramsPublicPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex h-[60px] items-center px-6">
+      <header className="flex h-[60px] items-center px-4 sm:px-6">
         <Link
           to="/login"
           className="font-display text-[19px] font-bold tracking-[-.05em] text-foreground hover:opacity-80 transition-opacity"
@@ -28,7 +28,7 @@ export default function BrowseProgramsPublicPage() {
         </Link>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pb-10 pt-[14px]">
+      <main className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
         <ProgramsList title="Programas abertos" hrefBuilder={hrefBuilder} />
       </main>
     </div>
