@@ -64,7 +64,7 @@ describe('BrowseProgramsPage', () => {
     );
 
     expect(screen.getByText('Abertos')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
       'href',
       '/influencer/programs/camp-1',
     );

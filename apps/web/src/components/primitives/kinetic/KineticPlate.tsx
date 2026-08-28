@@ -38,7 +38,13 @@ export default function KineticPlate({
     <Tag
       className={cn(
         'relative rounded-lg bg-kinetic-light text-black',
-        flush ? 'overflow-hidden' : 'p-6 lg:p-8',
+        // As crop marks ocupam de 16px a 32px a partir de cada borda. O padding
+        // é exatamente 32px pra que o conteúdo COMECE onde a marca termina:
+        // assim ela emoldura o bloco em vez de flutuar solta na margem, e não
+        // sobra faixa morta entre o texto e a borda. Menos que isso e a marca
+        // atravessa o texto (mordeu no /apply); mais que isso e ela se desgruda
+        // do conteúdo. Quem sobrescrever com className precisa manter 32px.
+        flush ? 'overflow-hidden' : 'p-8',
         className,
       )}
     >

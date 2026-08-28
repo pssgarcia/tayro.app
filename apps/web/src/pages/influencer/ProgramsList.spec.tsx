@@ -92,7 +92,7 @@ describe('ProgramsList', () => {
     expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
   });
 
-  it('renderiza o primeiro programa como placa em destaque, com o href default (autenticado)', () => {
+  it('renderiza os programas com o href default (autenticado)', () => {
     mockHook({
       data: {
         data: [makeCampaign()],
@@ -101,9 +101,9 @@ describe('ProgramsList', () => {
     });
     renderList();
     expect(screen.getByText('Lançamento Whey')).toBeInTheDocument();
-    expect(screen.getByText('Marca Fit')).toBeInTheDocument();
+    expect(screen.getByText(/Marca Fit · 5 vagas/i)).toBeInTheDocument();
 
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
       'href',
       '/influencer/programs/camp-1',
     );
@@ -118,22 +118,50 @@ describe('ProgramsList', () => {
     });
     renderList({ hrefBuilder: (id) => `/apply/${id}` });
 
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
       'href',
       '/apply/camp-1',
     );
   });
 
-  it('programas além do primeiro aparecem como rows em "Todos os abertos"', () => {
+  // Até 2026-08-28 o primeiro programa da página virava placa em destaque sem
+  // regra nenhuma por trás (era só o mais novo DAQUELA página). Este teste
+  // trava a lista uniforme: se alguém reintroduzir a placa, ele quebra.
+  it('nenhum programa recebe destaque — todos saem como a mesma linha', () => {
     mockHook({
       data: {
         data: [makeCampaign(), makeCampaign({ id: 'camp-2', title: 'Segundo Programa' })],
         meta: { total: 2, page: 1, limit: 12, totalPages: 1 },
       },
     });
-    renderList();
+    const { container } = renderList();
+
     expect(screen.getByText('Todos os abertos')).toBeInTheDocument();
-    expect(screen.getByText('Segundo Programa')).toBeInTheDocument();
+    expect(screen.queryByText(/em destaque/i)).not.toBeInTheDocument();
+    // nenhuma placa clara na tela
+    expect(container.querySelector('.bg-kinetic-light')).toBeNull();
+
+    // os dois programas têm exatamente a mesma estrutura de link
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(2);
+    expect(links[0]).toHaveTextContent('Lançamento Whey');
+    expect(links[1]).toHaveTextContent('Segundo Programa');
+    expect(links[0].className).toBe(links[1].className);
+  });
+
+  it('numeração é contínua entre páginas (2ª página não recomeça em 01)', () => {
+    mockHook({
+      data: {
+        data: [makeCampaign({ id: 'camp-13', title: 'Décimo Terceiro' })],
+        meta: { total: 13, page: 2, limit: 12, totalPages: 2 },
+      },
+    });
+    renderList();
+
+    // "13" também é o total no cabeçalho — escopar no link da linha
+    const row = screen.getByRole('link', { name: /décimo terceiro/i });
+    expect(row).toHaveTextContent('13');
+    expect(row).not.toHaveTextContent('01');
   });
 
   it('pager de traços: avança de página ao clicar num traço', () => {

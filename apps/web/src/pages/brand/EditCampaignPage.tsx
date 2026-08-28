@@ -23,12 +23,9 @@ export default function EditCampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Logo escondido no mobile: o BrandLayout já mostra o logo + sair no
-          header mobile — sem isso apareciam dois "tayro" empilhados. */}
+      {/* Sem logo próprio — ver NewCampaignPage: o BrandLayout sempre mostra
+          um, na sidebar ou no header mobile. */}
       <header className="flex h-[60px] items-center justify-between px-6">
-        <span className="hidden font-display text-[19px] font-bold tracking-[-.05em] text-foreground md:inline-block">
-          tay<span className="text-lime">ro</span>
-        </span>
         <Link
           to={`/brand/campaigns/${id}`}
           className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"

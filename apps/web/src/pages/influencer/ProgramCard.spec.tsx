@@ -33,48 +33,39 @@ function renderCard(ui: React.ReactElement) {
 }
 
 describe('ProgramCard', () => {
-  it('placa em destaque leva ao detalhe do programa (não candidata direto)', () => {
-    renderCard(<ProgramCard campaign={makeCampaign()} variant="featured" />);
+  it('leva ao detalhe do programa (não candidata direto)', () => {
+    renderCard(<ProgramCard campaign={makeCampaign()} />);
 
-    const link = screen.getByRole('link', { name: /ver programa/i });
+    const link = screen.getByRole('link', { name: /lançamento whey/i });
     expect(link).toHaveAttribute('href', '/influencer/programs/camp-1');
     // o card não abre mais o modal de candidatura
     expect(screen.queryByText('Quero participar')).not.toBeInTheDocument();
   });
 
-  it('row leva ao detalhe do programa', () => {
-    renderCard(<ProgramCard campaign={makeCampaign({ id: 'camp-9' })} />);
+  it('mostra marca, vagas e oferta — o mesmo conteúdo pra todo programa', () => {
+    renderCard(<ProgramCard campaign={makeCampaign()} />);
 
-    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
-      'href',
-      '/influencer/programs/camp-9',
-    );
+    expect(screen.getByText(/Marca Fit · 5 vagas/i)).toBeInTheDocument();
+    expect(screen.getByText(/R\$\s*500/)).toBeInTheDocument();
   });
 
-  it('mostra a oferta e a marca na placa em destaque', () => {
-    renderCard(<ProgramCard campaign={makeCampaign()} variant="featured" />);
+  it('singulariza "vaga" quando só há uma', () => {
+    renderCard(<ProgramCard campaign={makeCampaign({ maxSpots: 1 })} />);
 
-    expect(screen.getByText('Marca Fit')).toBeInTheDocument();
-    expect(screen.getByText('500')).toBeInTheDocument();
-    expect(screen.getByText(/5 vagas/i)).toBeInTheDocument();
+    expect(screen.getByText(/Marca Fit · 1 vaga$/i)).toBeInTheDocument();
   });
 
-  it('featured usa hrefBuilder customizado quando informado (ex: visitante sem conta)', () => {
-    renderCard(
-      <ProgramCard
-        campaign={makeCampaign()}
-        variant="featured"
-        hrefBuilder={(id) => `/apply/${id}`}
-      />,
-    );
+  it('não existe variação de destaque: todo programa renderiza a mesma linha', () => {
+    const { container } = renderCard(<ProgramCard campaign={makeCampaign()} index={7} />);
 
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
-      'href',
-      '/apply/camp-1',
-    );
+    // índice mono 1-based, zero-padded — a única diferença entre as linhas
+    expect(screen.getByText('07')).toBeInTheDocument();
+    // nenhuma placa (KineticPlate renderiza as crop marks em lime sobre fundo claro)
+    expect(container.querySelector('.bg-kinetic-light')).toBeNull();
+    expect(screen.queryByRole('link', { name: /ver programa/i })).not.toBeInTheDocument();
   });
 
-  it('row usa hrefBuilder customizado quando informado', () => {
+  it('usa hrefBuilder customizado quando informado (ex: visitante sem conta)', () => {
     renderCard(
       <ProgramCard
         campaign={makeCampaign({ id: 'camp-9' })}

@@ -70,7 +70,7 @@ export default function DashboardPage() {
         <Skeleton />
       ) : (
         <>
-          <KineticPlate marks="all" className="max-w-[560px] px-6 py-10 sm:px-9">
+          <KineticPlate marks="all" className="max-w-[560px] p-8">
             {rate === null ? (
               <>
                 <p
