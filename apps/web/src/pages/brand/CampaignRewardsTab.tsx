@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  Gift,
-  Plus,
-  Banknote,
-  Package,
-  Tag,
-  Truck,
-  Trash2,
-} from 'lucide-react';
+import { Gift, Plus, Banknote, Package, Tag, Truck, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import type { CampaignReward, RewardStatus, RewardType } from '../../types/api';
 import {
@@ -60,7 +52,13 @@ function CreateRewardModal({
   campaignId: string;
   approvedCreators: { influencerId: string; name: string }[];
   onClose: () => void;
-  onCreate: (data: { influencerId: string; campaignId: string; type: string; value: string; notes?: string }) => void;
+  onCreate: (data: {
+    influencerId: string;
+    campaignId: string;
+    type: string;
+    value: string;
+    notes?: string;
+  }) => void;
   isPending: boolean;
   error?: string | null;
 }) {
@@ -223,9 +221,7 @@ function RewardCard({
             </div>
           )}
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {reward.influencer.name}
-            </p>
+            <p className="truncate text-sm font-medium text-foreground">{reward.influencer.name}</p>
             {reward.influencer.instagramHandle && (
               <p className="truncate text-xs text-muted-foreground">
                 @{reward.influencer.instagramHandle}
@@ -317,13 +313,10 @@ function RemoveRewardModal({
               Remover esta recompensa?
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              O registro de{' '}
-              <span className="font-medium text-black">{reward.value}</span> para{' '}
-              <span className="font-medium text-black">
-                {reward.influencer.name}
-              </span>{' '}
-              some pra sempre, e some também da lista de recompensas dela. Não dá pra
-              desfazer — mas você pode registrar de novo.
+              O registro de <span className="font-medium text-black">{reward.value}</span> para{' '}
+              <span className="font-medium text-black">{reward.influencer.name}</span> some pra
+              sempre, e some também da lista de recompensas dela. Não dá pra desfazer — mas você
+              pode registrar de novo.
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
@@ -438,8 +431,8 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
             filter === 'ALL' && approvedCreators.length > 0
               ? 'Registre as recompensas das candidaturas aprovadas nessa campanha.'
               : filter === 'ALL'
-              ? 'Recompensas ficam disponíveis quando houver candidatura aprovada.'
-              : undefined
+                ? 'Recompensas ficam disponíveis quando houver candidatura aprovada.'
+                : undefined
           }
         />
       ) : (
@@ -466,8 +459,8 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
           isPending={create.isPending}
           error={
             create.error && axios.isAxiosError(create.error)
-              ? (create.error.response?.data?.message as string | undefined) ??
-                'Erro ao registrar recompensa.'
+              ? ((create.error.response?.data?.message as string | undefined) ??
+                'Erro ao registrar recompensa.')
               : null
           }
           onCreate={(data) => {
@@ -483,9 +476,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
           reward={removing}
           isPending={remove.isPending}
           isError={remove.isError}
-          onConfirm={() =>
-            remove.mutate(removing.id, { onSuccess: () => setRemoving(null) })
-          }
+          onConfirm={() => remove.mutate(removing.id, { onSuccess: () => setRemoving(null) })}
           onClose={() => {
             remove.reset();
             setRemoving(null);

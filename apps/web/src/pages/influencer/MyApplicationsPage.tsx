@@ -181,9 +181,9 @@ function WithdrawModal({
               Retirar candidatura?
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              Sua candidatura para <strong className="font-semibold text-black">{app.campaign.title}</strong>{' '}
-              sai da fila de {app.campaign.brand.name}. Você não poderá se candidatar de novo a
-              este programa.
+              Sua candidatura para{' '}
+              <strong className="font-semibold text-black">{app.campaign.title}</strong> sai da fila
+              de {app.campaign.brand.name}. Você não poderá se candidatar de novo a este programa.
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">

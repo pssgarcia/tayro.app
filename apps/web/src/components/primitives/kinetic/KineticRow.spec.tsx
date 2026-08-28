@@ -46,9 +46,7 @@ describe('KineticRow', () => {
   });
 
   it('mostra meta e trailing quando existem', () => {
-    render(
-      <KineticRow title="Desafio Verão" meta="Fit Foods" trailing={<span>Ativa</span>} />,
-    );
+    render(<KineticRow title="Desafio Verão" meta="Fit Foods" trailing={<span>Ativa</span>} />);
     expect(screen.getByText('Fit Foods')).toBeInTheDocument();
     expect(screen.getByText('Ativa')).toBeInTheDocument();
   });

@@ -92,7 +92,10 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
                   aria-label={`Página ${i + 1} de ${totalPages}`}
                   aria-current={page === i + 1}
                   onClick={() => setPage(i + 1)}
-                  className={cn('h-0.5 w-[22px] rounded-full', page === i + 1 ? 'bg-lime' : 'bg-[#242422]')}
+                  className={cn(
+                    'h-0.5 w-[22px] rounded-full',
+                    page === i + 1 ? 'bg-lime' : 'bg-[#242422]',
+                  )}
                 />
               ))}
             </div>

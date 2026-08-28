@@ -199,10 +199,7 @@ describe('CampaignRewardsTab', () => {
       abrirModal();
       fireEvent.click(screen.getByRole('button', { name: /^remover$/i }));
 
-      expect(deleteMutation.mutate).toHaveBeenCalledWith(
-        'rew-1',
-        expect.anything(),
-      );
+      expect(deleteMutation.mutate).toHaveBeenCalledWith('rew-1', expect.anything());
     });
 
     it('cancelar fecha o modal sem apagar', () => {

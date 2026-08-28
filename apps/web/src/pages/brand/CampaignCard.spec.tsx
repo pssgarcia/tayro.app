@@ -150,8 +150,6 @@ describe('CampaignCard — copiar link público', () => {
       vi.advanceTimersByTime(2000);
     });
 
-    expect(
-      screen.getByRole('button', { name: /copiar link/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /copiar link/i })).toBeInTheDocument();
   });
 });

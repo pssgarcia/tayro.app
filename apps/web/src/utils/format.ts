@@ -1,9 +1,4 @@
-import type {
-  ApplicationStatus,
-  CampaignStatus,
-  ContentStatus,
-  RewardStatus,
-} from '../types/api';
+import type { ApplicationStatus, CampaignStatus, ContentStatus, RewardStatus } from '../types/api';
 
 /**
  * Rótulo em português de cada status de candidatura, no feminino (concorda com

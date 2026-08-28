@@ -26,10 +26,7 @@ vi.mock('../../hooks/useMyApplications', async (importOriginal) => {
 
 const APP_ID = '11111111-1111-4111-8111-111111111111';
 
-function makeSubmission(
-  id: string,
-  overrides: Partial<MySubmission> = {},
-): MySubmission {
+function makeSubmission(id: string, overrides: Partial<MySubmission> = {}): MySubmission {
   return {
     id,
     applicationId: APP_ID,
@@ -47,10 +44,7 @@ function makeSubmission(
   };
 }
 
-function makeApplication(
-  id = APP_ID,
-  status: ApplicationStatus = 'APPROVED',
-): MyApplication {
+function makeApplication(id = APP_ID, status: ApplicationStatus = 'APPROVED'): MyApplication {
   return {
     id,
     campaignId: 'camp-1',
@@ -189,15 +183,11 @@ describe('SubmissionsPage — placa em destaque (cascata)', () => {
     renderPage();
 
     expect(screen.queryByRole('button', { name: /reenviar link/i })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /enviar novo conteúdo/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /enviar novo conteúdo/i })).not.toBeInTheDocument();
   });
 
   it('só mostra o feedback da marca no modo de ajuste', () => {
-    mockData([
-      makeSubmission('s1', { status: 'APPROVED', feedback: 'Ficou ótimo' }),
-    ]);
+    mockData([makeSubmission('s1', { status: 'APPROVED', feedback: 'Ficou ótimo' })]);
     renderPage();
 
     expect(screen.queryByText(/Ficou ótimo/)).not.toBeInTheDocument();
@@ -327,10 +317,7 @@ describe('SubmissionsPage — envio', () => {
     renderPage();
 
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
-    await user.type(
-      screen.getByLabelText(/link do conteúdo/i),
-      'https://instagram.com/reel/xyz',
-    );
+    await user.type(screen.getByLabelText(/link do conteúdo/i), 'https://instagram.com/reel/xyz');
     await user.click(screen.getByRole('button', { name: /enviar conteúdo/i }));
 
     expect(await screen.findByText(/selecione uma candidatura aprovada/i)).toBeInTheDocument();

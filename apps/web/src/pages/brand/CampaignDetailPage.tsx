@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { applicationKeys, useCampaign } from '../../hooks/useCampaignApplications';
 import { useCloseCampaign, useDeleteCampaign, usePublishCampaign } from '../../hooks/useCampaigns';
 import { useQuery } from '@tanstack/react-query';
@@ -12,8 +11,8 @@ import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
 import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
-import Plate from '../../components/primitives/Plate';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import { cn } from '../../lib/utils';
 
 // ─── Abas ─────────────────────────────────────────────────────────────────────
@@ -127,10 +126,12 @@ function PublishCampaignModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Publicar programa?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Publicar programa?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O link de candidatura fica ativo na hora e creators já podem se inscrever. Depois de
               publicado o programa não volta para rascunho e os detalhes não podem mais ser
               editados.
@@ -141,66 +142,60 @@ function PublishCampaignModal({
               </p>
             )}
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: publish.isPending ? 'Publicando…' : 'Publicar',
-              // Fecha só no sucesso: em erro o modal fica de pé pra dar retry,
-              // em vez de sumir por baixo do usuário fingindo que aconteceu.
-              onClick: () => publish.mutate(campaignId, { onSuccess: onClose }),
-              disabled: publish.isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: publish.isPending ? 'Publicando…' : 'Publicar',
+                // Fecha só no sucesso: em erro o modal fica de pé pra dar retry,
+                // em vez de sumir por baixo do usuário fingindo que aconteceu.
+                onClick: () => publish.mutate(campaignId, { onSuccess: onClose }),
+                disabled: publish.isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
 }
 
-function CloseCampaignModal({
-  campaignId,
-  onClose,
-}: {
-  campaignId: string;
-  onClose: () => void;
-}) {
+function CloseCampaignModal({ campaignId, onClose }: { campaignId: string; onClose: () => void }) {
   const close = useCloseCampaign();
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Encerrar campanha?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Encerrar campanha?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O link de candidatura deixa de aceitar novas inscrições na hora. Candidaturas e
-              conteúdos já em andamento continuam visíveis, mas não será possível reabrir a
-              campanha depois.
+              conteúdos já em andamento continuam visíveis, mas não será possível reabrir a campanha
+              depois.
             </p>
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: close.isPending ? 'Encerrando…' : 'Encerrar',
-              onClick: () => close.mutate(campaignId, { onSuccess: onClose }),
-              disabled: close.isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: close.isPending ? 'Encerrando…' : 'Encerrar',
+                onClick: () => close.mutate(campaignId, { onSuccess: onClose }),
+                disabled: close.isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
 }
 
-function DeleteCampaignModal({
-  campaignId,
-  onClose,
-}: {
-  campaignId: string;
-  onClose: () => void;
-}) {
+function DeleteCampaignModal({ campaignId, onClose }: { campaignId: string; onClose: () => void }) {
   const navigate = useNavigate();
   const deleteCampaign = useDeleteCampaign();
 
@@ -213,10 +208,12 @@ function DeleteCampaignModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Apagar rascunho?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Apagar rascunho?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O rascunho e todos os dados preenchidos somem pra sempre - não dá pra desfazer. Só é
               possível apagar campanhas que ainda não foram publicadas.
             </p>
@@ -226,16 +223,18 @@ function DeleteCampaignModal({
               </p>
             )}
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: deleteCampaign.isPending ? 'Apagando…' : 'Apagar',
-              onClick: handleDelete,
-              disabled: deleteCampaign.isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: deleteCampaign.isPending ? 'Apagando…' : 'Apagar',
+                onClick: handleDelete,
+                disabled: deleteCampaign.isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );

@@ -154,7 +154,9 @@ export default function RegisterInfluencerPage() {
       name: values.name,
       email: values.email,
       password: values.password,
-      ...(cleanHandle(values.instagramHandle) ? { instagramHandle: cleanHandle(values.instagramHandle) } : {}),
+      ...(cleanHandle(values.instagramHandle)
+        ? { instagramHandle: cleanHandle(values.instagramHandle) }
+        : {}),
       ...(values.niches.length ? { niches: values.niches } : {}),
     };
 
@@ -198,7 +200,9 @@ export default function RegisterInfluencerPage() {
         return;
       }
 
-      setError('root', { message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.' });
+      setError('root', {
+        message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.',
+      });
     }
   };
 
@@ -297,8 +301,7 @@ export default function RegisterInfluencerPage() {
             primary={
               step < STEPS.length - 1
                 ? {
-                    label:
-                      step === 0 && handleCheck.checking ? 'Verificando…' : 'Continuar',
+                    label: step === 0 && handleCheck.checking ? 'Verificando…' : 'Continuar',
                     type: 'button',
                     onClick: next,
                     disabled: isStepGuarded || (step === 0 && handleCheck.checking),

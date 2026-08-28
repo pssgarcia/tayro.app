@@ -33,7 +33,9 @@ describe('KineticActions', () => {
   it('renderiza <a> quando a ação é navegação', () => {
     render(
       <MemoryRouter>
-        <KineticActions actions={[{ label: 'Ver detalhes', to: '/brand/campaigns/1', primary: true }]} />
+        <KineticActions
+          actions={[{ label: 'Ver detalhes', to: '/brand/campaigns/1', primary: true }]}
+        />
       </MemoryRouter>,
     );
 
@@ -46,10 +48,7 @@ describe('KineticActions', () => {
   it('só o bloco primário fica em lime', () => {
     render(
       <KineticActions
-        actions={[
-          { label: 'Copiar link' },
-          { label: 'Ver detalhes', primary: true },
-        ]}
+        actions={[{ label: 'Copiar link' }, { label: 'Ver detalhes', primary: true }]}
       />,
     );
 

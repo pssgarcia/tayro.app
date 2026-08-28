@@ -39,11 +39,7 @@ function renderTab() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <CampaignFilaTab
-        campaign={campaignFixture}
-        campaignId="camp-1"
-        onExitMobile={vi.fn()}
-      />
+      <CampaignFilaTab campaign={campaignFixture} campaignId="camp-1" onExitMobile={vi.fn()} />
     </QueryClientProvider>,
   );
 }
@@ -140,12 +136,8 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     renderTab();
     await settle();
 
-    expect(
-      within(plate()).queryByRole('button', { name: /aprovar/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(plate()).queryByRole('button', { name: /descartar/i }),
-    ).not.toBeInTheDocument();
+    expect(within(plate()).queryByRole('button', { name: /aprovar/i })).not.toBeInTheDocument();
+    expect(within(plate()).queryByRole('button', { name: /descartar/i })).not.toBeInTheDocument();
   });
 
   it('aprova e descarta a candidatura selecionada', async () => {
@@ -167,10 +159,8 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
 // cronômetro zera se a condição desaparecer.
 
 describe('CampaignFilaTab — poll-while-PENDING', () => {
-  const esperandoIg = () =>
-    makeApplication('a', { status: 'PENDING', igFetchStatus: 'PENDING' });
-  const igPronto = () =>
-    makeApplication('a', { status: 'PENDING', igFetchStatus: 'OK' });
+  const esperandoIg = () => makeApplication('a', { status: 'PENDING', igFetchStatus: 'PENDING' });
+  const igPronto = () => makeApplication('a', { status: 'PENDING', igFetchStatus: 'OK' });
 
   it('reconsulta a cada 6s enquanto o IG de alguém não chegou', async () => {
     mockApplications([esperandoIg()]);
@@ -197,9 +187,7 @@ describe('CampaignFilaTab — poll-while-PENDING', () => {
   });
 
   it('não faz poll por candidatura já decidida, mesmo com IG pendente', async () => {
-    mockApplications([
-      makeApplication('a', { status: 'APPROVED', igFetchStatus: 'PENDING' }),
-    ]);
+    mockApplications([makeApplication('a', { status: 'APPROVED', igFetchStatus: 'PENDING' })]);
     renderTab();
     await settle();
 
@@ -227,10 +215,7 @@ describe('CampaignFilaTab — poll-while-PENDING', () => {
     mockApplications(
       [esperandoIg()],
       [igPronto()],
-      [
-        igPronto(),
-        makeApplication('b', { status: 'PENDING', igFetchStatus: 'PENDING' }),
-      ],
+      [igPronto(), makeApplication('b', { status: 'PENDING', igFetchStatus: 'PENDING' })],
     );
     renderTab();
     await settle();
@@ -247,21 +232,14 @@ describe('CampaignFilaTab — poll-while-PENDING', () => {
     // o tempo já decorrido (era o risco: cronômetro não zerado deixaria a
     // próxima fila sem poll nenhum).
     vi.mocked(api.get).mockResolvedValue({
-      data: [
-        igPronto(),
-        makeApplication('b', { status: 'PENDING', igFetchStatus: 'PENDING' }),
-      ],
+      data: [igPronto(), makeApplication('b', { status: 'PENDING', igFetchStatus: 'PENDING' })],
     } as any);
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
     render(
       <QueryClientProvider client={queryClient}>
-        <CampaignFilaTab
-          campaign={campaignFixture}
-          campaignId="camp-1"
-          onExitMobile={vi.fn()}
-        />
+        <CampaignFilaTab campaign={campaignFixture} campaignId="camp-1" onExitMobile={vi.fn()} />
       </QueryClientProvider>,
     );
     await settle();

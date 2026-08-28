@@ -238,21 +238,31 @@ describe('CampaignDetailPage — encerrar/apagar', () => {
     fireEvent.click(await screen.findByRole('button', { name: /encerrar campanha/i }));
     fireEvent.click(await screen.findByRole('button', { name: /^encerrar$/i }));
 
-    expect(closeMutate).toHaveBeenCalledWith('camp-1', expect.objectContaining({
-      onSuccess: expect.any(Function),
-    }));
+    expect(closeMutate).toHaveBeenCalledWith(
+      'camp-1',
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      }),
+    );
   });
 
   it('confirmar "Apagar" chama a mutation e navega pra lista ao ter sucesso', async () => {
     const deleteMutate = vi.fn((_id, opts) => opts?.onSuccess?.());
-    renderPage([], { status: 'DRAFT' }, { delete: { mutate: deleteMutate, isPending: false, isError: false } });
+    renderPage(
+      [],
+      { status: 'DRAFT' },
+      { delete: { mutate: deleteMutate, isPending: false, isError: false } },
+    );
 
     fireEvent.click(await screen.findByRole('button', { name: /apagar rascunho/i }));
     fireEvent.click(await screen.findByRole('button', { name: /^apagar$/i }));
 
-    expect(deleteMutate).toHaveBeenCalledWith('camp-1', expect.objectContaining({
-      onSuccess: expect.any(Function),
-    }));
+    expect(deleteMutate).toHaveBeenCalledWith(
+      'camp-1',
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      }),
+    );
     expect(navigateMock).toHaveBeenCalledWith('/brand/campaigns', { replace: true });
   });
 

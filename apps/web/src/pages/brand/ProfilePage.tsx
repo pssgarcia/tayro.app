@@ -175,7 +175,9 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
           'disabled:cursor-not-allowed disabled:opacity-40',
         )}
       >
-        {isSubmitting ? 'Salvando…' : justSaved && !isDirty ? (
+        {isSubmitting ? (
+          'Salvando…'
+        ) : justSaved && !isDirty ? (
           <>
             Salvo <Check size={16} />
           </>
@@ -216,7 +218,9 @@ export default function ProfilePage() {
 
       {isLoading && <Skeleton />}
 
-      {isError && <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>}
+      {isError && (
+        <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>
+      )}
 
       {!isLoading && !isError && profile && <ProfileForm profile={profile} />}
     </div>

@@ -152,8 +152,8 @@ Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignSt
 
 ### Estado da migração
 
-- **Kinetic:** os dois dashboards; todo o detalhe de campanha da marca (header, abas, Fila desktop + Story mobile, Briefing, Entregas, Pagamento); e as telas da creator (Registro, Entregas, Recompensas, detalhe do programa).
-- **Ainda 2a:** auth (`/login`, cadastros, `/claim`), `/apply/:id`, `/programs`, `/c/:handle`, perfis de marca e creator, lista de programas da marca, `CampaignForm`, `/influencer/browse`.
+- **Kinetic:** os dois dashboards; TODA a área de programas da marca (lista, card, criar/editar, detalhe com as 4 abas e os 3 modais de ciclo de vida); e as telas da creator (Registro, Entregas, Recompensas, detalhe do programa).
+- **Ainda 2a:** auth (`/login`, cadastros, `/claim`), `/apply/:id`, `/programs`, `/c/:handle`, perfis de marca e creator, `/influencer/browse` + `ProgramCard`, `ApplyModal`.
 
 ## Colors
 

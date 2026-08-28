@@ -272,14 +272,10 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
           <EmptyState
             icon={<Layers size={20} />}
             title={
-              filter === 'ALL'
-                ? 'Nenhum conteúdo enviado ainda'
-                : 'Nenhum conteúdo com esse status'
+              filter === 'ALL' ? 'Nenhum conteúdo enviado ainda' : 'Nenhum conteúdo com esse status'
             }
             description={
-              filter === 'ALL'
-                ? 'Os conteúdos aparecem aqui assim que forem enviados.'
-                : undefined
+              filter === 'ALL' ? 'Os conteúdos aparecem aqui assim que forem enviados.' : undefined
             }
           />
         </div>
@@ -304,11 +300,7 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
                       leading={
                         <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-kinetic-gray">
                           {rowAvatar && (
-                            <img
-                              src={rowAvatar}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
+                            <img src={rowAvatar} alt="" className="h-full w-full object-cover" />
                           )}
                         </span>
                       }

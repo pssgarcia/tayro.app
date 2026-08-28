@@ -76,9 +76,7 @@ beforeEach(() => {
 describe('MyApplicationsPage', () => {
   it('mostra empty state sem candidaturas', () => {
     renderPage();
-    expect(
-      screen.getByText(/você ainda não se candidatou a nenhum programa/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/você ainda não se candidatou a nenhum programa/i)).toBeInTheDocument();
   });
 
   it('renderiza a placa em destaque com programa, marca e oferta', () => {
@@ -94,17 +92,13 @@ describe('MyApplicationsPage', () => {
   it('candidatura PENDING sem conteúdo vira a placa em destaque com "Retirar candidatura"', () => {
     mockHooks([baseApp]);
     renderPage();
-    expect(
-      screen.getByRole('button', { name: /retirar candidatura/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retirar candidatura/i })).toBeInTheDocument();
   });
 
   it('candidatura APPROVED sem conteúdo enviado vira a placa com "Enviar conteúdo", não "Retirar"', () => {
     mockHooks([{ ...baseApp, status: 'APPROVED' }]);
     renderPage();
-    expect(
-      screen.queryByRole('button', { name: /retirar candidatura/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /retirar candidatura/i })).not.toBeInTheDocument();
     expect(screen.getByText(/enviar conteúdo/i)).toBeInTheDocument();
   });
 
@@ -139,9 +133,12 @@ describe('MyApplicationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /retirar candidatura/i }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^retirar$/i }));
 
-    expect(withdrawMutate).toHaveBeenCalledWith('app-1', expect.objectContaining({
-      onSuccess: expect.any(Function),
-    }));
+    expect(withdrawMutate).toHaveBeenCalledWith(
+      'app-1',
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+      }),
+    );
   });
 
   it('cancelar fecha a confirmação sem retirar', () => {

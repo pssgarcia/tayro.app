@@ -70,7 +70,9 @@ function ProgramFeatured({
         {offer && (
           <CountUp>
             <span className="font-display text-d-xl text-plate-ink tabular-nums">
-              {offer.prefix && <span className="text-[23px] tracking-[-.04em]">{offer.prefix}</span>}
+              {offer.prefix && (
+                <span className="text-[23px] tracking-[-.04em]">{offer.prefix}</span>
+              )}
               {offer.value}
             </span>
           </CountUp>
