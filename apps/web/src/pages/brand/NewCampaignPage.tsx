@@ -113,13 +113,12 @@ export default function NewCampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Logo escondido no mobile: o BrandLayout já mostra o logo + sair no
-          header mobile — sem isso apareciam dois "tayro" empilhados. No
-          desktop o BrandLayout só tem sidebar, então o logo aqui fica. */}
+      {/* Sem logo próprio: esta tela vive dentro do BrandLayout, que SEMPRE
+          mostra um — sidebar no desktop, header no mobile. O fix de 2026-08-27
+          escondeu o logo só abaixo de `md` porque assumiu que "no desktop o
+          BrandLayout só tem sidebar"; a sidebar tem logo, então acima de `md`
+          continuavam dois. */}
       <header className="flex h-[60px] items-center justify-between px-6">
-        <span className="hidden font-display text-[19px] font-bold tracking-[-.05em] text-foreground md:inline-block">
-          tay<span className="text-lime">ro</span>
-        </span>
         <Link
           to="/brand/campaigns"
           className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"
