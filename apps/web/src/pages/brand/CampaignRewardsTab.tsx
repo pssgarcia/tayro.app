@@ -238,7 +238,7 @@ function RewardCard({
           {typeCfg.icon}
           {typeCfg.label}
         </span>
-        <span className="break-all text-right font-display text-lg font-bold tracking-[-.03em] text-foreground">
+        <span className="break-words text-right font-display text-lg font-bold tracking-[-.03em] text-foreground">
           {reward.value}
         </span>
       </div>
@@ -363,7 +363,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mx-auto grid max-w-5xl gap-4 px-4 pb-12 sm:grid-cols-2 sm:px-6 xl:grid-cols-3">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -384,7 +384,10 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
   }
 
   return (
-    <div className="space-y-5">
+    // Container próprio: desde a leva 2 o corpo do detalhe não dá mais padding
+    // horizontal (cada aba dá o seu), e sem isto o conteúdo colava na sidebar e o
+    // CTA "Registrar recompensa" saía cortado na borda direita.
+    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-12 sm:px-6">
       {/* Header com botão de criação */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">

@@ -89,7 +89,7 @@ export default function RewardsPage() {
                   <span className="font-mono text-[10px] uppercase tracking-[.12em] text-kinetic-muted">
                     {REWARD_TYPE_LABEL[reward.type]}
                   </span>
-                  <span className="break-all font-display text-lg font-bold tracking-[-.03em] text-lime">
+                  <span className="break-words font-display text-lg font-bold tracking-[-.03em] text-lime">
                     {reward.value}
                   </span>
                 </div>

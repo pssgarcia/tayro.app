@@ -69,7 +69,7 @@ function CampaignHeader({
           <button
             type="button"
             onClick={onEncerrar}
-            className="mt-3 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            className="mt-3 font-mono text-[10px] uppercase tracking-widest text-kinetic-text underline underline-offset-4 transition-colors hover:text-foreground"
           >
             Encerrar campanha
           </button>
