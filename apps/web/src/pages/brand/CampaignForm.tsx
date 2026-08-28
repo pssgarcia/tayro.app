@@ -179,7 +179,9 @@ export default function CampaignForm({
           </div>
         </div>
 
-        <h2 className="mb-[6px] mt-[34px] font-display text-d-xs text-foreground">A oferta</h2>
+        <h2 className="mb-2 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+          A oferta
+        </h2>
         <p className="mb-5 text-xs text-[#75756E]">É a primeira coisa que quem se candidata lê.</p>
 
         <Controller

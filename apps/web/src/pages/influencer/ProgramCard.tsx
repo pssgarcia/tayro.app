@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import type { Campaign } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import { formatOfferWhole } from '../../utils/format';
 
 // O card NÃO candidata — leva pro detalhe do programa. Decidir participar é
@@ -30,14 +30,14 @@ function ProgramRow({
       to={hrefBuilder(campaign.id)}
       className="flex w-full items-baseline gap-3.5 text-left transition-colors hover:bg-accent"
     >
-      <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
+      <span className="shrink-0 font-mono text-[11px] text-kinetic-muted">
         {String(index).padStart(2, '0')}
       </span>
       <span className="min-w-0 flex-1">
-        <p className="truncate font-display text-d-xs font-semibold text-foreground">
+        <p className="truncate font-display text-base font-semibold tracking-[-.03em] font-semibold text-foreground">
           {campaign.title}
         </p>
-        <p className="mt-[5px] text-xs text-[#6E6E68]">{campaign.brand?.name ?? 'Marca'}</p>
+        <p className="mt-[5px] text-xs text-kinetic-muted">{campaign.brand?.name ?? 'Marca'}</p>
       </span>
       {offer && (
         <span className="shrink-0 text-[13px] tabular-nums text-foreground">
@@ -45,7 +45,7 @@ function ProgramRow({
           {offer.value}
         </span>
       )}
-      <ChevronRight size={14} className="shrink-0 text-[#4A4A46]" />
+      <ChevronRight size={14} className="shrink-0 text-kinetic-border" />
     </Link>
   );
 }
@@ -61,15 +61,15 @@ function ProgramFeatured({
 }) {
   const offer = formatOfferWhole(campaign);
   return (
-    <Plate marks="top" flush className="max-w-[520px]">
+    <KineticPlate marks="top" flush className="max-w-[520px]">
       <div className="px-6 pb-6 pt-[26px]">
-        <p className="text-xs text-plate-muted">{campaign.brand?.name ?? 'Marca'}</p>
-        <p className="mb-[22px] mt-[5px] font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+        <p className="text-xs text-[#6a6a64]">{campaign.brand?.name ?? 'Marca'}</p>
+        <p className="mb-[22px] mt-[5px] font-display text-[21px] font-bold tracking-[-.045em] text-black">
           {campaign.title}
         </p>
         {offer && (
           <CountUp>
-            <span className="font-display text-d-xl text-plate-ink tabular-nums">
+            <span className="font-display text-[40px] font-bold leading-[.85] tracking-[-.05em] text-black tabular-nums">
               {offer.prefix && (
                 <span className="text-[23px] tracking-[-.04em]">{offer.prefix}</span>
               )}
@@ -77,18 +77,14 @@ function ProgramFeatured({
             </span>
           </CountUp>
         )}
-        <p className="mt-3 text-xs text-plate-soft">
+        <p className="mt-3 text-xs text-[#7a7a74]">
           por candidatura aprovada · {campaign.maxSpots} vaga{campaign.maxSpots !== 1 ? 's' : ''}
         </p>
       </div>
-      <PlateActionBar
-        primary={{
-          label: 'Ver programa',
-          to: hrefBuilder(campaign.id),
-          icon: <ArrowRight size={16} />,
-        }}
+      <KineticActions
+        actions={[{ label: 'Ver programa', to: hrefBuilder(campaign.id), primary: true }]}
       />
-    </Plate>
+    </KineticPlate>
   );
 }
 

@@ -79,14 +79,8 @@ async function preencherEEnviar(
   user: ReturnType<typeof userEvent.setup>,
   overrides: { handle?: string; email?: string } = {},
 ) {
-  await user.type(
-    screen.getByLabelText(/@ do instagram/i),
-    overrides.handle ?? 'anafit',
-  );
-  await user.type(
-    screen.getByLabelText(/e-mail/i),
-    overrides.email ?? 'ana@email.com',
-  );
+  await user.type(screen.getByLabelText(/@ do instagram/i), overrides.handle ?? 'anafit');
+  await user.type(screen.getByLabelText(/e-mail/i), overrides.email ?? 'ana@email.com');
   await user.click(screen.getByRole('button', { name: /quero participar/i }));
 }
 
@@ -122,9 +116,7 @@ describe('PublicApplyPage — carga da campanha', () => {
       renderPage({ status });
 
       expect(await screen.findByText(/inscrições encerradas/i)).toBeInTheDocument();
-      expect(
-        screen.queryByRole('button', { name: /quero participar/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /quero participar/i })).not.toBeInTheDocument();
     },
   );
 });
@@ -175,9 +167,7 @@ describe('PublicApplyPage — envio da candidatura', () => {
     await preencherEEnviar(user);
 
     expect(await screen.findByText(/candidatura enviada/i)).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /quero participar/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /quero participar/i })).not.toBeInTheDocument();
   });
 
   it('recusa handle com caractere inválido sem chamar a API', async () => {
@@ -249,9 +239,7 @@ describe('PublicApplyPage — respostas de erro da API', () => {
     await preencherEEnviar(user);
     await screen.findByText(/algo deu errado/i);
 
-    expect(
-      screen.getByRole('button', { name: /quero participar/i }),
-    ).toBeEnabled();
+    expect(screen.getByRole('button', { name: /quero participar/i })).toBeEnabled();
   });
 });
 
@@ -263,9 +251,7 @@ describe('PublicApplyPage — verificação do @ do Instagram', () => {
 
     await preencherEEnviar(user);
 
-    expect(
-      await screen.findByText(/usuário não encontrado/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/usuário não encontrado/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -278,9 +264,7 @@ describe('PublicApplyPage — verificação do @ do Instagram', () => {
     await preencherEEnviar(user);
 
     await waitFor(() => expect(api.post).toHaveBeenCalled());
-    expect(
-      screen.queryByText(/usuário não encontrado/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/usuário não encontrado/i)).not.toBeInTheDocument();
   });
 
   it('sair do campo e depois enviar o mesmo @ verifica uma vez só', async () => {

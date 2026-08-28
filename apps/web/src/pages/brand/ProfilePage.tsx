@@ -6,9 +6,9 @@ import { ExternalLink, Lock, Check } from 'lucide-react';
 import axios from 'axios';
 import { useBrandProfile, useUpdateBrandProfile } from '../../hooks/useBrandProfile';
 import type { BrandProfile, UpdateBrandPayload } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
-import PlateEditField from '../../components/primitives/PlateEditField';
-import PlateEditNiches from '../../components/primitives/PlateEditNiches';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticEditField from '../../components/primitives/kinetic/KineticEditField';
+import KineticEditNiches from '../../components/primitives/kinetic/KineticEditNiches';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -26,8 +26,8 @@ type FormValues = z.infer<typeof schema>;
 // ─── Form ─────────────────────────────────────────────────────────────────────
 // Tela 16 do redesign 2a — espelho exato do Perfil da creator (tela 8): marca
 // e creator usam a mesma placa. "Editar" são rows label+valor+chevron que
-// abrem um modal placa-formulário de campo único (PlateEditField/
-// PlateEditNiches) — padrão literal do mock, a pedido do usuário.
+// abrem um modal placa-formulário de campo único (KineticEditField/
+// KineticEditNiches) — padrão literal do mock, a pedido do usuário.
 
 function ProfileForm({ profile }: { profile: BrandProfile }) {
   const update = useUpdateBrandProfile();
@@ -81,21 +81,21 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* Placa — preview ao vivo do cabeçalho do link público (/apply/:id) */}
-      <Plate marks="all" className="max-w-[520px]">
+      <KineticPlate marks="all" className="max-w-[520px]">
         <div className="flex items-center gap-3.5">
-          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-[#cfcfc8]">
             {watchedLogo && <img src={watchedLogo} alt="" className="h-full w-full object-cover" />}
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-plate-muted">Programa de</p>
-            <p className="mt-[4px] truncate font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+            <p className="text-xs text-[#6a6a64]">Programa de</p>
+            <p className="mt-[4px] truncate font-display text-[21px] font-bold tracking-[-.045em] text-black">
               {watchedName || '—'}
             </p>
           </div>
         </div>
 
         {watchedBio && (
-          <p className="mt-[26px] text-[15px] leading-[1.5] text-plate-body">{watchedBio}</p>
+          <p className="mt-[26px] text-[15px] leading-[1.5] text-[#3a3a34]">{watchedBio}</p>
         )}
 
         {watchedNiches.length > 0 && (
@@ -112,32 +112,34 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
         )}
 
         {watchedWebsite && (
-          <p className="mt-5 flex items-center gap-[5px] text-[13px] text-plate-muted">
+          <p className="mt-5 flex items-center gap-[5px] text-[13px] text-[#6a6a64]">
             {watchedWebsite.replace(/^https?:\/\//, '')}
             <ExternalLink size={11} className="shrink-0" />
           </p>
         )}
-      </Plate>
+      </KineticPlate>
 
       {errors.root && <p className="mt-6 text-sm text-destructive">{errors.root.message}</p>}
 
       {/* Editar — rows que abrem um modal de campo único (padrão do mock) */}
-      <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">Editar</h2>
+      <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+        Editar
+      </p>
       <div className="flex flex-col gap-[22px]">
-        <PlateEditField
+        <KineticEditField
           label="Nome da marca"
           value={watchedName}
           error={errors.name?.message}
           onSave={(v) => setValue('name', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="Logo (URL)"
           value={watchedLogo ?? ''}
           placeholder="https://cdn.suamarca.com/logo.png"
           error={errors.logoUrl?.message}
           onSave={(v) => setValue('logoUrl', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="Bio"
           value={watchedBio ?? ''}
           multiline
@@ -145,13 +147,13 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
           error={errors.bio?.message}
           onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditNiches
+        <KineticEditNiches
           label="Nichos"
           value={watchedNiches}
           extraOptions={profile.niches}
           onSave={(v) => setValue('niches', v, { shouldDirty: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="Website"
           value={watchedWebsite ?? ''}
           placeholder="https://suamarca.com"
@@ -162,7 +164,7 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
 
       <div className="my-[26px] h-px bg-muted" />
 
-      <div className="flex items-center gap-2.5 text-[#6E6E68]">
+      <div className="flex items-center gap-2.5 text-kinetic-muted">
         <Lock size={13} className="shrink-0" />
         <p className="flex-1 text-sm">{profile.email}</p>
       </div>
@@ -171,7 +173,7 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
         type="submit"
         disabled={isSubmitting || (!isDirty && !justSaved)}
         className={cn(
-          'mb-5 mt-[26px] flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-lime font-display text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90',
+          'mb-6 mt-8 flex min-h-[56px] w-full items-center justify-center gap-2 bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white',
           'disabled:cursor-not-allowed disabled:opacity-40',
         )}
       >
@@ -194,10 +196,10 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[180px] rounded-lg bg-secondary" />
+      <div className="h-[180px] rounded-lg bg-kinetic-dark" />
       <div className="space-y-[22px]">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-10 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -211,8 +213,10 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <h1 className="font-display text-d-md text-foreground">Marca</h1>
-      <p className="mb-[22px] mt-2 text-[13px] text-[#75756E]">
+      <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+        Marca
+      </h1>
+      <p className="mb-[22px] mt-2 text-[13px] text-kinetic-muted">
         É a primeira coisa que aparece no seu link.
       </p>
 

@@ -8,10 +8,10 @@ import { cn } from '../../lib/utils';
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[88px] rounded-lg bg-secondary" />
+      <div className="h-[240px] max-w-[560px] rounded-lg bg-kinetic-dark" />
       <div className="space-y-[22px]">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-14 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -43,8 +43,10 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
   return (
     <>
       <div className="mb-[26px] flex items-end justify-between">
-        <h1 className="font-display text-d-md text-foreground">{title}</h1>
-        <p className="font-display text-d-inline leading-none tabular-nums text-foreground">
+        <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+          {title}
+        </h1>
+        <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground">
           {total}
         </p>
       </div>
@@ -56,17 +58,19 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
       )}
 
       {!isLoading && !isError && programs.length === 0 && (
-        <p className="text-sm text-[#8A8A85]">Nenhum programa aberto agora. Volte em breve.</p>
+        <p className="text-sm text-kinetic-muted">Nenhum programa aberto agora. Volte em breve.</p>
       )}
 
       {!isLoading && !isError && featured && (
         <div className={cn(isPlaceholderData && 'opacity-60')}>
-          <p className="mb-3.5 text-xs text-[#75756E]">Em destaque</p>
+          <p className="mb-4 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+            Em destaque
+          </p>
           <ProgramCard campaign={featured} variant="featured" hrefBuilder={hrefBuilder} />
 
           {rest.length > 0 && (
             <>
-              <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">
+              <h2 className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
                 Todos os abertos
               </h2>
               <div className="flex flex-col gap-[22px]">
