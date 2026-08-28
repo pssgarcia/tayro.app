@@ -219,7 +219,7 @@ export default function PublicCreatorProfilePage() {
             </p>
             <Link
               to="/register/brand"
-              className="mt-4 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-lime text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90"
+              className="mt-5 flex min-h-[56px] w-full items-center justify-center bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
             >
               Crie seu programa
             </Link>

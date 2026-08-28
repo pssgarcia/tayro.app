@@ -280,18 +280,18 @@ export default function CampaignForm({
 
         {errorMessage && <p className="mt-6 text-sm text-destructive">{errorMessage}</p>}
 
-        <div className="mb-5 mt-[30px] flex gap-3">
+        <div className="mb-5 mt-9 flex">
           <button
             type="button"
             onClick={onCancel}
-            className="min-h-[52px] w-[104px] shrink-0 rounded-lg border border-[#232323] font-display text-[14px] font-medium tracking-[-.01em] text-[#75756E] transition-colors hover:text-foreground"
+            className="min-h-[56px] w-[130px] shrink-0 border border-kinetic-border font-mono text-[11px] font-medium uppercase tracking-widest text-kinetic-muted transition-colors hover:border-foreground hover:text-foreground"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="min-h-[52px] flex-1 rounded-lg bg-lime font-display text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-[56px] flex-1 bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? pendingLabel : submitLabel}
           </button>

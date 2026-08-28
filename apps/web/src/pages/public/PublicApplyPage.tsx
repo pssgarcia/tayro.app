@@ -406,7 +406,7 @@ export default function PublicApplyPage() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="mt-[30px] min-h-[52px] w-full rounded-lg bg-lime text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-9 min-h-[56px] w-full bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmitting
                         ? handleCheck.checking
