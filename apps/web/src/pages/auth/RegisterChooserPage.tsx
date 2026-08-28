@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Briefcase, Sparkles } from 'lucide-react';
+import { Briefcase, Sparkles } from 'lucide-react';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 
 // ─── Página ──────────────────────────────────────────────────────────────────
@@ -41,7 +41,6 @@ export default function RegisterChooserPage() {
             className="flex min-h-[56px] items-center justify-center gap-2 bg-black font-mono text-[11px] font-medium uppercase tracking-widest text-[#e5e5e0] transition-colors duration-[140ms] hover:bg-lime hover:text-black"
           >
             Criar conta de creator
-            <ArrowRight size={14} />
           </Link>
         </KineticPlate>
 
@@ -57,10 +56,9 @@ export default function RegisterChooserPage() {
           </div>
           <Link
             to="/register/brand"
-            className="flex min-h-[50px] items-center justify-center gap-2 border-t border-kinetic-gray font-display text-[14px] font-semibold tracking-[-.02em] text-foreground transition-colors duration-[140ms] hover:bg-[#1C1C1C]"
+            className="flex min-h-[56px] items-center justify-center gap-2 border-t border-kinetic-gray font-mono text-[11px] font-medium uppercase tracking-widest text-foreground transition-colors duration-[140ms] hover:bg-lime hover:text-black"
           >
             Criar conta de marca
-            <ArrowRight size={14} className="text-lime" />
           </Link>
         </div>
       </div>

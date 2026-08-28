@@ -21,12 +21,6 @@ function offerTypeLabel(type: Campaign['offerType']): string {
   return '—';
 }
 
-function offerValueLabel(type: Campaign['offerType']): string {
-  if (type === 'PRODUCT') return 'Produto';
-  if (type === 'COMMISSION') return 'Comissão';
-  return 'Valor';
-}
-
 const monoLabel = 'font-mono text-[11px] uppercase tracking-widest text-kinetic-muted';
 
 export default function CampaignOverviewTab({
@@ -121,14 +115,6 @@ export default function CampaignOverviewTab({
                 tone="plate"
               />
             </div>
-
-            {/* O rótulo do valor muda por tipo de oferta e some quando é
-                dinheiro — ali o número acima já se explica. */}
-            {!isCash && (
-              <p className="mt-5 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-                {offerValueLabel(campaign.offerType)}
-              </p>
-            )}
 
             {isCash && campaign.offerDescription && (
               <p className="mt-6 text-sm leading-relaxed text-[#4a4a44]">

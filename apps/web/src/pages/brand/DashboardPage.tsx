@@ -34,6 +34,12 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useDashboard();
 
+  // A placa só existe em dois casos: nenhum programa ainda, ou candidatura
+  // esperando análise. Fora deles a coluna da esquerda não pode ficar
+  // RESERVADA — senão sobra um vão de 560px e o Resumo parece jogado no canto
+  // (visto em produção local: 1 programa, 0 pendentes).
+  const hasPlate = !!data && (data.campaigns.total === 0 || data.applications.pending > 0);
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <div className="flex items-end justify-between gap-4">
@@ -52,66 +58,68 @@ export default function DashboardPage() {
 
       {!isLoading && !isError && data && (
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
-          <div className="w-full lg:w-[560px] lg:shrink-0">
-            {data.campaigns.total === 0 ? (
-              <>
-                <p className="mb-3.5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                  Comece por aqui
-                </p>
-                <KineticPlate marks="top" flush>
-                  <div className="px-6 pb-8 pt-11 sm:px-9">
-                    <p className="font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
-                      Nenhum programa ainda
-                    </p>
-                    <p className="mt-4 max-w-[340px] text-sm leading-[1.5] text-[#4a4a44]">
-                      Crie o primeiro programa para começar a receber candidaturas de creators.
-                    </p>
-                  </div>
-                  <KineticActions
-                    actions={[
-                      {
-                        label: 'Criar o primeiro',
-                        onClick: () => navigate('/brand/campaigns/new'),
-                        primary: true,
-                      },
-                    ]}
-                  />
-                </KineticPlate>
-              </>
-            ) : (
-              data.applications.pending > 0 && (
+          {hasPlate && (
+            <div className="w-full lg:w-[560px] lg:shrink-0">
+              {data.campaigns.total === 0 ? (
                 <>
                   <p className="mb-3.5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                    Precisa de você
+                    Comece por aqui
                   </p>
                   <KineticPlate marks="top" flush>
                     <div className="px-6 pb-8 pt-11 sm:px-9">
-                      {/* Sem rótulo mono aqui: "Precisa de você", logo acima da
-                          placa, já É o rótulo deste número. */}
-                      <CountUp>
-                        <span className="block font-display text-[72px] font-bold leading-[.78] tracking-[-.06em] tabular-nums text-black min-[380px]:text-[96px]">
-                          {data.applications.pending}
-                        </span>
-                      </CountUp>
-                      <p className="mt-6 max-w-[340px] text-sm leading-[1.5] text-[#4a4a44]">
-                        candidatura{data.applications.pending !== 1 ? 's' : ''} esperando sua
-                        análise.
+                      <p className="font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
+                        Nenhum programa ainda
+                      </p>
+                      <p className="mt-4 max-w-[340px] text-sm leading-[1.5] text-[#4a4a44]">
+                        Crie o primeiro programa para começar a receber candidaturas de creators.
                       </p>
                     </div>
                     <KineticActions
                       actions={[
                         {
-                          label: 'Analisar agora',
-                          onClick: () => navigate('/brand/campaigns'),
+                          label: 'Criar o primeiro',
+                          onClick: () => navigate('/brand/campaigns/new'),
                           primary: true,
                         },
                       ]}
                     />
                   </KineticPlate>
                 </>
-              )
-            )}
-          </div>
+              ) : (
+                data.applications.pending > 0 && (
+                  <>
+                    <p className="mb-3.5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+                      Precisa de você
+                    </p>
+                    <KineticPlate marks="top" flush>
+                      <div className="px-6 pb-8 pt-11 sm:px-9">
+                        {/* Sem rótulo mono aqui: "Precisa de você", logo acima da
+                          placa, já É o rótulo deste número. */}
+                        <CountUp>
+                          <span className="block font-display text-[72px] font-bold leading-[.78] tracking-[-.06em] tabular-nums text-black min-[380px]:text-[96px]">
+                            {data.applications.pending}
+                          </span>
+                        </CountUp>
+                        <p className="mt-6 max-w-[340px] text-sm leading-[1.5] text-[#4a4a44]">
+                          candidatura{data.applications.pending !== 1 ? 's' : ''} esperando sua
+                          análise.
+                        </p>
+                      </div>
+                      <KineticActions
+                        actions={[
+                          {
+                            label: 'Analisar agora',
+                            onClick: () => navigate('/brand/campaigns'),
+                            primary: true,
+                          },
+                        ]}
+                      />
+                    </KineticPlate>
+                  </>
+                )
+              )}
+            </div>
+          )}
 
           <div className="min-w-0 flex-1">
             <p className="mb-7 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
