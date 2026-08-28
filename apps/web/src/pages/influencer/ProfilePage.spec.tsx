@@ -140,9 +140,7 @@ describe('Creator ProfilePage', () => {
   it('salva enviando publicProfileEnabled=true após ativar o toggle (LGPD)', async () => {
     render(<ProfilePage />);
 
-    fireEvent.click(
-      screen.getByRole('switch', { name: /tornar meu perfil público/i }),
-    );
+    fireEvent.click(screen.getByRole('switch', { name: /tornar meu perfil público/i }));
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
     await waitFor(() =>

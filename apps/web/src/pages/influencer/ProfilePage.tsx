@@ -6,23 +6,23 @@ import { ExternalLink, Lock, Check } from 'lucide-react';
 import axios from 'axios';
 import { useInfluencerProfile, useUpdateInfluencerProfile } from '../../hooks/useInfluencerProfile';
 import type { InfluencerProfile, UpdateInfluencerPayload } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
-import PlateEditField from '../../components/primitives/PlateEditField';
-import PlateEditNiches from '../../components/primitives/PlateEditNiches';
-import {
-  formatEngagement,
-  formatNumberParts,
-  publicUrl,
-  publicUrlLabel,
-} from '../../utils/format';
+import KineticEditField from '../../components/primitives/kinetic/KineticEditField';
+import KineticEditNiches from '../../components/primitives/kinetic/KineticEditNiches';
+import { formatEngagement, formatNumberParts, publicUrl, publicUrlLabel } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
-  avatarUrl: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
+  avatarUrl: z
+    .string()
+    .url('URL inválida (inclua https://)')
+    .max(2048)
+    .optional()
+    .or(z.literal('')),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   city: z.string().max(100, 'Máximo 100 caracteres').optional(),
   tiktokHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
@@ -47,20 +47,13 @@ function cleanHandle(raw?: string): string {
 //    `profile` (servidor), NUNCA do watch() do form: com o toggle recém-ligado
 //    e ainda não salvo, o backend continua devolvendo 404.
 
-function PublicProfileLink({
-  handle,
-  enabled,
-}: {
-  handle: string | null;
-  enabled: boolean;
-}) {
+function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled: boolean }) {
   const [copied, setCopied] = useState(false);
 
   if (!handle) {
     return (
-      <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
-        Adicione seu @ do Instagram para ganhar um endereço em{' '}
-        {publicUrlLabel('/c/')}.
+      <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
+        Adicione seu @ do Instagram para ganhar um endereço em {publicUrlLabel('/c/')}.
       </p>
     );
   }
@@ -70,7 +63,7 @@ function PublicProfileLink({
 
   if (!enabled) {
     return (
-      <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
+      <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
         Ative para as marcas encontrarem você em {publicUrlLabel(path)}.
       </p>
     );
@@ -98,7 +91,7 @@ function PublicProfileLink({
       <button
         type="button"
         onClick={handleCopy}
-        className="text-xs text-[#75756E] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+        className="text-xs text-kinetic-muted underline-offset-2 transition-colors hover:text-foreground hover:underline"
       >
         {copied ? 'Copiado!' : 'Copiar link'}
       </button>
@@ -126,7 +119,9 @@ function Toggle({
       onClick={() => onChange(!checked)}
       className={cn(
         'relative flex h-6 w-11 shrink-0 items-center rounded-full px-[3px] transition-colors',
-        checked ? 'justify-end bg-plate' : 'justify-start border border-[#232323] bg-[#1C1C1C]',
+        checked
+          ? 'justify-end bg-lime'
+          : 'justify-start border border-kinetic-gray bg-kinetic-dark',
       )}
     >
       <span
@@ -138,7 +133,7 @@ function Toggle({
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 // "Editar" = rows label+valor+chevron, cada uma abre um modal placa-formulário
-// de campo único (PlateEditField/PlateEditNiches) — igual ao mock.
+// de campo único (KineticEditField/KineticEditNiches) — igual ao mock.
 
 function ProfileForm({ profile }: { profile: InfluencerProfile }) {
   const update = useUpdateInfluencerProfile();
@@ -196,19 +191,19 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* Placa — preview ao vivo do que a marca vê na Fila (tela 2) */}
-      <Plate marks="all" className="max-w-[520px]">
+      <KineticPlate marks="all" className="max-w-[520px]">
         <div className="flex items-center gap-3.5">
-          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-[#cfcfc8]">
             {watchedAvatar && (
               <img src={watchedAvatar} alt="" className="h-full w-full object-cover" />
             )}
           </div>
           <div className="min-w-0">
-            <p className="truncate font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+            <p className="truncate font-display text-[21px] font-bold tracking-[-.045em] text-black">
               {watchedName || '—'}
             </p>
             {profile.instagramHandle && (
-              <p className="mt-[5px] flex items-center gap-[5px] text-[13px] text-plate-muted">
+              <p className="mt-[5px] flex items-center gap-[5px] text-[13px] text-[#6a6a64]">
                 @{profile.instagramHandle}
                 <ExternalLink size={11} className="shrink-0" />
               </p>
@@ -221,7 +216,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             {profile.followersCount != null && (
               <div>
                 <CountUp>
-                  <span className="font-display text-d-xl text-plate-ink tabular-nums">
+                  <span className="font-display text-[40px] font-bold leading-[.85] tracking-[-.05em] tabular-nums text-black">
                     {/* sufixo (k/M) vem do formatador — hardcodar "k" fazia
                         800 seguidores virarem "800k" e 13,6M virar "13,6Mk" */}
                     {formatNumberParts(profile.followersCount).value}
@@ -230,24 +225,26 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
                     </span>
                   </span>
                 </CountUp>
-                <p className="mt-3 text-xs text-plate-soft">seguidores</p>
+                <p className="mt-3 text-xs text-[#7a7a74]">seguidores</p>
               </div>
             )}
             {profile.igEngagementRate != null && (
               <div>
                 <CountUp delay={140}>
-                  <span className="font-display text-d-xl text-plate-ink tabular-nums">
+                  <span className="font-display text-[40px] font-bold leading-[.85] tracking-[-.05em] tabular-nums text-black">
                     {formatEngagement(profile.igEngagementRate).replace('%', '')}
                     <span className="text-[23px] tracking-[-.04em]">%</span>
                   </span>
                 </CountUp>
-                <p className="mt-3 text-xs text-plate-soft">engajamento</p>
+                <p className="mt-3 text-xs text-[#7a7a74]">engajamento</p>
               </div>
             )}
           </div>
         )}
 
-        {watchedBio && <p className="mt-7 text-[15px] leading-[1.5] text-plate-body">{watchedBio}</p>}
+        {watchedBio && (
+          <p className="mt-7 text-[15px] leading-[1.5] text-[#3a3a34]">{watchedBio}</p>
+        )}
 
         {watchedNiches.length > 0 && (
           <div className="mt-5 flex flex-wrap gap-[7px]">
@@ -261,38 +258,40 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             ))}
           </div>
         )}
-      </Plate>
+      </KineticPlate>
 
       {errors.root && <p className="mt-6 text-sm text-destructive">{errors.root.message}</p>}
 
       {/* Editar — rows que abrem um modal de campo único (padrão do mock) */}
-      <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">Editar</h2>
+      <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+        Editar
+      </p>
       <div className="flex flex-col gap-[22px]">
-        <PlateEditField
+        <KineticEditField
           label="Nome"
           value={watchedName}
           error={errors.name?.message}
           onSave={(v) => setValue('name', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="Cidade"
           value={watch('city') ?? ''}
           onSave={(v) => setValue('city', v, { shouldDirty: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="Foto (URL)"
           value={watchedAvatar ?? ''}
           placeholder="https://cdn.exemplo.com/voce.png"
           error={errors.avatarUrl?.message}
           onSave={(v) => setValue('avatarUrl', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="TikTok"
           value={watch('tiktokHandle') ?? ''}
           error={errors.tiktokHandle?.message}
           onSave={(v) => setValue('tiktokHandle', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditField
+        <KineticEditField
           label="Bio"
           value={watchedBio ?? ''}
           multiline
@@ -300,7 +299,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
           error={errors.bio?.message}
           onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
         />
-        <PlateEditNiches
+        <KineticEditNiches
           label="Nichos"
           value={watchedNiches}
           extraOptions={profile.niches}
@@ -319,7 +318,11 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             name="publicProfileEnabled"
             control={control}
             render={({ field }) => (
-              <Toggle checked={field.value} onChange={field.onChange} label="Tornar meu perfil público" />
+              <Toggle
+                checked={field.value}
+                onChange={field.onChange}
+                label="Tornar meu perfil público"
+              />
             )}
           />
         </div>
@@ -327,7 +330,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
       <div className="my-[26px] h-px bg-muted" />
 
-      <div className="flex items-center gap-2.5 text-[#6E6E68]">
+      <div className="flex items-center gap-2.5 text-kinetic-muted">
         <Lock size={13} className="shrink-0" />
         <p className="flex-1 text-sm">{profile.email}</p>
       </div>
@@ -336,11 +339,13 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
         type="submit"
         disabled={isSubmitting || (!isDirty && !justSaved)}
         className={cn(
-          'mb-5 mt-[26px] flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-lime font-display text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90',
+          'mb-6 mt-8 flex min-h-[56px] w-full items-center justify-center gap-2 bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white',
           'disabled:cursor-not-allowed disabled:opacity-40',
         )}
       >
-        {isSubmitting ? 'Salvando…' : justSaved && !isDirty ? (
+        {isSubmitting ? (
+          'Salvando…'
+        ) : justSaved && !isDirty ? (
           <>
             Salvo <Check size={16} />
           </>
@@ -357,10 +362,10 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[220px] rounded-lg bg-secondary" />
+      <div className="h-[220px] rounded-lg bg-kinetic-dark" />
       <div className="space-y-[22px]">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-10 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -374,13 +379,19 @@ export default function ProfilePage() {
   const { data: profile, isLoading, isError } = useInfluencerProfile();
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <h1 className="font-display text-d-md text-foreground">Perfil</h1>
-      <p className="mb-[22px] mt-2 text-[13px] text-[#75756E]">É exatamente isso que a marca vê.</p>
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
+      <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+        Perfil
+      </h1>
+      <p className="mb-[22px] mt-2 text-[13px] text-kinetic-muted">
+        É exatamente isso que a marca vê.
+      </p>
 
       {isLoading && <Skeleton />}
 
-      {isError && <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>}
+      {isError && (
+        <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>
+      )}
 
       {!isLoading && !isError && profile && <ProfileForm profile={profile} />}
     </div>

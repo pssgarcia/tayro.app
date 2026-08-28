@@ -25,9 +25,7 @@ const baseCampaign: Campaign = {
 describe('CampaignOverviewTab', () => {
   it('mostra a descrição e os nichos do programa', () => {
     render(<CampaignOverviewTab campaign={baseCampaign} approvedCount={3} />);
-    expect(
-      screen.getByText(/creators autênticas para o lançamento/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/creators autênticas para o lançamento/i)).toBeInTheDocument();
     expect(screen.getByText('fitness')).toBeInTheDocument();
     expect(screen.getByText('lifestyle')).toBeInTheDocument();
   });
@@ -60,8 +58,6 @@ describe('CampaignOverviewTab', () => {
     render(<CampaignOverviewTab campaign={productCampaign} approvedCount={1} />);
     // "Produto" aparece como valor do Tipo e como label do StatBlock
     expect(screen.getAllByText('Produto').length).toBeGreaterThanOrEqual(1);
-    expect(
-      screen.getByText('Kit Whey 900g + coqueteleira'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Kit Whey 900g + coqueteleira')).toBeInTheDocument();
   });
 });

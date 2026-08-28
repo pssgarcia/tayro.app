@@ -6,11 +6,11 @@ import { cn } from '../../lib/utils';
 
 // Rótulos e ícones do redesign 2a (README §Telas 1, 5, 6, 7, 8).
 const navItems = [
-  { to: '/influencer/dashboard',    icon: Activity,      label: 'Leitura' },
-  { to: '/influencer/browse',       icon: Crosshair,     label: 'Abertos' },
-  { to: '/influencer/applications', icon: ScrollText,    label: 'Registro' },
-  { to: '/influencer/submissions',  icon: Clapperboard,  label: 'Entregas' },
-  { to: '/influencer/profile',      icon: IdCard,        label: 'Perfil' },
+  { to: '/influencer/dashboard', icon: Activity, label: 'Leitura' },
+  { to: '/influencer/browse', icon: Crosshair, label: 'Abertos' },
+  { to: '/influencer/applications', icon: ScrollText, label: 'Registro' },
+  { to: '/influencer/submissions', icon: Clapperboard, label: 'Entregas' },
+  { to: '/influencer/profile', icon: IdCard, label: 'Perfil' },
 ];
 
 export default function InfluencerLayout() {
@@ -26,15 +26,20 @@ export default function InfluencerLayout() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar — desktop only */}
-      <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card">
+      <aside className="hidden md:flex w-56 flex-col border-r border-kinetic-gray bg-kinetic-black">
         {/* Logo */}
         <div className="flex h-16 items-center px-5">
-          <Link to="/influencer" className="font-display text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
+          <Link
+            to="/influencer"
+            className="font-display text-xl font-bold tracking-tight hover:opacity-80 transition-opacity"
+          >
             tay<span className="text-lime">ro</span>
           </Link>
         </div>
 
-        {/* Nav — item ativo: barra vertical lime de 2px na esquerda, sem caixa (2a) */}
+        {/* Nav — item ativo: barra vertical lime de 2px na esquerda, sem caixa.
+            Rótulo em mono caixa alta: é metadado de navegação, mesma classe
+            dos rótulos de seção do Kinetic. */}
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -42,10 +47,10 @@ export default function InfluencerLayout() {
               to={to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[.16em] transition-colors',
                   isActive
                     ? 'text-lime shadow-[inset_2px_0_0_#C6FF33]'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    : 'text-kinetic-muted hover:bg-kinetic-dark hover:text-foreground',
                 )
               }
             >
@@ -56,13 +61,11 @@ export default function InfluencerLayout() {
         </nav>
 
         {/* Usuário + logout */}
-        <div className="border-t border-border p-3">
-          <div className="mb-2 truncate px-2 text-xs text-muted-foreground">
-            {user?.email}
-          </div>
+        <div className="border-t border-kinetic-gray p-3">
+          <div className="mb-2.5 truncate px-3 text-[11px] text-kinetic-muted">{user?.email}</div>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[.16em] text-kinetic-muted transition-colors hover:bg-kinetic-dark hover:text-foreground"
           >
             <LogOut size={16} />
             Sair
@@ -85,7 +88,7 @@ export default function InfluencerLayout() {
           <button
             onClick={handleLogout}
             aria-label="Sair"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center text-kinetic-muted transition-colors hover:bg-kinetic-dark hover:text-foreground"
           >
             <LogOut size={18} />
           </button>
@@ -111,8 +114,10 @@ export default function InfluencerLayout() {
             className={({ isActive }) =>
               cn(
                 'flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1.5',
-                'font-display text-[11px] font-medium tracking-[-.01em] transition-colors',
-                isActive ? 'text-lime shadow-[inset_0_2px_0_#C6FF33]' : 'text-muted-foreground',
+                // tracking curto e 9px: 5 itens em mono caixa alta não cabem
+                // em 360px com o tracking padrão dos rótulos.
+                'font-mono text-[9px] uppercase tracking-[.08em] transition-colors',
+                isActive ? 'text-lime shadow-[inset_0_2px_0_#C6FF33]' : 'text-kinetic-muted',
               )
             }
           >

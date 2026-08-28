@@ -1,101 +1,31 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import type { Campaign } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
-import CountUp from '../../components/primitives/CountUp';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
 import { formatOfferWhole } from '../../utils/format';
 
 // O card NÃO candidata — leva pro detalhe do programa. Decidir participar é
 // passo posterior, com os termos na tela (ProgramDetailPage).
+//
+// Card, não linha (pedido do Pedro em 2026-08-28, olhando a lista em 360): em
+// grade, o par título + oferta fica legível de relance, e a oferta — que é o
+// que faz a creator parar — ganha escala de display em vez de virar um número
+// espremido na ponta direita de uma linha.
+//
+// Todos os programas abertos têm o MESMO peso visual. Até 2026-08-28 o
+// primeiro da página virava placa em destaque, mas não havia regra nenhuma
+// por trás: a lista vem ordenada por createdAt desc e o corte era por página,
+// então "em destaque" só queria dizer "o mais novo desta página" — na página 2
+// outro programa qualquer ganhava a placa. Destaque sem critério é ruído.
+// Se algum dia houver curadoria de verdade (como no lado da marca, onde
+// pickFeatured escolhe o programa ativo mais cheio), a placa volta com regra.
 
 function programPath(id: string) {
   return `/influencer/programs/${id}`;
 }
 
-// ─── Row (padrão "Todos os abertos") ─────────────────────────────────────────
-
-function ProgramRow({
-  campaign,
-  index,
-  hrefBuilder,
-}: {
-  campaign: Campaign;
-  index: number;
-  hrefBuilder: (id: string) => string;
-}) {
-  const offer = formatOfferWhole(campaign);
-  return (
-    <Link
-      to={hrefBuilder(campaign.id)}
-      className="flex w-full items-baseline gap-3.5 text-left transition-colors hover:bg-accent"
-    >
-      <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
-        {String(index).padStart(2, '0')}
-      </span>
-      <span className="min-w-0 flex-1">
-        <p className="truncate font-display text-d-xs font-semibold text-foreground">
-          {campaign.title}
-        </p>
-        <p className="mt-[5px] text-xs text-[#6E6E68]">{campaign.brand?.name ?? 'Marca'}</p>
-      </span>
-      {offer && (
-        <span className="shrink-0 text-[13px] tabular-nums text-foreground">
-          {offer.prefix}
-          {offer.value}
-        </span>
-      )}
-      <ChevronRight size={14} className="shrink-0 text-[#4A4A46]" />
-    </Link>
-  );
-}
-
-// ─── Placa (destaque — primeiro programa da página) ──────────────────────────
-
-function ProgramFeatured({
-  campaign,
-  hrefBuilder,
-}: {
-  campaign: Campaign;
-  hrefBuilder: (id: string) => string;
-}) {
-  const offer = formatOfferWhole(campaign);
-  return (
-    <Plate marks="top" flush className="max-w-[520px]">
-      <div className="px-6 pb-6 pt-[26px]">
-        <p className="text-xs text-plate-muted">{campaign.brand?.name ?? 'Marca'}</p>
-        <p className="mb-[22px] mt-[5px] font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
-          {campaign.title}
-        </p>
-        {offer && (
-          <CountUp>
-            <span className="font-display text-d-xl text-plate-ink tabular-nums">
-              {offer.prefix && <span className="text-[23px] tracking-[-.04em]">{offer.prefix}</span>}
-              {offer.value}
-            </span>
-          </CountUp>
-        )}
-        <p className="mt-3 text-xs text-plate-soft">
-          por candidatura aprovada · {campaign.maxSpots} vaga{campaign.maxSpots !== 1 ? 's' : ''}
-        </p>
-      </div>
-      <PlateActionBar
-        primary={{
-          label: 'Ver programa',
-          to: hrefBuilder(campaign.id),
-          icon: <ArrowRight size={16} />,
-        }}
-      />
-    </Plate>
-  );
-}
-
-// ─── Componente exportado ─────────────────────────────────────────────────────
-
 interface Props {
   campaign: Campaign;
-  variant?: 'row' | 'featured';
-  /** índice mono, 1-based — só usado na variant="row". */
+  /** índice mono, 1-based. */
   index?: number;
   className?: string;
   /** Destino do link. Default: detalhe autenticado. Visitante sem conta usa /apply/:id. */
@@ -104,18 +34,58 @@ interface Props {
 
 export default function ProgramCard({
   campaign,
-  variant = 'row',
   index = 1,
   className,
   hrefBuilder = programPath,
 }: Props) {
+  const offer = formatOfferWhole(campaign);
+  const brand = campaign.brand?.name ?? 'Marca';
+  const spots = `${campaign.maxSpots} vaga${campaign.maxSpots !== 1 ? 's' : ''}`;
+
   return (
     <div className={className}>
-      {variant === 'featured' ? (
-        <ProgramFeatured campaign={campaign} hrefBuilder={hrefBuilder} />
-      ) : (
-        <ProgramRow campaign={campaign} index={index} hrefBuilder={hrefBuilder} />
-      )}
+      <Link
+        to={hrefBuilder(campaign.id)}
+        className="flex h-full flex-col justify-between border border-kinetic-gray bg-kinetic-dark p-5 transition-colors hover:border-kinetic-border hover:bg-[#1f1f1f]"
+      >
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-display text-lg font-semibold leading-snug tracking-[-.03em] text-foreground">
+              {campaign.title}
+            </p>
+            <span className="shrink-0 pt-1 font-mono text-[11px] text-kinetic-muted">
+              {String(index).padStart(2, '0')}
+            </span>
+          </div>
+          {/* marca e vagas numa linha só: é assim que a creator compara dois
+              programas de relance, e é o que o teste consulta. */}
+          <p className="mt-2 text-xs text-kinetic-muted">
+            {brand} · {spots}
+          </p>
+        </div>
+
+        <div className="mt-7 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+              A oferta
+            </p>
+            {offer ? (
+              <p className="mt-2 truncate font-display text-2xl font-bold tracking-[-.04em] tabular-nums text-foreground">
+                {offer.prefix}
+                {offer.value}
+              </p>
+            ) : (
+              <p className="mt-2 font-display text-2xl font-bold tracking-[-.04em] text-kinetic-muted">
+                —
+              </p>
+            )}
+          </div>
+          <ChevronRight
+            size={16}
+            className="mb-1 shrink-0 text-kinetic-border transition-colors group-hover:text-foreground"
+          />
+        </div>
+      </Link>
     </div>
   );
 }

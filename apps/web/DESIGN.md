@@ -101,6 +101,63 @@ O sistema nasceu de um antecessor mais barulhento (direção "1c") e o redesign 
 - CARDS nunca-tabelas em listas; linhas com `gap-22px`, sem caixa, sem borda entre itens
 - Números grandes (`d-hero` a `d-sm`) sempre em Space Grotesk 700 com `tabular-nums`
 
+## Kinetic Editorial — a direção atual
+
+> **Leia isto antes do resto.** Tudo abaixo desta seção descreve o **redesign 2a**, que está sendo substituído. O 2a continua valendo — e seus tokens `plate`/`signal` **não podem ser removidos** — enquanto houver tela não migrada.
+
+"Kinetic Editorial" foi aprovada em 2026-08-16 a partir de dois mockups do Pedro e é a direção padrão do produto daqui pra frente. Estreou na aba Fila e está sendo estendida ao resto em levas.
+
+Onde o 2a é contido e silencioso, o Kinetic é **editorial**: tipografia mais ousada, rótulo mono em caixa alta como assinatura de metadado, blocos retos no lugar de barras divididas, e a placa clara com *crop marks* **em lime** em vez de ticks cinza.
+
+### Tokens (`tailwind.config.ts` → `colors.kinetic`)
+
+| Token | Hex | Uso |
+|---|---|---|
+| `kinetic-black` | `#121212` | Fundo |
+| `kinetic-dark` | `#1a1a1a` | Superfície elevada (linha selecionada, skeleton) |
+| `kinetic-gray` | `#2a2a2a` | Borda de superfície, placeholder de imagem |
+| `kinetic-border` | `#3a3a3a` | Borda de controle |
+| `kinetic-muted` | `#888888` | Rótulo mono, legenda, status inerte |
+| `kinetic-text` | `#d1d1d1` | Texto secundário forte |
+| `kinetic-light` | `#e5e5e0` | Placa clara (mais quente que o `plate` do 2a) |
+| `lime` | `#C6FF33` | **Mesmo token do 2a** — não duplicar |
+
+### Primitivos (`components/primitives/kinetic/`)
+
+| Componente | Substitui (2a) | Diferença que importa |
+|---|---|---|
+| `KineticPlate` | `Plate` | Crop marks em **L de 16px em lime**, sem sombra. `as` permite `<section>` quando a placa é região de conteúdo. **As marcas ocupam de 16px a 32px a partir da borda — conteúdo precisa de `pt` ≥ 40px, senão a marca atravessa o texto** |
+| `KineticActions` | `PlateActionBar` | Blocos retos edge-to-edge separados por 1px; primário em lime, mono caixa alta (o 2a usa split bar com primário quase-preto em Space Grotesk) |
+| `StatusWord` | `StatusPill` / `ContentStatusPill` | Status é **palavra**, não pill. Vocabulário único vindo de `utils/format.ts` |
+| `StatFigure` | `StatBlock` | Rótulo mono caixa alta **em cima**, número embaixo (o 2a inverte) |
+| `KineticRow` | linhas soltas | A linha é um **alvo**: selecionada ganha `kinetic-dark` + borda `kinetic-gray` |
+| `KineticSegments` | `SegmentBar` | Segmentos retos, sem `rounded-sm` |
+
+### As 6 regras
+
+1. **Uma placa por tela** — ela carrega o que mais importa ali (o número no dashboard, a oferta no apply, a candidatura selecionada na Fila).
+2. **Lime é ação, não decoração** — botão primário, nav ativa, crop marks e status que pede decisão sua. Nada mais.
+3. **Mono só em rótulo e status** — JetBrains Mono caixa alta identifica metadado. Título e texto corrido, nunca.
+4. **Controle não tem canto arredondado** — botão, tag e campo são retos. Só a placa e o avatar guardam raio.
+5. **Foto p&b sobre a placa clara** — fora dela (hero do Story mobile, grade do feed), a cores.
+6. **Tudo em português** — inglês sobrou só em nome de token e de variável. Ver `CLAUDE.md` → Design system.
+
+### Caixa alta vem do CSS, não do texto
+
+Rótulo mono é escrito em minúsculas no JSX e sobe pra caixa alta com `uppercase`. O texto no DOM continua sendo o que a pessoa escreveu — busca por texto em teste e leitor de tela não mudam. Não escrever `"CONTEÚDOS A REVISAR"` no JSX.
+
+### Status: um vocabulário só
+
+Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignStatusWord`, `contentStatusWord`, `rewardStatusWord`) e são a fonte única. A migração unificou o vocabulário: onde o 2a dizia "Análise"/"Fechada" para candidatura, o Kinetic diz **"Pendente"/"Aprovada"** — as mesmas palavras que a marca já lê na Fila. Conteúdo concorda no masculino ("Aprovado"); candidatura, campanha e recompensa no feminino. A exceção deliberada é o `creatorRewardStatusWord`: o MESMO status de recompensa dito da ótica de quem espera ("A receber"/"A caminho") em vez da de quem paga ("Pendente"/"Emitida"). Não unificar — são perspectivas, não drift. Recompensa é o único domínio com **dois** estados acionáveis (`PENDING` pede emitir, `ISSUED` pede confirmar entrega) — os dois saem em lime.
+
+### Estado da migração
+
+**Todas as telas estão em Kinetic** desde 2026-08-28. O que sobra do 2a é uma cauda de primitivos:
+
+- **Órfãos (0 consumidores, prontos pra apagar):** `Plate`, `PlateActionBar`, `StatusPill`, `StatBlock`, `TabsUnderline`, `SegmentBar`, `ContentStatusPill`, `ProgressBar`.
+- **Ainda usados, ainda com cara de 2a:** `PlateField` (6 telas), `PlateTextarea` (4), `NicheSelector` (3). São campos de formulário — a anatomia (rótulo + régua de 1px) já é a do Kinetic, o que falta é o rótulo virar mono caixa alta e o `NicheSelector` sair do `bg-plate-ink`. Enquanto eles existirem, **os tokens `plate`/`signal` não podem ser removidos** do `tailwind.config.ts`.
+- **Neutros de design, ficam:** `CountUp` (9), `EmptyState` (2), `ThumbGrid` (1).
+
 ## Colors
 
 Paleta de duas superfícies: o fundo escuro do app e a placa clara — cada uma com sua própria escala de neutros, e elas nunca se misturam num mesmo elemento.

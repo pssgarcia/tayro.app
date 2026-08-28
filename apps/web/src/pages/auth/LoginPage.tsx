@@ -3,13 +3,13 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import PlateField from '../../components/primitives/PlateField';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -76,14 +76,14 @@ export default function LoginPage() {
         tay<span className="text-lime">ro</span>
       </span>
 
-      <h1 className="mb-7 font-display text-d-md text-foreground">
+      <h1 className="mb-7 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] text-foreground">
         Que bom te ver
         <br />
         de novo.
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Plate marks="top" flush>
+        <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             <PlateField
               label="E-mail"
@@ -106,7 +106,7 @@ export default function LoginPage() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="shrink-0 text-[#8A8A84] transition-colors hover:text-plate-ink"
+                  className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -122,25 +122,27 @@ export default function LoginPage() {
               clicável em produção sem fazer nada. Botão morto é pior que botão
               ausente — quem esquece a senha ao menos não perde tempo tentando.
               Volta quando POST /auth/forgot-password existir. */}
-          <PlateActionBar
-            primary={{
-              label: isSubmitting ? 'Entrando…' : 'Entrar',
-              type: 'submit',
-              disabled: isSubmitting,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              {
+                label: isSubmitting ? 'Entrando…' : 'Entrar',
+                type: 'submit',
+                disabled: isSubmitting,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </form>
 
-      <p className="mt-[26px] text-[13px] text-[#75756E]">
+      <p className="mt-[26px] text-[13px] text-kinetic-muted">
         Não tem conta?{' '}
         <Link to="/register" className="font-medium text-lime hover:underline">
           Cadastre-se
         </Link>
       </p>
 
-      <p className="mt-3 text-[13px] text-[#75756E]">
+      <p className="mt-3 text-[13px] text-kinetic-muted">
         <Link to="/programs" className="hover:underline">
           Ver programas abertos
         </Link>

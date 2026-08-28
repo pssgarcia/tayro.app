@@ -1,16 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DashboardPage from './DashboardPage';
 import * as appHooks from '../../hooks/useMyApplications';
 import * as rewardHooks from '../../hooks/useMyRewards';
-import type {
-  ApplicationStatus,
-  MyApplication,
-  MyReward,
-  RewardStatus,
-} from '../../types/api';
+import type { ApplicationStatus, MyApplication, MyReward, RewardStatus } from '../../types/api';
 
 vi.mock('../../hooks/useMyApplications', async (importOriginal) => {
   const actual = await importOriginal<typeof appHooks>();
@@ -122,11 +117,7 @@ describe('DashboardPage — taxa de conversão', () => {
   });
 
   it('arredonda a taxa em vez de mostrar decimal', () => {
-    mockData([
-      makeApp('a', 'APPROVED'),
-      makeApp('b', 'PENDING'),
-      makeApp('c', 'PENDING'),
-    ]);
+    mockData([makeApp('a', 'APPROVED'), makeApp('b', 'PENDING'), makeApp('c', 'PENDING')]);
     renderPage();
 
     expect(screen.getByText('33')).toBeInTheDocument();
@@ -135,14 +126,14 @@ describe('DashboardPage — taxa de conversão', () => {
 
 describe('DashboardPage — resumo lateral', () => {
   it('conta candidaturas em análise', () => {
-    mockData([
-      makeApp('a', 'PENDING'),
-      makeApp('b', 'PENDING'),
-      makeApp('c', 'APPROVED'),
-    ]);
+    mockData([makeApp('a', 'PENDING'), makeApp('b', 'PENDING'), makeApp('c', 'APPROVED')]);
     renderPage();
 
-    expect(screen.getByText('em análise').previousElementSibling).toHaveTextContent('2');
+    // Consulta escopada no bloco, não pela ordem dos irmãos: no Kinetic o
+    // rótulo vem ANTES do número (o 2a punha depois), e um teste preso à ordem
+    // do DOM quebra numa mudança puramente visual.
+    const bloco = screen.getByText('em análise').closest('div') as HTMLElement;
+    expect(within(bloco).getByText('2')).toBeInTheDocument();
   });
 
   // "A receber" inclui ISSUED: da ótica da creator, o que já saiu mas não
@@ -150,15 +141,12 @@ describe('DashboardPage — resumo lateral', () => {
   it('conta como "a receber" tudo que não foi entregue', () => {
     mockData(
       [makeApp('a', 'APPROVED')],
-      [
-        makeReward('r1', 'PENDING'),
-        makeReward('r2', 'ISSUED'),
-        makeReward('r3', 'DELIVERED'),
-      ],
+      [makeReward('r1', 'PENDING'), makeReward('r2', 'ISSUED'), makeReward('r3', 'DELIVERED')],
     );
     renderPage();
 
-    expect(screen.getByText('a receber').previousElementSibling).toHaveTextContent('2');
+    const bloco = screen.getByText('a receber').closest('div') as HTMLElement;
+    expect(within(bloco).getByText('2')).toBeInTheDocument();
   });
 
   it('leva pra tela de recompensas ao clicar no bloco "a receber"', () => {

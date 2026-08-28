@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { applicationKeys, useCampaign } from '../../hooks/useCampaignApplications';
 import { useCloseCampaign, useDeleteCampaign, usePublishCampaign } from '../../hooks/useCampaigns';
 import { useQuery } from '@tanstack/react-query';
@@ -11,9 +10,9 @@ import CampaignFilaTab from './CampaignFilaTab';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
-import TabsUnderline from '../../components/primitives/TabsUnderline';
-import Plate from '../../components/primitives/Plate';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import { cn } from '../../lib/utils';
 
 // ─── Abas ─────────────────────────────────────────────────────────────────────
@@ -56,10 +55,12 @@ function CampaignHeader({
   const days = daysUntil(deadline);
 
   return (
-    <div className="flex items-end justify-between gap-3 px-6 pb-[22px] pt-2">
-      <div>
-        <h1 className="font-display text-d-sm text-foreground">{title}</h1>
-        <p className="mt-[7px] text-xs text-[#6E6E68]">
+    <div className="flex items-end justify-between gap-4 px-4 pb-6 pt-4 sm:px-6">
+      <div className="min-w-0">
+        <h1 className="font-display text-[32px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
+          {title}
+        </h1>
+        <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
           {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
         </p>
         {/* Ação de gestão do status - só existe transição pra estado ativo/rascunho,
@@ -68,7 +69,7 @@ function CampaignHeader({
           <button
             type="button"
             onClick={onEncerrar}
-            className="mt-2 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            className="mt-3 font-mono text-[10px] uppercase tracking-widest text-kinetic-text underline underline-offset-4 transition-colors hover:text-foreground"
           >
             Encerrar campanha
           </button>
@@ -79,33 +80,33 @@ function CampaignHeader({
             Vem em lime porque é a ação que destrava o programa; apagar é a
             saída destrutiva e fica em ghost, como antes. */}
         {status === 'DRAFT' && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
             <button
               type="button"
               onClick={onPublicar}
-              className="text-xs font-semibold text-lime underline-offset-2 transition-opacity hover:underline hover:opacity-80"
+              className="font-mono text-[10px] uppercase tracking-widest text-lime underline-offset-4 transition-opacity hover:underline hover:opacity-80"
             >
               Publicar programa
             </button>
             <Link
               to={`/brand/campaigns/${campaignId}/edit`}
-              className="text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
               Editar
             </Link>
             <button
               type="button"
               onClick={onApagar}
-              className="text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
               Apagar rascunho
             </button>
           </div>
         )}
       </div>
-      <p className="font-display text-d-inline leading-none text-foreground">
+      <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground sm:text-[40px]">
         {spotsUsed}
-        <span className="text-[#6E6E68]">/{maxSpots}</span>
+        <span className="text-kinetic-muted">/{maxSpots}</span>
       </p>
     </div>
   );
@@ -125,10 +126,12 @@ function PublishCampaignModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Publicar programa?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Publicar programa?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O link de candidatura fica ativo na hora e creators já podem se inscrever. Depois de
               publicado o programa não volta para rascunho e os detalhes não podem mais ser
               editados.
@@ -139,66 +142,60 @@ function PublishCampaignModal({
               </p>
             )}
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: publish.isPending ? 'Publicando…' : 'Publicar',
-              // Fecha só no sucesso: em erro o modal fica de pé pra dar retry,
-              // em vez de sumir por baixo do usuário fingindo que aconteceu.
-              onClick: () => publish.mutate(campaignId, { onSuccess: onClose }),
-              disabled: publish.isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: publish.isPending ? 'Publicando…' : 'Publicar',
+                // Fecha só no sucesso: em erro o modal fica de pé pra dar retry,
+                // em vez de sumir por baixo do usuário fingindo que aconteceu.
+                onClick: () => publish.mutate(campaignId, { onSuccess: onClose }),
+                disabled: publish.isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
 }
 
-function CloseCampaignModal({
-  campaignId,
-  onClose,
-}: {
-  campaignId: string;
-  onClose: () => void;
-}) {
+function CloseCampaignModal({ campaignId, onClose }: { campaignId: string; onClose: () => void }) {
   const close = useCloseCampaign();
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Encerrar campanha?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Encerrar campanha?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O link de candidatura deixa de aceitar novas inscrições na hora. Candidaturas e
-              conteúdos já em andamento continuam visíveis, mas não será possível reabrir a
-              campanha depois.
+              conteúdos já em andamento continuam visíveis, mas não será possível reabrir a campanha
+              depois.
             </p>
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: close.isPending ? 'Encerrando…' : 'Encerrar',
-              onClick: () => close.mutate(campaignId, { onSuccess: onClose }),
-              disabled: close.isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: close.isPending ? 'Encerrando…' : 'Encerrar',
+                onClick: () => close.mutate(campaignId, { onSuccess: onClose }),
+                disabled: close.isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
 }
 
-function DeleteCampaignModal({
-  campaignId,
-  onClose,
-}: {
-  campaignId: string;
-  onClose: () => void;
-}) {
+function DeleteCampaignModal({ campaignId, onClose }: { campaignId: string; onClose: () => void }) {
   const navigate = useNavigate();
   const deleteCampaign = useDeleteCampaign();
 
@@ -211,10 +208,12 @@ function DeleteCampaignModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Apagar rascunho?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Apagar rascunho?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O rascunho e todos os dados preenchidos somem pra sempre - não dá pra desfazer. Só é
               possível apagar campanhas que ainda não foram publicadas.
             </p>
@@ -224,16 +223,18 @@ function DeleteCampaignModal({
               </p>
             )}
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: deleteCampaign.isPending ? 'Apagando…' : 'Apagar',
-              onClick: handleDelete,
-              disabled: deleteCampaign.isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: deleteCampaign.isPending ? 'Apagando…' : 'Apagar',
+                onClick: handleDelete,
+                disabled: deleteCampaign.isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
@@ -283,12 +284,12 @@ export default function CampaignDetailPage() {
         onApagar={() => setOpenModal('delete')}
       />
 
-      <TabsUnderline tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      <KineticTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       <div
         className={cn(
           'min-h-0 flex-1 overflow-auto',
-          activeTab === 'queue' ? 'px-6 pt-6' : 'p-4 md:p-6',
+          activeTab === 'queue' ? 'px-4 pt-6 sm:px-6' : 'pt-8',
         )}
       >
         {activeTab === 'queue' && (

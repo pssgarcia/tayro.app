@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import type { Campaign } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import PlateTextarea from '../../components/primitives/PlateTextarea';
 import { useCreateApplication } from '../../hooks/useMyApplications';
 
@@ -55,19 +54,23 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
       onClick={onClose}
     >
       <div className="w-full sm:max-w-md" onClick={(e) => e.stopPropagation()}>
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           {applied ? (
             <div className="px-6 pb-[26px] pt-[30px] text-center">
-              <p className="font-display text-d-lg text-plate-ink">Candidatura enviada</p>
-              <p className="mt-5 text-[13px] leading-[1.5] text-plate-muted">
-                <span className="font-medium text-plate-body">{campaign.brand?.name}</span> vai
+              <p className="font-display text-[34px] font-bold leading-[1.05] tracking-[-.05em] text-black">
+                Candidatura enviada
+              </p>
+              <p className="mt-5 text-[13px] leading-[1.5] text-[#6a6a64]">
+                <span className="font-medium text-[#3a3a34]">{campaign.brand?.name}</span> vai
                 analisar seu perfil.
               </p>
             </div>
           ) : (
             <div className="px-6 pb-[26px] pt-[30px]">
-              <p className="font-display text-d-xs text-plate-ink">Quero participar</p>
-              <p className="mt-[6px] truncate text-[13px] text-plate-muted">{campaign.title}</p>
+              <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+                Quero participar
+              </p>
+              <p className="mt-[6px] truncate text-[13px] text-[#6a6a64]">{campaign.title}</p>
 
               <div className="mt-6">
                 <PlateTextarea
@@ -84,20 +87,24 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
             </div>
           )}
 
-          <PlateActionBar
-            secondary={{ label: applied ? 'Fechar' : 'Cancelar', onClick: onClose, width: 100 }}
-            primary={
+          <KineticActions
+            actions={[
+              { label: applied ? 'Fechar' : 'Cancelar', onClick: onClose, width: 130 },
               applied
-                ? { label: 'Ver minhas candidaturas', onClick: onApplied ?? onClose }
+                ? {
+                    label: 'Ver minhas candidaturas',
+                    onClick: onApplied ?? onClose,
+                    primary: true,
+                  }
                 : {
                     label: create.isPending ? 'Enviando…' : 'Confirmar',
                     onClick: handleConfirm,
                     disabled: create.isPending,
-                    icon: <ArrowRight size={16} />,
-                  }
-            }
+                    primary: true,
+                  },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );

@@ -3,15 +3,15 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useStepGuard } from '../../hooks/useStepGuard';
 import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import PlateField from '../../components/primitives/PlateField';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import NicheSelector from '../../components/primitives/NicheSelector';
 import { cn } from '../../lib/utils';
 import { INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
@@ -154,7 +154,9 @@ export default function RegisterInfluencerPage() {
       name: values.name,
       email: values.email,
       password: values.password,
-      ...(cleanHandle(values.instagramHandle) ? { instagramHandle: cleanHandle(values.instagramHandle) } : {}),
+      ...(cleanHandle(values.instagramHandle)
+        ? { instagramHandle: cleanHandle(values.instagramHandle) }
+        : {}),
       ...(values.niches.length ? { niches: values.niches } : {}),
     };
 
@@ -198,7 +200,9 @@ export default function RegisterInfluencerPage() {
         return;
       }
 
-      setError('root', { message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.' });
+      setError('root', {
+        message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.',
+      });
     }
   };
 
@@ -208,13 +212,15 @@ export default function RegisterInfluencerPage() {
         tay<span className="text-lime">ro</span>
       </span>
 
-      <h1 className="font-display text-d-md text-foreground">Criar sua conta</h1>
-      <p className="mb-7 mt-2 text-[13px] text-[#75756E]">
+      <h1 className="font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] text-foreground">
+        Criar sua conta
+      </h1>
+      <p className="mb-7 mt-2 text-[13px] text-kinetic-muted">
         Leva 1 minuto. Depois você já vê os programas abertos.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Plate marks="top" flush>
+        <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             {step === 0 && (
               <>
@@ -265,7 +271,7 @@ export default function RegisterInfluencerPage() {
                       type="button"
                       tabIndex={-1}
                       onClick={() => setShowPassword((v) => !v)}
-                      className="shrink-0 text-[#8A8A84] transition-colors hover:text-plate-ink"
+                      className="shrink-0 text-[#8A8A84] transition-colors hover:text-black"
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -278,7 +284,7 @@ export default function RegisterInfluencerPage() {
 
             {step === 2 && (
               <div>
-                <p className="mb-3 text-[11px] text-plate-muted">Seus nichos</p>
+                <p className="mb-3 text-[11px] text-[#6a6a64]">Seus nichos</p>
                 <Controller
                   name="niches"
                   control={control}
@@ -292,27 +298,26 @@ export default function RegisterInfluencerPage() {
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
           </div>
 
-          <PlateActionBar
-            secondary={step > 0 ? { label: 'Voltar', onClick: back } : undefined}
-            primary={
+          <KineticActions
+            actions={[
+              ...(step > 0 ? [{ label: 'Voltar', onClick: back, width: 130 }] : []),
               step < STEPS.length - 1
                 ? {
-                    label:
-                      step === 0 && handleCheck.checking ? 'Verificando…' : 'Continuar',
-                    type: 'button',
+                    label: step === 0 && handleCheck.checking ? 'Verificando…' : 'Continuar',
+                    type: 'button' as const,
                     onClick: next,
                     disabled: isStepGuarded || (step === 0 && handleCheck.checking),
-                    icon: <ArrowRight size={16} />,
+                    primary: true,
                   }
                 : {
                     label: isSubmitting ? 'Criando conta…' : 'Criar conta',
-                    type: 'submit',
+                    type: 'submit' as const,
                     disabled: isSubmitting || isStepGuarded,
-                    icon: <ArrowRight size={16} />,
-                  }
-            }
+                    primary: true,
+                  },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
 
         <div className="mt-[18px] flex items-center justify-center gap-[7px]">
           {STEPS.map((label, i) => (
@@ -328,7 +333,7 @@ export default function RegisterInfluencerPage() {
         </div>
       </form>
 
-      <p className="mt-[26px] text-[13px] text-[#75756E]">
+      <p className="mt-[26px] text-[13px] text-kinetic-muted">
         Já tem conta?{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
           Entrar

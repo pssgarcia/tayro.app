@@ -24,7 +24,9 @@ const baseData: BrandDashboard = {
   rewards: { total: 8, pending: 2, issued: 3, delivered: 3 },
 };
 
-function mockDashboard(over: Partial<{ data: BrandDashboard; isLoading: boolean; isError: boolean }> = {}) {
+function mockDashboard(
+  over: Partial<{ data: BrandDashboard; isLoading: boolean; isError: boolean }> = {},
+) {
   vi.mocked(hook.useDashboard).mockReturnValue({
     data: baseData,
     isLoading: false,
@@ -85,6 +87,27 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('button', { name: /analisar agora/i })).not.toBeInTheDocument();
     // o Resumo continua aparecendo — os números não têm ação, só leitura
     expect(screen.getByText('conteúdos a revisar')).toBeInTheDocument();
+  });
+
+  // Achado na conferência visual (2026-08-28): com programa criado e zero
+  // pendentes não há placa nenhuma, mas a coluna dela continuava RESERVADA —
+  // 560px vazios à esquerda com o Resumo jogado no canto. Nenhum rótulo de
+  // placa na tela tem que significar nenhuma coluna de placa.
+  it('sem placa nenhuma, não reserva a coluna da esquerda', () => {
+    mockDashboard({
+      data: {
+        ...baseData,
+        campaigns: { total: 1, active: 1, draft: 0, closed: 0, completed: 0 },
+        applications: { total: 4, pending: 0, approved: 4, rejected: 0 },
+      },
+    });
+    renderPage();
+
+    expect(screen.queryByText('Precisa de você')).not.toBeInTheDocument();
+    expect(screen.queryByText('Comece por aqui')).not.toBeInTheDocument();
+    // O Resumo passa a ser o primeiro (e único) bloco da linha.
+    const linha = screen.getByText('Resumo').closest('div')?.parentElement;
+    expect(linha?.children).toHaveLength(1);
   });
 
   it('clicar em "Analisar agora" navega para os programas', () => {

@@ -7,22 +7,20 @@ import { cn } from '../../lib/utils';
 
 function Skeleton() {
   return (
-    <div className="animate-pulse space-y-8">
-      <div className="h-[88px] rounded-lg bg-secondary" />
-      <div className="space-y-[22px]">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
-        ))}
-      </div>
+    <div className="grid animate-pulse gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="h-[168px] bg-kinetic-dark" />
+      ))}
     </div>
   );
 }
 
 // ─── Lista ───────────────────────────────────────────────────────────────────
-// Tela 5 do redesign 2a. O primeiro programa da PÁGINA vira a placa em
-// destaque; o resto são rows. Pager de traços no lugar de Anterior/Próxima.
-// Compartilhado entre /influencer/browse (autenticado) e /programs (vitrine
-// pública) — só o título e o destino do link mudam entre os dois contextos.
+// Todos os programas abertos com o mesmo peso visual — ver o comentário em
+// ProgramCard.tsx sobre por que a placa "Em destaque" saiu. Pager de traços no
+// lugar de Anterior/Próxima. Compartilhado entre /influencer/browse
+// (autenticado) e /programs (vitrine pública) — só o título e o destino do
+// link mudam entre os dois contextos.
 
 interface Props {
   title: string;
@@ -37,14 +35,18 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
   const programs = data?.data ?? [];
   const totalPages = data?.meta.totalPages ?? 1;
   const total = data?.meta.total ?? 0;
-
-  const [featured, ...rest] = programs;
+  const limit = data?.meta.limit ?? 0;
+  // do meta, não do state: com isPlaceholderData o state já avançou mas o dado
+  // na tela ainda é o da página anterior — numerar pelo state mostraria número errado.
+  const shownPage = data?.meta.page ?? 1;
 
   return (
     <>
       <div className="mb-[26px] flex items-end justify-between">
-        <h1 className="font-display text-d-md text-foreground">{title}</h1>
-        <p className="font-display text-d-inline leading-none tabular-nums text-foreground">
+        <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+          {title}
+        </h1>
+        <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground">
           {total}
         </p>
       </div>
@@ -56,32 +58,27 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
       )}
 
       {!isLoading && !isError && programs.length === 0 && (
-        <p className="text-sm text-[#8A8A85]">Nenhum programa aberto agora. Volte em breve.</p>
+        <p className="text-sm text-kinetic-muted">Nenhum programa aberto agora. Volte em breve.</p>
       )}
 
-      {!isLoading && !isError && featured && (
+      {!isLoading && !isError && programs.length > 0 && (
         <div className={cn(isPlaceholderData && 'opacity-60')}>
-          <p className="mb-3.5 text-xs text-[#75756E]">Em destaque</p>
-          <ProgramCard campaign={featured} variant="featured" hrefBuilder={hrefBuilder} />
-
-          {rest.length > 0 && (
-            <>
-              <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">
-                Todos os abertos
-              </h2>
-              <div className="flex flex-col gap-[22px]">
-                {rest.map((c, i) => (
-                  <ProgramCard
-                    key={c.id}
-                    campaign={c}
-                    variant="row"
-                    index={i + 2}
-                    hrefBuilder={hrefBuilder}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          <h2 className="mb-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+            Todos os abertos
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {programs.map((c, i) => (
+              <ProgramCard
+                key={c.id}
+                campaign={c}
+                // numeração contínua entre páginas: na 2ª página começa em 13,
+                // não em 01 — senão o mesmo número aparece em programas
+                // diferentes conforme se navega.
+                index={(shownPage - 1) * limit + i + 1}
+                hrefBuilder={hrefBuilder}
+              />
+            ))}
+          </div>
 
           {totalPages > 1 && (
             <div className="mt-[26px] flex items-center justify-center gap-[7px]">
@@ -92,7 +89,10 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
                   aria-label={`Página ${i + 1} de ${totalPages}`}
                   aria-current={page === i + 1}
                   onClick={() => setPage(i + 1)}
-                  className={cn('h-0.5 w-[22px] rounded-full', page === i + 1 ? 'bg-lime' : 'bg-[#242422]')}
+                  className={cn(
+                    'h-0.5 w-[22px] rounded-full',
+                    page === i + 1 ? 'bg-lime' : 'bg-[#242422]',
+                  )}
                 />
               ))}
             </div>

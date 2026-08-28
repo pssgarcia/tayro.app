@@ -10,9 +10,12 @@ import {
   useRefreshApplicationIg,
 } from '../../hooks/useCampaignApplications';
 import CountUp from '../../components/primitives/CountUp';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
+import KineticRow from '../../components/primitives/kinetic/KineticRow';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import CampaignPipelineMobileStory from './CampaignPipelineMobileStory';
 import {
-  applicationStatusWord,
   creatorAvatarSrc,
   creatorPostSrc,
   formatEngagement,
@@ -60,39 +63,17 @@ function PipelineRow({
 
   return (
     <li>
-      <button
-        type="button"
+      <KineticRow
+        title={influencer.name}
+        selected={selected}
         onClick={onSelect}
-        aria-current={selected}
-        className={cn(
-          'flex w-full items-center justify-between rounded border p-3 text-left transition-colors',
-          selected
-            ? 'border-kinetic-gray bg-kinetic-dark'
-            : 'border-transparent bg-transparent hover:bg-kinetic-dark',
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-kinetic-gray">
+        leading={
+          <span className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-kinetic-gray">
             {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
-          </div>
-          <span
-            className={cn(
-              'truncate text-sm font-medium',
-              selected ? 'text-white' : 'text-kinetic-text',
-            )}
-          >
-            {influencer.name}
           </span>
-        </div>
-        <span
-          className={cn(
-            'shrink-0 font-mono text-xs',
-            status === 'PENDING' ? 'text-lime' : 'text-kinetic-muted',
-          )}
-        >
-          {applicationStatusWord[status]}
-        </span>
-      </button>
+        }
+        trailing={<StatusWord kind="application" status={status} />}
+      />
     </li>
   );
 }
@@ -136,12 +117,7 @@ function ProfilePlate({
     // posts). `min-h-0` no meio é o que faz o overflow-y-auto respeitar a
     // altura em vez de estourar o card (mesma causa do bug corrigido no
     // mobile em CampaignPipelineMobileStory.tsx).
-    <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg bg-kinetic-light text-black">
-      <div className="absolute left-4 top-4 h-4 w-4 border-l border-t border-lime" />
-      <div className="absolute right-4 top-4 h-4 w-4 border-r border-t border-lime" />
-      <div className="absolute bottom-4 left-4 h-4 w-4 border-b border-l border-lime" />
-      <div className="absolute bottom-4 right-4 h-4 w-4 border-b border-r border-lime" />
-
+    <KineticPlate as="section" marks="all" flush className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
@@ -278,26 +254,24 @@ function ProfilePlate({
       </div>
 
       {application.status === 'PENDING' && (
-        <div className="flex shrink-0 gap-3 border-t border-gray-300 p-6 lg:px-8">
-          <button
-            type="button"
-            onClick={onApprove}
-            disabled={isApproving || isRejecting}
-            className="flex-1 bg-lime px-6 py-3 font-mono font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isApproving ? 'Aprovando…' : 'Aprovar'}
-          </button>
-          <button
-            type="button"
-            onClick={onReject}
-            disabled={isApproving || isRejecting}
-            className="flex-1 border border-gray-400 bg-transparent px-6 py-3 font-mono font-medium uppercase tracking-widest text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isRejecting ? 'Descartando…' : 'Descartar'}
-          </button>
-        </div>
+        <KineticActions
+          className="shrink-0"
+          actions={[
+            {
+              label: isApproving ? 'Aprovando…' : 'Aprovar',
+              onClick: onApprove,
+              disabled: isApproving || isRejecting,
+              primary: true,
+            },
+            {
+              label: isRejecting ? 'Descartando…' : 'Descartar',
+              onClick: onReject,
+              disabled: isApproving || isRejecting,
+            },
+          ]}
+        />
       )}
-    </section>
+    </KineticPlate>
   );
 }
 

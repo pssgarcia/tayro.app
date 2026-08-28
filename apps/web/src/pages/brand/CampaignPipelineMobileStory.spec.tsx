@@ -199,8 +199,7 @@ describe('CampaignPipelineMobileStory — painel de detalhes', () => {
 
 describe('CampaignPipelineMobileStory — decisão e tally', () => {
   /** No fim de fila, o número fica no irmão anterior ao rótulo. */
-  const contador = (rotulo: string) =>
-    screen.getByText(rotulo).previousElementSibling;
+  const contador = (rotulo: string) => screen.getByText(rotulo).previousElementSibling;
 
   it('conta no resumo do fim de fila a decisão que o servidor confirmou', () => {
     const approve = makeMutation({ mutate: vi.fn() });

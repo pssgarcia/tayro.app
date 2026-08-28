@@ -46,8 +46,7 @@ function renderForm(overrides: Partial<CampaignFormValues> | null = {}, props: a
 }
 
 /** A prévia da oferta vive dentro da placa "O que você recebe". */
-const previa = () =>
-  screen.getByText(/o que você recebe/i).parentElement as HTMLElement;
+const previa = () => screen.getByText(/o que você recebe/i).parentElement as HTMLElement;
 
 beforeEach(() => {
   onSubmit = vi.fn().mockResolvedValue(undefined);
@@ -135,9 +134,7 @@ describe('CampaignForm — prévia da oferta', () => {
 
     await user.type(screen.getByLabelText(/valor \(r\$\)/i), '450');
 
-    await waitFor(() =>
-      expect(within(previa()).getByText(/R\$\s?450,00/)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(within(previa()).getByText(/R\$\s?450,00/)).toBeInTheDocument());
   });
 
   it('a legenda da prévia muda com o tipo de oferta', () => {

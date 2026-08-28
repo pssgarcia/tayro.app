@@ -7,13 +7,14 @@ import {
   useRejectApplication,
 } from '../../hooks/useCampaignApplications';
 import {
-  applicationStatusWord,
   creatorAvatarSrc,
   creatorPostSrc,
   formatEngagement,
   formatNumberParts,
   formatOffer,
 } from '../../utils/format';
+import KineticRow from '../../components/primitives/kinetic/KineticRow';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
 
@@ -331,30 +332,18 @@ function AllList({
         const avatarSrc = creatorAvatarSrc(app.influencer);
         return (
           <li key={app.id}>
-            <button
-              type="button"
+            <KineticRow
+              title={app.influencer.name}
               onClick={() => onSelect(app.id)}
-              className="flex w-full items-center justify-between gap-3 rounded p-3 text-left transition-colors hover:bg-kinetic-dark"
-            >
-              <span className="flex min-w-0 items-center gap-3">
+              leading={
                 <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-kinetic-gray">
                   {avatarSrc && (
                     <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
                   )}
                 </span>
-                <span className="truncate text-sm font-medium text-kinetic-light">
-                  {app.influencer.name}
-                </span>
-              </span>
-              <span
-                className={cn(
-                  'shrink-0 font-mono text-xs',
-                  app.status === 'PENDING' ? 'text-lime' : 'text-kinetic-muted',
-                )}
-              >
-                {applicationStatusWord[app.status]}
-              </span>
-            </button>
+              }
+              trailing={<StatusWord kind="application" status={app.status} />}
+            />
           </li>
         );
       })}

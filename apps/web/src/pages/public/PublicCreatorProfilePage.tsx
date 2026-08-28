@@ -1,13 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { usePublicCreatorProfile } from '../../hooks/usePublicCreatorProfile';
-import {
-  creatorAvatarSrc,
-  formatEngagement,
-  formatNumberParts,
-} from '../../utils/format';
-import Plate from '../../components/primitives/Plate';
-import StatBlock from '../../components/primitives/StatBlock';
+import { creatorAvatarSrc, formatEngagement, formatNumberParts } from '../../utils/format';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import ThumbGrid from '../../components/primitives/ThumbGrid';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
@@ -15,10 +11,10 @@ import ThumbGrid from '../../components/primitives/ThumbGrid';
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[220px] rounded-lg bg-secondary" />
+      <div className="h-[220px] rounded-lg bg-kinetic-dark" />
       <div className="flex gap-3.5">
-        <div className="h-[88px] flex-1 rounded-lg bg-secondary" />
-        <div className="h-[88px] flex-1 rounded-lg bg-secondary" />
+        <div className="h-[88px] flex-1 rounded-lg bg-kinetic-dark" />
+        <div className="h-[88px] flex-1 rounded-lg bg-kinetic-dark" />
       </div>
     </div>
   );
@@ -40,8 +36,8 @@ function IgStats({
   if (status === 'PENDING' || status === null) {
     return (
       <div className="flex flex-1 animate-pulse gap-3.5">
-        <div className="h-[88px] flex-1 rounded-lg bg-secondary" />
-        <div className="h-[88px] flex-1 rounded-lg bg-secondary" />
+        <div className="h-[88px] flex-1 rounded-lg bg-kinetic-dark" />
+        <div className="h-[88px] flex-1 rounded-lg bg-kinetic-dark" />
       </div>
     );
   }
@@ -58,7 +54,7 @@ function IgStats({
 
   return (
     <>
-      <StatBlock
+      <StatFigure
         label="seguidores"
         value={
           <>
@@ -68,7 +64,7 @@ function IgStats({
         }
       />
       {igEngagementRate != null && (
-        <StatBlock
+        <StatFigure
           label="engajamento"
           value={
             <>
@@ -115,7 +111,7 @@ export default function PublicCreatorProfilePage() {
         </Link>
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-[7px] text-[13px] text-[#75756E] transition-colors hover:text-foreground"
+          className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
           Voltar
@@ -130,7 +126,7 @@ export default function PublicCreatorProfilePage() {
             <p className="font-display font-semibold text-foreground">
               Este perfil não está disponível
             </p>
-            <p className="mt-1 text-sm text-[#75756E]">
+            <p className="mt-1 text-sm text-kinetic-muted">
               O link pode estar incorreto ou o perfil não é público.
             </p>
           </div>
@@ -139,19 +135,19 @@ export default function PublicCreatorProfilePage() {
         {profile && (
           <div className="max-w-[520px] pb-4">
             {/* Placa — identidade da creator (regra: uma placa por tela) */}
-            <Plate marks="all">
+            <KineticPlate marks="all">
               <div className="flex items-start gap-4">
-                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[4px] bg-[#cfcfc8]">
                   {avatarSrc ? (
                     <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="flex h-full w-full items-center justify-center font-display text-[22px] font-semibold text-plate-muted">
+                    <span className="flex h-full w-full items-center justify-center font-display text-[22px] font-semibold text-[#6a6a64]">
                       {initials || '?'}
                     </span>
                   )}
                 </div>
                 <div className="min-w-0 flex-1 pt-1">
-                  <p className="truncate font-display text-[22px] font-bold leading-[1.05] tracking-[-.045em] text-plate-ink">
+                  <p className="truncate font-display text-[22px] font-bold leading-[1.05] tracking-[-.045em] text-black">
                     {profile.name}
                   </p>
                   {igHandle && (
@@ -159,14 +155,14 @@ export default function PublicCreatorProfilePage() {
                       href={`https://instagram.com/${igHandle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-[7px] flex w-fit items-center gap-[5px] text-[13px] text-plate-muted transition-colors hover:text-plate-ink"
+                      className="mt-[7px] flex w-fit items-center gap-[5px] text-[13px] text-[#6a6a64] transition-colors hover:text-black"
                     >
                       @{igHandle}
                       <ExternalLink size={11} className="shrink-0" />
                     </a>
                   )}
                   {profile.city && (
-                    <p className="mt-[6px] text-xs text-plate-soft">{profile.city}</p>
+                    <p className="mt-[6px] text-xs text-[#7a7a74]">{profile.city}</p>
                   )}
                 </div>
               </div>
@@ -176,7 +172,7 @@ export default function PublicCreatorProfilePage() {
                   {profile.niches.map((n) => (
                     <span
                       key={n}
-                      className="rounded-[3px] border border-[rgba(14,14,14,.16)] px-[9px] py-[5px] text-[11px] capitalize text-plate-muted"
+                      className="rounded-[3px] border border-[rgba(14,14,14,.16)] px-[9px] py-[5px] text-[11px] capitalize text-[#6a6a64]"
                     >
                       {n}
                     </span>
@@ -185,11 +181,11 @@ export default function PublicCreatorProfilePage() {
               )}
 
               {profile.bio && (
-                <p className="mt-5 whitespace-pre-line break-words text-sm leading-[1.55] text-plate-body">
+                <p className="mt-5 whitespace-pre-line break-words text-sm leading-[1.55] text-[#3a3a34]">
                   {profile.bio}
                 </p>
               )}
-            </Plate>
+            </KineticPlate>
 
             {/* Stats — seguidores/engajamento (IG) + parcerias concluídas (histórico) */}
             <div className="mt-8 flex gap-3.5">
@@ -198,7 +194,7 @@ export default function PublicCreatorProfilePage() {
                 followersCount={profile.followersCount}
                 igEngagementRate={profile.igEngagementRate}
               />
-              <StatBlock
+              <StatFigure
                 label="parcerias concluídas"
                 value={profile.completedPartnerships}
                 highlight
@@ -209,7 +205,7 @@ export default function PublicCreatorProfilePage() {
             {/* Conteúdo recente */}
             {profile.igRecentPosts && profile.igRecentPosts.length > 0 && (
               <>
-                <h2 className="mb-5 mt-9 font-display text-d-xs text-foreground">
+                <h2 className="mb-5 mt-9 font-display text-base font-semibold tracking-[-.03em] text-foreground">
                   Conteúdo recente
                 </h2>
                 <ThumbGrid posts={profile.igRecentPosts} influencerId={profile.id} />
@@ -218,12 +214,12 @@ export default function PublicCreatorProfilePage() {
 
             <div className="my-[30px] h-px bg-muted" />
 
-            <p className="text-center text-sm text-[#8A8A85]">
+            <p className="text-center text-sm text-kinetic-muted">
               Quer creators como {profile.name}?
             </p>
             <Link
               to="/register/brand"
-              className="mt-4 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-lime text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90"
+              className="mt-5 flex min-h-[56px] w-full items-center justify-center bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
             >
               Crie seu programa
             </Link>

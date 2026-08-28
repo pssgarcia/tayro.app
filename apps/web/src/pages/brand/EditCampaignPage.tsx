@@ -23,15 +23,12 @@ export default function EditCampaignPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Logo escondido no mobile: o BrandLayout já mostra o logo + sair no
-          header mobile — sem isso apareciam dois "tayro" empilhados. */}
+      {/* Sem logo próprio — ver NewCampaignPage: o BrandLayout sempre mostra
+          um, na sidebar ou no header mobile. */}
       <header className="flex h-[60px] items-center justify-between px-6">
-        <span className="hidden font-display text-[19px] font-bold tracking-[-.05em] text-foreground md:inline-block">
-          tay<span className="text-lime">ro</span>
-        </span>
         <Link
           to={`/brand/campaigns/${id}`}
-          className="ml-auto flex items-center gap-[7px] text-[13px] text-[#75756E] transition-colors hover:text-foreground"
+          className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
           Voltar
@@ -39,7 +36,9 @@ export default function EditCampaignPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pb-10">
-        <h1 className="mb-[30px] font-display text-d-md text-foreground">Editar programa</h1>
+        <h1 className="mb-9 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
+          Editar programa
+        </h1>
 
         {isLoading && (
           <div className="flex h-64 items-center justify-center">
@@ -55,14 +54,14 @@ export default function EditCampaignPage() {
 
         {!isLoading && !isError && campaign && campaign.status !== 'DRAFT' && (
           <div className="max-w-[520px]">
-            <p className="text-sm text-[#8A8A85]">
-              Este programa já foi publicado e não pode mais ser editado. Quem se candidatou
-              viu estes termos — mudá-los agora quebraria o combinado.
+            <p className="text-sm text-kinetic-muted">
+              Este programa já foi publicado e não pode mais ser editado. Quem se candidatou viu
+              estes termos — mudá-los agora quebraria o combinado.
             </p>
             <button
               type="button"
               onClick={backToDetail}
-              className="mt-6 min-h-[52px] rounded-lg border border-[#232323] px-6 font-display text-[14px] font-medium tracking-[-.01em] text-[#75756E] transition-colors hover:text-foreground"
+              className="mt-7 min-h-[52px] border border-kinetic-border px-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted transition-colors hover:border-foreground hover:text-foreground"
             >
               Voltar ao programa
             </button>
