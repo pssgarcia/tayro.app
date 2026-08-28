@@ -1,4 +1,4 @@
-import type { ApplicationStatus } from '../types/api';
+import type { ApplicationStatus, CampaignStatus, ContentStatus } from '../types/api';
 
 /**
  * Rótulo em português de cada status de candidatura, no feminino (concorda com
@@ -10,6 +10,32 @@ export const applicationStatusWord: Record<ApplicationStatus, string> = {
   APPROVED: 'Aprovada',
   REJECTED: 'Recusada',
   WITHDRAWN: 'Retirada',
+};
+
+/**
+ * Rótulo em português de cada status de campanha, no feminino (concorda com
+ * "campanha"). Vivia preso dentro de `StatusPill.tsx`; virou fonte única
+ * quando o Kinetic passou a mostrar status como palavra, sem pill.
+ */
+export const campaignStatusWord: Record<CampaignStatus, string> = {
+  DRAFT: 'Rascunho',
+  ACTIVE: 'Ativa',
+  CLOSED: 'Encerrada',
+  COMPLETED: 'Concluída',
+};
+
+/**
+ * Rótulo em português de cada status de conteúdo, no MASCULINO (concorda com
+ * "conteúdo") — por isso "Aprovado", não "Aprovada" como na candidatura.
+ * `ContentStatus` não é `ApplicationStatus`: além do gênero, tem
+ * REVISION_REQUESTED e não tem WITHDRAWN. Vivia preso em
+ * `ContentStatusPill.tsx`.
+ */
+export const contentStatusWord: Record<ContentStatus, string> = {
+  PENDING: 'Em análise',
+  APPROVED: 'Aprovado',
+  REJECTED: 'Recusado',
+  REVISION_REQUESTED: 'Revisar',
 };
 
 /**
