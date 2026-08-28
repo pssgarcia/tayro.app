@@ -10,19 +10,19 @@ import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
 import PlateEditField from '../../components/primitives/PlateEditField';
 import PlateEditNiches from '../../components/primitives/PlateEditNiches';
-import {
-  formatEngagement,
-  formatNumberParts,
-  publicUrl,
-  publicUrlLabel,
-} from '../../utils/format';
+import { formatEngagement, formatNumberParts, publicUrl, publicUrlLabel } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
-  avatarUrl: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
+  avatarUrl: z
+    .string()
+    .url('URL inválida (inclua https://)')
+    .max(2048)
+    .optional()
+    .or(z.literal('')),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   city: z.string().max(100, 'Máximo 100 caracteres').optional(),
   tiktokHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
@@ -47,20 +47,13 @@ function cleanHandle(raw?: string): string {
 //    `profile` (servidor), NUNCA do watch() do form: com o toggle recém-ligado
 //    e ainda não salvo, o backend continua devolvendo 404.
 
-function PublicProfileLink({
-  handle,
-  enabled,
-}: {
-  handle: string | null;
-  enabled: boolean;
-}) {
+function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled: boolean }) {
   const [copied, setCopied] = useState(false);
 
   if (!handle) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-[#75756E]">
-        Adicione seu @ do Instagram para ganhar um endereço em{' '}
-        {publicUrlLabel('/c/')}.
+        Adicione seu @ do Instagram para ganhar um endereço em {publicUrlLabel('/c/')}.
       </p>
     );
   }
@@ -247,7 +240,9 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
           </div>
         )}
 
-        {watchedBio && <p className="mt-7 text-[15px] leading-[1.5] text-plate-body">{watchedBio}</p>}
+        {watchedBio && (
+          <p className="mt-7 text-[15px] leading-[1.5] text-plate-body">{watchedBio}</p>
+        )}
 
         {watchedNiches.length > 0 && (
           <div className="mt-5 flex flex-wrap gap-[7px]">
@@ -319,7 +314,11 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             name="publicProfileEnabled"
             control={control}
             render={({ field }) => (
-              <Toggle checked={field.value} onChange={field.onChange} label="Tornar meu perfil público" />
+              <Toggle
+                checked={field.value}
+                onChange={field.onChange}
+                label="Tornar meu perfil público"
+              />
             )}
           />
         </div>
@@ -340,7 +339,9 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
           'disabled:cursor-not-allowed disabled:opacity-40',
         )}
       >
-        {isSubmitting ? 'Salvando…' : justSaved && !isDirty ? (
+        {isSubmitting ? (
+          'Salvando…'
+        ) : justSaved && !isDirty ? (
           <>
             Salvo <Check size={16} />
           </>
@@ -380,7 +381,9 @@ export default function ProfilePage() {
 
       {isLoading && <Skeleton />}
 
-      {isError && <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>}
+      {isError && (
+        <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>
+      )}
 
       {!isLoading && !isError && profile && <ProfileForm profile={profile} />}
     </div>

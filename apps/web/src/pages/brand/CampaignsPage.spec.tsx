@@ -57,8 +57,7 @@ function renderPage() {
 
 /** A placa em destaque é a única com a barra de ação "Copiar link". */
 const placaEmDestaque = () =>
-  screen.queryByRole('button', { name: /copiar link/i })?.closest('div')
-    ?.parentElement ?? null;
+  screen.queryByRole('button', { name: /copiar link/i })?.closest('div')?.parentElement ?? null;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -151,19 +150,14 @@ describe('CampaignsPage — placa em destaque', () => {
     expect(within(placa as HTMLElement).getByText('Programa cheio')).toBeInTheDocument();
   });
 
-  it.each(['Rascunho', 'Encerradas'])(
-    'não mostra a placa na aba %s',
-    (aba) => {
-      mockCampaigns(comAtivos());
-      renderPage();
+  it.each(['Rascunho', 'Encerradas'])('não mostra a placa na aba %s', (aba) => {
+    mockCampaigns(comAtivos());
+    renderPage();
 
-      fireEvent.click(screen.getByRole('button', { name: aba }));
+    fireEvent.click(screen.getByRole('button', { name: aba }));
 
-      expect(
-        screen.queryByRole('button', { name: /copiar link/i }),
-      ).not.toBeInTheDocument();
-    },
-  );
+    expect(screen.queryByRole('button', { name: /copiar link/i })).not.toBeInTheDocument();
+  });
 
   it('mostra a placa na aba Ativas', () => {
     mockCampaigns(comAtivos());
@@ -178,8 +172,6 @@ describe('CampaignsPage — placa em destaque', () => {
     mockCampaigns([makeCampaign('d', 'DRAFT'), makeCampaign('c', 'CLOSED')]);
     renderPage();
 
-    expect(
-      screen.queryByRole('button', { name: /copiar link/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /copiar link/i })).not.toBeInTheDocument();
   });
 });

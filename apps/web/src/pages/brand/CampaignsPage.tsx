@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react';
 import { useCampaigns } from '../../hooks/useCampaigns';
 import type { Campaign, CampaignStatus } from '../../types/api';
 import CampaignCard from './CampaignCard';
-import TabsUnderline from '../../components/primitives/TabsUnderline';
+import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
 
 type Filter = 'ALL' | CampaignStatus;
 
@@ -36,10 +36,10 @@ function pickFeatured(campaigns: Campaign[]): Campaign | null {
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[88px] rounded-lg bg-secondary" />
-      <div className="space-y-[22px]">
+      <div className="h-[240px] max-w-[560px] rounded-lg bg-kinetic-dark" />
+      <div className="space-y-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-14 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -63,28 +63,33 @@ export default function CampaignsPage() {
   const featured = campaigns && showFeatured ? pickFeatured(campaigns) : null;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <div className="mb-[22px] flex items-center justify-between">
-        <h1 className="font-display text-d-md text-foreground">Programas</h1>
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+          Programas
+        </h1>
         <button
           onClick={() => navigate('/brand/campaigns/new')}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-lime px-[14px] py-[9px] font-display text-[13px] font-semibold tracking-[-.02em] text-lime transition-colors hover:bg-lime/10"
+          className="flex min-h-[38px] shrink-0 items-center gap-2 border border-lime px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-lime transition-colors hover:bg-lime hover:text-black"
         >
-          <Plus size={13} />
+          <Plus size={12} />
           Novo
         </button>
       </div>
 
-      <TabsUnderline tabs={TABS} active={filter} onChange={setFilter} className="mb-[22px] px-0" />
+      <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
 
-      {isError && <p className="text-sm text-destructive">Erro ao carregar campanhas. Tente novamente.</p>}
+      <KineticTabs tabs={TABS} active={filter} onChange={setFilter} className="mb-8 px-0" />
+
+      {isError && (
+        <p className="text-sm text-destructive">Erro ao carregar campanhas. Tente novamente.</p>
+      )}
 
       {isLoading && <Skeleton />}
 
       {!isLoading && !isError && campaigns?.length === 0 && (
-        <p className="text-sm text-[#8A8A85]">
-          Você ainda não criou nenhum programa. Crie o primeiro para começar a receber
-          candidaturas.
+        <p className="text-sm text-kinetic-muted">
+          Você ainda não criou nenhum programa. Crie o primeiro para começar a receber candidaturas.
         </p>
       )}
 
@@ -93,11 +98,11 @@ export default function CampaignsPage() {
           {featured && <CampaignCard campaign={featured} variant="featured" />}
 
           {visible.length === 0 ? (
-            <p className="mt-[30px] text-sm text-[#8A8A85]">
+            <p className="mt-8 text-sm text-kinetic-muted">
               Nenhum programa com status "{TABS.find((f) => f.id === filter)?.label}".
             </p>
           ) : (
-            <div className="mt-[30px] flex flex-col gap-[22px]">
+            <div className="mt-8 flex flex-col gap-0.5">
               {visible.map((c, i) => (
                 <CampaignCard key={c.id} campaign={c} variant="row" index={i + 1} />
               ))}

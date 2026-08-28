@@ -86,7 +86,9 @@ export default function ProgramDetailPage() {
               )}
             </div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">Programa de</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+                Programa de
+              </p>
               <p className="mt-1.5 font-display text-base font-semibold tracking-[-.03em] text-foreground">
                 {campaign.brand?.name ?? '—'}
               </p>
@@ -149,7 +151,9 @@ export default function ProgramDetailPage() {
             </div>
           )}
 
-          <p className="mt-9 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">Sobre o programa</p>
+          <p className="mt-9 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+            Sobre o programa
+          </p>
           <p className="mt-5 whitespace-pre-line break-words text-[15px] leading-relaxed text-kinetic-text">
             {campaign.description}
           </p>

@@ -161,9 +161,7 @@ describe('RegisterInfluencerPage', () => {
     await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
-    expect(
-      await screen.findByText(/este e-mail já está em uso/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/este e-mail já está em uso/i)).toBeInTheDocument();
     // O erro é do passo 2 (Acesso) — precisa ter voltado pra lá pra ficar visível.
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
@@ -184,9 +182,7 @@ describe('RegisterInfluencerPage', () => {
     await fillAllSteps({ instagramHandle: '@pitringym' });
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
-    expect(
-      await screen.findByText(/já está em uso por outra conta/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/já está em uso por outra conta/i)).toBeInTheDocument();
     // O erro é do passo 1 (Identidade) — precisa ter voltado pra lá.
     expect(screen.getByLabelText(/instagram/i)).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
@@ -221,9 +217,7 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
     });
     continueStep();
 
-    expect(
-      await screen.findByText(/usuário não encontrado/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/usuário não encontrado/i)).toBeInTheDocument();
     // Não avançou: o campo de e-mail (passo 2) não existe na tela.
     expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();

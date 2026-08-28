@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import type { Campaign } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
-import SegmentBar from '../../components/primitives/SegmentBar';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
-import StatusPill from '../../components/primitives/StatusPill';
-import { daysUntil, publicUrl } from '../../utils/format';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
+import KineticRow from '../../components/primitives/kinetic/KineticRow';
+import KineticSegments from '../../components/primitives/kinetic/KineticSegments';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
+import { campaignStatusWord, daysUntil, publicUrl } from '../../utils/format';
 
 // ─── Row (padrão "Programas") ─────────────────────────────────────────────────
 
@@ -22,26 +22,17 @@ function CampaignRow({
 }) {
   const total = campaign._count.applications;
   return (
-    <button
-      type="button"
+    <KineticRow
+      index={index}
+      title={campaign.title}
+      meta={
+        campaign.status === 'DRAFT'
+          ? 'sem link publicado'
+          : `${total} candidatura${total !== 1 ? 's' : ''} · ${campaign.maxSpots} vaga${campaign.maxSpots !== 1 ? 's' : ''}`
+      }
       onClick={onClick}
-      className="flex w-full items-baseline gap-3.5 text-left transition-colors hover:bg-accent"
-    >
-      <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
-        {String(index).padStart(2, '0')}
-      </span>
-      <span className="min-w-0 flex-1">
-        <p className="truncate font-display text-d-xs font-semibold text-foreground">
-          {campaign.title}
-        </p>
-        <p className="mt-[5px] text-xs text-[#6E6E68]">
-          {campaign.status === 'DRAFT'
-            ? 'sem link publicado'
-            : `${total} candidatura${total !== 1 ? 's' : ''} · ${campaign.maxSpots} vaga${campaign.maxSpots !== 1 ? 's' : ''}`}
-        </p>
-      </span>
-      <StatusPill status={campaign.status} />
-    </button>
+      trailing={<StatusWord kind="campaign" status={campaign.status} />}
+    />
   );
 }
 
@@ -54,6 +45,12 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
   const approved = campaign.approvedCount ?? 0;
   const pending = campaign.pendingCount ?? 0;
 
+  // Um segmento por vaga só funciona em programa pequeno; acima de 12 a barra
+  // vira proporcional (mesma regra da aba Briefing).
+  const segmentTotal = Math.min(campaign.maxSpots, 12);
+  const segmentFilled =
+    campaign.maxSpots <= 12 ? approved : Math.round((approved / campaign.maxSpots) * segmentTotal);
+
   function handleCopy() {
     navigator.clipboard.writeText(publicUrl(`/apply/${campaign.id}`));
     setCopied(true);
@@ -61,43 +58,47 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
   }
 
   return (
-    <Plate marks="top" flush className="max-w-[520px]">
-      <div className="px-6 pb-6 pt-[26px]">
-        <div className="mb-[22px] flex items-start justify-between gap-3">
+    <KineticPlate marks="top" flush className="max-w-[560px]">
+      <div className="px-6 pb-8 pt-11 sm:px-8">
+        <div className="mb-7 flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+            <p className="font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
               {campaign.title}
             </p>
-            <p className="mt-[5px] text-xs text-plate-muted">
+            <p className="mt-2 text-[13px] text-[#6a6a64]">
               {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
             </p>
           </div>
-          <StatusPill status={campaign.status} className="shrink-0" />
+          <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
+            {campaignStatusWord[campaign.status]}
+          </span>
         </div>
 
         <CountUp>
-          <span className="font-display text-d-xl text-plate-ink tabular-nums">
+          <span className="font-display text-[52px] font-bold leading-[.85] tracking-[-.055em] tabular-nums text-black">
             {approved}
-            <span className="text-[23px] tracking-[-.04em] text-plate-muted">
+            <span className="text-[26px] tracking-[-.03em] text-[#6a6a64]">
               /{campaign.maxSpots}
             </span>
           </span>
         </CountUp>
-        <p className="mb-[18px] mt-3 text-xs text-plate-soft">
+        <p className="mb-6 mt-4 text-[13px] text-[#6a6a64]">
           vagas preenchidas · {pending} na fila
         </p>
-        <SegmentBar filled={approved} total={campaign.maxSpots} />
+        <KineticSegments filled={segmentFilled} total={segmentTotal} />
       </div>
 
-      <PlateActionBar
-        secondary={{ label: copied ? 'Copiado!' : 'Copiar link', onClick: handleCopy, width: 100 }}
-        primary={{
-          label: 'Ver detalhes',
-          onClick: () => navigate(`/brand/campaigns/${campaign.id}`),
-          icon: <ArrowRight size={16} />,
-        }}
+      <KineticActions
+        actions={[
+          { label: copied ? 'Copiado!' : 'Copiar link', onClick: handleCopy, width: 150 },
+          {
+            label: 'Ver detalhes',
+            onClick: () => navigate(`/brand/campaigns/${campaign.id}`),
+            primary: true,
+          },
+        ]}
       />
-    </Plate>
+    </KineticPlate>
   );
 }
 

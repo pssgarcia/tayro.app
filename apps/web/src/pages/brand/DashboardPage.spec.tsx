@@ -24,7 +24,9 @@ const baseData: BrandDashboard = {
   rewards: { total: 8, pending: 2, issued: 3, delivered: 3 },
 };
 
-function mockDashboard(over: Partial<{ data: BrandDashboard; isLoading: boolean; isError: boolean }> = {}) {
+function mockDashboard(
+  over: Partial<{ data: BrandDashboard; isLoading: boolean; isError: boolean }> = {},
+) {
   vi.mocked(hook.useDashboard).mockReturnValue({
     data: baseData,
     isLoading: false,

@@ -5,12 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import DashboardPage from './DashboardPage';
 import * as appHooks from '../../hooks/useMyApplications';
 import * as rewardHooks from '../../hooks/useMyRewards';
-import type {
-  ApplicationStatus,
-  MyApplication,
-  MyReward,
-  RewardStatus,
-} from '../../types/api';
+import type { ApplicationStatus, MyApplication, MyReward, RewardStatus } from '../../types/api';
 
 vi.mock('../../hooks/useMyApplications', async (importOriginal) => {
   const actual = await importOriginal<typeof appHooks>();
@@ -122,11 +117,7 @@ describe('DashboardPage — taxa de conversão', () => {
   });
 
   it('arredonda a taxa em vez de mostrar decimal', () => {
-    mockData([
-      makeApp('a', 'APPROVED'),
-      makeApp('b', 'PENDING'),
-      makeApp('c', 'PENDING'),
-    ]);
+    mockData([makeApp('a', 'APPROVED'), makeApp('b', 'PENDING'), makeApp('c', 'PENDING')]);
     renderPage();
 
     expect(screen.getByText('33')).toBeInTheDocument();
@@ -135,11 +126,7 @@ describe('DashboardPage — taxa de conversão', () => {
 
 describe('DashboardPage — resumo lateral', () => {
   it('conta candidaturas em análise', () => {
-    mockData([
-      makeApp('a', 'PENDING'),
-      makeApp('b', 'PENDING'),
-      makeApp('c', 'APPROVED'),
-    ]);
+    mockData([makeApp('a', 'PENDING'), makeApp('b', 'PENDING'), makeApp('c', 'APPROVED')]);
     renderPage();
 
     // Consulta escopada no bloco, não pela ordem dos irmãos: no Kinetic o
@@ -154,11 +141,7 @@ describe('DashboardPage — resumo lateral', () => {
   it('conta como "a receber" tudo que não foi entregue', () => {
     mockData(
       [makeApp('a', 'APPROVED')],
-      [
-        makeReward('r1', 'PENDING'),
-        makeReward('r2', 'ISSUED'),
-        makeReward('r3', 'DELIVERED'),
-      ],
+      [makeReward('r1', 'PENDING'), makeReward('r2', 'ISSUED'), makeReward('r3', 'DELIVERED')],
     );
     renderPage();
 

@@ -45,7 +45,10 @@ function PlateSelectField({
   const selectId = id ?? (typeof props.name === 'string' ? props.name : undefined);
   return (
     <div>
-      <label htmlFor={selectId} className="mb-2 block font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
+      <label
+        htmlFor={selectId}
+        className="mb-2 block font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]"
+      >
         {label}
       </label>
       <span
@@ -125,10 +128,15 @@ function SubmitModal({
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           {approvedApps.length === 0 ? (
             <div className="px-6 pb-[26px] pt-[30px]">
-              <p className="font-display text-xl font-bold tracking-[-.04em] text-black">Enviar conteúdo</p>
+              <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+                Enviar conteúdo
+              </p>
               <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
                 Você não tem candidaturas aprovadas no momento.{' '}
-                <Link to="/influencer/applications" className="whitespace-nowrap text-black underline">
+                <Link
+                  to="/influencer/applications"
+                  className="whitespace-nowrap text-black underline"
+                >
                   Ver candidaturas
                 </Link>
                 .
@@ -137,7 +145,9 @@ function SubmitModal({
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
-                <p className="-mb-2 font-display text-xl font-bold tracking-[-.04em] text-black">Enviar conteúdo</p>
+                <p className="-mb-2 font-display text-xl font-bold tracking-[-.04em] text-black">
+                  Enviar conteúdo
+                </p>
 
                 <PlateSelectField
                   label="Candidatura aprovada *"
@@ -175,7 +185,9 @@ function SubmitModal({
                   {...register('caption')}
                 />
 
-                {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
+                {errors.root && (
+                  <p className="text-[13px] text-destructive">{errors.root.message}</p>
+                )}
               </div>
 
               <KineticActions
@@ -344,7 +356,9 @@ export default function SubmissionsPage() {
             />
           )}
 
-          <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">Enviados</p>
+          <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+            Enviados
+          </p>
           <div className="flex flex-col gap-0.5">
             {submissions.map((s, i) => (
               <KineticRow

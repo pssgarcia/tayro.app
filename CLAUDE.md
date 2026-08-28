@@ -179,6 +179,11 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - **Vocabulário de status: uma exceção deliberada.** `creatorRewardStatusWord` (novo em `utils/format.ts`) diz o MESMO status da ótica de quem espera — "A receber"/"A caminho" em vez de "Pendente"/"Emitida". Não é drift: pra marca `PENDING` é trabalho não feito, pra creator é dinheiro não recebido. Por isso a tela de recompensas da creator **não** usa `StatusWord`, que carrega o vocabulário da marca. As abas do Registro, essas sim, foram alinhadas ("Fechadas" → "Aprovadas").
   - **Dois testes presos a `previousElementSibling`** (resumo de recompensas) reescritos com consulta escopada, mesma correção da leva 1 — o Kinetic inverte a ordem rótulo/número.
 
+- **Migração pro "Kinetic Editorial" — leva 4: programas da marca (2026-08-28):** `/brand/campaigns`, `CampaignCard` (linha + placa em destaque), `CampaignForm` (compartilhado por criar e editar), `NewCampaignPage`, `EditCampaignPage` e os **3 modais de ciclo de vida** do `CampaignDetailPage` (publicar/encerrar/apagar) — estes últimos tinham escapado da leva 2, que migrou só o header e as abas.
+  - Sem primitivo novo: a leva inteira saiu de `KineticPlate`/`KineticActions`/`KineticRow`/`KineticSegments`/`KineticTabs`/`StatFigure`/`StatusWord`, que é o sinal de que o conjunto extraído na leva 1 estava certo.
+  - **Cap de segmentos replicado:** a placa em destaque de Programas usava um segmento por vaga, igual à aba Briefing — acima de 12 vagas viram tiras de 2px. Mesma regra dos dois lados (proporcional acima de 12).
+  - Os 167 testes de `pages/brand` passaram sem alteração nenhuma.
+
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)

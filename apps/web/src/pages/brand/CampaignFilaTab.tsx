@@ -118,7 +118,6 @@ function ProfilePlate({
     // altura em vez de estourar o card (mesma causa do bug corrigido no
     // mobile em CampaignPipelineMobileStory.tsx).
     <KineticPlate as="section" marks="all" flush className="flex h-full min-h-0 flex-col">
-
       <div className="min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
