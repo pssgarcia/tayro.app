@@ -212,7 +212,7 @@ export default function ProfilePage() {
   const { data: profile, isLoading, isError } = useBrandProfile();
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
         Marca
       </h1>

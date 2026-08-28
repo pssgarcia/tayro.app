@@ -38,7 +38,7 @@ export default function RewardsPage() {
   const delivered = rewards.filter((r) => r.status === 'DELIVERED').length;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px]">
         Recompensas
       </h1>

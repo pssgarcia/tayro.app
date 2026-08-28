@@ -262,7 +262,11 @@ export default function MyApplicationsPage() {
 
       {!isLoading && !isError && applications.length > 0 && (
         <>
-          <p className={`${monoLabel} mb-4`}>Precisa de você</p>
+          {/* No modo readonly a placa é só leitura (candidatura já decidida) —
+              prometer "precisa de você" ali é falso. */}
+          <p className={`${monoLabel} mb-4`}>
+            {featured?.mode === 'readonly' ? 'Última candidatura' : 'Precisa de você'}
+          </p>
           {featured && (
             <FeaturedPlate
               featured={featured}

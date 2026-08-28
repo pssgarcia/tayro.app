@@ -7,6 +7,7 @@ import KineticSegments from '../../components/primitives/kinetic/KineticSegments
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
+import { cn } from '../../lib/utils';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -53,6 +54,9 @@ export default function DashboardPage() {
   const barFilled = Math.min(approvedApps, barTotal);
 
   const recentApps = applications?.slice(0, 3) ?? [];
+
+  // O bloco "a receber" só vai a lime quando há algo a receber: lime é ação, e
+  // destacar um zero gasta o orçamento da tela apontando pra nada.
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
@@ -109,9 +113,12 @@ export default function DashboardPage() {
               <StatFigure
                 label="a receber"
                 value={pendingRewards}
-                highlight
+                highlight={pendingRewards > 0}
                 delay={240}
-                className="h-full border border-lime p-4 sm:p-5"
+                className={cn(
+                  'h-full border p-4 sm:p-5',
+                  pendingRewards > 0 ? 'border-lime' : 'border-kinetic-gray',
+                )}
               />
             </Link>
           </div>
