@@ -1,4 +1,9 @@
-import type { ApplicationStatus, CampaignStatus, ContentStatus } from '../types/api';
+import type {
+  ApplicationStatus,
+  CampaignStatus,
+  ContentStatus,
+  RewardStatus,
+} from '../types/api';
 
 /**
  * Rótulo em português de cada status de candidatura, no feminino (concorda com
@@ -36,6 +41,16 @@ export const contentStatusWord: Record<ContentStatus, string> = {
   APPROVED: 'Aprovado',
   REJECTED: 'Recusado',
   REVISION_REQUESTED: 'Revisar',
+};
+
+/**
+ * Rótulo em português de cada status de recompensa, no feminino (concorda com
+ * "recompensa"). Vivia preso no `STATUS_CONFIG` do `CampaignRewardsTab`.
+ */
+export const rewardStatusWord: Record<RewardStatus, string> = {
+  PENDING: 'Pendente',
+  ISSUED: 'Emitida',
+  DELIVERED: 'Entregue',
 };
 
 /**

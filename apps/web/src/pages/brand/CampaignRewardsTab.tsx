@@ -7,7 +7,6 @@ import {
   Tag,
   Truck,
   Trash2,
-  ArrowRight,
 } from 'lucide-react';
 import axios from 'axios';
 import type { CampaignReward, RewardStatus, RewardType } from '../../types/api';
@@ -20,18 +19,13 @@ import {
   useApplications,
 } from '../../hooks/useCampaignApplications';
 import EmptyState from '../../components/primitives/EmptyState';
-import Plate from '../../components/primitives/Plate';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { creatorAvatarSrc } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<RewardStatus, { label: string; className: string }> = {
-  PENDING: { label: 'Pendente', className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
-  ISSUED: { label: 'Emitida', className: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  DELIVERED: { label: 'Entregue', className: 'bg-lime/10 text-lime border-lime/20' },
-};
 
 const TYPE_CONFIG: Record<
   RewardType,
@@ -77,116 +71,117 @@ function CreateRewardModal({
 
   const canSubmit = influencerId && value.trim();
 
+  const fieldClasses =
+    'w-full border-b border-[#b8b8b1] bg-transparent pb-2 text-sm text-black placeholder:text-[#8a8a84] focus:border-black focus:outline-none';
+  const labelClasses = 'mb-2 block font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
-        <h3 className="mb-4 font-display text-sm font-semibold text-foreground">
-          Registrar recompensa
-        </h3>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4">
+      <div className="w-full sm:max-w-md">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="max-h-[70vh] overflow-y-auto px-6 pb-7 pt-11">
+            <h3 className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Registrar recompensa
+            </h3>
 
-        <div className="space-y-4">
-          {/* Creator */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Creator
-            </label>
-            <select
-              value={influencerId}
-              onChange={(e) => setInfluencerId(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-lime focus:outline-none"
-            >
-              {approvedCreators.map((c) => (
-                <option key={c.influencerId} value={c.influencerId}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tipo */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Tipo
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(TYPE_CONFIG) as RewardType[]).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setType(t)}
-                  className={cn(
-                    'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                    type === t
-                      ? 'border-lime/30 bg-lime/10 text-lime'
-                      : 'border-border text-muted-foreground hover:text-foreground',
-                  )}
+            <div className="mt-7 space-y-6">
+              <div>
+                <label htmlFor="reward-creator" className={labelClasses}>
+                  Creator
+                </label>
+                <select
+                  id="reward-creator"
+                  value={influencerId}
+                  onChange={(e) => setInfluencerId(e.target.value)}
+                  className={fieldClasses}
                 >
-                  {TYPE_CONFIG[t].icon}
-                  {TYPE_CONFIG[t].label}
-                </button>
-              ))}
+                  {approvedCreators.map((c) => (
+                    <option key={c.influencerId} value={c.influencerId}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <span className={labelClasses}>Tipo</span>
+                {/* `flex-wrap` não é enfeite: em 360px os três blocos não cabem
+                    numa linha e "Desconto" vazava pra fora do modal
+                    (reportado 2026-08-27). */}
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(TYPE_CONFIG) as RewardType[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setType(t)}
+                      className={cn(
+                        'flex min-h-[44px] items-center gap-2 border px-3 font-mono text-[10px] uppercase tracking-[.12em] transition-colors',
+                        type === t
+                          ? 'border-black bg-black text-[#e5e5e0]'
+                          : 'border-[#b8b8b1] text-[#4a4a44] hover:border-black',
+                      )}
+                    >
+                      {TYPE_CONFIG[t].icon}
+                      {TYPE_CONFIG[t].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="reward-value" className={labelClasses}>
+                  Valor
+                </label>
+                <input
+                  id="reward-value"
+                  type="text"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  /* O placeholder sai do tipo escolhido — era um ternário que
+                     mostrava exemplo de produto quando o tipo era desconto. */
+                  placeholder={TYPE_CONFIG[type].placeholder}
+                  className={fieldClasses}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="reward-notes" className={labelClasses}>
+                  Observações (opcional)
+                </label>
+                <textarea
+                  id="reward-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Ex: Pix enviado em 15/06/2026"
+                  className={cn(fieldClasses, 'resize-none')}
+                />
+              </div>
             </div>
+
+            {error && <p className="mt-5 text-[13px] text-destructive">{error}</p>}
           </div>
 
-          {/* Valor */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Valor
-            </label>
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder={TYPE_CONFIG[type].placeholder}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-lime focus:outline-none"
-            />
-          </div>
-
-          {/* Observações */}
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Observações <span className="text-muted-foreground/60">(opcional)</span>
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              placeholder="Ex: Pix enviado em 15/06/2026"
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-lime focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {error && (
-          <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400">
-            {error}
-          </p>
-        )}
-
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={() =>
-              canSubmit &&
-              onCreate({
-                influencerId,
-                campaignId,
-                type,
-                value: value.trim(),
-                notes: notes.trim() || undefined,
-              })
-            }
-            disabled={!canSubmit || isPending}
-            className="rounded-lg bg-lime px-4 py-2 text-xs font-semibold text-background disabled:opacity-50 hover:bg-lime/90"
-          >
-            {isPending ? 'Salvando...' : 'Registrar'}
-          </button>
-        </div>
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: isPending ? 'Salvando…' : 'Registrar',
+                onClick: () =>
+                  canSubmit &&
+                  onCreate({
+                    influencerId,
+                    campaignId,
+                    type,
+                    value: value.trim(),
+                    notes: notes.trim() || undefined,
+                  }),
+                disabled: !canSubmit || isPending,
+                primary: true,
+              },
+            ]}
+          />
+        </KineticPlate>
       </div>
     </div>
   );
@@ -209,11 +204,10 @@ function RewardCard({
   isIssueing: boolean;
   isDelivering: boolean;
 }) {
-  const statusCfg = STATUS_CONFIG[reward.status];
   const typeCfg = TYPE_CONFIG[reward.type];
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+    <div className="flex flex-col gap-4 border border-kinetic-gray bg-kinetic-dark p-5">
       {/* Header: creator + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -239,47 +233,42 @@ function RewardCard({
             )}
           </div>
         </div>
-        <span
-          className={cn(
-            'shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium',
-            statusCfg.className,
-          )}
-        >
-          {statusCfg.label}
-        </span>
+        <StatusWord kind="reward" status={reward.status} />
       </div>
 
       {/* Tipo + Valor */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="flex items-center gap-1.5 text-muted-foreground">
+      <div className="flex items-end justify-between gap-3">
+        <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
           {typeCfg.icon}
           {typeCfg.label}
         </span>
-        <span className="font-semibold text-foreground">{reward.value}</span>
+        <span className="break-all text-right font-display text-lg font-bold tracking-[-.03em] text-foreground">
+          {reward.value}
+        </span>
       </div>
 
       {/* Observações */}
       {reward.notes && (
-        <p className="text-xs leading-relaxed text-muted-foreground">{reward.notes}</p>
+        <p className="break-words text-xs leading-relaxed text-kinetic-muted">{reward.notes}</p>
       )}
 
       {/* Ações */}
       {/* Remover só enquanto PENDING: a partir de ISSUED o pagamento/envio já
           foi anunciado à creator, e apagar reescreveria o histórico dela. */}
       {reward.status === 'PENDING' && (
-        <div className="flex gap-2 border-t border-border pt-3">
+        <div className="flex gap-2 border-t border-kinetic-gray pt-4">
           <button
             onClick={onIssue}
             disabled={isIssueing}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-2 bg-lime px-3 font-mono text-[10px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Truck size={13} />
-            {isIssueing ? 'Processando...' : 'Marcar como emitida'}
+            {isIssueing ? 'Processando…' : 'Marcar como emitida'}
           </button>
           <button
             onClick={onRemove}
             aria-label={`Remover recompensa de ${reward.influencer.name}`}
-            className="flex min-h-[36px] shrink-0 items-center justify-center rounded-lg border border-border px-3 text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+            className="flex min-h-[44px] w-11 shrink-0 items-center justify-center border border-kinetic-border text-kinetic-muted transition-colors hover:border-destructive hover:text-destructive"
           >
             <Trash2 size={13} />
           </button>
@@ -287,14 +276,14 @@ function RewardCard({
       )}
 
       {reward.status === 'ISSUED' && (
-        <div className="border-t border-border pt-3">
+        <div className="border-t border-kinetic-gray pt-4">
           <button
             onClick={onDeliver}
             disabled={isDelivering}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-lime/10 px-3 py-2 text-xs font-medium text-lime hover:bg-lime/20 disabled:opacity-50 transition-colors"
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 bg-lime px-3 font-mono text-[10px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Gift size={13} />
-            {isDelivering ? 'Processando...' : 'Confirmar entrega'}
+            {isDelivering ? 'Processando…' : 'Confirmar entrega'}
           </button>
         </div>
       )}
@@ -322,15 +311,15 @@ function RemoveRewardModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
               Remover esta recompensa?
             </p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O registro de{' '}
-              <span className="font-medium text-plate-body">{reward.value}</span> para{' '}
-              <span className="font-medium text-plate-body">
+              <span className="font-medium text-black">{reward.value}</span> para{' '}
+              <span className="font-medium text-black">
                 {reward.influencer.name}
               </span>{' '}
               some pra sempre, e some também da lista de recompensas dela. Não dá pra
@@ -342,16 +331,18 @@ function RemoveRewardModal({
               </p>
             )}
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-            primary={{
-              label: isPending ? 'Removendo…' : 'Remover',
-              onClick: onConfirm,
-              disabled: isPending,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, width: 130 },
+              {
+                label: isPending ? 'Removendo…' : 'Remover',
+                onClick: onConfirm,
+                disabled: isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
@@ -383,16 +374,16 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="animate-pulse rounded-xl border border-border bg-card p-5 space-y-4"
+            className="animate-pulse space-y-4 border border-kinetic-gray bg-kinetic-dark p-5"
           >
             <div className="flex gap-3">
-              <div className="h-8 w-8 rounded-full bg-secondary" />
+              <div className="h-8 w-8 rounded-full bg-kinetic-gray" />
               <div className="flex-1 space-y-2 pt-1">
-                <div className="h-3 w-28 rounded bg-secondary" />
-                <div className="h-2.5 w-20 rounded bg-secondary" />
+                <div className="h-3 w-28 rounded bg-kinetic-gray" />
+                <div className="h-2.5 w-20 rounded bg-kinetic-gray" />
               </div>
             </div>
-            <div className="h-3 w-1/2 rounded bg-secondary" />
+            <div className="h-3 w-1/2 rounded bg-kinetic-gray" />
           </div>
         ))}
       </div>
@@ -402,24 +393,22 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
   return (
     <div className="space-y-5">
       {/* Header com botão de criação */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => setFilter(value)}
               className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                'border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[.12em] transition-colors',
                 filter === value
-                  ? 'border-lime/30 bg-lime/10 text-lime'
-                  : 'border-border text-muted-foreground hover:border-border/80 hover:text-foreground',
+                  ? 'border-lime text-lime'
+                  : 'border-kinetic-gray text-kinetic-muted hover:text-foreground',
               )}
             >
               {label}
               {value === 'ALL' && (
-                <span className="ml-1.5 tabular-nums text-muted-foreground">
-                  {rewards.length}
-                </span>
+                <span className="ml-2 tabular-nums text-kinetic-muted">{rewards.length}</span>
               )}
             </button>
           ))}
@@ -428,9 +417,9 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
         {approvedCreators.length > 0 && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-lime px-3 py-1.5 text-xs font-semibold text-background hover:bg-lime/90 transition-colors"
+            className="flex min-h-[38px] shrink-0 items-center gap-2 border border-lime px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-lime transition-colors hover:bg-lime hover:text-black"
           >
-            <Plus size={13} />
+            <Plus size={12} />
             Registrar recompensa
           </button>
         )}

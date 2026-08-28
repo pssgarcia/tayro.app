@@ -3,8 +3,14 @@ import {
   applicationStatusWord,
   campaignStatusWord,
   contentStatusWord,
+  rewardStatusWord,
 } from '../../../utils/format';
-import type { ApplicationStatus, CampaignStatus, ContentStatus } from '../../../types/api';
+import type {
+  ApplicationStatus,
+  CampaignStatus,
+  ContentStatus,
+  RewardStatus,
+} from '../../../types/api';
 
 // ─── Status como palavra, não como pill ──────────────────────────────────────
 // No Kinetic o status não ganha caixa: é a própria palavra em mono caixa alta.
@@ -21,6 +27,7 @@ type Props = { className?: string } & (
   | { kind: 'application'; status: ApplicationStatus }
   | { kind: 'campaign'; status: CampaignStatus }
   | { kind: 'content'; status: ContentStatus }
+  | { kind: 'reward'; status: RewardStatus }
 );
 
 /** Quem espera decisão de alguém aparece em lime. O resto é cinza. */
@@ -32,6 +39,10 @@ function isActionable(props: Props): boolean {
       return props.status === 'PENDING';
     case 'campaign':
       return props.status === 'ACTIVE';
+    // Recompensa tem DOIS estados que esperam a marca: PENDING pede emitir e
+    // ISSUED pede confirmar a entrega. Só DELIVERED é fim de linha.
+    case 'reward':
+      return props.status !== 'DELIVERED';
   }
 }
 
@@ -43,6 +54,8 @@ function wordFor(props: Props): string {
       return contentStatusWord[props.status];
     case 'campaign':
       return campaignStatusWord[props.status];
+    case 'reward':
+      return rewardStatusWord[props.status];
   }
 }
 
