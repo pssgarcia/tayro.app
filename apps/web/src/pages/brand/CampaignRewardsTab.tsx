@@ -387,7 +387,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
     // Container próprio: desde a leva 2 o corpo do detalhe não dá mais padding
     // horizontal (cada aba dá o seu), e sem isto o conteúdo colava na sidebar e o
     // CTA "Registrar recompensa" saía cortado na borda direita.
-    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-12 sm:px-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-32 sm:px-6 md:pb-12">
       {/* Header com botão de criação */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -413,7 +413,15 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
         {approvedCreators.length > 0 && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex min-h-[38px] shrink-0 items-center gap-2 border border-lime px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-lime transition-colors hover:bg-lime hover:text-black"
+            /* No celular os filtros já ocupam duas linhas e o CTA caía numa
+               terceira, parecendo mais um chip do grupo. Vira barra fixa no
+               rodapé, 10px acima da tab bar do BrandLayout (que mede 4rem + safe
+               area) — colada nela parecia parte da navegação,
+               que é onde a ação primária fica ao alcance do polegar. A partir
+               de `md` some a tab bar e ele volta a ser o contorno compacto à
+               direita dos filtros. */
+            style={{ bottom: 'calc(4rem + 0.625rem + env(safe-area-inset-bottom))' }}
+            className="fixed inset-x-4 z-30 flex min-h-[52px] items-center justify-center gap-2 bg-lime px-4 font-mono text-[11px] font-medium uppercase tracking-widest text-black shadow-[0_8px_24px_-8px_rgba(0,0,0,.9)] transition-colors hover:bg-white md:static md:inset-auto md:min-h-[38px] md:w-auto md:shrink-0 md:border md:border-lime md:bg-transparent md:text-[10px] md:text-lime md:shadow-none md:hover:bg-lime md:hover:text-black"
           >
             <Plus size={12} />
             Registrar recompensa
