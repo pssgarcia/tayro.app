@@ -1,28 +1,26 @@
 import { Link } from 'react-router-dom';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { useMyRewards } from '../../hooks/useMyRewards';
-import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
-import SegmentBar from '../../components/primitives/SegmentBar';
-import StatBlock from '../../components/primitives/StatBlock';
-import StatusPill from '../../components/primitives/StatusPill';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticSegments from '../../components/primitives/kinetic/KineticSegments';
+import KineticRow from '../../components/primitives/kinetic/KineticRow';
+import StatFigure from '../../components/primitives/kinetic/StatFigure';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
-// "Barra 88px de altura pra placa (não card), retângulos sem borda pros
-// stats" (README §Interações e estados).
 
 function Skeleton() {
   return (
-    <div className="animate-pulse space-y-8">
-      <div className="h-[88px] rounded-lg bg-secondary" />
-      <div className="flex gap-3.5">
-        <div className="h-20 flex-1 rounded-lg bg-secondary" />
-        <div className="h-20 flex-1 rounded-lg bg-secondary" />
+    <div className="animate-pulse space-y-10">
+      <div className="h-[240px] max-w-[560px] rounded-lg bg-kinetic-dark" />
+      <div className="flex max-w-[560px] gap-4">
+        <div className="h-20 flex-1 rounded bg-kinetic-dark" />
+        <div className="h-20 flex-1 rounded bg-kinetic-dark" />
       </div>
-      <div className="space-y-[22px]">
-        <div className="h-4 w-24 rounded bg-secondary" />
+      <div className="space-y-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-14 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -30,8 +28,14 @@ function Skeleton() {
 }
 
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Tela 1 do redesign 2a. A placa carrega a taxa de conversão (maior número da
-// tela); o registro de candidaturas mostra só as 3 mais recentes.
+// Migrada do redesign 2a pra "Kinetic Editorial". A placa continua carregando o
+// maior número da tela (a taxa de conversão) e o registro continua mostrando só
+// as 3 candidaturas mais recentes — o que muda é a gramática visual.
+//
+// O status das linhas passa de `StatusPill` (pill com fundo sólido, vocabulário
+// "Análise"/"Fechada") pra `StatusWord` (palavra mono, "Pendente"/"Aprovada"),
+// que é o vocabulário que a Fila já usa em produção. Vocabulário único nas duas
+// pontas: a marca e a creator passam a ler a mesma palavra pro mesmo estado.
 
 export default function DashboardPage() {
   const { data: applications, isLoading: appsLoading } = useMyApplications();
@@ -51,53 +55,73 @@ export default function DashboardPage() {
   const recentApps = applications?.slice(0, 3) ?? [];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <h1 className="mb-7 font-display text-d-md text-foreground">Sua leitura</h1>
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
+      <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+        Sua leitura
+      </h1>
+
+      <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
 
       {isLoading ? (
         <Skeleton />
       ) : (
         <>
-          <Plate marks="all" className="max-w-[520px]">
+          <KineticPlate marks="all" className="max-w-[560px] px-6 py-10 sm:px-9">
             {rate === null ? (
               <>
                 <p
                   aria-hidden
-                  className="font-display text-[72px] font-bold leading-[.76] tracking-[-.075em] text-plate-ink/[.2] min-[340px]:text-d-hero"
+                  className="font-display text-[72px] font-bold leading-[.78] tracking-[-.06em] text-black/20 min-[380px]:text-[96px]"
                 >
                   —
                 </p>
-                <p className="mt-5 text-sm leading-[1.5] text-plate-dim">
+                <p className="mt-6 text-sm leading-[1.5] text-[#4a4a44]">
                   Nenhuma candidatura ainda.
                 </p>
               </>
             ) : (
               <>
+                {/* O número precisa ser filho de texto DIRETO do span e o "%"
+                    precisa ficar aninhado — é assim que a tela distingue "sem
+                    taxa" de "taxa zero", e o que os testes consultam. */}
                 <CountUp>
-                  <span className="font-display text-[72px] font-bold leading-[.76] tracking-[-.075em] text-plate-ink tabular-nums min-[340px]:text-d-hero">
+                  <span className="block font-display text-[72px] font-bold leading-[.78] tracking-[-.06em] tabular-nums text-black min-[380px]:text-[96px]">
                     {rate}
-                    <span className="text-[38px] tracking-[-.05em]">%</span>
+                    <span className="text-[38px] tracking-[-.04em] text-[#6a6a64]">%</span>
                   </span>
                 </CountUp>
-                <p className="mt-5 text-sm leading-[1.5] text-plate-dim">
+                <p className="mt-6 text-sm leading-[1.5] text-[#4a4a44]">
                   {approvedApps} das suas {totalApps} candidaturas viraram parceria.
                 </p>
-                <SegmentBar filled={barFilled} total={barTotal} className="mt-[22px]" />
+                <KineticSegments filled={barFilled} total={barTotal} className="mt-7" />
               </>
             )}
-          </Plate>
+          </KineticPlate>
 
-          <div className="mt-8 flex max-w-[520px] gap-3.5">
-            <StatBlock label="em análise" value={pendingApps} delay={120} />
+          <div className="mt-9 flex max-w-[560px] gap-4">
+            <StatFigure
+              label="em análise"
+              value={pendingApps}
+              delay={120}
+              className="flex-1 border border-kinetic-gray p-4 sm:p-5"
+            />
             <Link to="/influencer/rewards" className="flex-1">
-              <StatBlock label="a receber" value={pendingRewards} highlight delay={240} />
+              <StatFigure
+                label="a receber"
+                value={pendingRewards}
+                highlight
+                delay={240}
+                className="h-full border border-lime p-4 sm:p-5"
+              />
             </Link>
           </div>
 
-          <h2 className="mb-5 mt-9 font-display text-d-xs text-foreground">Registro</h2>
+          <p className="mb-5 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+            Registro
+          </p>
 
           {recentApps.length === 0 ? (
-            <p className="text-sm text-[#8A8A85]">
+            <p className="text-sm text-kinetic-muted">
               Nenhuma candidatura ainda.{' '}
               <Link to="/influencer/browse" className="text-lime hover:underline">
                 Explore os programas
@@ -105,20 +129,15 @@ export default function DashboardPage() {
               .
             </p>
           ) : (
-            <div className="flex flex-col gap-[22px]">
+            <div className="flex flex-col gap-0.5">
               {recentApps.map((app, i) => (
-                <div key={app.id} className="flex items-baseline gap-3.5">
-                  <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-d-xs font-semibold text-foreground">
-                      {app.campaign.title}
-                    </p>
-                    <p className="mt-[5px] text-xs text-[#6E6E68]">{app.campaign.brand.name}</p>
-                  </div>
-                  <StatusPill status={app.status} />
-                </div>
+                <KineticRow
+                  key={app.id}
+                  index={i + 1}
+                  title={app.campaign.title}
+                  meta={app.campaign.brand.name}
+                  trailing={<StatusWord kind="application" status={app.status} />}
+                />
               ))}
             </div>
           )}

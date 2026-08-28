@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import DashboardPage from './DashboardPage';
 import * as appHooks from '../../hooks/useMyApplications';
@@ -142,7 +142,11 @@ describe('DashboardPage — resumo lateral', () => {
     ]);
     renderPage();
 
-    expect(screen.getByText('em análise').previousElementSibling).toHaveTextContent('2');
+    // Consulta escopada no bloco, não pela ordem dos irmãos: no Kinetic o
+    // rótulo vem ANTES do número (o 2a punha depois), e um teste preso à ordem
+    // do DOM quebra numa mudança puramente visual.
+    const bloco = screen.getByText('em análise').closest('div') as HTMLElement;
+    expect(within(bloco).getByText('2')).toBeInTheDocument();
   });
 
   // "A receber" inclui ISSUED: da ótica da creator, o que já saiu mas não
@@ -158,7 +162,8 @@ describe('DashboardPage — resumo lateral', () => {
     );
     renderPage();
 
-    expect(screen.getByText('a receber').previousElementSibling).toHaveTextContent('2');
+    const bloco = screen.getByText('a receber').closest('div') as HTMLElement;
+    expect(within(bloco).getByText('2')).toBeInTheDocument();
   });
 
   it('leva pra tela de recompensas ao clicar no bloco "a receber"', () => {
