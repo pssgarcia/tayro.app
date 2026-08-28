@@ -7,9 +7,9 @@ import { cn } from '../../lib/utils';
 
 function Skeleton() {
   return (
-    <div className="animate-pulse space-y-[22px]">
+    <div className="grid animate-pulse gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-14 rounded bg-kinetic-dark" />
+        <div key={i} className="h-[168px] bg-kinetic-dark" />
       ))}
     </div>
   );
@@ -66,7 +66,7 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
           <h2 className="mb-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
             Todos os abertos
           </h2>
-          <div className="flex flex-col gap-[22px]">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {programs.map((c, i) => (
               <ProgramCard
                 key={c.id}
