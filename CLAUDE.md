@@ -173,6 +173,12 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - **Dois testes de Entregas precisaram de escopo.** Com lista + placa, a entrega selecionada aparece nas DUAS superfícies: `getByText('Ana Creator')` passou a achar 3 nós onde esperava 2. Resolvido com `within(getByRole('list', { name: 'Entregas' }))`, e não afrouxando a asserção. Pelo mesmo motivo, avatar de linha é decorativo (`alt=""`) e só o da placa carrega o nome.
   - 465 testes web verdes (49 arquivos). Falta a leva 3: telas da creator.
 
+- **Migração pro "Kinetic Editorial" — leva 3: telas da creator (2026-08-28):** fecha a migração combinada. `MyApplicationsPage` (Registro), `SubmissionsPage` (Entregas), `RewardsPage` (Recompensas) e `ProgramDetailPage` saem do 2a.
+  - **Botão morto encontrado e consertado:** a placa em destaque do Registro tinha "Enviar conteúdo" **sem `onClick` e sem rota** — clicável em produção, sem fazer nada. O destino sempre existiu (`SubmissionsPage` lê `?apply=` e já abre o modal na candidatura certa); a fiação se perdeu no redesign 2a. Agora é `to={/influencer/submissions?apply=<id>}`. O teste cobria só a existência do botão, não o destino — por isso passou despercebido.
+  - **`RewardsPage` e `ProgramDetailPage` não tinham primitivo nenhum** (`rounded-xl border bg-card`, pills `bg-amber-500/10`), e a `ProgramDetailPage` era a única tela do produto com **zero** classes responsivas.
+  - **Vocabulário de status: uma exceção deliberada.** `creatorRewardStatusWord` (novo em `utils/format.ts`) diz o MESMO status da ótica de quem espera — "A receber"/"A caminho" em vez de "Pendente"/"Emitida". Não é drift: pra marca `PENDING` é trabalho não feito, pra creator é dinheiro não recebido. Por isso a tela de recompensas da creator **não** usa `StatusWord`, que carrega o vocabulário da marca. As abas do Registro, essas sim, foram alinhadas ("Fechadas" → "Aprovadas").
+  - **Dois testes presos a `previousElementSibling`** (resumo de recompensas) reescritos com consulta escopada, mesma correção da leva 1 — o Kinetic inverte a ordem rótulo/número.
+
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)

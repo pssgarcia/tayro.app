@@ -148,12 +148,12 @@ Rótulo mono é escrito em minúsculas no JSX e sobe pra caixa alta com `upperca
 
 ### Status: um vocabulário só
 
-Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignStatusWord`, `contentStatusWord`, `rewardStatusWord`) e são a fonte única. A migração unificou o vocabulário: onde o 2a dizia "Análise"/"Fechada" para candidatura, o Kinetic diz **"Pendente"/"Aprovada"** — as mesmas palavras que a marca já lê na Fila. Conteúdo concorda no masculino ("Aprovado"); candidatura, campanha e recompensa no feminino. Recompensa é o único domínio com **dois** estados acionáveis (`PENDING` pede emitir, `ISSUED` pede confirmar entrega) — os dois saem em lime.
+Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignStatusWord`, `contentStatusWord`, `rewardStatusWord`) e são a fonte única. A migração unificou o vocabulário: onde o 2a dizia "Análise"/"Fechada" para candidatura, o Kinetic diz **"Pendente"/"Aprovada"** — as mesmas palavras que a marca já lê na Fila. Conteúdo concorda no masculino ("Aprovado"); candidatura, campanha e recompensa no feminino. A exceção deliberada é o `creatorRewardStatusWord`: o MESMO status de recompensa dito da ótica de quem espera ("A receber"/"A caminho") em vez da de quem paga ("Pendente"/"Emitida"). Não unificar — são perspectivas, não drift. Recompensa é o único domínio com **dois** estados acionáveis (`PENDING` pede emitir, `ISSUED` pede confirmar entrega) — os dois saem em lime.
 
 ### Estado da migração
 
-- **Kinetic:** todo o detalhe de campanha da marca (header, abas, Fila desktop + Story mobile, Briefing, Entregas, Pagamento) e os dois dashboards.
-- **Ainda 2a:** telas da creator, auth, `/apply/:id`, `/programs`, `/c/:handle`, perfis, lista de programas da marca.
+- **Kinetic:** os dois dashboards; todo o detalhe de campanha da marca (header, abas, Fila desktop + Story mobile, Briefing, Entregas, Pagamento); e as telas da creator (Registro, Entregas, Recompensas, detalhe do programa).
+- **Ainda 2a:** auth (`/login`, cadastros, `/claim`), `/apply/:id`, `/programs`, `/c/:handle`, perfis de marca e creator, lista de programas da marca, `CampaignForm`, `/influencer/browse`.
 
 ## Colors
 

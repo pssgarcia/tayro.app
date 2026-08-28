@@ -1,34 +1,39 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { useMyApplications, useWithdrawApplication } from '../../hooks/useMyApplications';
 import { useMySubmissions } from '../../hooks/useMySubmissions';
 import type { MyApplication, ApplicationStatus } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
 import CountUp from '../../components/primitives/CountUp';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
-import StatusPill from '../../components/primitives/StatusPill';
-import TabsUnderline from '../../components/primitives/TabsUnderline';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
+import KineticRow from '../../components/primitives/kinetic/KineticRow';
+import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { formatOfferWhole, formatRelativeDays } from '../../utils/format';
 
 type Filter = 'ALL' | ApplicationStatus;
 
+// Rótulos das abas seguem o vocabulário do `applicationStatusWord`: até a
+// migração pro Kinetic esta tela dizia "Análise"/"Fechadas" enquanto o status
+// da linha ao lado dizia outra coisa.
 const TABS: { id: Filter; label: string }[] = [
   { id: 'ALL', label: 'Todas' },
-  { id: 'PENDING', label: 'Análise' },
-  { id: 'APPROVED', label: 'Fechadas' },
+  { id: 'PENDING', label: 'Pendentes' },
+  { id: 'APPROVED', label: 'Aprovadas' },
   { id: 'REJECTED', label: 'Recusadas' },
 ];
+
+const monoLabel = 'font-mono text-[11px] uppercase tracking-widest text-kinetic-muted';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[88px] rounded-lg bg-secondary" />
-      <div className="space-y-[22px]">
+      <div className="h-[220px] max-w-[560px] rounded-lg bg-kinetic-dark" />
+      <div className="space-y-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-14 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -72,27 +77,39 @@ function FeaturedPlate({
   const offer = formatOfferWhole(campaign);
 
   return (
-    <Plate marks="top" flush className="max-w-[520px]">
-      <div className="px-6 pb-6 pt-[26px]">
-        <div className="flex items-start justify-between gap-3">
+    <KineticPlate marks="top" flush className="max-w-[560px]">
+      <div className="px-6 pb-8 pt-11 sm:px-8">
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs text-plate-muted">{campaign.brand.name}</p>
-            <p className="mt-[5px] font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
+              {campaign.brand.name}
+            </p>
+            <p className="mt-2 font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
               {campaign.title}
             </p>
           </div>
-          <StatusPill status={app.status} className="shrink-0" />
+          <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
+            {app.status === 'PENDING'
+              ? 'Pendente'
+              : app.status === 'APPROVED'
+                ? 'Aprovada'
+                : app.status === 'REJECTED'
+                  ? 'Recusada'
+                  : 'Retirada'}
+          </span>
         </div>
 
         {offer && (
           <CountUp delay={0}>
-            <span className="mt-6 block font-display text-d-xl text-plate-ink tabular-nums">
-              {offer.prefix && <span className="text-[23px] tracking-[-.04em]">{offer.prefix}</span>}
+            <span className="mt-8 block font-display text-[52px] font-bold leading-[.85] tracking-[-.055em] tabular-nums text-black">
+              {offer.prefix && (
+                <span className="text-[26px] tracking-[-.03em] text-[#6a6a64]">{offer.prefix}</span>
+              )}
               {offer.value}
             </span>
           </CountUp>
         )}
-        <p className="mt-3 text-xs text-plate-soft">
+        <p className="mt-4 text-[13px] text-[#6a6a64]">
           {mode === 'submit'
             ? 'a receber depois que o conteúdo for aprovado'
             : mode === 'withdraw'
@@ -101,27 +118,32 @@ function FeaturedPlate({
         </p>
       </div>
 
+      {/* Até a migração pro Kinetic este botão não tinha `onClick` NEM rota:
+          era um botão morto em produção. O destino sempre existiu — a
+          SubmissionsPage lê `?apply=` e já abre o modal na candidatura certa. */}
       {mode === 'submit' && (
-        <PlateActionBar
-          primary={{
-            label: 'Enviar conteúdo',
-            icon: <ArrowRight size={16} />,
-          }}
+        <KineticActions
+          actions={[
+            {
+              label: 'Enviar conteúdo',
+              to: `/influencer/submissions?apply=${app.id}`,
+              primary: true,
+            },
+          ]}
         />
       )}
       {mode === 'withdraw' && (
-        <div className="flex border-t border-plate-line">
-          <button
-            type="button"
-            onClick={onWithdraw}
-            disabled={isWithdrawing}
-            className="min-h-[56px] flex-1 font-display text-[14px] font-medium tracking-[-.02em] text-plate-muted transition-colors duration-[140ms] hover:bg-plate-ink hover:text-plate disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {isWithdrawing ? 'Retirando…' : 'Retirar candidatura'}
-          </button>
-        </div>
+        <KineticActions
+          actions={[
+            {
+              label: isWithdrawing ? 'Retirando…' : 'Retirar candidatura',
+              onClick: onWithdraw,
+              disabled: isWithdrawing,
+            },
+          ]}
+        />
       )}
-    </Plate>
+    </KineticPlate>
   );
 }
 
@@ -130,8 +152,7 @@ function FeaturedPlate({
 // (campaignId, influencerId) não olha status, então `POST /applications`
 // devolve 409 mesmo depois de WITHDRAWN — a creator fica trancada fora daquele
 // programa pra sempre, e não existe rota de "desfazer". Por isso a confirmação
-// diz o que acontece em vez de perguntar "tem certeza?". Antes disso o botão da
-// placa em destaque disparava a retirada num clique só.
+// diz o que acontece em vez de perguntar "tem certeza?".
 
 function WithdrawModal({
   app,
@@ -151,14 +172,16 @@ function WithdrawModal({
       role="dialog"
       aria-modal="true"
       aria-label="Retirar candidatura?"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
     >
       <div className="w-full sm:max-w-md">
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
-          <div className="px-6 pb-[26px] pt-[30px]">
-            <p className="font-display text-d-xs text-plate-ink">Retirar candidatura?</p>
-            <p className="mt-3 text-[13px] leading-[1.5] text-plate-muted">
-              Sua candidatura para <strong className="font-semibold">{app.campaign.title}</strong>{' '}
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+          <div className="px-6 pb-7 pt-11">
+            <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
+              Retirar candidatura?
+            </p>
+            <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
+              Sua candidatura para <strong className="font-semibold text-black">{app.campaign.title}</strong>{' '}
               sai da fila de {app.campaign.brand.name}. Você não poderá se candidatar de novo a
               este programa.
             </p>
@@ -168,22 +191,24 @@ function WithdrawModal({
               </p>
             )}
           </div>
-          <PlateActionBar
-            secondary={{ label: 'Cancelar', onClick: onClose, disabled: isPending, width: 100 }}
-            primary={{
-              label: isPending ? 'Retirando…' : 'Retirar',
-              onClick: onConfirm,
-              disabled: isPending,
-            }}
+          <KineticActions
+            actions={[
+              { label: 'Cancelar', onClick: onClose, disabled: isPending, width: 130 },
+              {
+                label: isPending ? 'Retirando…' : 'Retirar',
+                onClick: onConfirm,
+                disabled: isPending,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
 }
 
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Tela 6 do redesign 2a.
 
 export default function MyApplicationsPage() {
   const [filter, setFilter] = useState<Filter>('ALL');
@@ -205,22 +230,28 @@ export default function MyApplicationsPage() {
   const visible = filter === 'ALL' ? applications : applications.filter((a) => a.status === filter);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <div className="mb-[26px] flex items-end justify-between">
-        <h1 className="font-display text-d-md text-foreground">Registro</h1>
-        <p className="font-display text-d-inline leading-none tabular-nums text-foreground">
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+          Registro
+        </h1>
+        <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground">
           {applications.length}
         </p>
       </div>
 
+      <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
+
       {isLoading && <Skeleton />}
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar suas candidaturas. Tente novamente.</p>
+        <p className="text-sm text-destructive">
+          Erro ao carregar suas candidaturas. Tente novamente.
+        </p>
       )}
 
       {!isLoading && !isError && applications.length === 0 && (
-        <p className="text-sm text-[#8A8A85]">
+        <p className="text-sm text-kinetic-muted">
           Você ainda não se candidatou a nenhum programa.{' '}
           <Link to="/influencer/browse" className="text-lime hover:underline">
             Explore os programas
@@ -231,7 +262,7 @@ export default function MyApplicationsPage() {
 
       {!isLoading && !isError && applications.length > 0 && (
         <>
-          <p className="mb-3.5 text-xs text-[#75756E]">Precisa de você</p>
+          <p className={`${monoLabel} mb-4`}>Precisa de você</p>
           {featured && (
             <FeaturedPlate
               featured={featured}
@@ -240,46 +271,41 @@ export default function MyApplicationsPage() {
             />
           )}
 
-          <TabsUnderline
+          <KineticTabs
             tabs={TABS}
             active={filter}
             onChange={setFilter}
-            className="mb-5 mt-8 px-0"
+            className="mb-6 mt-11 px-0"
           />
 
           {visible.length === 0 ? (
-            <p className="text-sm text-[#8A8A85]">Nenhuma candidatura com esse status.</p>
+            <p className="text-sm text-kinetic-muted">Nenhuma candidatura com esse status.</p>
           ) : (
-            <div className="flex flex-col gap-[22px]">
+            <div className="flex flex-col gap-0.5">
               {visible.map((app, i) => (
-                <div key={app.id} className="flex items-baseline gap-3.5">
-                  <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-d-xs font-semibold text-foreground">
-                      {app.campaign.title}
-                    </p>
-                    <p className="mt-[5px] text-xs text-[#6E6E68]">
-                      {app.campaign.brand.name} · {formatRelativeDays(app.appliedAt)}
-                    </p>
-                  </div>
-                  {/* Retirar em QUALQUER pendente, não só na que está em
-                      destaque: quem tinha 3 na fila só conseguia retirar a mais
-                      recente, porque as linhas eram inertes. O backend sempre
-                      aceitou (PATCH /applications/:id/withdraw exige apenas
-                      PENDING + dono) — faltava a superfície. */}
-                  {app.status === 'PENDING' && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirming(app)}
-                      className="shrink-0 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
-                    >
-                      Retirar
-                    </button>
-                  )}
-                  <StatusPill status={app.status} />
-                </div>
+                <KineticRow
+                  key={app.id}
+                  index={i + 1}
+                  title={app.campaign.title}
+                  meta={`${app.campaign.brand.name} · ${formatRelativeDays(app.appliedAt)}`}
+                  trailing={
+                    <span className="flex shrink-0 items-center gap-4">
+                      {/* Retirar em QUALQUER pendente, não só na que está em
+                          destaque: quem tinha 3 na fila só conseguia retirar a
+                          mais recente, porque as linhas eram inertes. */}
+                      {app.status === 'PENDING' && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirming(app)}
+                          className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                        >
+                          Retirar
+                        </button>
+                      )}
+                      <StatusWord kind="application" status={app.status} />
+                    </span>
+                  }
+                />
               ))}
             </div>
           )}

@@ -54,6 +54,19 @@ export const rewardStatusWord: Record<RewardStatus, string> = {
 };
 
 /**
+ * O MESMO status de recompensa, dito da ótica da creator. Não é drift de
+ * vocabulário: pra marca `PENDING` é trabalho que ela ainda não fez ("Pendente")
+ * e `ISSUED` é trabalho feito ("Emitida"); pra creator os dois são espera, e o
+ * que muda é quão perto está de chegar. Manter as duas listas separadas é
+ * deliberado — não unificar.
+ */
+export const creatorRewardStatusWord: Record<RewardStatus, string> = {
+  PENDING: 'A receber',
+  ISSUED: 'A caminho',
+  DELIVERED: 'Entregue',
+};
+
+/**
  * Alfabeto aceito pro handle do Instagram: letras, números, ponto e
  * underscore, sem @, até 30 caracteres.
  *

@@ -211,9 +211,11 @@ describe('MyApplicationsPage', () => {
     expect(screen.getAllByText('Programa Verão')).toHaveLength(1);
     expect(screen.getAllByText('Programa Inverno')).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole('button', { name: /^fechadas$/i }));
+    // A aba se chamava "Fechadas" até a migração pro Kinetic; virou
+    // "Aprovadas" pra falar a mesma palavra que o status da linha ao lado.
+    fireEvent.click(screen.getByRole('button', { name: /^aprovadas$/i }));
 
-    // filtrado pra Fechadas (APPROVED): Programa Verão (PENDING) some de vez;
+    // filtrado pra Aprovadas (APPROVED): Programa Verão (PENDING) some de vez;
     // Programa Inverno continua aparecendo duas vezes (placa + lista, as duas
     // já eram APPROVED).
     expect(screen.queryByText('Programa Verão')).not.toBeInTheDocument();

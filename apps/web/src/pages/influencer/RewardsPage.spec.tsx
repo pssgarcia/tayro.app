@@ -38,9 +38,11 @@ function mockRewards(
   } as any);
 }
 
-/** O resumo do topo — cada pill é número + rótulo. */
+/** O resumo do topo — cada bloco é rótulo + número. Consulta escopada no
+ *  bloco em vez de irmão anterior: no Kinetic o rótulo vem ANTES do número, e
+ *  um teste preso à ordem do DOM quebra numa mudança puramente visual. */
 const resumo = (rotulo: string) =>
-  screen.getByText(rotulo).previousElementSibling;
+  screen.getByText(rotulo).closest('div') as HTMLElement;
 
 beforeEach(() => {
   vi.clearAllMocks();
