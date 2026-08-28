@@ -77,7 +77,11 @@ Controller `rewards`, prefixo `/api/v1`, atrás de `JwtAuthGuard`.
 | DELETE | `/rewards/:id` | BRAND | remove — só enquanto `PENDING`, `204` sem corpo |
 
 ## UI Behavior
-`CampaignRewardsTab` (marca): modal de registro de recompensa por candidatura aprovada; o
+`CampaignRewardsTab` (marca): abaixo de `md` a ação "Registrar recompensa" é uma **barra fixa
+no rodapé**, acima da tab bar — no celular os filtros por status já ocupam duas linhas e o botão
+caía numa terceira com o mesmo tratamento visual dos chips, lendo como um quarto filtro. A partir
+de `md` volta a ser um botão de contorno ao lado dos filtros. Modal de registro de recompensa por
+candidatura aprovada; o
 seletor de `type` (Monetária/Produto/Desconto) quebra em várias linhas quando não cabe (mobile)
 e o placeholder do campo de valor acompanha o tipo selecionado (`R$300,00` / `Kit Whey 900g` /
 `Cupom AMANDA20`). Ações de emitir/entregar disponíveis conforme o status atual. Recompensa `PENDING` também oferece
@@ -147,6 +151,7 @@ Frontend:
   `$transaction` — leitura pura, sem check-then-act de escrita concorrente).
 
 ## Change History
+- 2026-08-28 — "Registrar recompensa" vira barra fixa no rodapé abaixo de `md`; a listagem ganhou folga inferior pra não passar por baixo dela.
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0.
 - 2026-08-21 · reestruturado pro padrão SDD (Objective/Scope/Out of Scope/Domain/Behavior/API
   interfaces/UI Behavior/Acceptance Criteria/Error Scenarios/Known Gaps/Test Coverage/Current

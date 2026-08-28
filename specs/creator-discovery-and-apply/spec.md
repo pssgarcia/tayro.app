@@ -3,7 +3,7 @@ slug: creator-discovery-and-apply
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-26
+last_updated: 2026-08-28
 implements:
   - apps/web/src/hooks/useInstagramHandleCheck.ts
   - apps/api/src/modules/campaigns/presentation/campaigns.controller.ts
@@ -127,6 +127,13 @@ A verificação do @ usa `GET /ig/handle/:handle` (pública, com limite próprio
 
 ## UI Behavior
 - `/influencer/browse` (autenticado): card só navega, nunca abre modal.
+- **A listagem é uniforme: todo programa aberto tem o mesmo peso visual.** Nenhum recebe
+  destaque, porque não existe critério de curadoria — a ordenação é `createdAt desc` e nada
+  mais. Se um dia houver regra de verdade (relevância, vagas restantes, nicho da creator), o
+  destaque volta junto com ela, nunca antes. Cada programa é um **card em grade** (1 coluna no
+  celular, 2 a partir de `sm`, 3 a partir de `xl`) mostrando título, marca, vagas e oferta — a
+  oferta em escala de display, porque é o que faz a creator parar. A numeração é contínua entre
+  páginas.
 - `/programs` (público): mesmo componente de listagem; o link de cada card muda conforme há ou
   não sessão de creator no momento (autenticado → detalhe; anônimo → apply público).
 - `/influencer/programs/:id` (autenticado): oferta, prazo, vagas, nichos, descrição. Três
@@ -271,6 +278,17 @@ Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage
   não duas cópias divergindo.
 
 ## Change History
+- 2026-08-28 — listagem passa de linhas pra grade de cards (as duas superfícies: `/influencer/browse` e `/programs`). Conteúdo e destino do link inalterados; muda o arranjo e o peso da oferta.
+- 2026-08-28 · **placa "Em destaque" removida da listagem de programas abertos** (as duas
+  superfícies, `/influencer/browse` e `/programs`). O primeiro programa da página virava placa
+  desde o redesign 2a, mas sem nenhum critério por trás: como a ordenação é `createdAt desc` e o
+  corte era por página, "em destaque" significava só "o mais novo desta página" — na página 2
+  outro programa qualquer ganhava a placa. Destaque sem regra é ruído e sugere curadoria que não
+  existe. A variante `featured` do `ProgramCard` foi apagada junto (ficaria órfã); as vagas, que
+  só a placa mostrava, passaram pra linha, então nada de informação se perdeu. Teste de
+  regressão trava a lista uniforme (validado por mutação). Contraste que fica: no lado da marca
+  (`CampaignsPage`) a placa **tem** regra — `pickFeatured` = programa ativo mais cheio — e por
+  isso continua.
 - 2026-08-27 · **implementada** a regra 11 desenhada em 2026-08-26 (ver entrada abaixo). Bloqueio
   acontece em `onSubmit` (reaproveita o desfecho do blur via `handleCheck.check`, que dedupe
   internamente); mensagem manual via `setError('igHandle', { type: 'manual', ... })`, limpa no
