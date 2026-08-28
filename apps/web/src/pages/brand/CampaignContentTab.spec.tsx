@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import CampaignContentTab from './CampaignContentTab';
 import * as hooks from '../../hooks/useCampaignApplications';
 import type { CampaignSubmission } from '../../types/api';
@@ -56,12 +56,19 @@ describe('CampaignContentTab', () => {
     expect(screen.getByText(/nenhum conteúdo enviado ainda/i)).toBeInTheDocument();
   });
 
-  it('renderiza card com nome da creator e tipo de mídia', () => {
+  // Desde a migração pro Kinetic a aba é lista + placa: a entrega selecionada
+  // aparece nas DUAS (linha na lista, detalhe na placa). Consultas de nome e
+  // tipo precisam dizer onde estão olhando, senão colidem.
+  it('lista a creator e abre a entrega selecionada na placa', () => {
     mockHooks([baseSubmission]);
     render(<CampaignContentTab campaignId="camp-1" />);
-    expect(screen.getByText('Ana Creator')).toBeInTheDocument();
+
+    const lista = within(screen.getByRole('list', { name: 'Entregas' }));
+    expect(lista.getByText('Ana Creator')).toBeInTheDocument();
+    expect(lista.getByText('VIDEO')).toBeInTheDocument();
+
+    // O @handle só existe na placa — na lista a linha mostra nome e tipo.
     expect(screen.getByText('@ana.creator')).toBeInTheDocument();
-    expect(screen.getByText('VIDEO')).toBeInTheDocument();
   });
 
   it('mostra botões de ação apenas em PENDING', () => {
@@ -114,10 +121,11 @@ describe('CampaignContentTab', () => {
     mockHooks([baseSubmission, approved]);
 
     render(<CampaignContentTab campaignId="camp-1" />);
-    expect(screen.getAllByText('Ana Creator')).toHaveLength(2);
+    const lista = () => within(screen.getByRole('list', { name: 'Entregas' }));
+    expect(lista().getAllByText('Ana Creator')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: /^aprovados$/i }));
-    expect(screen.getAllByText('Ana Creator')).toHaveLength(1);
+    expect(lista().getAllByText('Ana Creator')).toHaveLength(1);
   });
 
   // Até 2026-08-23 esta tela lia só `avatarUrl` — campo que só a própria

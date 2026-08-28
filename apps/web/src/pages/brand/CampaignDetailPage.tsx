@@ -11,7 +11,7 @@ import CampaignFilaTab from './CampaignFilaTab';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
-import TabsUnderline from '../../components/primitives/TabsUnderline';
+import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
 import Plate from '../../components/primitives/Plate';
 import PlateActionBar from '../../components/primitives/PlateActionBar';
 import { cn } from '../../lib/utils';
@@ -56,10 +56,12 @@ function CampaignHeader({
   const days = daysUntil(deadline);
 
   return (
-    <div className="flex items-end justify-between gap-3 px-6 pb-[22px] pt-2">
-      <div>
-        <h1 className="font-display text-d-sm text-foreground">{title}</h1>
-        <p className="mt-[7px] text-xs text-[#6E6E68]">
+    <div className="flex items-end justify-between gap-4 px-4 pb-6 pt-4 sm:px-6">
+      <div className="min-w-0">
+        <h1 className="font-display text-[32px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
+          {title}
+        </h1>
+        <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
           {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
         </p>
         {/* Ação de gestão do status - só existe transição pra estado ativo/rascunho,
@@ -68,7 +70,7 @@ function CampaignHeader({
           <button
             type="button"
             onClick={onEncerrar}
-            className="mt-2 text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            className="mt-3 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
           >
             Encerrar campanha
           </button>
@@ -79,33 +81,33 @@ function CampaignHeader({
             Vem em lime porque é a ação que destrava o programa; apagar é a
             saída destrutiva e fica em ghost, como antes. */}
         {status === 'DRAFT' && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
             <button
               type="button"
               onClick={onPublicar}
-              className="text-xs font-semibold text-lime underline-offset-2 transition-opacity hover:underline hover:opacity-80"
+              className="font-mono text-[10px] uppercase tracking-widest text-lime underline-offset-4 transition-opacity hover:underline hover:opacity-80"
             >
               Publicar programa
             </button>
             <Link
               to={`/brand/campaigns/${campaignId}/edit`}
-              className="text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
               Editar
             </Link>
             <button
               type="button"
               onClick={onApagar}
-              className="text-xs text-[#6E6E68] underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
               Apagar rascunho
             </button>
           </div>
         )}
       </div>
-      <p className="font-display text-d-inline leading-none text-foreground">
+      <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground sm:text-[40px]">
         {spotsUsed}
-        <span className="text-[#6E6E68]">/{maxSpots}</span>
+        <span className="text-kinetic-muted">/{maxSpots}</span>
       </p>
     </div>
   );
@@ -283,12 +285,12 @@ export default function CampaignDetailPage() {
         onApagar={() => setOpenModal('delete')}
       />
 
-      <TabsUnderline tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      <KineticTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       <div
         className={cn(
           'min-h-0 flex-1 overflow-auto',
-          activeTab === 'queue' ? 'px-6 pt-6' : 'p-4 md:p-6',
+          activeTab === 'queue' ? 'px-4 pt-6 sm:px-6' : 'pt-8',
         )}
       >
         {activeTab === 'queue' && (

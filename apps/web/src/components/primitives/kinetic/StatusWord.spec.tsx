@@ -25,6 +25,11 @@ describe('StatusWord — rótulo em português por domínio', () => {
     expect(screen.getByText('Rascunho')).toBeInTheDocument();
   });
 
+  it('usa o feminino da recompensa', () => {
+    render(<StatusWord kind="reward" status="ISSUED" />);
+    expect(screen.getByText('Emitida')).toBeInTheDocument();
+  });
+
   it('cobre REVISION_REQUESTED, que só existe em conteúdo', () => {
     render(<StatusWord kind="content" status="REVISION_REQUESTED" />);
     expect(screen.getByText('Revisar')).toBeInTheDocument();
@@ -52,6 +57,18 @@ describe('StatusWord — lime só no que espera decisão', () => {
 
     render(<StatusWord kind="content" status="APPROVED" />);
     expect(screen.getByText('Aprovado')).not.toHaveClass('text-lime');
+  });
+
+  // Recompensa é o único domínio com dois estados acionáveis: PENDING pede
+  // emitir, ISSUED pede confirmar entrega. Só a entregue apaga.
+  it.each(['PENDING', 'ISSUED'] as const)('pinta recompensa %s de lime', (status) => {
+    render(<StatusWord kind="reward" status={status} />);
+    expect(screen.getByText(/./)).toHaveClass('text-lime');
+  });
+
+  it('não pinta de lime recompensa entregue', () => {
+    render(<StatusWord kind="reward" status="DELIVERED" />);
+    expect(screen.getByText('Entregue')).not.toHaveClass('text-lime');
   });
 
   // Na campanha o que "pede atenção" é a que está no ar recebendo candidatura,

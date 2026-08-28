@@ -73,9 +73,14 @@ Controller `submissions`, prefixo `/api/v1`, atrás de `JwtAuthGuard`.
 | PATCH | `/submissions/:id/request-revision` | BRAND | `PENDING → REVISION_REQUESTED`, feedback obrigatório |
 
 ## UI Behavior
-`CampaignContentTab` (marca): ação de aprovar/recusar/pedir revisão só aparece em conteúdo
-`PENDING`; conteúdo `APPROVED`/`REJECTED`/`REVISION_REQUESTED` não mostra ação. Pedir revisão
-abre modal que exige o texto de feedback antes de submeter. Lista filtrável por status.
+`CampaignContentTab` (marca): lista + placa, no padrão da aba Fila. A lista mostra TODA entrega
+do filtro corrente (nome da creator, tipo de mídia, status); a placa abre a entrega selecionada
+com legenda, feedback e link pro conteúdo. A seleção começa na primeira entrega visível e
+acompanha o filtro — se a entrega aberta sai do filtro, a placa passa pra primeira que restou.
+No celular a lista vem antes da placa, pra que tocar numa linha atualize uma placa já visível.
+Ação de aprovar/recusar/pedir revisão só aparece em conteúdo `PENDING`; conteúdo
+`APPROVED`/`REJECTED`/`REVISION_REQUESTED` não mostra ação. Pedir revisão abre modal que exige o
+texto de feedback antes de submeter. Lista filtrável por status.
 `SubmissionsPage` (creator): lista os próprios envios com status e o feedback da marca quando
 existir.
 
@@ -157,6 +162,7 @@ Frontend: `apps/web/src/pages/brand/CampaignContentTab.spec.tsx`.
   `influencer`) numa única leitura, comparando `userId` contra os dois lados.
 
 ## Change History
+- 2026-08-28 — aba da marca migrada pro "Kinetic Editorial": grade de cards vira lista + placa; rótulo de status passa a sair de `contentStatusWord` (`utils/format.ts`), com "Aguardando" virando "Em análise" também no filtro.
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0.
 - 2026-08-21 · reestruturado pro padrão SDD (Objective/Scope/Out of Scope/Domain/Behavior/API
   interfaces/UI Behavior/Acceptance Criteria/Error Scenarios/Known Gaps/Test Coverage/Current
