@@ -9,9 +9,9 @@ import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useStepGuard } from '../../hooks/useStepGuard';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
-import PlateField from '../../components/primitives/PlateField';
+import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
-import NicheSelector from '../../components/primitives/NicheSelector';
+import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ export default function RegisterBrandPage() {
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             {step === 0 && (
               <>
-                <PlateField
+                <KineticField
                   label="Nome da marca"
                   variant="plate"
                   autoComplete="organization"
@@ -141,7 +141,7 @@ export default function RegisterBrandPage() {
                   error={errors.brandName?.message}
                   {...register('brandName')}
                 />
-                <PlateField
+                <KineticField
                   label="Website (opcional)"
                   variant="plate"
                   type="url"
@@ -155,7 +155,7 @@ export default function RegisterBrandPage() {
 
             {step === 1 && (
               <>
-                <PlateField
+                <KineticField
                   label="E-mail"
                   variant="plate"
                   type="email"
@@ -164,7 +164,7 @@ export default function RegisterBrandPage() {
                   error={errors.email?.message}
                   {...register('email')}
                 />
-                <PlateField
+                <KineticField
                   label="Senha"
                   variant="plate"
                   type={showPassword ? 'text' : 'password'}

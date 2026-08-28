@@ -134,9 +134,7 @@ function AppShell() {
 
 export default function App() {
   return (
-    <Sentry.ErrorBoundary
-      fallback={({ resetError }) => <SentryFallback onReset={resetError} />}
-    >
+    <Sentry.ErrorBoundary fallback={({ resetError }) => <SentryFallback onReset={resetError} />}>
       <AppShell />
     </Sentry.ErrorBoundary>
   );

@@ -1,11 +1,11 @@
 import { forwardRef, useCallback, useEffect, useRef } from 'react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../../lib/utils';
 
-// Mesmo padrão do PlateField (label + linha de base, sem caixa, htmlFor/id
+// Mesmo padrão do KineticField (label + linha de base, sem caixa, htmlFor/id
 // em vez de label-envolve-input — error precisa ficar fora do <label> pra
 // não entrar na accessible name do campo), pra texto longo. pb-[34px] em vez
 // de pb-[9px] é o que dá altura ao campo sem desenhar uma caixa de textarea.
-// Duas variantes, mesmos tamanhos do PlateField: `plate` (sobre o claro —
+// Duas variantes, mesmos tamanhos do KineticField: `plate` (sobre o claro —
 // label 11px, valor 15px) e `dark` (sobre o fundo — label 12px, valor 14px).
 //
 // O campo CRESCE com o conteúdo (bug reportado 2026-08-23): com `rows={1}`
@@ -33,7 +33,7 @@ function autoGrow(el: HTMLTextAreaElement | null) {
   el.style.height = `${el.scrollHeight}px`;
 }
 
-const PlateTextarea = forwardRef<HTMLTextAreaElement, Props>(function PlateTextarea(
+const KineticTextarea = forwardRef<HTMLTextAreaElement, Props>(function KineticTextarea(
   { label, variant = 'dark', error, id, className, onInput, ...props },
   ref,
 ) {
@@ -62,7 +62,10 @@ const PlateTextarea = forwardRef<HTMLTextAreaElement, Props>(function PlateTexta
     <div>
       <label
         htmlFor={textareaId}
-        className={cn('mb-2 block', isPlate ? 'text-[11px] text-plate-muted' : 'text-[12px] text-[#75756E]')}
+        className={cn(
+          'mb-2.5 block font-mono text-[10px] uppercase tracking-widest',
+          isPlate ? 'text-[#6a6a64]' : 'text-kinetic-muted',
+        )}
       >
         {label}
       </label>
@@ -70,8 +73,8 @@ const PlateTextarea = forwardRef<HTMLTextAreaElement, Props>(function PlateTexta
         className={cn(
           'block border-b pb-[34px] transition-colors duration-[140ms]',
           isPlate
-            ? 'border-[rgba(14,14,14,.18)] focus-within:border-plate-ink'
-            : 'border-[#232323] focus-within:border-lime',
+            ? 'border-[#b8b8b1] focus-within:border-black'
+            : 'border-kinetic-border focus-within:border-lime',
           error && 'border-destructive focus-within:border-destructive',
         )}
       >
@@ -86,8 +89,8 @@ const PlateTextarea = forwardRef<HTMLTextAreaElement, Props>(function PlateTexta
           className={cn(
             'w-full resize-none overflow-hidden break-words bg-transparent outline-none',
             isPlate
-              ? 'text-[15px]/[1.45] text-plate-ink caret-plate-ink placeholder:text-[#55554F]/70'
-              : 'text-[14px]/[1.45] text-foreground caret-lime placeholder:text-[#55554F]',
+              ? 'text-[15px]/[1.45] text-black caret-black placeholder:text-[#55554f]/70'
+              : 'text-[14px]/[1.45] text-foreground caret-lime placeholder:text-[#55554f]',
             className,
           )}
           {...props}
@@ -98,4 +101,4 @@ const PlateTextarea = forwardRef<HTMLTextAreaElement, Props>(function PlateTexta
   );
 });
 
-export default PlateTextarea;
+export default KineticTextarea;

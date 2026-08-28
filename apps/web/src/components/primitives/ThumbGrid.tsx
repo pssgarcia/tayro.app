@@ -26,7 +26,7 @@ export default function ThumbGrid({
             className="aspect-square w-full rounded-[3px] object-cover"
           />
         ) : (
-          <div key={i} className="aspect-square w-full rounded-[3px] bg-plate-fill" />
+          <div key={i} className="aspect-square w-full bg-[#cfcfc8]" />
         ),
       )}
     </div>

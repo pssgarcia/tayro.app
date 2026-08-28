@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import KineticPlate from './KineticPlate';
 import KineticActions from './KineticActions';
-import NicheSelector from '../NicheSelector';
+import NicheSelector from './NicheSelector';
 
 // Mesmo padrão do KineticEditField (row + modal placa-formulário), mas pro
 // caso de nichos — o valor não é texto, é um NicheSelector(variant="plate").

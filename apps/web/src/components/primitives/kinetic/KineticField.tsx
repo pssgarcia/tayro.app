@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { cn } from '../../lib/utils';
+import { cn } from '../../../lib/utils';
 
 // Campo "sem caixa" transversal (README: Login, os 3 cadastros, Ativar
 // conta, PublishModal, modal de Entregas) — label + linha de base, nunca
@@ -17,7 +17,7 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefi
   label: string;
   variant?: 'dark' | 'plate';
   error?: string;
-  /** Marca o label com um "*" — dark: foreground, plate: plate-ink (nunca vermelho). */
+  /** Marca o label com um "*" — dark: foreground, plate: preto (nunca vermelho). */
   required?: boolean;
   /** Ex.: "@" no handle do Instagram — tom fixo, não acompanha o valor. */
   prefix?: string;
@@ -27,7 +27,7 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefi
   hint?: string;
 }
 
-const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
+const KineticField = forwardRef<HTMLInputElement, Props>(function KineticField(
   { label, variant = 'dark', error, required, prefix, suffix, hint, id, className, ...props },
   ref,
 ) {
@@ -38,17 +38,22 @@ const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
     <div>
       <label
         htmlFor={inputId}
-        className={cn('mb-2 block', isPlate ? 'text-[11px] text-plate-muted' : 'text-[12px] text-[#75756E]')}
+        className={cn(
+          'mb-2.5 block font-mono text-[10px] uppercase tracking-widest',
+          isPlate ? 'text-[#6a6a64]' : 'text-kinetic-muted',
+        )}
       >
         {label}
-        {required && <span className={cn('ml-0.5', isPlate ? 'text-plate-ink' : 'text-foreground')}>*</span>}
+        {required && (
+          <span className={cn('ml-0.5', isPlate ? 'text-black' : 'text-foreground')}>*</span>
+        )}
       </label>
       <span
         className={cn(
           'flex items-center gap-2.5 border-b pb-[9px] transition-colors duration-[140ms]',
           isPlate
-            ? 'border-[rgba(14,14,14,.18)] focus-within:border-plate-ink'
-            : 'border-[#232323] focus-within:border-lime',
+            ? 'border-[#b8b8b1] focus-within:border-black'
+            : 'border-kinetic-border focus-within:border-lime',
           error && 'border-destructive focus-within:border-destructive',
         )}
       >
@@ -56,7 +61,7 @@ const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
           <span
             className={cn(
               'shrink-0',
-              isPlate ? 'text-[15px] text-plate-muted' : 'text-[14px] text-[#55554F]',
+              isPlate ? 'text-[15px] text-[#6a6a64]' : 'text-[14px] text-[#55554f]',
             )}
           >
             {prefix}
@@ -68,8 +73,8 @@ const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
           className={cn(
             'w-full bg-transparent leading-none outline-none',
             isPlate
-              ? 'text-[15px] text-plate-ink caret-plate-ink placeholder:text-[#55554F]/70'
-              : 'text-[14px] text-foreground caret-lime placeholder:text-[#55554F]',
+              ? 'text-[15px] text-black caret-black placeholder:text-[#55554f]/70'
+              : 'text-[14px] text-foreground caret-lime placeholder:text-[#55554f]',
             className,
           )}
           {...props}
@@ -85,4 +90,4 @@ const PlateField = forwardRef<HTMLInputElement, Props>(function PlateField(
   );
 });
 
-export default PlateField;
+export default KineticField;

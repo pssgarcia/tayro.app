@@ -3,7 +3,7 @@ import axios from 'axios';
 import type { Campaign } from '../../types/api';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
-import PlateTextarea from '../../components/primitives/PlateTextarea';
+import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import { useCreateApplication } from '../../hooks/useMyApplications';
 
 // ─── Modal de confirmação — mesmo padrão de placa-formulário do Login ────────
@@ -73,7 +73,7 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
               <p className="mt-[6px] truncate text-[13px] text-[#6a6a64]">{campaign.title}</p>
 
               <div className="mt-6">
-                <PlateTextarea
+                <KineticTextarea
                   label="Mensagem para a marca (opcional)"
                   variant="plate"
                   value={message}

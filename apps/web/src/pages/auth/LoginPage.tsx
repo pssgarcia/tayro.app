@@ -8,7 +8,7 @@ import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
-import PlateField from '../../components/primitives/PlateField';
+import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
-            <PlateField
+            <KineticField
               label="E-mail"
               type="email"
               variant="plate"
@@ -94,7 +94,7 @@ export default function LoginPage() {
               error={errors.email?.message}
               {...register('email')}
             />
-            <PlateField
+            <KineticField
               label="Senha"
               type={showPassword ? 'text' : 'password'}
               variant="plate"
