@@ -84,7 +84,7 @@ export default function CampaignOverviewTab({
         </div>
 
         <div className="w-full lg:w-[420px] lg:shrink-0">
-          <KineticPlate marks="all" className="px-6 py-9 sm:px-8">
+          <KineticPlate marks="all" className="px-6 pb-8 pt-11 sm:px-8">
             <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
               A oferta
             </p>

@@ -38,7 +38,13 @@ export default function KineticPlate({
     <Tag
       className={cn(
         'relative rounded-lg bg-kinetic-light text-black',
-        flush ? 'overflow-hidden' : 'p-6 lg:p-8',
+        // As crop marks ocupam de 16px a 32px a partir de cada borda, então
+        // conteúdo com menos de 40px de respiro no topo COLIDE com elas — foi o
+        // que aconteceu no /apply, onde a marca atravessava o "O" do rótulo
+        // "O que você recebe". Padding de topo generoso é requisito da
+        // anatomia, não gosto: quem sobrescrever com className precisa manter
+        // `pt` >= 40px.
+        flush ? 'overflow-hidden' : 'px-6 pb-8 pt-11 sm:px-8',
         className,
       )}
     >

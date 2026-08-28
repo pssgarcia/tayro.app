@@ -243,7 +243,7 @@ export default function CampaignForm({
         <p className="mb-4 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
           Prévia da oferta
         </p>
-        <KineticPlate marks="all" className="px-6 py-9 sm:px-8">
+        <KineticPlate marks="all" className="px-6 pb-8 pt-11 sm:px-8">
           <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
             O que você recebe
           </p>

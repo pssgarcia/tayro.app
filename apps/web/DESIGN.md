@@ -126,7 +126,7 @@ Onde o 2a é contido e silencioso, o Kinetic é **editorial**: tipografia mais o
 
 | Componente | Substitui (2a) | Diferença que importa |
 |---|---|---|
-| `KineticPlate` | `Plate` | Crop marks em **L de 16px em lime**, sem sombra. `as` permite `<section>` quando a placa é região de conteúdo |
+| `KineticPlate` | `Plate` | Crop marks em **L de 16px em lime**, sem sombra. `as` permite `<section>` quando a placa é região de conteúdo. **As marcas ocupam de 16px a 32px a partir da borda — conteúdo precisa de `pt` ≥ 40px, senão a marca atravessa o texto** |
 | `KineticActions` | `PlateActionBar` | Blocos retos edge-to-edge separados por 1px; primário em lime, mono caixa alta (o 2a usa split bar com primário quase-preto em Space Grotesk) |
 | `StatusWord` | `StatusPill` / `ContentStatusPill` | Status é **palavra**, não pill. Vocabulário único vindo de `utils/format.ts` |
 | `StatFigure` | `StatBlock` | Rótulo mono caixa alta **em cima**, número embaixo (o 2a inverte) |
