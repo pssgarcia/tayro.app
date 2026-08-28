@@ -3,15 +3,15 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { useMySubmissions, useCreateSubmission } from '../../hooks/useMySubmissions';
 import type { MediaType, MySubmission } from '../../types/api';
-import Plate from '../../components/primitives/Plate';
 import PlateTextarea from '../../components/primitives/PlateTextarea';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
-import ContentStatusPill from '../../components/primitives/ContentStatusPill';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
+import KineticRow from '../../components/primitives/kinetic/KineticRow';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { formatRelativeDays } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
@@ -45,19 +45,19 @@ function PlateSelectField({
   const selectId = id ?? (typeof props.name === 'string' ? props.name : undefined);
   return (
     <div>
-      <label htmlFor={selectId} className="mb-2 block text-[11px] text-plate-muted">
+      <label htmlFor={selectId} className="mb-2 block font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
         {label}
       </label>
       <span
         className={cn(
           'block border-b pb-[9px] transition-colors duration-[140ms]',
-          error ? 'border-destructive' : 'border-[rgba(14,14,14,.18)] focus-within:border-plate-ink',
+          error ? 'border-destructive' : 'border-[#b8b8b1] focus-within:border-black',
         )}
       >
         <select
           id={selectId}
           {...props}
-          className="w-full appearance-none bg-transparent text-[15px] leading-none text-plate-ink outline-none"
+          className="w-full appearance-none bg-transparent text-[15px] leading-none text-black outline-none"
         >
           {children}
         </select>
@@ -122,13 +122,13 @@ function SubmitModal({
       onClick={onClose}
     >
       <div className="w-full sm:max-w-md" onClick={(e) => e.stopPropagation()}>
-        <Plate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
+        <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           {approvedApps.length === 0 ? (
             <div className="px-6 pb-[26px] pt-[30px]">
-              <p className="font-display text-d-xs text-plate-ink">Enviar conteúdo</p>
-              <p className="mt-3 text-[13px] text-plate-muted">
+              <p className="font-display text-xl font-bold tracking-[-.04em] text-black">Enviar conteúdo</p>
+              <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
                 Você não tem candidaturas aprovadas no momento.{' '}
-                <Link to="/influencer/applications" className="whitespace-nowrap text-plate-ink underline">
+                <Link to="/influencer/applications" className="whitespace-nowrap text-black underline">
                   Ver candidaturas
                 </Link>
                 .
@@ -137,7 +137,7 @@ function SubmitModal({
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
-                <p className="-mb-2 font-display text-d-xs text-plate-ink">Enviar conteúdo</p>
+                <p className="-mb-2 font-display text-xl font-bold tracking-[-.04em] text-black">Enviar conteúdo</p>
 
                 <PlateSelectField
                   label="Candidatura aprovada *"
@@ -178,18 +178,20 @@ function SubmitModal({
                 {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
               </div>
 
-              <PlateActionBar
-                secondary={{ label: 'Cancelar', onClick: onClose, width: 100 }}
-                primary={{
-                  label: isSubmitting ? 'Enviando…' : 'Enviar conteúdo',
-                  type: 'submit',
-                  disabled: isSubmitting,
-                  icon: <ArrowRight size={16} />,
-                }}
+              <KineticActions
+                actions={[
+                  { label: 'Cancelar', onClick: onClose, width: 130 },
+                  {
+                    label: isSubmitting ? 'Enviando…' : 'Enviar conteúdo',
+                    type: 'submit',
+                    disabled: isSubmitting,
+                    primary: true,
+                  },
+                ]}
               />
             </form>
           )}
-        </Plate>
+        </KineticPlate>
       </div>
     </div>
   );
@@ -226,41 +228,47 @@ function FeaturedPlate({
   const { s, mode } = featured;
 
   return (
-    <Plate marks="top" flush className="max-w-[520px]">
+    <KineticPlate marks="top" flush className="max-w-[520px]">
       <div className="px-6 pb-6 pt-[26px]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs text-plate-muted">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
               {s.application.campaign.brand.name} · {MEDIA_LABELS[s.mediaType]}
             </p>
-            <p className="mt-[5px] font-display text-[21px] font-bold tracking-[-.045em] text-plate-ink">
+            <p className="mt-2 font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
               {s.application.campaign.title}
             </p>
           </div>
-          <ContentStatusPill status={s.status} className="shrink-0" />
+          <StatusWord kind="content" status={s.status} />
         </div>
 
         {s.feedback && mode === 'revise' && (
-          <p className="mt-[22px] text-[15px] leading-[1.5] text-plate-body">
+          <p className="mt-6 text-[15px] leading-[1.5] text-[#3a3a34]">
             &ldquo;{s.feedback}&rdquo;
           </p>
         )}
 
-        <p className="mt-4 text-xs text-plate-soft">{formatRelativeDays(s.submittedAt)}</p>
+        <p className="mt-4 text-xs text-[#7a7a74]">{formatRelativeDays(s.submittedAt)}</p>
       </div>
 
       {mode === 'revise' && (
-        <PlateActionBar
-          secondary={{ label: 'Ver atual', width: 100, onClick: () => window.open(s.mediaUrl, '_blank') }}
-          primary={{ label: 'Reenviar link', onClick: onResend, icon: <ArrowRight size={16} /> }}
+        <KineticActions
+          actions={[
+            {
+              label: 'Ver atual',
+              width: 130,
+              onClick: () => window.open(s.mediaUrl, '_blank'),
+            },
+            { label: 'Reenviar link', onClick: onResend, primary: true },
+          ]}
         />
       )}
       {mode === 'approved' && (
-        <PlateActionBar
-          primary={{ label: 'Enviar novo conteúdo', onClick: onResend, icon: <ArrowRight size={16} /> }}
+        <KineticActions
+          actions={[{ label: 'Enviar novo conteúdo', onClick: onResend, primary: true }]}
         />
       )}
-    </Plate>
+    </KineticPlate>
   );
 }
 
@@ -269,10 +277,10 @@ function FeaturedPlate({
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-8">
-      <div className="h-[88px] rounded-lg bg-secondary" />
+      <div className="h-[220px] max-w-[560px] rounded-lg bg-kinetic-dark" />
       <div className="space-y-[22px]">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-secondary" />
+          <div key={i} className="h-14 rounded bg-kinetic-dark" />
         ))}
       </div>
     </div>
@@ -298,23 +306,27 @@ export default function SubmissionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
-      <div className="mb-[26px] flex items-center justify-between">
-        <h1 className="font-display text-d-md text-foreground">Entregas</h1>
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
+          Entregas
+        </h1>
         <button
           onClick={() => openModal(undefined)}
-          className="shrink-0 rounded-lg border border-lime px-[15px] py-[9px] font-display text-[13px] font-semibold tracking-[-.02em] text-lime transition-colors hover:bg-lime/10"
+          className="flex min-h-[38px] shrink-0 items-center border border-lime px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-lime transition-colors hover:bg-lime hover:text-black"
         >
           Enviar
         </button>
       </div>
+
+      <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
 
       {isLoading && <Skeleton />}
 
       {isError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
 
       {!isLoading && !isError && submissions.length === 0 && (
-        <p className="text-sm text-[#8A8A85]">
+        <p className="text-sm text-kinetic-muted">
           Nenhum conteúdo enviado ainda. Quando você tiver uma candidatura aprovada, envie o link do
           seu conteúdo aqui.
         </p>
@@ -322,7 +334,7 @@ export default function SubmissionsPage() {
 
       {!isLoading && !isError && submissions.length > 0 && (
         <>
-          <p className="mb-3.5 text-xs text-[#75756E]">
+          <p className="mb-4 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
             {featured?.mode === 'revise' ? 'A marca pediu ajuste' : 'Precisa de você'}
           </p>
           {featured && (
@@ -332,23 +344,16 @@ export default function SubmissionsPage() {
             />
           )}
 
-          <h2 className="mb-5 mt-[34px] font-display text-d-xs text-foreground">Enviados</h2>
-          <div className="flex flex-col gap-[22px]">
+          <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">Enviados</p>
+          <div className="flex flex-col gap-0.5">
             {submissions.map((s, i) => (
-              <div key={s.id} className="flex items-baseline gap-3.5">
-                <span className="shrink-0 font-mono text-[11px] text-[#6E6E68]">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-d-xs font-semibold text-foreground">
-                    {s.application.campaign.title}
-                  </p>
-                  <p className="mt-[5px] text-xs text-[#6E6E68]">
-                    {MEDIA_LABELS[s.mediaType]} · {formatRelativeDays(s.submittedAt)}
-                  </p>
-                </div>
-                <ContentStatusPill status={s.status} />
-              </div>
+              <KineticRow
+                key={s.id}
+                index={i + 1}
+                title={s.application.campaign.title}
+                meta={`${MEDIA_LABELS[s.mediaType]} · ${formatRelativeDays(s.submittedAt)}`}
+                trailing={<StatusWord kind="content" status={s.status} />}
+              />
             ))}
           </div>
         </>

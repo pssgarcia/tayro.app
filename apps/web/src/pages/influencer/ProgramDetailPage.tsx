@@ -4,9 +4,9 @@ import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { useProgram } from '../../hooks/useProgram';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { formatDate, formatOffer } from '../../utils/format';
-import Plate from '../../components/primitives/Plate';
-import CountUp from '../../components/primitives/CountUp';
-import StatusPill from '../../components/primitives/StatusPill';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import StatFigure from '../../components/primitives/kinetic/StatFigure';
+import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import ApplyModal from './ApplyModal';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
@@ -14,12 +14,12 @@ import ApplyModal from './ApplyModal';
 function Skeleton() {
   return (
     <div className="animate-pulse space-y-6">
-      <div className="h-4 w-32 rounded bg-secondary" />
-      <div className="h-7 w-3/5 rounded bg-secondary" />
-      <div className="h-[180px] rounded-lg bg-secondary" />
+      <div className="h-4 w-32 rounded bg-kinetic-dark" />
+      <div className="h-7 w-3/5 rounded bg-kinetic-dark" />
+      <div className="h-[220px] rounded-lg bg-kinetic-dark" />
       <div className="space-y-2">
-        <div className="h-3 w-full rounded bg-secondary" />
-        <div className="h-3 w-4/5 rounded bg-secondary" />
+        <div className="h-3 w-full rounded bg-kinetic-dark" />
+        <div className="h-3 w-4/5 rounded bg-kinetic-dark" />
       </div>
     </div>
   );
@@ -51,10 +51,10 @@ export default function ProgramDetailPage() {
     .toUpperCase();
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pt-[14px]">
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <button
         onClick={() => navigate(-1)}
-        className="mb-[22px] flex items-center gap-[7px] text-[13px] text-[#75756E] transition-colors hover:text-foreground"
+        className="mb-7 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} />
         Voltar
@@ -65,7 +65,7 @@ export default function ProgramDetailPage() {
       {isError && (
         <div className="py-16 text-center">
           <p className="font-display font-semibold text-foreground">Programa não encontrado</p>
-          <p className="mt-1 text-sm text-[#75756E]">
+          <p className="mt-2 text-sm text-kinetic-muted">
             Ele pode ter sido encerrado ou o link está desatualizado.
           </p>
           <Link to="/influencer/browse" className="mt-4 inline-block text-sm text-lime">
@@ -75,70 +75,62 @@ export default function ProgramDetailPage() {
       )}
 
       {campaign && (
-        <div className="max-w-[520px] pb-10">
+        <div className="max-w-[560px]">
           {/* Marca */}
           <div className="mb-[22px] flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-muted">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border border-kinetic-gray bg-kinetic-dark">
               {campaign.brand?.logoUrl ? (
                 <img src={campaign.brand.logoUrl} alt="" className="h-full w-full object-cover" />
               ) : (
-                <span className="font-mono text-[13px] text-[#75756E]">{initials}</span>
+                <span className="font-mono text-[13px] text-kinetic-muted">{initials}</span>
               )}
             </div>
             <div>
-              <p className="text-xs text-[#75756E]">Programa de</p>
-              <p className="mt-[3px] font-display text-[15px] font-semibold tracking-[-.025em] text-foreground">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">Programa de</p>
+              <p className="mt-1.5 font-display text-base font-semibold tracking-[-.03em] text-foreground">
                 {campaign.brand?.name ?? '—'}
               </p>
             </div>
           </div>
 
-          <h1 className="mb-[26px] font-display text-d-md leading-none text-foreground">
+          <h1 className="mb-8 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
             {campaign.title}
           </h1>
 
           {/* Placa — a oferta (regra 5: uma placa por tela) */}
-          <Plate marks="all">
-            <p className="mb-3 font-mono text-[9px] uppercase tracking-[.16em] text-plate-muted">
+          <KineticPlate marks="all" className="px-6 py-9 sm:px-8">
+            <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
               O que você recebe
             </p>
-            <p className="font-display text-[26px] font-bold leading-[1.04] tracking-[-.045em] text-plate-ink">
+            <p className="font-display text-[30px] font-bold leading-[1.05] tracking-[-.045em] text-black">
               {formatOffer(campaign)}
             </p>
-            <p className="mt-2.5 text-xs text-plate-muted">
+            <p className="mt-3 text-[13px] text-[#6a6a64]">
               {isProduct ? 'produto enviado para você' : 'por candidatura aprovada'}
             </p>
 
-            <div className="mb-5 mt-[22px] h-px bg-plate-line" />
-            <div className="flex gap-[30px]">
+            <div className="my-7 h-px bg-[#c9c9c3]" />
+            <div className="flex flex-wrap gap-x-12 gap-y-6">
               {campaign.offerDeadlineDays != null && (
-                <div>
-                  <CountUp>
-                    <span className="font-display text-d-xl text-plate-ink tabular-nums">
-                      {campaign.offerDeadlineDays}
-                    </span>
-                  </CountUp>
-                  <p className="mt-3 text-xs text-plate-soft">
-                    {isProduct ? 'dias até o envio' : 'dias até o pagamento'}
-                  </p>
-                </div>
+                <StatFigure
+                  label={isProduct ? 'dias até o envio' : 'dias até o pagamento'}
+                  value={campaign.offerDeadlineDays}
+                  size="md"
+                  tone="plate"
+                />
               )}
-              <div>
-                <CountUp delay={140}>
-                  <span className="font-display text-d-xl text-plate-ink tabular-nums">
-                    {campaign.maxSpots}
-                  </span>
-                </CountUp>
-                <p className="mt-3 text-xs text-plate-soft">
-                  vaga{campaign.maxSpots !== 1 ? 's' : ''} aberta
-                  {campaign.maxSpots !== 1 ? 's' : ''}
-                </p>
-              </div>
+              <StatFigure
+                label={`vaga${campaign.maxSpots !== 1 ? 's' : ''} aberta${campaign.maxSpots !== 1 ? 's' : ''}`}
+                value={campaign.maxSpots}
+                size="md"
+                tone="plate"
+                delay={140}
+              />
             </div>
-          </Plate>
+          </KineticPlate>
 
           {campaign.deadline && (
-            <p className="mt-[22px] flex items-center gap-2 text-xs text-[#75756E]">
+            <p className="mt-7 flex items-center gap-2 text-xs text-kinetic-muted">
               <CalendarDays size={13} />
               Inscrições até {formatDate(campaign.deadline)}
             </p>
@@ -149,7 +141,7 @@ export default function ProgramDetailPage() {
               {campaign.niches.map((n) => (
                 <span
                   key={n}
-                  className="rounded-[3px] border border-[#232323] px-[9px] py-[5px] text-[11px] capitalize text-[#8A8A85]"
+                  className="border border-kinetic-gray px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[.12em] text-kinetic-muted"
                 >
                   {n}
                 </span>
@@ -157,8 +149,8 @@ export default function ProgramDetailPage() {
             </div>
           )}
 
-          <h2 className="mt-[30px] font-display text-d-xs text-foreground">Sobre o programa</h2>
-          <p className="mt-3 whitespace-pre-line break-words text-sm leading-[1.55] text-[#8A8A85]">
+          <p className="mt-9 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">Sobre o programa</p>
+          <p className="mt-5 whitespace-pre-line break-words text-[15px] leading-relaxed text-kinetic-text">
             {campaign.description}
           </p>
 
@@ -167,19 +159,19 @@ export default function ProgramDetailPage() {
               href={campaign.briefUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-block text-sm text-[#5B8EFF] hover:underline"
+              className="mt-6 inline-block font-mono text-[11px] uppercase tracking-widest text-lime transition-opacity hover:opacity-80"
             >
               Ver briefing completo
             </a>
           )}
 
-          <div className="my-[30px] h-px bg-muted" />
+          <div className="my-9 h-px bg-kinetic-gray" />
 
           {/* Decisão */}
           {myApplication ? (
             <div className="flex items-center gap-3">
-              <StatusPill status={myApplication.status} />
-              <p className="text-sm text-[#8A8A85]">
+              <StatusWord kind="application" status={myApplication.status} />
+              <p className="text-sm text-kinetic-muted">
                 Você já se candidatou a este programa.{' '}
                 <Link to="/influencer/applications" className="text-lime hover:underline">
                   Ver candidatura
@@ -187,12 +179,12 @@ export default function ProgramDetailPage() {
               </p>
             </div>
           ) : campaign.status !== 'ACTIVE' ? (
-            <p className="text-sm text-[#75756E]">Inscrições encerradas para este programa.</p>
+            <p className="text-sm text-kinetic-muted">Inscrições encerradas para este programa.</p>
           ) : (
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="min-h-[52px] w-full rounded-lg bg-lime text-[15px] font-semibold tracking-[-.02em] text-background transition-opacity hover:opacity-90"
+              className="min-h-[60px] w-full bg-lime font-mono text-[13px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
             >
               Quero participar
             </button>
