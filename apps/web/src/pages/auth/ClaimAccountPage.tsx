@@ -9,7 +9,7 @@ import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useClaimPreview } from '../../hooks/useClaimPreview';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
-import PlateField from '../../components/primitives/PlateField';
+import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
 const schema = z.object({
@@ -178,7 +178,7 @@ export default function ClaimAccountPage() {
                 </div>
               </div>
             )}
-            <PlateField
+            <KineticField
               label="Criar senha"
               variant="plate"
               type={showPassword ? 'text' : 'password'}

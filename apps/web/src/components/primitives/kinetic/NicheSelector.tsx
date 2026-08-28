@@ -1,4 +1,4 @@
-import { cn } from '../../lib/utils';
+import { cn } from '../../../lib/utils';
 
 // Nichos padrão (fitness). Valores canônicos em minúsculas — usados também
 // como filtro de campanha, então a consistência aqui evita drift.
@@ -26,10 +26,10 @@ interface Props {
   extraOptions?: string[];
   /**
    * "plate" — sobre o claro (a placa-formulário dos cadastros): selecionado
-   * = bg-plate-ink text-plate, sem borda; não selecionado = border
-   * rgba(14,14,14,.16) text-plate-muted.
+   * = bg-black text-[#e5e5e0], sem borda; não selecionado = border
+   * rgba(14,14,14,.16) text-[#6a6a64].
    * "dark" (default) — sobre o fundo (Novo programa, Ficha, Perfil da
-   * marca): selecionado = bg-plate text-[#0A0A0A] (a placa "vaza" pro
+   * marca): selecionado = bg-lime text-black (a placa "vaza" pro
    * fundo escuro); não selecionado = border #232323 text-[#8A8A85].
    * As duas são tag quadrada (radius 3px), sem ícone de check — só a
    * inversão de cor avisa que está selecionado.
@@ -63,16 +63,19 @@ export default function NicheSelector({
           <button
             key={niche}
             type="button"
+            // Toggle que só comunicava estado por COR: quem usa leitor de tela
+            // não tinha como saber quais nichos estavam marcados.
+            aria-pressed={selected}
             onClick={() => toggle(niche)}
             className={cn(
-              'rounded-[3px] text-[11px] capitalize transition-colors',
+              'text-[11px] capitalize transition-colors',
               isPlate
                 ? selected
-                  ? 'bg-plate-ink px-[10px] py-[6px] text-plate'
-                  : 'border border-[rgba(14,14,14,.16)] px-[10px] py-[5px] text-plate-muted'
+                  ? 'bg-black px-[10px] py-[6px] text-[#e5e5e0]'
+                  : 'border border-[#b8b8b1] px-[10px] py-[5px] text-[#6a6a64]'
                 : selected
-                  ? 'bg-plate px-[10px] py-[6px] text-[#0A0A0A]'
-                  : 'border border-[#232323] px-[10px] py-[5px] text-[#8A8A85]',
+                  ? 'bg-lime px-[10px] py-[6px] text-black'
+                  : 'border border-kinetic-border px-[10px] py-[5px] text-kinetic-muted',
             )}
           >
             {niche}

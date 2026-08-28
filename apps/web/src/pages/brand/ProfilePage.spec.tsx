@@ -92,14 +92,21 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: /^nichos/i }));
     const dialog = screen.getByRole('dialog', { name: 'Nichos' });
 
-    expect(within(dialog).getByRole('button', { name: /^fitness$/i }).className).toMatch(
-      /bg-plate-ink\b/,
+    // Afirma o estado por SEMÂNTICA, não por classe de cor: o seletor ganhou
+    // `aria-pressed` na limpeza dos primitivos 2a (antes, quem usava leitor de
+    // tela não tinha como saber o que estava marcado), e um teste preso ao hex
+    // quebra a cada ajuste de paleta.
+    expect(within(dialog).getByRole('button', { name: /^fitness$/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
     );
-    expect(within(dialog).getByRole('button', { name: /^wellness$/i }).className).toMatch(
-      /bg-plate-ink\b/,
+    expect(within(dialog).getByRole('button', { name: /^wellness$/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
     );
-    expect(within(dialog).getByRole('button', { name: /^yoga$/i }).className).not.toMatch(
-      /bg-plate-ink\b/,
+    expect(within(dialog).getByRole('button', { name: /^yoga$/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
     );
   });
 

@@ -10,8 +10,8 @@ import type { Campaign } from '../../types/api';
 import { formatOffer, INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
-import PlateField from '../../components/primitives/PlateField';
-import PlateTextarea from '../../components/primitives/PlateTextarea';
+import KineticField from '../../components/primitives/kinetic/KineticField';
+import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
 
 function normalizeHandle(v: string): string {
@@ -353,7 +353,7 @@ export default function PublicApplyPage() {
                     </p>
 
                     <div className="flex flex-col gap-6">
-                      <PlateField
+                      <KineticField
                         label="Seu @ do Instagram"
                         required
                         prefix="@"
@@ -366,7 +366,7 @@ export default function PublicApplyPage() {
                         onBlur={handleIgHandleBlur}
                         onChange={handleIgHandleChange}
                       />
-                      <PlateField
+                      <KineticField
                         label="E-mail"
                         required
                         type="email"
@@ -374,14 +374,14 @@ export default function PublicApplyPage() {
                         error={errors.email?.message}
                         {...register('email')}
                       />
-                      <PlateField
+                      <KineticField
                         label="Seu nome (opcional)"
                         placeholder="Como você se chama?"
                         autoComplete="name"
                         error={errors.name?.message}
                         {...register('name')}
                       />
-                      <PlateTextarea
+                      <KineticTextarea
                         label="Mensagem para a marca (opcional)"
                         placeholder="Por que você é ideal para esse programa?"
                         error={errors.message?.message}

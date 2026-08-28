@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { useMySubmissions, useCreateSubmission } from '../../hooks/useMySubmissions';
 import type { MediaType, MySubmission } from '../../types/api';
-import PlateTextarea from '../../components/primitives/PlateTextarea';
+import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
@@ -162,7 +162,7 @@ function SubmitModal({
                   ))}
                 </PlateSelectField>
 
-                <PlateTextarea
+                <KineticTextarea
                   label="Link do conteúdo *"
                   variant="plate"
                   placeholder="https://instagram.com/reel/..."
@@ -177,7 +177,7 @@ function SubmitModal({
                   <option value="STORY">Story</option>
                 </PlateSelectField>
 
-                <PlateTextarea
+                <KineticTextarea
                   label="Legenda (opcional)"
                   variant="plate"
                   placeholder="Cole aqui a legenda do post…"
