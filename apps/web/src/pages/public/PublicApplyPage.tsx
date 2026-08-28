@@ -8,7 +8,7 @@ import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Campaign } from '../../types/api';
 import { formatOffer, INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
 import PlateField from '../../components/primitives/PlateField';
 import PlateTextarea from '../../components/primitives/PlateTextarea';
@@ -64,16 +64,16 @@ function PageSkeleton() {
   return (
     <div className="animate-pulse space-y-6">
       <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded bg-secondary" />
+        <div className="h-11 w-11 rounded bg-kinetic-dark" />
         <div className="space-y-2">
-          <div className="h-3 w-20 rounded bg-secondary" />
-          <div className="h-4 w-32 rounded bg-secondary" />
+          <div className="h-3 w-20 rounded bg-kinetic-dark" />
+          <div className="h-4 w-32 rounded bg-kinetic-dark" />
         </div>
       </div>
-      <div className="h-[88px] rounded-lg bg-secondary" />
+      <div className="h-[88px] rounded-lg bg-kinetic-dark" />
       <div className="space-y-2">
-        <div className="h-3 w-full rounded bg-secondary" />
-        <div className="h-3 w-4/5 rounded bg-secondary" />
+        <div className="h-3 w-full rounded bg-kinetic-dark" />
+        <div className="h-3 w-4/5 rounded bg-kinetic-dark" />
       </div>
     </div>
   );
@@ -89,7 +89,11 @@ export default function PublicApplyPage() {
   const navigate = useNavigate();
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
 
-  const { data: campaign, isLoading, isError } = useQuery({
+  const {
+    data: campaign,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['campaign', 'public', id],
     queryFn: () => api.get<Campaign>(`/campaigns/${id}`).then((r) => r.data),
     enabled: !!id,
@@ -204,7 +208,7 @@ export default function PublicApplyPage() {
         </Link>
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-[7px] text-[13px] text-[#75756E] transition-colors hover:text-foreground"
+          className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
           Voltar
@@ -217,7 +221,7 @@ export default function PublicApplyPage() {
         {isError && (
           <div className="py-16 text-center">
             <p className="font-display font-semibold text-foreground">Programa não encontrado</p>
-            <p className="mt-1 text-sm text-[#75756E]">
+            <p className="mt-1 text-sm text-kinetic-muted">
               O link pode estar desatualizado ou o programa foi encerrado.
             </p>
           </div>
@@ -231,30 +235,32 @@ export default function PublicApplyPage() {
                 {campaign.brand?.logoUrl ? (
                   <img src={campaign.brand.logoUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="font-mono text-[13px] text-[#75756E]">{initials}</span>
+                  <span className="font-mono text-[13px] text-kinetic-muted">{initials}</span>
                 )}
               </div>
               <div>
-                <p className="text-xs text-[#75756E]">Programa de</p>
+                <p className="text-xs text-kinetic-muted">Programa de</p>
                 <p className="mt-[3px] font-display text-[15px] font-semibold tracking-[-.025em] text-foreground">
                   {campaign.brand?.name ?? '—'}
                 </p>
               </div>
             </div>
 
-            <h1 className="mb-[26px] font-display text-d-md leading-none text-foreground">
+            <h1 className="mb-[26px] font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] leading-none text-foreground">
               {campaign.title}
             </h1>
 
             {/* Placa — oferta, ou (depois de enviar) confirmação */}
-            <Plate marks="all">
+            <KineticPlate marks="all">
               {isSuccess ? (
                 <>
-                  <p className="font-display text-d-lg text-plate-ink">Candidatura enviada</p>
-                  <div className="mt-5 flex flex-col gap-2 text-[13px] leading-[1.5] text-plate-muted">
+                  <p className="font-display text-[34px] font-bold leading-[1.05] tracking-[-.05em] text-black">
+                    Candidatura enviada
+                  </p>
+                  <div className="mt-5 flex flex-col gap-2 text-[13px] leading-[1.5] text-[#6a6a64]">
                     <p>
-                      <span className="font-medium text-plate-body">{submitState.brandName}</span> vai
-                      analisar seu perfil do Instagram.
+                      <span className="font-medium text-[#3a3a34]">{submitState.brandName}</span>{' '}
+                      vai analisar seu perfil do Instagram.
                     </p>
                     <p>Você recebe a decisão por e-mail.</p>
                     <p>Se a candidatura for aprovada, os detalhes da parceria chegam por lá.</p>
@@ -262,49 +268,53 @@ export default function PublicApplyPage() {
                 </>
               ) : (
                 <>
-                  <p className="mb-3 font-mono text-[9px] uppercase tracking-[.16em] text-plate-muted">
+                  <p className="mb-3 font-mono text-[9px] uppercase tracking-[.16em] text-[#6a6a64]">
                     O que você recebe
                   </p>
-                  <p className="font-display text-[26px] font-bold leading-[1.04] tracking-[-.045em] text-plate-ink">
+                  <p className="font-display text-[26px] font-bold leading-[1.04] tracking-[-.045em] text-black">
                     {formatOffer(campaign)}
                   </p>
-                  <p className="mt-2.5 text-xs text-plate-muted">
-                    {campaign.offerType === 'PRODUCT' ? 'produto enviado para você' : 'por candidatura aprovada'}
+                  <p className="mt-2.5 text-xs text-[#6a6a64]">
+                    {campaign.offerType === 'PRODUCT'
+                      ? 'produto enviado para você'
+                      : 'por candidatura aprovada'}
                   </p>
 
                   {campaign.offerDeadlineDays != null && (
                     <>
-                      <div className="mb-5 mt-[22px] h-px bg-plate-line" />
+                      <div className="mb-5 mt-[22px] h-px bg-[#c9c9c3]" />
                       <div className="flex gap-[30px]">
                         <div>
                           <CountUp>
-                            <span className="font-display text-d-xl text-plate-ink tabular-nums">
+                            <span className="font-display text-[40px] font-bold leading-[.85] tracking-[-.05em] text-black tabular-nums">
                               {campaign.offerDeadlineDays}
                             </span>
                           </CountUp>
-                          <p className="mt-3 text-xs text-plate-soft">
-                            {campaign.offerType === 'PRODUCT' ? 'dias até o envio' : 'dias até o pagamento'}
+                          <p className="mt-3 text-xs text-[#7a7a74]">
+                            {campaign.offerType === 'PRODUCT'
+                              ? 'dias até o envio'
+                              : 'dias até o pagamento'}
                           </p>
                         </div>
                         <div>
                           <CountUp delay={140}>
-                            <span className="font-display text-d-xl text-plate-ink tabular-nums">
+                            <span className="font-display text-[40px] font-bold leading-[.85] tracking-[-.05em] text-black tabular-nums">
                               {campaign.maxSpots}
                             </span>
                           </CountUp>
-                          <p className="mt-3 text-xs text-plate-soft">vagas abertas</p>
+                          <p className="mt-3 text-xs text-[#7a7a74]">vagas abertas</p>
                         </div>
                       </div>
                     </>
                   )}
                 </>
               )}
-            </Plate>
+            </KineticPlate>
 
             {!isSuccess && (
               <>
                 {campaign.deadline && (
-                  <p className="mt-[22px] flex items-center gap-2 text-xs text-[#75756E]">
+                  <p className="mt-[22px] flex items-center gap-2 text-xs text-kinetic-muted">
                     <CalendarDays size={13} />
                     Inscrições até {formatDateLong(campaign.deadline)}
                   </p>
@@ -315,7 +325,7 @@ export default function PublicApplyPage() {
                     {campaign.niches.map((n) => (
                       <span
                         key={n}
-                        className="rounded-[3px] border border-[#232323] px-[9px] py-[5px] text-[11px] capitalize text-[#8A8A85]"
+                        className="rounded-[3px] border border-kinetic-gray px-[9px] py-[5px] text-[11px] capitalize text-kinetic-muted"
                       >
                         {n}
                       </span>
@@ -323,18 +333,22 @@ export default function PublicApplyPage() {
                   </div>
                 )}
 
-                <p className="mt-[18px] whitespace-pre-line break-words text-sm leading-[1.55] text-[#8A8A85]">
+                <p className="mt-[18px] whitespace-pre-line break-words text-sm leading-[1.55] text-kinetic-muted">
                   {campaign.description}
                 </p>
 
                 <div className="my-[30px] h-px bg-muted" />
 
                 {campaign.status !== 'ACTIVE' ? (
-                  <p className="text-sm text-[#75756E]">Inscrições encerradas para este programa.</p>
+                  <p className="text-sm text-kinetic-muted">
+                    Inscrições encerradas para este programa.
+                  </p>
                 ) : (
                   <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                    <h2 className="font-display text-d-xs text-foreground">Quero participar</h2>
-                    <p className="mb-[26px] mt-[6px] text-[13px] text-[#75756E]">
+                    <h2 className="font-display text-base font-semibold tracking-[-.03em] text-foreground">
+                      Quero participar
+                    </h2>
+                    <p className="mb-[26px] mt-[6px] text-[13px] text-kinetic-muted">
                       Leva menos de 1 minuto.
                     </p>
 
@@ -401,7 +415,7 @@ export default function PublicApplyPage() {
                         : 'Quero participar'}
                     </button>
 
-                    <p className="mt-4 text-center text-[11px] leading-[1.5] text-[#6E6E68]">
+                    <p className="mt-4 text-center text-[11px] leading-[1.5] text-kinetic-muted">
                       Ao enviar, você concorda que seus dados de perfil do Instagram sejam
                       consultados pela marca.
                     </p>

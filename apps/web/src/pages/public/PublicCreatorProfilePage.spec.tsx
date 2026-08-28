@@ -22,7 +22,9 @@ function makeProfile(over: Partial<PublicCreatorProfile> = {}): PublicCreatorPro
     city: 'Belo Horizonte',
     followersCount: 12000,
     igEngagementRate: 4.2,
-    igRecentPosts: [{ url: 'https://ig.com/p1', thumbnail: 'https://ig.com/t1.jpg', likes: 10, comments: 2 }],
+    igRecentPosts: [
+      { url: 'https://ig.com/p1', thumbnail: 'https://ig.com/t1.jpg', likes: 10, comments: 2 },
+    ],
     igFetchStatus: 'OK',
     completedPartnerships: 3,
     results: [],
@@ -30,7 +32,9 @@ function makeProfile(over: Partial<PublicCreatorProfile> = {}): PublicCreatorPro
   };
 }
 
-function mockProfile(result: Partial<{ data: PublicCreatorProfile; isLoading: boolean; isError: boolean }>) {
+function mockProfile(
+  result: Partial<{ data: PublicCreatorProfile; isLoading: boolean; isError: boolean }>,
+) {
   vi.mocked(profileHook.usePublicCreatorProfile).mockReturnValue({
     data: undefined,
     isLoading: false,
@@ -109,7 +113,9 @@ describe('PublicCreatorProfilePage', () => {
   });
 
   it('igFetchStatus=PENDING mostra skeleton dos stats, sem quebrar a página', () => {
-    mockProfile({ data: makeProfile({ igFetchStatus: 'PENDING', followersCount: null, igEngagementRate: null }) });
+    mockProfile({
+      data: makeProfile({ igFetchStatus: 'PENDING', followersCount: null, igEngagementRate: null }),
+    });
     const { container } = renderPage();
 
     expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
@@ -148,7 +154,9 @@ describe('PublicCreatorProfilePage', () => {
   });
 
   it('usa o proxy same-origin quando igProfilePicUrl existe', () => {
-    mockProfile({ data: makeProfile({ igProfilePicUrl: 'https://scontent.cdninstagram.com/pic.jpg' }) });
+    mockProfile({
+      data: makeProfile({ igProfilePicUrl: 'https://scontent.cdninstagram.com/pic.jpg' }),
+    });
     const { container } = renderPage();
 
     // alt="" tira o role="img" implícito (decorativo) — precisa de querySelector.

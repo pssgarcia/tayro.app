@@ -128,9 +128,7 @@ describe('RegisterBrandPage', () => {
         niches: ['fitness', 'wellness'],
       }),
     );
-    await waitFor(() =>
-      expect(navigateMock).toHaveBeenCalledWith('/brand', { replace: true }),
-    );
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/brand', { replace: true }));
     expect(useAuthStore.getState().accessToken).toBe('tok-123');
   });
 
@@ -143,9 +141,7 @@ describe('RegisterBrandPage', () => {
     await fillAllSteps();
     fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
 
-    expect(
-      await screen.findByText(/já existe uma conta com esse e-mail/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/já existe uma conta com esse e-mail/i)).toBeInTheDocument();
     // O erro é do passo 2 (Acesso) — precisa ter voltado pra lá pra ficar visível.
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();

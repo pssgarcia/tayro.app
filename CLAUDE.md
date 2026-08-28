@@ -184,6 +184,12 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - **Cap de segmentos replicado:** a placa em destaque de Programas usava um segmento por vaga, igual à aba Briefing — acima de 12 vagas viram tiras de 2px. Mesma regra dos dois lados (proporcional acima de 12).
   - Os 167 testes de `pages/brand` passaram sem alteração nenhuma.
 
+- **Migração pro "Kinetic Editorial" — leva 5: perfis, público e auth (2026-08-28). Fecha a migração de TELAS.** Perfil da marca e da creator, `/influencer/browse` + `/programs` (compartilham o `ProgramsList`), `ProgramCard`, `ApplyModal`, `/apply/:id`, `/c/:handle`, Login, os dois cadastros, `/register` e `/claim`.
+  - **`PlateEditField`/`PlateEditNiches` migrados NO LUGAR** (viraram `kinetic/KineticEditField`/`KineticEditNiches`), sem criar irmão Kinetic: só as duas telas de Perfil os usavam, então não havia raio de alcance pra proteger — o oposto do `Plate` (21 telas) e do `PlateActionBar` (13), que justificaram os primitivos paralelos na leva 1.
+  - **`PlateActionBar` com `secondary`/`primary` condicional** (cadastros: `secondary={step > 0 ? {...} : undefined}`; `ApplyModal`: `primary` ternário) não cabia na conversão automática — viraram `actions={[...(cond ? [x] : []), cond ? a : b]}` à mão. O resto do lote saiu por script com um scanner de blocos JSX (o `/>` do `icon: <ArrowRight/>` enganava a contagem de chaves).
+  - **Sobra uma cauda de primitivos 2a, não de telas:** 8 órfãos com ZERO consumidores (`Plate`, `PlateActionBar`, `StatusPill`, `StatBlock`, `TabsUnderline`, `SegmentBar`, `ContentStatusPill`, `ProgressBar`) e 3 ainda usados com cara de 2a (`PlateField` ×6, `PlateTextarea` ×4, `NicheSelector` ×3). **Os tokens `plate`/`signal` seguem no `tailwind.config.ts` por causa desses 3** — não remover antes deles.
+  - 465 testes verdes sem alterar nenhum: esta leva não tocou comportamento.
+
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)

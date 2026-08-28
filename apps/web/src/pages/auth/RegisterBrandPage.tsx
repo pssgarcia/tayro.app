@@ -3,14 +3,14 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useStepGuard } from '../../hooks/useStepGuard';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import PlateField from '../../components/primitives/PlateField';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import NicheSelector from '../../components/primitives/NicheSelector';
 import { cn } from '../../lib/utils';
 
@@ -37,11 +37,7 @@ interface RegisterResponse {
 // PlateActionBar, pager de bolinhas só como indicador (não clicável).
 
 const STEPS = ['Identidade', 'Acesso', 'Nichos'] as const;
-const STEP_FIELDS: (keyof FormValues)[][] = [
-  ['brandName', 'website'],
-  ['email', 'password'],
-  [],
-];
+const STEP_FIELDS: (keyof FormValues)[][] = [['brandName', 'website'], ['email', 'password'], []];
 const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
   brandName: 0,
   website: 0,
@@ -103,7 +99,9 @@ export default function RegisterBrandPage() {
           setError('email', { message: 'Já existe uma conta com esse e-mail' });
           setStep(FIELD_STEP.email ?? STEPS.length - 1);
         } else if (status === 429) {
-          setError('root', { message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' });
+          setError('root', {
+            message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+          });
         } else if (status === 400) {
           setError('root', { message: 'Verifique os dados e tente novamente.' });
         } else {
@@ -121,17 +119,17 @@ export default function RegisterBrandPage() {
         tay<span className="text-lime">ro</span>
       </span>
 
-      <h1 className="font-display text-d-md leading-[1.02] text-foreground">
+      <h1 className="font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] leading-[1.02] text-foreground">
         Criar conta
         <br />
         da marca
       </h1>
-      <p className="mb-7 mt-2 text-[13px] text-[#75756E]">
+      <p className="mb-7 mt-2 text-[13px] text-kinetic-muted">
         Depois disso você já publica o primeiro programa.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Plate marks="top" flush>
+        <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             {step === 0 && (
               <>
@@ -178,7 +176,7 @@ export default function RegisterBrandPage() {
                       type="button"
                       tabIndex={-1}
                       onClick={() => setShowPassword((v) => !v)}
-                      className="shrink-0 text-[#8A8A84] transition-colors hover:text-plate-ink"
+                      className="shrink-0 text-[#8A8A84] transition-colors hover:text-black"
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -191,7 +189,7 @@ export default function RegisterBrandPage() {
 
             {step === 2 && (
               <div>
-                <p className="mb-3 text-[11px] text-plate-muted">Nichos da marca</p>
+                <p className="mb-3 text-[11px] text-[#6a6a64]">Nichos da marca</p>
                 <Controller
                   name="niches"
                   control={control}
@@ -205,26 +203,26 @@ export default function RegisterBrandPage() {
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
           </div>
 
-          <PlateActionBar
-            secondary={step > 0 ? { label: 'Voltar', onClick: back } : undefined}
-            primary={
+          <KineticActions
+            actions={[
+              ...(step > 0 ? [{ label: 'Voltar', onClick: back, width: 130 }] : []),
               step < STEPS.length - 1
                 ? {
                     label: 'Continuar',
-                    type: 'button',
+                    type: 'button' as const,
                     onClick: next,
                     disabled: isStepGuarded,
-                    icon: <ArrowRight size={16} />,
+                    primary: true,
                   }
                 : {
                     label: isSubmitting ? 'Criando conta…' : 'Criar conta',
-                    type: 'submit',
+                    type: 'submit' as const,
                     disabled: isSubmitting || isStepGuarded,
-                    icon: <ArrowRight size={16} />,
-                  }
-            }
+                    primary: true,
+                  },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
 
         <div className="mt-[18px] flex items-center justify-center gap-[7px]">
           {STEPS.map((label, i) => (
@@ -240,7 +238,7 @@ export default function RegisterBrandPage() {
         </div>
       </form>
 
-      <p className="mt-[26px] text-[13px] text-[#75756E]">
+      <p className="mt-[26px] text-[13px] text-kinetic-muted">
         Quer se candidatar em vez disso?{' '}
         <Link to="/register/influencer" className="font-medium text-lime hover:underline">
           Sou creator

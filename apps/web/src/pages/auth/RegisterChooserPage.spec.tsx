@@ -26,25 +26,24 @@ describe('RegisterChooserPage', () => {
   it('leva a creator para o cadastro de creator', () => {
     renderPage();
 
-    expect(
-      screen.getByRole('link', { name: /criar conta de creator/i }),
-    ).toHaveAttribute('href', '/register/influencer');
+    expect(screen.getByRole('link', { name: /criar conta de creator/i })).toHaveAttribute(
+      'href',
+      '/register/influencer',
+    );
   });
 
   it('leva a marca para o cadastro de marca', () => {
     renderPage();
 
-    expect(
-      screen.getByRole('link', { name: /criar conta de marca/i }),
-    ).toHaveAttribute('href', '/register/brand');
+    expect(screen.getByRole('link', { name: /criar conta de marca/i })).toHaveAttribute(
+      'href',
+      '/register/brand',
+    );
   });
 
   it('oferece saída para quem já tem conta', () => {
     renderPage();
 
-    expect(screen.getByRole('link', { name: /entrar/i })).toHaveAttribute(
-      'href',
-      '/login',
-    );
+    expect(screen.getByRole('link', { name: /entrar/i })).toHaveAttribute('href', '/login');
   });
 });

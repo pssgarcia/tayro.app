@@ -3,14 +3,14 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useClaimPreview } from '../../hooks/useClaimPreview';
-import Plate from '../../components/primitives/Plate';
+import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import PlateField from '../../components/primitives/PlateField';
-import PlateActionBar from '../../components/primitives/PlateActionBar';
+import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
 const schema = z.object({
   password: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
@@ -38,7 +38,7 @@ function InvalidLinkMessage({ message }: { message: string }) {
     <div>
       <Wordmark />
       <p className="text-sm text-destructive">{message}</p>
-      <p className="mt-[22px] text-xs leading-[1.5] text-[#6E6E68]">
+      <p className="mt-[22px] text-xs leading-[1.5] text-kinetic-muted">
         <Link to="/login" className="font-medium text-lime hover:underline">
           Entrar com e-mail
         </Link>
@@ -51,9 +51,9 @@ function PreviewSkeleton() {
   return (
     <div className="animate-pulse">
       <Wordmark />
-      <div className="mb-[10px] h-[60px] w-full rounded bg-secondary" />
-      <div className="mb-7 h-4 w-4/5 rounded bg-secondary" />
-      <div className="h-[220px] w-full rounded-lg bg-secondary" />
+      <div className="mb-[10px] h-[60px] w-full rounded bg-kinetic-dark" />
+      <div className="mb-7 h-4 w-4/5 rounded bg-kinetic-dark" />
+      <div className="h-[220px] w-full rounded-lg bg-kinetic-dark" />
     </div>
   );
 }
@@ -88,8 +88,7 @@ export default function ClaimAccountPage() {
     error: previewError,
   } = useClaimPreview(token, !(accessToken && user));
 
-  const previewInvalid =
-    axios.isAxiosError(previewError) && previewError.response?.status === 401;
+  const previewInvalid = axios.isAxiosError(previewError) && previewError.response?.status === 401;
 
   if (accessToken && user) {
     return <Navigate to="/influencer" replace />;
@@ -151,32 +150,31 @@ export default function ClaimAccountPage() {
     <div>
       <Wordmark />
 
-      <h1 className="mb-[10px] font-display text-d-md leading-[1.02] text-foreground">
+      <h1 className="mb-[10px] font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] leading-[1.02] text-foreground">
         Falta só
-        <br />
-        a senha.
+        <br />a senha.
       </h1>
-      <p className="mb-7 text-sm leading-[1.5] text-[#8A8A85]">
+      <p className="mb-7 text-sm leading-[1.5] text-kinetic-muted">
         {preview?.campaignTitle
           ? `Sua candidatura ao ${preview.campaignTitle} já foi enviada. Crie uma senha para acompanhar a resposta.`
           : 'Falta só isso para acessar sua conta e acompanhar suas candidaturas.'}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Plate marks="top" flush>
+        <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             {preview && (
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[4px] bg-plate-fill">
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[4px] bg-[#cfcfc8]">
                   {avatarSrc && (
                     <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate font-display text-[17px] font-bold tracking-[-.035em] text-plate-ink">
+                  <p className="truncate font-display text-[17px] font-bold tracking-[-.035em] text-black">
                     @{preview.instagramHandle}
                   </p>
-                  <p className="mt-1 truncate text-xs text-plate-muted">{preview.email}</p>
+                  <p className="mt-1 truncate text-xs text-[#6a6a64]">{preview.email}</p>
                 </div>
               </div>
             )}
@@ -192,7 +190,7 @@ export default function ClaimAccountPage() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="shrink-0 text-[#8A8A84] transition-colors hover:text-plate-ink"
+                  className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -203,18 +201,20 @@ export default function ClaimAccountPage() {
             {rootError && <p className="text-[13px] text-destructive">{rootError}</p>}
           </div>
 
-          <PlateActionBar
-            primary={{
-              label: isSubmitting ? 'Ativando…' : 'Ativar minha conta',
-              type: 'submit',
-              disabled: isSubmitting,
-              icon: <ArrowRight size={16} />,
-            }}
+          <KineticActions
+            actions={[
+              {
+                label: isSubmitting ? 'Ativando…' : 'Ativar minha conta',
+                type: 'submit',
+                disabled: isSubmitting,
+                primary: true,
+              },
+            ]}
           />
-        </Plate>
+        </KineticPlate>
       </form>
 
-      <p className="mt-[22px] text-xs leading-[1.5] text-[#6E6E68]">
+      <p className="mt-[22px] text-xs leading-[1.5] text-kinetic-muted">
         Link inválido ou expirado?{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
           Entrar com e-mail

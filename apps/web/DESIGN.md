@@ -152,8 +152,11 @@ Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignSt
 
 ### Estado da migração
 
-- **Kinetic:** os dois dashboards; TODA a área de programas da marca (lista, card, criar/editar, detalhe com as 4 abas e os 3 modais de ciclo de vida); e as telas da creator (Registro, Entregas, Recompensas, detalhe do programa).
-- **Ainda 2a:** auth (`/login`, cadastros, `/claim`), `/apply/:id`, `/programs`, `/c/:handle`, perfis de marca e creator, `/influencer/browse` + `ProgramCard`, `ApplyModal`.
+**Todas as telas estão em Kinetic** desde 2026-08-28. O que sobra do 2a é uma cauda de primitivos:
+
+- **Órfãos (0 consumidores, prontos pra apagar):** `Plate`, `PlateActionBar`, `StatusPill`, `StatBlock`, `TabsUnderline`, `SegmentBar`, `ContentStatusPill`, `ProgressBar`.
+- **Ainda usados, ainda com cara de 2a:** `PlateField` (6 telas), `PlateTextarea` (4), `NicheSelector` (3). São campos de formulário — a anatomia (rótulo + régua de 1px) já é a do Kinetic, o que falta é o rótulo virar mono caixa alta e o `NicheSelector` sair do `bg-plate-ink`. Enquanto eles existirem, **os tokens `plate`/`signal` não podem ser removidos** do `tailwind.config.ts`.
+- **Neutros de design, ficam:** `CountUp` (9), `EmptyState` (2), `ThumbGrid` (1).
 
 ## Colors
 
