@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import KineticPlate from './KineticPlate';
 import KineticActions from './KineticActions';
-import PlateField from '../PlateField';
-import PlateTextarea from '../PlateTextarea';
+import KineticField from './KineticField';
+import KineticTextarea from './KineticTextarea';
 import { cn } from '../../../lib/utils';
 
 // Row (rótulo + valor + chevron) que abre um modal placa-formulário de campo
@@ -87,7 +87,7 @@ export default function KineticEditField({
             <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
               <div className="px-6 pb-7 pt-11">
                 {multiline ? (
-                  <PlateTextarea
+                  <KineticTextarea
                     id={fieldId}
                     label={label}
                     variant="plate"
@@ -97,7 +97,7 @@ export default function KineticEditField({
                     autoFocus
                   />
                 ) : (
-                  <PlateField
+                  <KineticField
                     id={fieldId}
                     label={label}
                     variant="plate"

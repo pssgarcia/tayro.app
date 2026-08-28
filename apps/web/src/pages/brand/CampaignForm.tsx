@@ -10,16 +10,16 @@ import { formatCurrency } from '../../utils/format';
 import { cn } from '../../lib/utils';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
-import PlateField from '../../components/primitives/PlateField';
-import PlateTextarea from '../../components/primitives/PlateTextarea';
-import NicheSelector from '../../components/primitives/NicheSelector';
+import KineticField from '../../components/primitives/kinetic/KineticField';
+import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
+import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
 
 // Formulário do programa, compartilhado por "Novo programa" e "Editar
 // programa". Extraído do NewCampaignPage quando a edição ganhou tela —
 // duplicar ~200 linhas de form + prévia era garantia de os dois divergirem na
 // primeira mudança de campo.
 
-// ─── Segmentado CASH/PRODUCT — trilha transparente, ativo bg-plate ──────────
+// ─── Segmentado CASH/PRODUCT — blocos retos, ativo em lime ──────────────────
 
 function OfferTypeToggle({
   value,
@@ -120,21 +120,21 @@ export default function CampaignForm({
           O programa
         </h2>
         <div className="flex flex-col gap-6">
-          <PlateField
+          <KineticField
             label="Título"
             required
             placeholder="Ex: Verão Fitness 2026"
             error={errors.title?.message}
             {...register('title')}
           />
-          <PlateTextarea
+          <KineticTextarea
             label="Descrição"
             required
             placeholder="O que você espera do conteúdo, que tipo de post quer, qual é a vibe da marca…"
             error={errors.description?.message}
             {...register('description')}
           />
-          <PlateField
+          <KineticField
             label="Link do brief (opcional)"
             type="url"
             placeholder="https://drive.google.com/…"
@@ -158,7 +158,7 @@ export default function CampaignForm({
           </div>
           <div className="flex gap-[22px]">
             <div className="flex-1">
-              <PlateField
+              <KineticField
                 label="Vagas"
                 required
                 type="number"
@@ -169,7 +169,7 @@ export default function CampaignForm({
               />
             </div>
             <div className="flex-1">
-              <PlateField
+              <KineticField
                 label="Inscrições até"
                 type="date"
                 error={errors.deadline?.message}
@@ -192,7 +192,7 @@ export default function CampaignForm({
 
         <div className="flex flex-col gap-6">
           {offerType === 'CASH' ? (
-            <PlateField
+            <KineticField
               label="Valor (R$)"
               required
               type="number"
@@ -204,7 +204,7 @@ export default function CampaignForm({
               {...register('offerAmountBRL')}
             />
           ) : offerType === 'PRODUCT' ? (
-            <PlateTextarea
+            <KineticTextarea
               label="Descrição do produto"
               required
               placeholder="Ex: Kit Whey 900g + coqueteleira da marca"
@@ -212,7 +212,7 @@ export default function CampaignForm({
               {...register('offerDescription')}
             />
           ) : (
-            <PlateField
+            <KineticField
               label="Comissão (%)"
               required
               type="number"
@@ -227,7 +227,7 @@ export default function CampaignForm({
           )}
 
           <div className="w-[110px]">
-            <PlateField
+            <KineticField
               label={
                 offerType === 'PRODUCT' ? 'Prazo p/ envio (dias)' : 'Prazo p/ pagamento (dias)'
               }

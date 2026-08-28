@@ -103,7 +103,7 @@ O sistema nasceu de um antecessor mais barulhento (direção "1c") e o redesign 
 
 ## Kinetic Editorial — a direção atual
 
-> **Leia isto antes do resto.** Tudo abaixo desta seção descreve o **redesign 2a**, que está sendo substituído. O 2a continua valendo — e seus tokens `plate`/`signal` **não podem ser removidos** — enquanto houver tela não migrada.
+> **Leia isto antes do resto.** Tudo abaixo desta seção descreve o **redesign 2a**, que foi **REMOVIDO do código em 2026-08-28** — tokens `plate`/`signal`, escala `d-*`, sombras de placa e os 9 primitivos. Fica como registro de onde o sistema veio; nada ali existe mais no `tailwind.config.ts`, então classe copiada de lá não vai renderizar.
 
 "Kinetic Editorial" foi aprovada em 2026-08-16 a partir de dois mockups do Pedro e é a direção padrão do produto daqui pra frente. Estreou na aba Fila e está sendo estendida ao resto em levas.
 
@@ -152,11 +152,18 @@ Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignSt
 
 ### Estado da migração
 
-**Todas as telas estão em Kinetic** desde 2026-08-28. O que sobra do 2a é uma cauda de primitivos:
+**Todas as telas estão em Kinetic** desde 2026-08-28, e o 2a foi removido do código no mesmo dia:
 
-- **Órfãos (0 consumidores, prontos pra apagar):** `Plate`, `PlateActionBar`, `StatusPill`, `StatBlock`, `TabsUnderline`, `SegmentBar`, `ContentStatusPill`, `ProgressBar`.
-- **Ainda usados, ainda com cara de 2a:** `PlateField` (6 telas), `PlateTextarea` (4), `NicheSelector` (3). São campos de formulário — a anatomia (rótulo + régua de 1px) já é a do Kinetic, o que falta é o rótulo virar mono caixa alta e o `NicheSelector` sair do `bg-plate-ink`. Enquanto eles existirem, **os tokens `plate`/`signal` não podem ser removidos** do `tailwind.config.ts`.
-- **Neutros de design, ficam:** `CountUp` (9), `EmptyState` (2), `ThumbGrid` (1).
+- **Apagados** (9 primitivos, zero consumidores): `Plate`, `PlateActionBar`, `StatusPill`, `StatBlock`, `TabsUnderline`, `SegmentBar`, `ContentStatusPill`, `ProgressBar`, `Avatar`.
+- **Migrados e movidos pra `primitives/kinetic/`:** `PlateField` → `KineticField`, `PlateTextarea` → `KineticTextarea`, e o `NicheSelector` (que ganhou `aria-pressed` — era um toggle que só comunicava estado por cor).
+- **Removidos do `tailwind.config.ts`:** os tokens `plate.*` e `signal.*`, a escala de display `d-*` e as sombras `plate`/`plate-lg`.
+- **`primitives/` ficou só com o que é neutro de design:** `CountUp`, `EmptyState`, `ThumbGrid`. Tudo que carrega a identidade vive em `primitives/kinetic/`.
+
+---
+
+# Redesign 2a — REMOVIDO (histórico)
+
+> Nada abaixo existe mais no código. Mantido como registro da direção anterior e do raciocínio por trás dela. Para o sistema vivo, ver a seção "Kinetic Editorial" acima.
 
 ## Colors
 

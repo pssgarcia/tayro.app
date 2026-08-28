@@ -202,6 +202,12 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - **Método que funcionou:** medir overflow por DOM (`scrollWidth` vs `clientWidth` + varredura de elementos além do viewport), com a URL conferida no mesmo retorno. Screenshot em viewport estreito volta em metade da resolução e some com texto pequeno — quase reportei uma tela "vazia" que estava correta. **Todos os achados de proporção e peso visual vieram do Pedro, não da ferramenta.**
   - **Programas abertos viraram grade de cards** (pedido dele olhando o 360): em card o par título + oferta se lê de relance, e a oferta ganha escala de display em vez de um número de 13px na ponta da linha. Specs `rewards` e `creator-discovery-and-apply` atualizadas no mesmo passo.
 
+- **2a removido do código (2026-08-28) — fim da migração.** Com as 31 telas em Kinetic, a cauda do redesign anterior saiu: **9 primitivos apagados** com zero consumidores (`Plate`, `PlateActionBar`, `StatusPill`, `StatBlock`, `TabsUnderline`, `SegmentBar`, `ContentStatusPill`, `ProgressBar`, `Avatar` — este último órfão desde antes), os tokens `plate.*`/`signal.*`, a escala de display `d-*` e as sombras `plate`/`plate-lg` fora do `tailwind.config.ts`.
+  - **Os 3 que ainda tinham consumidor foram migrados, não apagados:** `PlateField` → `kinetic/KineticField`, `PlateTextarea` → `kinetic/KineticTextarea`, e o `NicheSelector` foi pra `kinetic/`. Rótulo de campo virou mono caixa alta, igual ao resto do sistema.
+  - **`primitives/` agora tem só o que é neutro de design** (`CountUp`, `EmptyState`, `ThumbGrid`); tudo que carrega identidade vive em `primitives/kinetic/`. É o critério pra decidir onde um primitivo novo nasce.
+  - **Achado de acessibilidade no caminho:** o `NicheSelector` era um toggle que comunicava estado **só por cor** — sem `aria-pressed`, quem usa leitor de tela não tinha como saber quais nichos estavam marcados. Corrigido. O teste do Perfil da marca, que era a ÚNICA asserção de classe de cor da suíte (`bg-plate-ink`), passou a afirmar `aria-pressed` — semântica em vez de hex, então não quebra no próximo ajuste de paleta.
+  - 467 testes verdes, build ok. `DESIGN.md`: a seção do 2a virou histórico marcado, com aviso de que nada ali existe mais no código — classe copiada de lá não renderiza.
+
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)
