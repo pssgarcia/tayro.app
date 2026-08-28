@@ -283,7 +283,7 @@ export default function PublicApplyPage() {
                   {campaign.offerDeadlineDays != null && (
                     <>
                       <div className="mb-5 mt-[22px] h-px bg-[#c9c9c3]" />
-                      <div className="flex gap-[30px]">
+                      <div className="grid grid-cols-2 gap-6">
                         <div>
                           <CountUp>
                             <span className="font-display text-[40px] font-bold leading-[.85] tracking-[-.05em] text-black tabular-nums">

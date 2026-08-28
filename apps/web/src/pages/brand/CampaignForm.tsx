@@ -243,7 +243,7 @@ export default function CampaignForm({
         <p className="mb-4 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
           Prévia da oferta
         </p>
-        <KineticPlate marks="all" className="px-6 pb-8 pt-11 sm:px-8">
+        <KineticPlate marks="all" className="p-8">
           <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
             O que você recebe
           </p>
@@ -261,7 +261,7 @@ export default function CampaignForm({
           </p>
 
           <div className="my-7 h-px bg-[#c9c9c3]" />
-          <div className="flex flex-wrap gap-x-12 gap-y-6">
+          <div className="grid grid-cols-2 gap-6">
             <StatFigure
               label={offerType === 'PRODUCT' ? 'dias até o envio' : 'dias até o pagamento'}
               value={watchedDeadlineDays || '—'}

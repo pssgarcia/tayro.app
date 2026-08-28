@@ -69,7 +69,7 @@ describe('BrowseProgramsPublicPage', () => {
     });
     renderPage();
 
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
       'href',
       '/apply/camp-1',
     );
@@ -87,7 +87,7 @@ describe('BrowseProgramsPublicPage', () => {
     });
     renderPage();
 
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
       'href',
       '/influencer/programs/camp-1',
     );
@@ -105,7 +105,7 @@ describe('BrowseProgramsPublicPage', () => {
     });
     renderPage();
 
-    expect(screen.getByRole('link', { name: /ver programa/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /lançamento whey/i })).toHaveAttribute(
       'href',
       '/apply/camp-1',
     );
