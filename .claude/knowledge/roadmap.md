@@ -82,6 +82,23 @@ número é trabalho de 10 minutos e é a única evidência de funil que o produt
 
 ## PRÓXIMO — antes do lançamento
 
+### Paridade mobile da Fila — ver aprovadas/recusadas no celular `[EM IMPLEMENTAÇÃO — ratificado 2026-08-27]`
+`[FATO — verificado 2026-08-27]` A Fila **desktop** (`CampaignFilaTab`) lista toda candidatura de
+qualquer status; a Fila **mobile** (`CampaignPipelineMobileStory`) filtra `status === 'PENDING'`
+e **não tem superfície nenhuma** pra ver quem já foi aprovado ou recusado. Como o produto é
+mobile-first (`D-10`), a marca que opera do celular — o dispositivo assumido como primário —
+fica sem enxergar o próprio elenco da campanha. É a dor nº 2 da Marina (`personas.md`:
+"perde o fio de quem já está dentro"), e no mobile ela hoje não tem resposta alguma.
+**Escopo mínimo:** um filtro/aba de status na revisão mobile (ou uma lista simples fora do modo
+Story), reaproveitando a query e as mutations que já vivem em `CampaignFilaTab`. Não é tela nova
+nem roster cross-campanha — é paridade com o que o desktop já faz.
+**Ratificado pelo Pedro em 2026-08-27** e puxado pra implementação imediata (branch
+`feature/fila-mobile-paridade-status`) apesar de não haver marca real — o argumento que venceu o
+"não é AGORA" é `D-10`: um produto mobile-first que esconde metade do dado no celular é buraco,
+não backlog. Cadastro manual de creator pela marca foi avaliado junto e **rejeitado** (contradiz
+`vision.md` nº 3, adiciona trabalho manual, adjacente a `D-B`); ver `decisions.md` → propostas
+rejeitadas, 2026-08-27.
+
 ### LGPD — levantamento 2026-08-14 (Pedro: "importante, mas não agora")
 
 Auditoria dos direitos que a lei nomeia contra o que o código faz hoje. **Não é opinião jurídica**

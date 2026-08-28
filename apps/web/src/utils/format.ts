@@ -1,3 +1,17 @@
+import type { ApplicationStatus } from '../types/api';
+
+/**
+ * Rótulo em português de cada status de candidatura, no feminino (concorda com
+ * "candidatura"). Fonte única — usado pela lista Pipeline do desktop e pela
+ * lista "Todas" da revisão mobile.
+ */
+export const applicationStatusWord: Record<ApplicationStatus, string> = {
+  PENDING: 'Pendente',
+  APPROVED: 'Aprovada',
+  REJECTED: 'Recusada',
+  WITHDRAWN: 'Retirada',
+};
+
 /**
  * Alfabeto aceito pro handle do Instagram: letras, números, ponto e
  * underscore, sem @, até 30 caracteres.
