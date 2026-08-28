@@ -280,7 +280,7 @@ export default function CampaignForm({
 
         {errorMessage && <p className="mt-6 text-sm text-destructive">{errorMessage}</p>}
 
-        <div className="mb-5 mt-9 flex">
+        <div className="mb-5 mt-9 flex gap-3">
           <button
             type="button"
             onClick={onCancel}
