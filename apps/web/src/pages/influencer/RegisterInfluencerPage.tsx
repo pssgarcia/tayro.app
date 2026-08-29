@@ -144,6 +144,8 @@ export default function RegisterInfluencerPage() {
         : instagramHandleAlreadyChecked && handleCheck.result === 'UNKNOWN'
           ? 'Não deu para confirmar agora — você pode continuar'
           : undefined;
+  const instagramHandleHintTone =
+    instagramHandleAlreadyChecked && handleCheck.result === 'FOUND' ? 'success' : 'muted';
 
   function back() {
     setStep((s) => Math.max(s - 1, 0));
@@ -241,6 +243,7 @@ export default function RegisterInfluencerPage() {
                   autoCorrect="off"
                   error={errors.instagramHandle?.message}
                   hint={instagramHandleHint}
+                  hintTone={instagramHandleHintTone}
                   {...instagramHandleField}
                   onBlur={handleInstagramHandleBlur}
                   onChange={handleInstagramHandleChange}

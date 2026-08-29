@@ -97,8 +97,17 @@ export class RapidApiInstagramProvider implements InstagramProvider {
     try {
       const res = await this.fetchRaw(url, this.handleCheckTimeoutMs);
       if (res.status === 404) {
-        this.cache.set(handle, { kind: 'not_found' });
-        return 'NOT_FOUND';
+        // A API responde 404 tanto pra @ que realmente não existe QUANTO pra
+        // conta real que ela não consegue ler (verificado em prod:
+        // `ramondinopro`, ~7M seguidores, verificada → 404). Só o corpo de
+        // erro explícito do Instagram distingue os dois casos. 404 sem esse
+        // corpo é ambíguo → UNKNOWN, que libera o envio (regra da spec:
+        // "não existe" só com resposta conclusiva).
+        if (await this.isConclusiveNotFound(res)) {
+          this.cache.set(handle, { kind: 'not_found' });
+          return 'NOT_FOUND';
+        }
+        return 'UNKNOWN';
       }
       if (!res.ok) return 'UNKNOWN';
 
@@ -111,6 +120,27 @@ export class RapidApiInstagramProvider implements InstagramProvider {
     } catch {
       // timeout (AbortController) ou falha de rede — indeterminado, nunca "não existe".
       return 'UNKNOWN';
+    }
+  }
+
+  /**
+   * Um 404 do provedor só conta como "não existe" quando o corpo traz a
+   * mensagem de erro explícita do Instagram ("We're sorry, we couldn't find
+   * that."). 404 com corpo diferente, vazio ou não-JSON é indeterminado —
+   * costuma ser rate limit disfarçado ou conta que a API não consegue raspar.
+   */
+  private async isConclusiveNotFound(res: Response): Promise<boolean> {
+    try {
+      const body = (await res.json()) as { error?: unknown; message?: unknown };
+      const text = [body?.error, body?.message]
+        .filter((v): v is string => typeof v === 'string')
+        .join(' ')
+        .toLowerCase();
+      return /couldn'?t find|not found|does ?n'?t exist|no such user|user not found/.test(
+        text,
+      );
+    } catch {
+      return false;
     }
   }
 
