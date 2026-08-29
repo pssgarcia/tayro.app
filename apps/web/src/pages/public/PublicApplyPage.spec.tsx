@@ -315,6 +315,18 @@ describe('PublicApplyPage — verificação do @ do Instagram', () => {
     expect(api.get).toHaveBeenCalledWith('/ig/handle/anafit');
   });
 
+  it('desfecho "existe": mostra "Perfil encontrado" em verde', async () => {
+    const user = userEvent.setup();
+    renderPageComHandleCheck('FOUND');
+    await screen.findByText('Lilo');
+
+    await user.type(screen.getByLabelText(/@ do instagram/i), 'anafit');
+    await user.click(screen.getByLabelText(/e-mail/i)); // blur do handle
+
+    const hint = await screen.findByText(/perfil encontrado no instagram/i);
+    expect(hint).toHaveClass('text-[#1EDB8C]');
+  });
+
   it('corrigir o @ depois de um bloqueio permite enviar de novo', async () => {
     const user = userEvent.setup();
     vi.mocked(api.get).mockImplementation((url: string) => {

@@ -249,12 +249,46 @@ describe('RapidApiInstagramProvider', () => {
       await expect(provider.checkHandle('pitringym')).resolves.toBe('FOUND');
     });
 
-    it('devolve NOT_FOUND numa resposta 404 conclusiva', async () => {
-      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+    it('devolve NOT_FOUND num 404 com o corpo de erro conclusivo do Instagram', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: () =>
+          Promise.resolve({
+            status: 'error',
+            error: "We're sorry, we couldn't find that.",
+          }),
+      });
 
       const provider = makeProvider(makeConfig());
       await expect(provider.checkHandle('naoexiste')).resolves.toBe(
         'NOT_FOUND',
+      );
+    });
+
+    it('devolve UNKNOWN num 404 SEM corpo de erro conclusivo — pode ser conta real que a API não consegue ler (ex.: ramondinopro em prod)', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ message: 'Not authorized' }),
+      });
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('ramondinopro')).resolves.toBe(
+        'UNKNOWN',
+      );
+    });
+
+    it('devolve UNKNOWN num 404 com corpo não-JSON', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: () => Promise.reject(new SyntaxError('Unexpected token <')),
+      });
+
+      const provider = makeProvider(makeConfig());
+      await expect(provider.checkHandle('ramondinopro')).resolves.toBe(
+        'UNKNOWN',
       );
     });
 
@@ -315,7 +349,15 @@ describe('RapidApiInstagramProvider', () => {
       const cache = new IgProfileCache(config);
       const provider = makeProvider(config, cache);
 
-      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: () =>
+          Promise.resolve({
+            status: 'error',
+            error: "We're sorry, we couldn't find that.",
+          }),
+      });
       const primeira = await provider.checkHandle('naoexiste');
       const segunda = await provider.checkHandle('naoexiste');
 
@@ -385,7 +427,15 @@ describe('RapidApiInstagramProvider', () => {
       const cache = new IgProfileCache(config);
       const provider = makeProvider(config, cache);
 
-      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: () =>
+          Promise.resolve({
+            status: 'error',
+            error: "We're sorry, we couldn't find that.",
+          }),
+      });
       await expect(provider.checkHandle('naoexiste')).resolves.toBe(
         'NOT_FOUND',
       );

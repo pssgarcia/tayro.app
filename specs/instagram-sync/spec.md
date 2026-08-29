@@ -100,6 +100,12 @@ recusa e a imagem some da tela. É por isso que o sistema guarda os bytes, e nã
   esgotado, resposta ambígua ou teto de consumo atingido resultam em **indeterminado**, nunca em
   "não existe". Acusar o @ de alguém de inexistente porque o provedor está instável barra uma
   creator legítima, e esse erro custa mais que deixar passar um @ errado.
+- **O `404` do provedor, sozinho, não é conclusivo.** A RapidAPI devolve `404` tanto para um @
+  que realmente não existe quanto para uma conta real que ela não consegue ler (verificado em
+  produção em 2026-08-29: `ramondinopro`, ~7M seguidores, conta verificada → `404`). Só conta
+  como "não existe" o `404` cujo corpo traz a mensagem de erro explícita do Instagram
+  (`"We're sorry, we couldn't find that."`); `404` com corpo vazio, não-JSON ou outra mensagem
+  é **indeterminado**.
 - A verificação **nunca consulta dados do TAYRO e nunca devolve dado de perfil** (seguidores,
   foto, feed). A resposta é o desfecho e nada mais. Ela também não diz se o @ já pertence a
   alguma conta do TAYRO — isso é outra pergunta, respondida no envio do cadastro/candidatura
@@ -270,20 +276,21 @@ Verificação de existência de @:
 - Verificação acima do limite por origem → `429`.
 - Provedor fora do ar, lento ou respondendo algo inesperado durante uma verificação → `200` com
   desfecho "indeterminado". Erro de terceiro nunca vira `5xx` nosso nem stack trace na resposta.
+- Provedor responde `404` sem o corpo de erro conclusivo do Instagram (conta real que ele não
+  consegue ler, rate limit disfarçado) → desfecho "indeterminado", não "não existe".
 - Teto global de consultas por minuto atingido → `200` com "indeterminado"; nenhuma requisição
   externa é feita.
 
 ## Known Gaps
-- **(RESOLVIDO 2026-08-27) Mapeamento do provedor real pra "não existe" estava sem observação —
-  agora está confirmado.** Testado com `curl` direto contra a RapidAPI (chave do `.env` local):
-  um @ inexistente de formato válido (≤30 chars) devolve `404` com corpo
-  `{"status":"error","error":"We're sorry, we couldn't find that."}`, batendo com o mapeamento
-  implementado (`404` → `NOT_FOUND`). **Achado no processo:** a 1ª tentativa usou um handle de
-  38 caracteres (acima do limite de 30 do Instagram) e voltou `400` — formato inválido, não
-  inexistência — o que teria sido um sinal falso se aceito sem reteste com um handle de tamanho
-  válido. Falta ainda repetir a checagem uma vez em produção com tráfego real (não por dúvida
-  sobre o mapeamento, mas porque nenhuma chamada real em prod tinha acontecido até aqui) — ver
-  `decisions.md` `D-19`.
+- **(RESOLVIDO 2026-08-29) O mapeamento `404 → NOT_FOUND` era cru demais e gerava falso
+  negativo em produção.** A verificação em prod com tráfego real (que faltava fazer) mostrou
+  que `ramondinopro` (~7M seguidores, conta verificada e real) responde `404` — a RapidAPI não
+  consegue ler certas contas e devolve o mesmo status de "não existe". O código bloqueava a
+  candidatura dessa creator. **Fix:** `checkHandle` passou a exigir o corpo de erro explícito
+  do Instagram (`"couldn't find that"` / equivalentes) para afirmar `NOT_FOUND`; qualquer outro
+  `404` vira `UNKNOWN` e **libera** o envio. O `404` conclusivo de um @ realmente inexistente
+  (corpo `{"status":"error","error":"We're sorry, we couldn't find that."}`, confirmado por
+  `curl` em 2026-08-27) continua bloqueando. Ver `decisions.md` `D-19`.
 - **O reaproveitamento da consulta de perfil vive na memória do processo.** Se a API rodar em mais
   de uma instância, ou reiniciar entre a verificação e a candidatura, o reaproveitamento
   simplesmente não acontece e paga-se o perfil duas vezes. É degradação silenciosa, sem quebra
@@ -359,8 +366,9 @@ Persistência de imagem (a escrever **antes** do código):
       imagem; a grade de posts aponta para o TAYRO, não para a CDN.
 
 Verificação de existência de @:
-- [x] Provedor real: `404` conclusivo → "não existe"; `5xx`, tempo esgotado e corpo sem
-      identificador de perfil → "indeterminado".
+- [x] Provedor real: `404` **com o corpo de erro explícito do Instagram** → "não existe";
+      `404` sem esse corpo (vazio, não-JSON, ou outra mensagem) → "indeterminado"; `5xx`, tempo
+      esgotado e corpo sem identificador de perfil → "indeterminado".
       (`rapidapi.instagram.provider.spec.ts` → `describe('checkHandle')`)
 - [x] Provedor real: nenhuma nova tentativa em cadeia na verificação (diferente da busca de
       perfil da sincronização, que tem retentativas) — a pessoa está esperando na tela.
@@ -439,6 +447,13 @@ Verificação de existência de @:
   post — a fórmula descrita dava o dobro do valor real.)
 
 ## Change History
+- 2026-08-29 · **fix de falso negativo na verificação de @.** A checagem em produção com tráfego
+  real (que a entrada de 2026-08-27 dizia faltar) revelou que a RapidAPI responde `404` para
+  contas reais que ela não consegue ler — `ramondinopro`, ~7M seguidores, verificada, era
+  bloqueada. `RapidApiInstagramProvider.checkHandle` passou a exigir o corpo de erro explícito
+  do Instagram para afirmar `NOT_FOUND`; `404` sem esse corpo → `UNKNOWN` (libera o envio).
+  Frontend: o hint "Perfil encontrado no Instagram" agora aparece em verde (`KineticField`
+  ganhou `hintTone`). Ver `decisions.md` `D-19`.
 - 2026-08-27 · **implementada** a verificação de existência de um @ desenhada em 2026-08-26 (ver
   entrada abaixo pro desenho). `GET /ig/handle/:handle`, `IgProfileCache`, `checkHandle` nos dois
   providers, `InstagramSyncService.refresh` repassando `allowCached: !force`. Mapeamento

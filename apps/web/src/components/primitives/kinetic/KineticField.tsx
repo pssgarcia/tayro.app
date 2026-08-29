@@ -25,10 +25,12 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefi
   suffix?: React.ReactNode;
   /** Ex.: "Mínimo 8 caracteres" — some com error, error tem prioridade. */
   hint?: string;
+  /** Tom do hint. `success` (verde) para confirmação positiva, ex.: "@ encontrado". */
+  hintTone?: 'muted' | 'success';
 }
 
 const KineticField = forwardRef<HTMLInputElement, Props>(function KineticField(
-  { label, variant = 'dark', error, required, prefix, suffix, hint, id, className, ...props },
+  { label, variant = 'dark', error, required, prefix, suffix, hint, hintTone = 'muted', id, className, ...props },
   ref,
 ) {
   const isPlate = variant === 'plate';
@@ -84,7 +86,20 @@ const KineticField = forwardRef<HTMLInputElement, Props>(function KineticField(
       {error ? (
         <span className="mt-1.5 block text-[11px] text-destructive">{error}</span>
       ) : (
-        hint && <span className="mt-1.5 block text-[11px] text-[#8A8A84]">{hint}</span>
+        hint && (
+          <span
+            className={cn(
+              'mt-1.5 block text-[11px]',
+              hintTone === 'success'
+                ? isPlate
+                  ? 'text-[#0B8F57]' // verde escuro — legível sobre a placa clara
+                  : 'text-[#1EDB8C]' // verde de sucesso do design system, sobre o fundo escuro
+                : 'text-[#8A8A84]',
+            )}
+          >
+            {hint}
+          </span>
+        )
       )}
     </div>
   );
