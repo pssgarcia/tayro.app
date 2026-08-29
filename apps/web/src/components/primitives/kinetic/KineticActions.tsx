@@ -6,7 +6,7 @@ import { cn } from '../../../lib/utils';
 // separados por 1px. Substitui o `PlateActionBar` do 2a (split bar com
 // secundário de largura fixa + primário quase-preto em Space Grotesk): aqui
 // todo botão é mono caixa alta e o primário é lime, exatamente como o
-// Aprovar/Descartar que a Fila já usa em produção.
+// Aprovar/Recusar que a Fila já usa em produção.
 //
 // Vive sobre a placa CLARA por padrão. `dark` troca o ghost pra fundo escuro
 // (a landing usa a barra no hero, fora de placa) — o bloco primário lime é o
@@ -14,6 +14,9 @@ import { cn } from '../../../lib/utils';
 
 export interface KineticAction {
   label: string;
+  /** Ícone à esquerda do rótulo. Usado pra dizer PRA ONDE a ação leva quando o
+   *  destino é externo (o CTA de WhatsApp), não como enfeite. */
+  icon?: React.ReactNode;
   onClick?: () => void;
   /** Navegação interna — renderiza <Link> com o visual idêntico. */
   to?: string;
@@ -66,6 +69,7 @@ export default function KineticActions({ actions, dark, className }: Props) {
               className={look}
               style={style}
             >
+              {action.icon}
               {action.label}
             </a>
           );
@@ -88,6 +92,7 @@ export default function KineticActions({ actions, dark, className }: Props) {
             className={look}
             style={style}
           >
+            {action.icon}
             {action.label}
           </button>
         );
