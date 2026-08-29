@@ -45,6 +45,21 @@ describe('KineticActions', () => {
     );
   });
 
+  // `href` é a variante da landing: WhatsApp é URL absoluta, e <Link> a
+  // transformaria num caminho relativo quebrado.
+  it('renderiza <a> em nova aba quando a ação é link externo', () => {
+    render(
+      <KineticActions
+        actions={[{ label: 'Quero conversar', href: 'https://wa.me/5537999931492', primary: true }]}
+      />,
+    );
+
+    const link = screen.getByRole('link', { name: 'Quero conversar' });
+    expect(link).toHaveAttribute('href', 'https://wa.me/5537999931492');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+
   it('só o bloco primário fica em lime', () => {
     render(
       <KineticActions

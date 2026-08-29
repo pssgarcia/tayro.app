@@ -139,7 +139,7 @@ Onde o 2a é contido e silencioso, o Kinetic é **editorial**: tipografia mais o
 2. **Lime é ação, não decoração** — botão primário, nav ativa, crop marks e status que pede decisão sua. Nada mais.
 3. **Mono só em rótulo e status** — JetBrains Mono caixa alta identifica metadado. Título e texto corrido, nunca.
 4. **Controle não tem canto arredondado** — botão, tag e campo são retos. Só a placa e o avatar guardam raio.
-5. **Foto p&b sobre a placa clara** — fora dela (hero do Story mobile, grade do feed), a cores.
+5. **Foto p&b sobre a placa clara** — fora dela (hero do Story mobile, grade do feed), a cores. **Exceção: a landing (`/`) usa foto COLORIDA também sobre a placa** — decisão do Pedro em 2026-08-29, vale só ali. Nas telas do produto a regra continua valendo.
 6. **Tudo em português** — inglês sobrou só em nome de token e de variável. Ver `CLAUDE.md` → Design system.
 
 ### Caixa alta vem do CSS, não do texto
@@ -149,6 +149,10 @@ Rótulo mono é escrito em minúsculas no JSX e sobe pra caixa alta com `upperca
 ### Status: um vocabulário só
 
 Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignStatusWord`, `contentStatusWord`, `rewardStatusWord`) e são a fonte única. A migração unificou o vocabulário: onde o 2a dizia "Análise"/"Fechada" para candidatura, o Kinetic diz **"Pendente"/"Aprovada"** — as mesmas palavras que a marca já lê na Fila. Conteúdo concorda no masculino ("Aprovado"); candidatura, campanha e recompensa no feminino. A exceção deliberada é o `creatorRewardStatusWord`: o MESMO status de recompensa dito da ótica de quem espera ("A receber"/"A caminho") em vez da de quem paga ("Pendente"/"Emitida"). Não unificar — são perspectivas, não drift. Recompensa é o único domínio com **dois** estados acionáveis (`PENDING` pede emitir, `ISSUED` pede confirmar entrega) — os dois saem em lime.
+
+### A landing tem componentes próprios
+
+`/` é a única superfície com componentes de identidade FORA de `components/primitives/kinetic/`: eles vivem em `pages/public/landing/` e são locais de propósito. A landing é uma peça de marketing com anatomia própria (placa de candidatura decorativa, Story de demonstração, o ciclo dos dois lados) que não se repete no produto — promover isso a primitivo compartilhado criaria API pra um consumidor só. Se algum dia uma segunda tela precisar da mesma peça, aí sim ela sobe pra `primitives/kinetic/`.
 
 ### Estado da migração
 

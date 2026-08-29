@@ -235,7 +235,7 @@ describe('CampaignPipelineMobileStory — decisão e tally', () => {
     const reject = makeMutation({ mutate: vi.fn() });
     const { rerender, props } = renderStory([makeApplication('a', { name: 'Ana' })], { reject });
 
-    fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /recusar/i }));
     const confirmada = [makeApplication('a', { name: 'Ana', status: 'REJECTED' })];
     rerender(<CampaignPipelineMobileStory {...props} applications={confirmada} />);
     rerender(<CampaignPipelineMobileStory {...props} applications={confirmada} />);
@@ -247,7 +247,7 @@ describe('CampaignPipelineMobileStory — decisão e tally', () => {
     const reject = makeMutation({ mutate: vi.fn() });
     const { rerender, props } = renderStory([makeApplication('a')], { reject });
 
-    fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /recusar/i }));
     expect(reject.mutate).toHaveBeenCalledWith('a');
 
     rerender(
@@ -279,7 +279,7 @@ describe('CampaignPipelineMobileStory — decisão e tally', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /recusar/i }));
     rerender(
       <CampaignPipelineMobileStory
         {...props}
@@ -314,7 +314,7 @@ describe('CampaignPipelineMobileStory — decisão e tally', () => {
     renderStory([makeApplication('a')], { approve });
 
     expect(screen.getByRole('button', { name: /aprovando/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /descartar/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /recusar/i })).toBeDisabled();
   });
 });
 
@@ -412,14 +412,14 @@ describe('CampaignPipelineMobileStory — modo "Todas" (paridade com o desktop)'
     expect(onExit).not.toHaveBeenCalled();
   });
 
-  it('detalhe de candidatura já decidida não oferece Aprovar/Descartar', () => {
+  it('detalhe de candidatura já decidida não oferece Aprovar/Recusar', () => {
     renderStory(mix());
 
     fireEvent.click(screen.getByRole('button', { name: 'Todas' }));
     fireEvent.click(screen.getByText('Bia Aprovada'));
 
     expect(screen.queryByRole('button', { name: /aprovar/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /descartar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /recusar/i })).not.toBeInTheDocument();
   });
 
   it('detalhe de candidatura PENDENTE em "Todas" ainda decide', () => {

@@ -23,6 +23,7 @@ import EditCampaignPage from './pages/brand/EditCampaignPage';
 import PublicApplyPage from './pages/public/PublicApplyPage';
 import PublicCreatorProfilePage from './pages/public/PublicCreatorProfilePage';
 import BrowseProgramsPublicPage from './pages/public/BrowseProgramsPublicPage';
+import LandingPage from './pages/public/LandingPage';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 import InfluencerProfilePage from './pages/influencer/ProfilePage';
 import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
@@ -70,7 +71,7 @@ function AppShell() {
 
   return (
     <SentryRoutes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
 
       {/* Rotas de autenticação — sem sidebar */}
       <Route element={<AuthLayout />}>

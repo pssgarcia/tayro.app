@@ -131,13 +131,13 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     expect(screen.getByText(/selecione uma candidatura/i)).toBeInTheDocument();
   });
 
-  it('só oferece aprovar/descartar em candidatura PENDING', async () => {
+  it('só oferece aprovar/recusar em candidatura PENDING', async () => {
     mockApplications([makeApplication('a', { status: 'APPROVED', name: 'Bia' })]);
     renderTab();
     await settle();
 
     expect(within(plate()).queryByRole('button', { name: /aprovar/i })).not.toBeInTheDocument();
-    expect(within(plate()).queryByRole('button', { name: /descartar/i })).not.toBeInTheDocument();
+    expect(within(plate()).queryByRole('button', { name: /recusar/i })).not.toBeInTheDocument();
   });
 
   it('aprova e descarta a candidatura selecionada', async () => {
@@ -148,7 +148,7 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     fireEvent.click(within(plate()).getByRole('button', { name: /aprovar/i }));
     expect(approveMutation.mutate).toHaveBeenCalledWith('a');
 
-    fireEvent.click(within(plate()).getByRole('button', { name: /descartar/i }));
+    fireEvent.click(within(plate()).getByRole('button', { name: /recusar/i }));
     expect(rejectMutation.mutate).toHaveBeenCalledWith('a');
   });
 });

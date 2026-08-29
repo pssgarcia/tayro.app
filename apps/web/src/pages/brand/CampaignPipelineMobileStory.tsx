@@ -26,7 +26,7 @@ import type { Application, Campaign } from '../../types/api';
 //
 // Dois modos, mesmo dado (paridade com o desktop, que tem placa de decisão +
 // lista Pipeline lado a lado):
-//   • "Revisar" — a fila PENDING, um candidato por vez, aprovar/descartar.
+//   • "Revisar" — a fila PENDING, um candidato por vez, aprovar/recusar.
 //   • "Todas"   — lista de TODA candidatura da campanha (qualquer status), com
 //                 o rótulo de status; tocar numa linha abre o mesmo detalhe.
 //                 Fecha o buraco de o celular não ter nenhuma superfície pra
@@ -397,7 +397,7 @@ function CandidateStory({
   const igFailed = influencer.igFetchStatus === 'FAILED' || influencer.igFetchStatus === null;
   const cooldownWait = extractCooldownWait(refreshIgError);
   const posts = Array.from({ length: 6 }, (_, i) => influencer.igRecentPosts?.[i] ?? null);
-  // Aprovar/descartar só faz sentido em candidatura pendente — decidida abre em
+  // Aprovar/recusar só faz sentido em candidatura pendente — decidida abre em
   // modo leitura (mesma regra da placa do desktop, ProfilePlate).
   const canDecide = application.status === 'PENDING';
 
@@ -555,7 +555,7 @@ function CandidateStory({
             disabled={isApproving || isRejecting}
             className="min-h-[56px] flex-1 border border-kinetic-border font-mono text-sm font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-[#555] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isRejecting ? 'Descartando…' : 'Descartar'}
+            {isRejecting ? 'Recusando…' : 'Recusar'}
           </button>
           <button
             type="button"

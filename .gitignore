@@ -66,6 +66,14 @@ CLAUDE.local.md
 
 # ─── Design handoffs — material de referência, não vai pro repo ───────────────
 apps/web/design_handoff_tayro_2a/
+stitch_tayro_visual_redesign_spec/
+
+# ─── Skills do Higgsfield (npx skills add) — ferramenta local, 100+ arquivos ──
+# Instaladas na raiz do projeto porque o `skills add` usa o diretório atual.
+# Não são código do TAYRO e não devem viajar no repo; um `git add -A` distraído
+# varreria tudo (foi o que aconteceu com o cache do impeccable, logo abaixo).
+.agents/
+skills-lock.json
 
 # Cache local da ferramenta impeccable — inclui estado de máquina
 # (live/server.json, questions/*.state.json). Entrou no repo por engano em
