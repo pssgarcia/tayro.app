@@ -223,6 +223,23 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('@ com desfecho "existe" mostra "Perfil encontrado" em verde', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      Promise.resolve({
+        data: { handle: url.replace('/ig/handle/', ''), result: 'FOUND' },
+      } as any),
+    );
+    renderPage();
+
+    const campo = screen.getByLabelText(/instagram/i);
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(campo, { target: { value: 'anafit' } });
+    fireEvent.blur(campo);
+
+    const hint = await screen.findByText(/perfil encontrado no instagram/i);
+    expect(hint).toHaveClass('text-[#0B8F57]'); // variante plate (fundo claro)
+  });
+
   it('@ com desfecho "indeterminado" NÃO impede o cadastro', async () => {
     vi.mocked(api.get).mockImplementation((url: string) =>
       Promise.resolve({

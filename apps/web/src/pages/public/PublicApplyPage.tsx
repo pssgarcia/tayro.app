@@ -145,6 +145,8 @@ export default function PublicApplyPage() {
         : handleAlreadyChecked && handleCheck.result === 'UNKNOWN'
           ? 'Não deu para confirmar agora — você pode continuar'
           : undefined;
+  const handleHintTone =
+    handleAlreadyChecked && handleCheck.result === 'FOUND' ? 'success' : 'muted';
 
   async function onSubmit(values: FormValues) {
     setSubmitState({ kind: 'idle' });
@@ -362,6 +364,7 @@ export default function PublicApplyPage() {
                         autoCorrect="off"
                         error={errors.igHandle?.message}
                         hint={handleHint}
+                        hintTone={handleHintTone}
                         {...igHandleField}
                         onBlur={handleIgHandleBlur}
                         onChange={handleIgHandleChange}
