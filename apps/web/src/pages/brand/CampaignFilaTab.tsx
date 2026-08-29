@@ -111,7 +111,7 @@ function ProfilePlate({
   const posts = Array.from({ length: 6 }, (_, i) => influencer.igRecentPosts?.[i] ?? null);
 
   return (
-    // flex column de altura cheia + só a região do meio rola: aprovar/descartar
+    // flex column de altura cheia + só a região do meio rola: aprovar/recusar
     // fica sempre visível sem precisar rolar a página (achado 2026-08-17 — o
     // card inteiro exigia scroll da página pra decidir e cortava a grade de
     // posts). `min-h-0` no meio é o que faz o overflow-y-auto respeitar a
@@ -264,7 +264,7 @@ function ProfilePlate({
               primary: true,
             },
             {
-              label: isRejecting ? 'Descartando…' : 'Descartar',
+              label: isRejecting ? 'Recusando…' : 'Recusar',
               onClick: onReject,
               disabled: isApproving || isRejecting,
             },
@@ -349,7 +349,7 @@ export default function CampaignFilaTab({ campaign, campaignId, onExitMobile }: 
       {/* Desktop — candidato à esquerda (protagonista, com as fotos), lista
           Pipeline à direita (achado 2026-08-17: era o contrário). Altura
           cheia (`lg:h-full`) pras duas colunas rolarem por dentro em vez da
-          página inteira rolar — é o que mantém aprovar/descartar sempre
+          página inteira rolar — é o que mantém aprovar/recusar sempre
           visível. */}
       {/* `lg:grid-rows-1` é o que faltava: sem `grid-template-rows` explícito,
           a linha do grid cresce pelo conteúdo (maior coluna) mesmo com

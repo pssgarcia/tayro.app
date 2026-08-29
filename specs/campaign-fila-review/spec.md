@@ -56,7 +56,7 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
   - **"Todas"**: lista de **toda** candidatura da campanha, qualquer status, com o rótulo de
     status em português (fonte única `applicationStatusWord` em `utils/format.ts`, compartilhada
     com a lista Pipeline do desktop). Tocar numa linha abre o **mesmo** detalhe usado no modo
-    Revisar (`CandidateStory`) — com "Voltar à lista" no cabeçalho. Aprovar/descartar só
+    Revisar (`CandidateStory`) — com "Voltar à lista" no cabeçalho. Aprovar/recusar só
     aparecem quando a candidatura ainda está `PENDING`; decidida abre em modo leitura (mesma
     regra da placa do desktop). Estado vazio quando a campanha não tem candidatura nenhuma.
     Fecha o buraco de o celular não ter superfície nenhuma pra ver quem já foi aprovado ou
@@ -89,7 +89,7 @@ negócio separada da apresentação).
 - [x] Desktop mostra toda candidatura da campanha, qualquer status.
 - [x] Mobile "Revisar" (modo padrão) mostra só candidaturas `PENDING`, uma por vez.
 - [x] Mobile "Todas" mostra toda candidatura da campanha, qualquer status, com rótulo de status;
-      tocar numa linha abre o detalhe; decidida abre sem Aprovar/Descartar; `PENDING` ainda decide.
+      tocar numa linha abre o detalhe; decidida abre sem Aprovar/Recusar; `PENDING` ainda decide.
 - [x] Alternar entre "Revisar" e "Todas" não sai do modo imersivo nem navega de rota; "Voltar à
       lista" a partir de um detalhe de "Todas" volta pra lista, não pra fora da revisão.
 - [x] Aprovar ou rejeitar no modo mobile "Revisar" avança automaticamente pro próximo pendente.
@@ -118,7 +118,7 @@ Fixtures compartilhadas pelos dois arquivos: `apps/web/src/test/fixtures/applica
 são dubladas:
 - [x] Pipeline lista candidatura de todo status; empty state.
 - [x] Seleção default (primeira) e troca de selecionada ao clicar na linha.
-- [x] Aprovar/descartar só aparecem em `PENDING` e disparam com o id da selecionada.
+- [x] Aprovar/recusar só aparecem em `PENDING` e disparam com o id da selecionada.
 - [x] Poll de 6s enquanto há `PENDING` com IG `PENDING`; nenhum poll quando não há.
 - [x] Candidatura já decidida com IG pendente **não** mantém o poll vivo.
 - [x] Poll para depois de 45s contínuos (verificado por mutação: desligar o teto no componente
@@ -131,7 +131,7 @@ props, nenhum hook mockado:
       nada de fim de fila prematuro durante o carregamento.
 - [x] Modo "Todas": lista toda candidatura com o rótulo de status; mostra as decididas mesmo sem
       nenhuma `PENDING`; estado vazio; tocar numa linha abre o detalhe sem sair da revisão;
-      detalhe de decidida não oferece Aprovar/Descartar; detalhe de `PENDING` ainda decide;
+      detalhe de decidida não oferece Aprovar/Recusar; detalhe de `PENDING` ainda decide;
       "Voltar à lista" retorna sem sair; alternar de volta pra "Revisar" volta ao Story.
 - [x] Navegação: zonas de toque, limite no primeiro candidato, swipe horizontal, arraste curto
       e arraste vertical ignorados.
