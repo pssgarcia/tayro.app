@@ -27,7 +27,7 @@ describe('KineticActions', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  // `to` existia no PlateActionBar e é usado por "Ver programa"/"Ver detalhes":
+  // `to` existia no PlateActionBar e é usado por "Ver campanha"/"Ver detalhes":
   // se virar <button> sem href, o link deixa de abrir em nova aba e some do
   // teclado como link.
   it('renderiza <a> quando a ação é navegação', () => {

@@ -26,7 +26,7 @@ const baseApp: MyApplication = {
   appliedAt: '2026-06-10T10:00:00.000Z',
   reviewedAt: null,
   campaign: {
-    title: 'Programa Verão',
+    title: 'Campanha Verão',
     status: 'ACTIVE',
     deadline: '2026-07-15T00:00:00.000Z',
     offerType: 'CASH',
@@ -76,13 +76,13 @@ beforeEach(() => {
 describe('MyApplicationsPage', () => {
   it('mostra empty state sem candidaturas', () => {
     renderPage();
-    expect(screen.getByText(/você ainda não se candidatou a nenhum programa/i)).toBeInTheDocument();
+    expect(screen.getByText(/você ainda não se candidatou a nenhuma campanha/i)).toBeInTheDocument();
   });
 
-  it('renderiza a placa em destaque com programa, marca e oferta', () => {
+  it('renderiza a placa em destaque com campanha, marca e oferta', () => {
     mockHooks([baseApp]);
     const { container } = renderPage();
-    expect(screen.getAllByText('Programa Verão').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Campanha Verão').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Marca Fit').length).toBeGreaterThan(0);
     // oferta na placa é em reais inteiros, sem centavos (R$ 300, não R$ 300,00)
     expect(container.textContent).toContain('R$ 300');
@@ -169,7 +169,7 @@ describe('MyApplicationsPage', () => {
       ...baseApp,
       id: 'app-2',
       appliedAt: '2026-06-01T10:00:00.000Z',
-      campaign: { ...baseApp.campaign, title: 'Programa Inverno' },
+      campaign: { ...baseApp.campaign, title: 'Campanha Inverno' },
     };
     mockHooks([baseApp, outraPendente]);
     renderPage();
@@ -197,25 +197,25 @@ describe('MyApplicationsPage', () => {
       ...baseApp,
       id: 'app-2',
       status: 'APPROVED',
-      campaign: { ...baseApp.campaign, title: 'Programa Inverno' },
+      campaign: { ...baseApp.campaign, title: 'Campanha Inverno' },
     };
     // Cascata da placa prioriza APPROVED sem conteúdo sobre PENDING — então
-    // app-2 (Programa Inverno) é a placa em destaque aqui, e também aparece
-    // de novo na lista "Todas". app-1 (Programa Verão, PENDING) só está na lista.
+    // app-2 (Campanha Inverno) é a placa em destaque aqui, e também aparece
+    // de novo na lista "Todas". app-1 (Campanha Verão, PENDING) só está na lista.
     mockHooks([baseApp, approved]);
     renderPage();
 
-    expect(screen.getAllByText('Programa Verão')).toHaveLength(1);
-    expect(screen.getAllByText('Programa Inverno')).toHaveLength(2);
+    expect(screen.getAllByText('Campanha Verão')).toHaveLength(1);
+    expect(screen.getAllByText('Campanha Inverno')).toHaveLength(2);
 
     // A aba se chamava "Fechadas" até a migração pro Kinetic; virou
     // "Aprovadas" pra falar a mesma palavra que o status da linha ao lado.
     fireEvent.click(screen.getByRole('button', { name: /^aprovadas$/i }));
 
-    // filtrado pra Aprovadas (APPROVED): Programa Verão (PENDING) some de vez;
-    // Programa Inverno continua aparecendo duas vezes (placa + lista, as duas
+    // filtrado pra Aprovadas (APPROVED): Campanha Verão (PENDING) some de vez;
+    // Campanha Inverno continua aparecendo duas vezes (placa + lista, as duas
     // já eram APPROVED).
-    expect(screen.queryByText('Programa Verão')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Programa Inverno')).toHaveLength(2);
+    expect(screen.queryByText('Campanha Verão')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Campanha Inverno')).toHaveLength(2);
   });
 });

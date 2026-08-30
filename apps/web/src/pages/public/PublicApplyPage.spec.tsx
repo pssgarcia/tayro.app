@@ -96,13 +96,13 @@ describe('PublicApplyPage — carga da campanha', () => {
     expect(screen.getByText('Campanha Verão')).toBeInTheDocument();
   });
 
-  it('mostra "programa não encontrado" quando a campanha não existe', async () => {
+  it('mostra "campanha não encontrada" quando a campanha não existe', async () => {
     vi.mocked(api.get).mockRejectedValue(httpError(404));
 
     renderInRoute(makeClient(), '/apply/ghost');
 
     expect(
-      await screen.findByText(/programa não encontrado/i, undefined, {
+      await screen.findByText(/campanha não encontrada/i, undefined, {
         timeout: 3000,
       }),
     ).toBeInTheDocument();
@@ -197,8 +197,8 @@ describe('PublicApplyPage — respostas de erro da API', () => {
   const cenarios = [
     {
       nome: '409 com mensagem curta do servidor mostra a mensagem real',
-      erro: httpError(409, 'Você já se candidatou a este programa'),
-      esperado: /já se candidatou a este programa/i,
+      erro: httpError(409, 'Você já se candidatou a esta campanha'),
+      esperado: /já se candidatou a esta campanha/i,
     },
     {
       nome: '409 sem mensagem usável cai no texto genérico',

@@ -7,7 +7,7 @@ import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea
 import { useCreateApplication } from '../../hooks/useMyApplications';
 
 // ─── Modal de confirmação — mesmo padrão de placa-formulário do Login ────────
-// Só abre a partir do detalhe do programa: a creator decide DEPOIS de ver os
+// Só abre a partir do detalhe da campanha: a creator decide DEPOIS de ver os
 // termos, nunca direto da lista.
 
 interface Props {
@@ -39,7 +39,7 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
           : null;
 
       if (status === 409) {
-        setError(msg ?? 'Você já se candidatou a este programa.');
+        setError(msg ?? 'Você já se candidatou a esta campanha.');
       } else if (status === 400 && msg) {
         setError(msg);
       } else {
@@ -79,7 +79,7 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={1000}
-                  placeholder="Por que você é ideal para esse programa?"
+                  placeholder="Por que você é ideal para essa campanha?"
                 />
               </div>
 

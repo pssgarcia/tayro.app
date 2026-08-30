@@ -234,8 +234,8 @@ cobertura. Ver Test Coverage.)
 - Frontend: `BrowseProgramsPage.spec.tsx`, `ProgramsList.spec.tsx`, `ProgramCard.spec.tsx`,
   `ProgramDetailPage.spec.tsx`, `ApplyModal.spec.tsx`, `BrowseProgramsPublicPage.spec.tsx`.
 - `apps/web/src/pages/public/PublicApplyPage.spec.tsx` —
-  [x] carga da campanha (oferta + marca), [x] campanha inexistente mostra "programa não
-  encontrado", [x] `DRAFT`/`CLOSED`/`COMPLETED` não mostram formulário, [x] payload enviado à
+  [x] carga da campanha (oferta + marca), [x] campanha inexistente mostra "campanha não
+  encontrada", [x] `DRAFT`/`CLOSED`/`COMPLETED` não mostram formulário, [x] payload enviado à
   rota pública, [x] normalização de `@` e caixa alta antes do envio, [x] confirmação na própria
   placa sem navegar, [x] handle e e-mail inválidos barrados antes da API, [x] respostas
   `409` (com e sem mensagem usável), `429` e `500`, [x] formulário continua disponível pra nova
@@ -319,3 +319,4 @@ Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage
 - 2026-08-23 · `PublicApplyPage` ganhou cobertura de teste (15 casos): contrato de envio,
   normalização do handle e as quatro respostas de erro da API. Era a única tela do produto sem
   guard nenhum e sem teste.
+- 2026-08-30 · terminologia de produto: "programa" passou a ser "campanha" em toda a copy visível (rótulos, botões, mensagens de erro, placeholders). Sem mudança de comportamento, rota, endpoint ou modelo de dados — só texto.

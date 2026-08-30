@@ -29,7 +29,7 @@ export default function BrowseProgramsPublicPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
-        <ProgramsList title="Programas abertos" hrefBuilder={hrefBuilder} />
+        <ProgramsList title="Campanhas abertas" hrefBuilder={hrefBuilder} />
       </main>
     </div>
   );

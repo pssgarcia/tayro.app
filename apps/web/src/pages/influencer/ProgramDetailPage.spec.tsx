@@ -76,13 +76,13 @@ describe('ProgramDetailPage', () => {
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it('mostra erro quando o programa não existe', () => {
+  it('mostra erro quando a campanha não existe', () => {
     mockProgram({ isError: true });
     renderPage();
-    expect(screen.getByText(/programa não encontrado/i)).toBeInTheDocument();
+    expect(screen.getByText(/campanha não encontrada/i)).toBeInTheDocument();
   });
 
-  it('mostra os detalhes do programa antes de qualquer candidatura', () => {
+  it('mostra os detalhes da campanha antes de qualquer candidatura', () => {
     mockProgram({ data: makeCampaign() });
     renderPage();
 
@@ -124,11 +124,11 @@ describe('ProgramDetailPage', () => {
     mockApplications([{ id: 'app-1', campaignId: 'camp-1', status: 'PENDING' as any }]);
     renderPage();
 
-    expect(screen.getByText(/você já se candidatou a este programa/i)).toBeInTheDocument();
+    expect(screen.getByText(/você já se candidatou a esta campanha/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /quero participar/i })).not.toBeInTheDocument();
   });
 
-  it('programa não-ACTIVE não oferece candidatura', () => {
+  it('campanha não-ACTIVE não oferece candidatura', () => {
     mockProgram({ data: makeCampaign({ status: 'CLOSED' as any }) });
     renderPage();
 

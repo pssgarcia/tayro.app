@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import type { Campaign } from '../../types/api';
 import { formatOfferWhole } from '../../utils/format';
 
-// O card NÃO candidata — leva pro detalhe do programa. Decidir participar é
+// O card NÃO candidata — leva pro detalhe da campanha. Decidir participar é
 // passo posterior, com os termos na tela (ProgramDetailPage).
 //
 // Card, não linha (pedido do Pedro em 2026-08-28, olhando a lista em 360): em
@@ -11,13 +11,13 @@ import { formatOfferWhole } from '../../utils/format';
 // que faz a creator parar — ganha escala de display em vez de virar um número
 // espremido na ponta direita de uma linha.
 //
-// Todos os programas abertos têm o MESMO peso visual. Até 2026-08-28 o
-// primeiro da página virava placa em destaque, mas não havia regra nenhuma
+// Todas as campanhas abertas têm o MESMO peso visual. Até 2026-08-28 a
+// primeira da página virava placa em destaque, mas não havia regra nenhuma
 // por trás: a lista vem ordenada por createdAt desc e o corte era por página,
-// então "em destaque" só queria dizer "o mais novo desta página" — na página 2
-// outro programa qualquer ganhava a placa. Destaque sem critério é ruído.
+// então "em destaque" só queria dizer "a mais nova desta página" — na página 2
+// outra campanha qualquer ganhava a placa. Destaque sem critério é ruído.
 // Se algum dia houver curadoria de verdade (como no lado da marca, onde
-// pickFeatured escolhe o programa ativo mais cheio), a placa volta com regra.
+// pickFeatured escolhe a campanha ativa mais cheia), a placa volta com regra.
 
 function programPath(id: string) {
   return `/influencer/programs/${id}`;
@@ -57,8 +57,8 @@ export default function ProgramCard({
               {String(index).padStart(2, '0')}
             </span>
           </div>
-          {/* marca e vagas numa linha só: é assim que a creator compara dois
-              programas de relance, e é o que o teste consulta. */}
+          {/* marca e vagas numa linha só: é assim que a creator compara duas
+              campanhas de relance, e é o que o teste consulta. */}
           <p className="mt-2 text-xs text-kinetic-muted">
             {brand} · {spots}
           </p>

@@ -131,7 +131,7 @@ export default function DashboardPage() {
             <p className="text-sm text-kinetic-muted">
               Nenhuma candidatura ainda.{' '}
               <Link to="/influencer/browse" className="text-lime hover:underline">
-                Explore os programas
+                Explore as campanhas
               </Link>
               .
             </p>

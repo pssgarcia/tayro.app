@@ -150,8 +150,8 @@ function FeaturedPlate({
 // ─── Confirmação de retirada ─────────────────────────────────────────────────
 // Retirar é DEFINITIVO e a consequência não é óbvia: o unique
 // (campaignId, influencerId) não olha status, então `POST /applications`
-// devolve 409 mesmo depois de WITHDRAWN — a creator fica trancada fora daquele
-// programa pra sempre, e não existe rota de "desfazer". Por isso a confirmação
+// devolve 409 mesmo depois de WITHDRAWN — a creator fica trancada fora daquela
+// campanha pra sempre, e não existe rota de "desfazer". Por isso a confirmação
 // diz o que acontece em vez de perguntar "tem certeza?".
 
 function WithdrawModal({
@@ -183,7 +183,7 @@ function WithdrawModal({
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               Sua candidatura para{' '}
               <strong className="font-semibold text-black">{app.campaign.title}</strong> sai da fila
-              de {app.campaign.brand.name}. Você não poderá se candidatar de novo a este programa.
+              de {app.campaign.brand.name}. Você não poderá se candidatar de novo a esta campanha.
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
@@ -252,9 +252,9 @@ export default function MyApplicationsPage() {
 
       {!isLoading && !isError && applications.length === 0 && (
         <p className="text-sm text-kinetic-muted">
-          Você ainda não se candidatou a nenhum programa.{' '}
+          Você ainda não se candidatou a nenhuma campanha.{' '}
           <Link to="/influencer/browse" className="text-lime hover:underline">
-            Explore os programas
+            Explore as campanhas
           </Link>
           .
         </p>

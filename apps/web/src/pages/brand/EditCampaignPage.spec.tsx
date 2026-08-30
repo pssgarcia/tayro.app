@@ -103,7 +103,7 @@ describe('EditCampaignPage', () => {
       renderPage();
 
       expect(
-        await screen.findByText(/já foi publicado e não pode mais ser editado/i),
+        await screen.findByText(/já foi publicada e não pode mais ser editada/i),
       ).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /salvar alterações/i })).not.toBeInTheDocument();
     },
@@ -113,7 +113,7 @@ describe('EditCampaignPage', () => {
     vi.mocked(api.get).mockRejectedValue(new Error('500'));
     renderPage();
 
-    expect(await screen.findByText(/não foi possível carregar o programa/i)).toBeInTheDocument();
+    expect(await screen.findByText(/não foi possível carregar a campanha/i)).toBeInTheDocument();
   });
 
   it('erro ao salvar mantém o form preenchido e mostra a mensagem', async () => {

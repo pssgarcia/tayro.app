@@ -63,7 +63,7 @@ describe('DashboardPage', () => {
 
   it('renderiza o Resumo com as métricas principais', () => {
     renderPage();
-    expect(screen.getByText(/3 ativos/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 ativas/i)).toBeInTheDocument();
     expect(screen.getByText(/4 fechadas/i)).toBeInTheDocument();
     expect(screen.getByText('conteúdos a revisar')).toBeInTheDocument();
     expect(screen.getByText(/3 entregues/i)).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('conteúdos a revisar')).toBeInTheDocument();
   });
 
-  // Achado na conferência visual (2026-08-28): com programa criado e zero
+  // Achado na conferência visual (2026-08-28): com campanha criada e zero
   // pendentes não há placa nenhuma, mas a coluna dela continuava RESERVADA —
   // 560px vazios à esquerda com o Resumo jogado no canto. Nenhum rótulo de
   // placa na tela tem que significar nenhuma coluna de placa.
@@ -110,13 +110,13 @@ describe('DashboardPage', () => {
     expect(linha?.children).toHaveLength(1);
   });
 
-  it('clicar em "Analisar agora" navega para os programas', () => {
+  it('clicar em "Analisar agora" navega para as campanhas', () => {
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: /analisar agora/i }));
     expect(navigateMock).toHaveBeenCalledWith('/brand/campaigns');
   });
 
-  it('sem programas: a placa vira convite com "Criar o primeiro"', () => {
+  it('sem campanhas: a placa vira convite com "Criar o primeiro"', () => {
     mockDashboard({
       data: {
         campaigns: { total: 0, active: 0, draft: 0, closed: 0, completed: 0 },
@@ -126,7 +126,7 @@ describe('DashboardPage', () => {
       },
     });
     renderPage();
-    expect(screen.getByText(/nenhum programa ainda/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhuma campanha ainda/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /criar o primeiro/i }));
     expect(navigateMock).toHaveBeenCalledWith('/brand/campaigns/new');
   });

@@ -40,7 +40,7 @@ describe('StatFigure', () => {
   });
 
   it('mostra a linha de apoio quando existe', () => {
-    render(<StatFigure label="programas" value={4} sub="3 ativos" />);
-    expect(screen.getByText('3 ativos')).toBeInTheDocument();
+    render(<StatFigure label="campanhas" value={4} sub="3 ativas" />);
+    expect(screen.getByText('3 ativas')).toBeInTheDocument();
   });
 });

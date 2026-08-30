@@ -125,7 +125,7 @@ export default function RegisterBrandPage() {
         da marca
       </h1>
       <p className="mb-7 mt-2 text-[13px] text-kinetic-muted">
-        Depois disso você já publica o primeiro programa.
+        Depois disso você já publica a primeira campanha.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>

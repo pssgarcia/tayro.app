@@ -55,7 +55,7 @@ describe('NewCampaignPage', () => {
   // Regressão: input numérico vazio chega como "", z.coerce.number() converte
   // em 0 e o .min(1) estoura — .optional() só aceita undefined. O prazo de
   // pagamento é opcional na API e não tem asterisco na tela, mas bloqueava a
-  // criação de programa com "Number must be greater than or equal to 1".
+  // criação de campanha com "Number must be greater than or equal to 1".
   it('cria o rascunho sem preencher o prazo opcional', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: draft } as any);
     renderPage();
@@ -111,7 +111,7 @@ describe('NewCampaignPage', () => {
   // resolver nem roda (por isso aqui se afirma "não criou", e não uma mensagem
   // nossa na tela — ela não chega a aparecer). A regra `.min(1)` no schema é a
   // rede de segurança para o dia em que o `min` do input sumir.
-  it('prazo zero não cria o programa', async () => {
+  it('prazo zero não cria a campanha', async () => {
     renderPage();
 
     fillRequiredFields();

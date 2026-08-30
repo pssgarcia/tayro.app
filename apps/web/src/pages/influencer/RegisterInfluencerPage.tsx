@@ -218,7 +218,7 @@ export default function RegisterInfluencerPage() {
         Criar sua conta
       </h1>
       <p className="mb-7 mt-2 text-[13px] text-kinetic-muted">
-        Leva 1 minuto. Depois você já vê os programas abertos.
+        Leva 1 minuto. Depois você já vê as campanhas abertas.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>

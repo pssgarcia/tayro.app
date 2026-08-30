@@ -212,7 +212,7 @@ describe('creatorAvatarSrc', () => {
 
 describe('publicUrl / publicUrlLabel', () => {
   // Regressão do bug de 2026-08-24: o link que a marca copiava pra divulgar o
-  // programa apontava pra `tayro.app`, um domínio inexistente. Estes testes
+  // campanha apontava pra `tayro.app`, um domínio inexistente. Estes testes
   // travam a origem como fonte do endereço — não um literal.
   it('monta a URL absoluta a partir da origem em que a página roda', () => {
     expect(publicUrl('/apply/camp-1')).toBe('http://localhost:3000/apply/camp-1');

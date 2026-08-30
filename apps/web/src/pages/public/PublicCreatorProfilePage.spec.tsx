@@ -149,7 +149,7 @@ describe('PublicCreatorProfilePage', () => {
     renderPage();
 
     expect(screen.getByText(/quer creators como ana flávia/i)).toBeInTheDocument();
-    const cta = screen.getByRole('link', { name: /crie seu programa/i });
+    const cta = screen.getByRole('link', { name: /crie sua campanha/i });
     expect(cta).toHaveAttribute('href', '/register/brand');
   });
 

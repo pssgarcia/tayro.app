@@ -33,7 +33,7 @@ function renderCard(ui: React.ReactElement) {
 }
 
 describe('ProgramCard', () => {
-  it('leva ao detalhe do programa (não candidata direto)', () => {
+  it('leva ao detalhe da campanha (não candidata direto)', () => {
     renderCard(<ProgramCard campaign={makeCampaign()} />);
 
     const link = screen.getByRole('link', { name: /lançamento whey/i });
@@ -42,7 +42,7 @@ describe('ProgramCard', () => {
     expect(screen.queryByText('Quero participar')).not.toBeInTheDocument();
   });
 
-  it('mostra marca, vagas e oferta — o mesmo conteúdo pra todo programa', () => {
+  it('mostra marca, vagas e oferta — o mesmo conteúdo pra toda campanha', () => {
     renderCard(<ProgramCard campaign={makeCampaign()} />);
 
     expect(screen.getByText(/Marca Fit · 5 vagas/i)).toBeInTheDocument();
@@ -55,14 +55,14 @@ describe('ProgramCard', () => {
     expect(screen.getByText(/Marca Fit · 1 vaga$/i)).toBeInTheDocument();
   });
 
-  it('não existe variação de destaque: todo programa renderiza a mesma linha', () => {
+  it('não existe variação de destaque: toda campanha renderiza a mesma linha', () => {
     const { container } = renderCard(<ProgramCard campaign={makeCampaign()} index={7} />);
 
     // índice mono 1-based, zero-padded — a única diferença entre as linhas
     expect(screen.getByText('07')).toBeInTheDocument();
     // nenhuma placa (KineticPlate renderiza as crop marks em lime sobre fundo claro)
     expect(container.querySelector('.bg-kinetic-light')).toBeNull();
-    expect(screen.queryByRole('link', { name: /ver programa/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ver campanha/i })).not.toBeInTheDocument();
   });
 
   it('usa hrefBuilder customizado quando informado (ex: visitante sem conta)', () => {

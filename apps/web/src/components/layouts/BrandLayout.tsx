@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils';
 // Rótulos e ícones do redesign 2a (README §Telas 2, 13, 14, 16): 3 itens.
 const navItems = [
   { to: '/brand/dashboard', icon: Activity, label: 'Leitura' },
-  { to: '/brand/campaigns', icon: Crosshair, label: 'Programas' },
+  { to: '/brand/campaigns', icon: Crosshair, label: 'Campanhas' },
   { to: '/brand/profile', icon: Flag, label: 'Marca' },
 ];
 

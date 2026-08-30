@@ -57,7 +57,7 @@ const PROBLEMAS = [
 
 const PASSOS = [
   {
-    text: 'Publique o programa com a oferta já definida: valor, tipo e prazo. Todo mundo vê o mesmo antes de se candidatar.',
+    text: 'Publique a campanha com a oferta já definida: valor, tipo e prazo. Todo mundo vê o mesmo antes de se candidatar.',
   },
   {
     text: 'Divulgue o link. A creator se candidata sem precisar criar conta antes. A conta nasce depois.',
@@ -157,7 +157,7 @@ export default function LandingPage() {
               </p>
 
               <div className="mt-10 max-w-xl">
-                {/* Em 360px "Ver programas abertos" (mono, caixa alta, tracking
+                {/* Em 360px "Ver campanhas abertas" (mono, caixa alta, tracking
                     largo) não cabe em meia barra: quebrava em duas linhas
                     coladas no bloco lime. Empilha no celular e volta a ficar
                     lado a lado a partir de sm. O divisor acompanha — vira
@@ -166,7 +166,7 @@ export default function LandingPage() {
                 <KineticActions
                   dark
                   className="flex-col sm:flex-row [&>*+*]:border-l-0 [&>*+*]:border-t sm:[&>*+*]:border-l sm:[&>*+*]:border-t-0"
-                  actions={[conversar, { label: 'Ver programas abertos', to: '/programs' }]}
+                  actions={[conversar, { label: 'Ver campanhas abertas', to: '/programs' }]}
                 />
               </div>
             </div>
@@ -261,8 +261,8 @@ export default function LandingPage() {
             <div className="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <SectionLabel id="sec-lados">os dois lados da parceria</SectionLabel>
               <p className="max-w-[52ch] text-pretty text-base leading-relaxed text-kinetic-text">
-                A marca cria a oportunidade e a creator encontra. Cada uma vê a sua parte do mesmo
-                programa, do primeiro anúncio até o conteúdo entregue.
+                A marca cria a oportunidade e a creator encontra. Cada uma vê a sua parte da mesma
+                campanha, do primeiro anúncio até o conteúdo entregue.
               </p>
             </div>
 
@@ -359,7 +359,7 @@ export default function LandingPage() {
                 Criar conta de marca
               </Link>
               <Link to="/programs" className={cn('transition-colors hover:text-lime', linkFocus)}>
-                Programas abertos
+                Campanhas abertas
               </Link>
             </nav>
           </div>

@@ -21,7 +21,7 @@ import { DEMO_CREATORS, DEMO_PROGRAMA } from './demo';
 
 const kicker = 'font-mono text-[11px] uppercase tracking-widest text-kinetic-muted';
 
-// ─── O que a marca vê: o programa publicado e as candidaturas chegando ───────
+// ─── O que a marca vê: a campanha publicada e as candidaturas chegando ───────
 
 function LadoMarca() {
   return (
@@ -29,7 +29,7 @@ function LadoMarca() {
       <KineticPlate flush marks="top" className="max-w-[340px]">
         <div className="px-6 pb-5 pt-7">
           <p className="font-mono text-[9px] uppercase tracking-widest text-[#6a6a64]">
-            programa ativo
+            campanha ativa
           </p>
           <p className="mt-2 font-display text-[15px] font-bold leading-tight tracking-[-.03em] text-black">
             {DEMO_PROGRAMA.titulo}
@@ -50,7 +50,7 @@ function LadoMarca() {
         </div>
       </KineticPlate>
 
-      {/* As candidaturas chegam por baixo do programa — é literalmente o que a
+      {/* As candidaturas chegam por baixo da campanha — é literalmente o que a
           marca vê acontecer depois de publicar. */}
       <p className={cn('mb-3 mt-6', kicker)}>candidaturas recebidas</p>
       <ul className="flex max-w-[340px] flex-col gap-2">
@@ -80,7 +80,7 @@ function LadoMarca() {
   );
 }
 
-// ─── O que a creator vê: o programa aberto e a própria parceria ──────────────
+// ─── O que a creator vê: a campanha aberta e a própria parceria ──────────────
 
 function LadoCreator() {
   const oferta = formatOfferWhole(DEMO_PROGRAMA);
@@ -146,8 +146,8 @@ function LadoCreator() {
 // ─── O ciclo: quem faz o quê, na ordem em que acontece ───────────────────────
 
 const CICLO: { lado: 'marca' | 'creator'; texto: string }[] = [
-  { lado: 'marca', texto: 'Publica o programa com a oferta definida' },
-  { lado: 'creator', texto: 'Encontra o programa aberto e vê a oferta' },
+  { lado: 'marca', texto: 'Publica a campanha com a oferta definida' },
+  { lado: 'creator', texto: 'Encontra a campanha aberta e vê a oferta' },
   { lado: 'creator', texto: 'Se candidata pelo link' },
   { lado: 'marca', texto: 'Decide com o Instagram da creator do lado' },
   { lado: 'marca', texto: 'Registra a recompensa da parceria' },
@@ -214,7 +214,7 @@ export default function DoisLados() {
             Encontre quem faz sentido.
           </h3>
           <p className="mt-4 max-w-[46ch] text-pretty text-base leading-relaxed text-kinetic-text">
-            Publique o programa com a oferta definida, receba as candidaturas e decida com o
+            Publique a campanha com a oferta definida, receba as candidaturas e decida com o
             Instagram de cada uma na mesma tela.
           </p>
           <div className="mt-8">

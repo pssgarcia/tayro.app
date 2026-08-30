@@ -20,7 +20,7 @@ function applyFilter(campaigns: Campaign[], filter: Filter): Campaign[] {
   return campaigns.filter((c) => c.status === filter);
 }
 
-/** Programa ATIVO com maior taxa de preenchimento (aprovadas/vagas). */
+/** Campanha ATIVA com maior taxa de preenchimento (aprovadas/vagas). */
 function pickFeatured(campaigns: Campaign[]): Campaign | null {
   const active = campaigns.filter((c) => c.status === 'ACTIVE');
   if (active.length === 0) return null;
@@ -47,10 +47,10 @@ function Skeleton() {
 }
 
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Tela 14 do redesign 2a. O programa ativo mais cheio vira a placa em
+// Tela 14 do redesign 2a. A campanha ativa mais cheia vira a placa em
 // destaque. Ela só faz sentido em "Todas"/"Ativas" (ela É ativa, por
-// definição) — em "Rascunho"/"Encerradas" some, senão parece um programa
-// ativo vazando pra uma aba que só devia ter rascunho/encerrado (bug
+// definição) — em "Rascunho"/"Encerradas" some, senão parece uma campanha
+// ativa vazando pra uma aba que só devia ter rascunho/encerrado (bug
 // reportado: a placa aparecia em qualquer aba, sem relação com o filtro).
 
 export default function CampaignsPage() {
@@ -66,7 +66,7 @@ export default function CampaignsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <div className="flex items-end justify-between gap-4">
         <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-          Programas
+          Campanhas
         </h1>
         <button
           onClick={() => navigate('/brand/campaigns/new')}
@@ -89,7 +89,7 @@ export default function CampaignsPage() {
 
       {!isLoading && !isError && campaigns?.length === 0 && (
         <p className="text-sm text-kinetic-muted">
-          Você ainda não criou nenhum programa. Crie o primeiro para começar a receber candidaturas.
+          Você ainda não criou nenhuma campanha. Crie a primeira para começar a receber candidaturas.
         </p>
       )}
 
@@ -99,7 +99,7 @@ export default function CampaignsPage() {
 
           {visible.length === 0 ? (
             <p className="mt-8 text-sm text-kinetic-muted">
-              Nenhum programa com status "{TABS.find((f) => f.id === filter)?.label}".
+              Nenhuma campanha com status "{TABS.find((f) => f.id === filter)?.label}".
             </p>
           ) : (
             <div className="mt-8 flex flex-col gap-0.5">
