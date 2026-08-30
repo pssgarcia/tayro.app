@@ -6,7 +6,7 @@ import type { Campaign } from '../../types/api';
 const baseCampaign: Campaign = {
   id: 'camp-1',
   brandId: 'brand-1',
-  title: 'Programa Verão',
+  title: 'Campanha Verão',
   description: 'Queremos creators autênticas para o lançamento.',
   briefUrl: 'https://example.com/brief.pdf',
   status: 'ACTIVE',
@@ -23,7 +23,7 @@ const baseCampaign: Campaign = {
 };
 
 describe('CampaignOverviewTab', () => {
-  it('mostra a descrição e os nichos do programa', () => {
+  it('mostra a descrição e os nichos da campanha', () => {
     render(<CampaignOverviewTab campaign={baseCampaign} approvedCount={3} />);
     expect(screen.getByText(/creators autênticas para o lançamento/i)).toBeInTheDocument();
     expect(screen.getByText('fitness')).toBeInTheDocument();

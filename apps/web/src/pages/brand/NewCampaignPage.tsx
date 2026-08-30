@@ -34,7 +34,7 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
           <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
             <div className="px-6 pb-[26px] pt-[30px]">
               <p className="font-display text-[34px] font-bold leading-[1.05] tracking-[-.05em] text-black">
-                Programa publicado
+                Campanha publicada
               </p>
               <p className="mt-5 text-[13px] leading-[1.5] text-[#6a6a64]">
                 Compartilhe o link abaixo para receber candidaturas.
@@ -78,8 +78,8 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
                 beco sem saída: dá pra publicar depois, pelo detalhe. */}
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               Ao publicar, o link de candidatura fica ativo na hora e creators já podem se
-              inscrever. Depois de publicado o programa não volta para rascunho e os detalhes não
-              podem mais ser editados — se preferir, publique depois, pelo detalhe do programa.
+              inscrever. Depois de publicada a campanha não volta para rascunho e os detalhes não
+              podem mais ser editados — se preferir, publique depois, pelo detalhe da campanha.
             </p>
           </div>
           <KineticActions
@@ -130,7 +130,7 @@ export default function NewCampaignPage() {
 
       <main className="mx-auto max-w-5xl px-6 pb-10">
         <h1 className="mb-9 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
-          Novo programa
+          Nova campanha
         </h1>
 
         <CampaignForm

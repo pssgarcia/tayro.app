@@ -221,7 +221,7 @@ export default function PublicCreatorProfilePage() {
               to="/register/brand"
               className="mt-5 flex min-h-[56px] w-full items-center justify-center bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
             >
-              Crie seu programa
+              Crie sua campanha
             </Link>
           </div>
         )}

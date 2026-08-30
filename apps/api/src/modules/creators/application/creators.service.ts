@@ -42,10 +42,10 @@ export class CreatorsService {
     const campaign = await this.prisma.campaign.findUnique({
       where: { id: campaignId },
     });
-    if (!campaign) throw new NotFoundException('Programa não encontrado');
+    if (!campaign) throw new NotFoundException('Campanha não encontrada');
     if (campaign.status !== CampaignStatus.ACTIVE) {
       throw new BadRequestException(
-        'Este programa não está aceitando candidaturas',
+        'Esta campanha não está aceitando candidaturas',
       );
     }
 
@@ -64,7 +64,7 @@ export class CreatorsService {
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === 'P2002'
       ) {
-        throw new ConflictException('Você já se candidatou a este programa');
+        throw new ConflictException('Você já se candidatou a esta campanha');
       }
       throw err;
     }

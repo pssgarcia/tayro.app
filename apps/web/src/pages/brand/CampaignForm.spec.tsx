@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * CampaignForm é compartilhado por "Novo programa" e "Editar programa". As
+ * CampaignForm é compartilhado por "Nova campanha" e "Editar campanha". As
  * specs das duas telas cobrem a fiação (prefill, navegação, gate de DRAFT);
  * aqui o alvo é o formulário em si: conversão de dinheiro, campos que mudam
  * com o tipo de oferta, e a prévia — que é o que a marca lê pra decidir o que

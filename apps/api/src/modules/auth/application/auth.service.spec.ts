@@ -219,7 +219,7 @@ describe('AuthService', () => {
   // ─── getClaimPreview ──────────────────────────────────────────────────────────
 
   describe('getClaimPreview', () => {
-    it('retorna a identidade (handle, e-mail, avatar, programa) sem consumir o token', async () => {
+    it('retorna a identidade (handle, e-mail, avatar, campanha) sem consumir o token', async () => {
       const rawToken = 'raw-claim-token';
       const tokenHash = crypto
         .createHash('sha256')

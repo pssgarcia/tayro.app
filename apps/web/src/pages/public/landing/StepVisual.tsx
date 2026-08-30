@@ -10,7 +10,7 @@ import { DEMO_CREATORS, DEMO_PROGRAMA } from './demo';
 // São representações reduzidas — o objetivo é a leitura de relance ao lado do
 // texto do passo. A tela cheia de verdade é a seção de demonstração, abaixo.
 //
-// O passo 02 mostra a PLACA do programa publicado, com o "Copiar link" que a
+// O passo 02 mostra a PLACA da campanha publicada, com o "Copiar link" que a
 // marca usa pra divulgar: é o objeto que o passo descreve, e sem ele o passo
 // falava de um link que a página nunca mostrava.
 
@@ -35,10 +35,10 @@ const Rotulo = ({ children }: { children: React.ReactNode }) => (
 const oferta = formatCurrency(DEMO_PROGRAMA.offerAmount);
 
 export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
-  // ── 01 · Publicar o programa ──────────────────────────────────────────────
+  // ── 01 · Publicar a campanha ──────────────────────────────────────────────
   if (step === 1) {
     return (
-      <Moldura canto="programa">
+      <Moldura canto="campanha">
         <div className="w-full max-w-[280px] border border-kinetic-gray bg-kinetic-black p-4">
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -67,14 +67,14 @@ export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
     );
   }
 
-  // ── 02 · A placa do programa publicado, com o link pra divulgar ───────────
+  // ── 02 · A placa da campanha publicada, com o link pra divulgar ───────────
   if (step === 2) {
     return (
       <Moldura canto="link">
         <KineticPlate flush marks="top" className="w-full max-w-[300px]">
           <div className="px-6 pb-5 pt-7">
             <p className="font-mono text-[9px] uppercase tracking-widest text-[#6a6a64]">
-              programa ativo
+              campanha ativa
             </p>
             <p className="mt-2 text-balance font-display text-[15px] font-bold leading-tight tracking-[-.03em] text-black">
               {DEMO_PROGRAMA.titulo}

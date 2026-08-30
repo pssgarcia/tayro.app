@@ -33,7 +33,7 @@ export default function RegisterChooserPage() {
               Sou creator
             </p>
             <p className="mt-[9px] text-[13.5px] leading-[1.5] text-[#3a3a34]">
-              Encontre programas abertos e feche parcerias com marcas.
+              Encontre campanhas abertas e feche parcerias com marcas.
             </p>
           </div>
           <Link
@@ -51,7 +51,7 @@ export default function RegisterChooserPage() {
               Sou marca
             </p>
             <p className="mt-[9px] text-[13.5px] leading-[1.5] text-kinetic-muted">
-              Crie programas e receba candidaturas.
+              Crie campanhas e receba candidaturas.
             </p>
           </div>
           <Link

@@ -46,7 +46,7 @@ export class EmailService {
       html: `
         <p>Oi, ${params.creatorName}!</p>
         <p><strong>${params.brandName}</strong> avaliou sua candidatura para <strong>${params.campaignTitle}</strong> e, desta vez, decidiu seguir com outro perfil.</p>
-        <p>Continue explorando outros programas na plataforma — sempre têm novidades.</p>
+        <p>Continue explorando outras campanhas na plataforma — sempre têm novidades.</p>
       `,
     });
   }

@@ -2,8 +2,8 @@ import { z } from 'zod';
 import type { Campaign } from '../../types/api';
 import type { CreateCampaignPayload } from '../../hooks/useCampaigns';
 
-// Schema + conversores do formulário de programa, compartilhados por "Novo
-// programa" e "Editar programa". Ficam fora do CampaignForm.tsx porque arquivo
+// Schema + conversores do formulário de campanha, compartilhados por "Nova
+// campanha" e "Editar campanha". Ficam fora do CampaignForm.tsx porque arquivo
 // de componente não pode exportar helper (react-refresh/only-export-components).
 
 /**
@@ -16,7 +16,7 @@ import type { CreateCampaignPayload } from '../../hooks/useCampaigns';
  * diferenciar "não preencheu" de "preencheu com zero".
  *
  * Sem isso, "Prazo p/ pagamento (dias)" — opcional na API (`@IsOptional()`) e
- * sem asterisco na tela — travava a criação de programa com "Number must be
+ * sem asterisco na tela — travava a criação da campanha com "Number must be
  * greater than or equal to 1", em inglês.
  */
 const optionalPositiveInt = (message: string) =>

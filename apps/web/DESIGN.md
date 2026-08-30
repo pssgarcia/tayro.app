@@ -220,7 +220,7 @@ Paleta de duas superfícies: o fundo escuro do app e a placa clara — cada uma 
 - **d-lg** (40px, .8, -.065em): stats do dashboard da marca.
 - **d-md** (30px, 1, -.05em): título de página ("Sua leitura", "Abertos").
 - **d-inline** (28px, 1, -.055em): contador inline no header ("4/10").
-- **d-sm** (24px, 1.1, -.05em): título de campanha/programa.
+- **d-sm** (24px, 1.1, -.05em): título de campanha.
 - **d-xs** (15px, 1.3, -.025em): título de seção e nome em linha de lista.
 
 Sufixos de unidade dentro de um número (`%`, `k`) herdam o tracking mas em tamanho menor (ex.: número 88px → sufixo 38px).

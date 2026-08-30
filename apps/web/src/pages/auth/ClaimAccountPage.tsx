@@ -60,7 +60,7 @@ function PreviewSkeleton() {
 
 // ─── Página ──────────────────────────────────────────────────────────────────
 // Tela 12 do redesign 2a. GET /auth/claim/:token (sem consumir o token) traz
-// a identidade — avatar/@handle/e-mail — e o programa da candidatura mais
+// a identidade — avatar/@handle/e-mail — e a campanha da candidatura mais
 // recente, pra placa confirmar "quem você é" antes de pedir a senha, igual
 // ao mock. Também fecha a limitação conhecida de link inválido/expirado só
 // aparecer no erro do submit: agora aparece já na carga da página. Se o
@@ -114,7 +114,7 @@ export default function ClaimAccountPage() {
       }
       if (err.response.status === 401) {
         setRootError(
-          'Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a um programa.',
+          'Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a uma campanha.',
         );
         return;
       }
@@ -138,7 +138,7 @@ export default function ClaimAccountPage() {
 
   if (previewInvalid) {
     return (
-      <InvalidLinkMessage message="Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a um programa." />
+      <InvalidLinkMessage message="Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a uma campanha." />
     );
   }
 

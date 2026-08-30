@@ -109,7 +109,7 @@ describe('ApplicationsService — race conditions', () => {
   describe('create()', () => {
     // NÃO é race condition. create() gera applications PENDING; maxSpots conta
     // apenas APPROVED (ver _count.where.status === APPROVED). Várias creators
-    // podem se candidatar (pending) ao mesmo programa de 1 vaga — é um funil.
+    // podem se candidatar (pending) à mesma campanha de 1 vaga — é um funil.
     // O limite de maxSpots é imposto em approve(), não aqui. Logo, duas
     // candidaturas concorrentes DEVEM ambas ter sucesso.
     it('permite múltiplas candidaturas pendentes concorrentes (maxSpots só limita APPROVED)', async () => {

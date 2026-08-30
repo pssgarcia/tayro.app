@@ -222,9 +222,9 @@ export default function PublicApplyPage() {
 
         {isError && (
           <div className="py-16 text-center">
-            <p className="font-display font-semibold text-foreground">Programa não encontrado</p>
+            <p className="font-display font-semibold text-foreground">Campanha não encontrada</p>
             <p className="mt-1 text-sm text-kinetic-muted">
-              O link pode estar desatualizado ou o programa foi encerrado.
+              O link pode estar desatualizado ou a campanha foi encerrada.
             </p>
           </div>
         )}
@@ -241,7 +241,7 @@ export default function PublicApplyPage() {
                 )}
               </div>
               <div>
-                <p className="text-xs text-kinetic-muted">Programa de</p>
+                <p className="text-xs text-kinetic-muted">Campanha de</p>
                 <p className="mt-[3px] font-display text-[15px] font-semibold tracking-[-.025em] text-foreground">
                   {campaign.brand?.name ?? '—'}
                 </p>
@@ -343,7 +343,7 @@ export default function PublicApplyPage() {
 
                 {campaign.status !== 'ACTIVE' ? (
                   <p className="text-sm text-kinetic-muted">
-                    Inscrições encerradas para este programa.
+                    Inscrições encerradas para esta campanha.
                   </p>
                 ) : (
                   <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -386,7 +386,7 @@ export default function PublicApplyPage() {
                       />
                       <KineticTextarea
                         label="Mensagem para a marca (opcional)"
-                        placeholder="Por que você é ideal para esse programa?"
+                        placeholder="Por que você é ideal para essa campanha?"
                         error={errors.message?.message}
                         {...register('message')}
                       />

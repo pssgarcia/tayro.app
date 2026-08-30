@@ -34,10 +34,10 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useDashboard();
 
-  // A placa só existe em dois casos: nenhum programa ainda, ou candidatura
+  // A placa só existe em dois casos: nenhuma campanha ainda, ou candidatura
   // esperando análise. Fora deles a coluna da esquerda não pode ficar
   // RESERVADA — senão sobra um vão de 560px e o Resumo parece jogado no canto
-  // (visto em produção local: 1 programa, 0 pendentes).
+  // (visto em produção local: 1 campanha, 0 pendentes).
   const hasPlate = !!data && (data.campaigns.total === 0 || data.applications.pending > 0);
 
   return (
@@ -68,10 +68,10 @@ export default function DashboardPage() {
                   <KineticPlate marks="top" flush>
                     <div className="px-6 pb-8 pt-11 sm:px-9">
                       <p className="font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
-                        Nenhum programa ainda
+                        Nenhuma campanha ainda
                       </p>
                       <p className="mt-4 max-w-[340px] text-sm leading-[1.5] text-[#4a4a44]">
-                        Crie o primeiro programa para começar a receber candidaturas de creators.
+                        Crie a primeira campanha para começar a receber candidaturas de creators.
                       </p>
                     </div>
                     <KineticActions
@@ -127,9 +127,9 @@ export default function DashboardPage() {
             </p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-10">
               <StatFigure
-                label="programas"
+                label="campanhas"
                 value={data.campaigns.total}
-                sub={`${data.campaigns.active} ativos`}
+                sub={`${data.campaigns.active} ativas`}
                 size="lg"
                 delay={120}
               />

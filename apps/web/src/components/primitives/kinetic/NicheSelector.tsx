@@ -28,7 +28,7 @@ interface Props {
    * "plate" — sobre o claro (a placa-formulário dos cadastros): selecionado
    * = bg-black text-[#e5e5e0], sem borda; não selecionado = border
    * rgba(14,14,14,.16) text-[#6a6a64].
-   * "dark" (default) — sobre o fundo (Novo programa, Ficha, Perfil da
+   * "dark" (default) — sobre o fundo (Nova campanha, Ficha, Perfil da
    * marca): selecionado = bg-lime text-black (a placa "vaza" pro
    * fundo escuro); não selecionado = border #232323 text-[#8A8A85].
    * As duas são tag quadrada (radius 3px), sem ícone de check — só a

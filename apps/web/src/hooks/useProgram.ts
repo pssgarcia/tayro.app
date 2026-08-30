@@ -6,7 +6,7 @@ export const programKeys = {
   detail: (id: string) => ['programs', 'detail', id] as const,
 };
 
-// Detalhe de um programa — GET /campaigns/:id (ACTIVE é público).
+// Detalhe de uma campanha — GET /campaigns/:id (ACTIVE é público).
 export function useProgram(id: string | undefined) {
   return useQuery({
     queryKey: programKeys.detail(id ?? ''),

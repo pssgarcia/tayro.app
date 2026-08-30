@@ -17,10 +17,10 @@ function renderPage() {
 }
 
 describe('LoginPage', () => {
-  it('oferece um caminho pra ver programas abertos', () => {
+  it('oferece um caminho pra ver campanhas abertas', () => {
     renderPage();
 
-    const link = screen.getByRole('link', { name: /ver programas abertos/i });
+    const link = screen.getByRole('link', { name: /ver campanhas abertas/i });
     expect(link).toHaveAttribute('href', '/programs');
   });
 

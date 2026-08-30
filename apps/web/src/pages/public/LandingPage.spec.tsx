@@ -200,8 +200,8 @@ describe('LandingPage', () => {
     renderAt();
 
     // Passos de cada lado, na ordem em que a parceria acontece.
-    expect(screen.getByText(/publica o programa com a oferta definida/i)).toBeInTheDocument();
-    expect(screen.getByText(/encontra o programa aberto e vê a oferta/i)).toBeInTheDocument();
+    expect(screen.getByText(/publica a campanha com a oferta definida/i)).toBeInTheDocument();
+    expect(screen.getByText(/encontra a campanha aberta e vê a oferta/i)).toBeInTheDocument();
     expect(screen.getByText(/se candidata pelo link/i)).toBeInTheDocument();
     expect(screen.getByText(/decide com o instagram da creator do lado/i)).toBeInTheDocument();
     expect(screen.getByText(/envia o conteúdo combinado/i)).toBeInTheDocument();

@@ -6,7 +6,7 @@ export const browseProgramsKeys = {
   list: (page: number) => ['programs', 'browse', page] as const,
 };
 
-// Lista programas ACTIVE (público, paginado) — GET /campaigns
+// Lista campanhas ACTIVE (público, paginado) — GET /campaigns
 export function useBrowsePrograms(page: number, limit = 12) {
   return useQuery({
     queryKey: browseProgramsKeys.list(page),

@@ -54,13 +54,13 @@ describe('ApplyModal', () => {
   it('409 (já se candidatou) mostra erro inline e mantém o form', async () => {
     mutateAsync.mockRejectedValueOnce({
       isAxiosError: true,
-      response: { status: 409, data: { message: 'Você já se candidatou a este programa' } },
+      response: { status: 409, data: { message: 'Você já se candidatou a esta campanha' } },
     });
     render(<ApplyModal campaign={campaign} onClose={onClose} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^confirmar$/i }));
 
-    expect(await screen.findByText(/você já se candidatou a este programa/i)).toBeInTheDocument();
+    expect(await screen.findByText(/você já se candidatou a esta campanha/i)).toBeInTheDocument();
     expect(screen.queryByText(/candidatura enviada/i)).not.toBeInTheDocument();
   });
 
