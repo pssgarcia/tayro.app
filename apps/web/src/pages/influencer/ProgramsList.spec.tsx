@@ -68,8 +68,8 @@ describe('ProgramsList', () => {
     mockHook({
       data: { data: [], meta: { total: 0, page: 1, limit: 12, totalPages: 0 } },
     });
-    renderList({ title: 'Programas abertos' });
-    expect(screen.getByText('Programas abertos')).toBeInTheDocument();
+    renderList({ title: 'Campanhas abertas' });
+    expect(screen.getByText('Campanhas abertas')).toBeInTheDocument();
   });
 
   it('mostra skeleton enquanto carrega', () => {
@@ -81,18 +81,18 @@ describe('ProgramsList', () => {
   it('mostra erro em isError', () => {
     mockHook({ isError: true });
     renderList();
-    expect(screen.getByText(/erro ao carregar os programas/i)).toBeInTheDocument();
+    expect(screen.getByText(/erro ao carregar as campanhas/i)).toBeInTheDocument();
   });
 
-  it('mostra empty state quando não há programas', () => {
+  it('mostra empty state quando não há campanhas', () => {
     mockHook({
       data: { data: [], meta: { total: 0, page: 1, limit: 12, totalPages: 0 } },
     });
     renderList();
-    expect(screen.getByText(/nenhum programa aberto agora/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhuma campanha aberta agora/i)).toBeInTheDocument();
   });
 
-  it('renderiza os programas com o href default (autenticado)', () => {
+  it('renderiza as campanhas com o href default (autenticado)', () => {
     mockHook({
       data: {
         data: [makeCampaign()],
@@ -124,13 +124,13 @@ describe('ProgramsList', () => {
     );
   });
 
-  // Até 2026-08-28 o primeiro programa da página virava placa em destaque sem
+  // Até 2026-08-28 a primeira campanha da página virava placa em destaque sem
   // regra nenhuma por trás (era só o mais novo DAQUELA página). Este teste
   // trava a lista uniforme: se alguém reintroduzir a placa, ele quebra.
-  it('nenhum programa recebe destaque — todos saem como a mesma linha', () => {
+  it('nenhuma campanha recebe destaque — todas saem como a mesma linha', () => {
     mockHook({
       data: {
-        data: [makeCampaign(), makeCampaign({ id: 'camp-2', title: 'Segundo Programa' })],
+        data: [makeCampaign(), makeCampaign({ id: 'camp-2', title: 'Segunda Campanha' })],
         meta: { total: 2, page: 1, limit: 12, totalPages: 1 },
       },
     });
@@ -141,11 +141,11 @@ describe('ProgramsList', () => {
     // nenhuma placa clara na tela
     expect(container.querySelector('.bg-kinetic-light')).toBeNull();
 
-    // os dois programas têm exatamente a mesma estrutura de link
+    // as duas campanhas têm exatamente a mesma estrutura de link
     const links = screen.getAllByRole('link');
     expect(links).toHaveLength(2);
     expect(links[0]).toHaveTextContent('Lançamento Whey');
-    expect(links[1]).toHaveTextContent('Segundo Programa');
+    expect(links[1]).toHaveTextContent('Segunda Campanha');
     expect(links[0].className).toBe(links[1].className);
   });
 

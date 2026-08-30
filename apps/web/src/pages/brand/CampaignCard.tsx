@@ -9,7 +9,7 @@ import KineticSegments from '../../components/primitives/kinetic/KineticSegments
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { campaignStatusWord, daysUntil, publicUrl } from '../../utils/format';
 
-// ─── Row (padrão "Programas") ─────────────────────────────────────────────────
+// ─── Row (padrão "Campanhas") ────────────────────────────────────────────────
 
 function CampaignRow({
   campaign,
@@ -36,7 +36,7 @@ function CampaignRow({
   );
 }
 
-// ─── Placa (destaque — programa ativo mais cheio) ─────────────────────────────
+// ─── Placa (destaque — campanha ativa mais cheia) ────────────────────────────
 
 function CampaignFeatured({ campaign }: { campaign: Campaign }) {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
   const approved = campaign.approvedCount ?? 0;
   const pending = campaign.pendingCount ?? 0;
 
-  // Um segmento por vaga só funciona em programa pequeno; acima de 12 a barra
+  // Um segmento por vaga só funciona em campanha pequena; acima de 12 a barra
   // vira proporcional (mesma regra da aba Briefing).
   const segmentTotal = Math.min(campaign.maxSpots, 12);
   const segmentFilled =

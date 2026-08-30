@@ -1,7 +1,7 @@
 /**
  * KineticTextarea — regressão do campo que não crescia (reportado 2026-08-23).
  *
- * O sintoma era escrever um texto mais longo na Descrição do programa e perder
+ * O sintoma era escrever um texto mais longo na Descrição da campanha e perder
  * de vista o que já tinha sido escrito: `rows={1}` fixo, `leading-none` e sem
  * quebra de palavra faziam a primeira linha rolar pra fora de um campo de uma
  * linha só.
@@ -47,7 +47,7 @@ describe('KineticTextarea — altura acompanha o conteúdo', () => {
     expect(campo.style.height).toBe('24px');
   });
 
-  // Edição de programa chega com a descrição já preenchida: se a altura só
+  // Edição de campanha chega com a descrição já preenchida: se a altura só
   // fosse calculada ao digitar, o texto abriria cortado.
   it('já abre na altura certa quando vem preenchido', () => {
     const ref = createRef<HTMLTextAreaElement>();

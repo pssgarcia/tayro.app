@@ -144,7 +144,7 @@ export default function LoginPage() {
 
       <p className="mt-3 text-[13px] text-kinetic-muted">
         <Link to="/programs" className="hover:underline">
-          Ver programas abertos
+          Ver campanhas abertas
         </Link>
       </p>
     </div>

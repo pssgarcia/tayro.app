@@ -16,7 +16,7 @@ function Skeleton() {
 }
 
 // ─── Lista ───────────────────────────────────────────────────────────────────
-// Todos os programas abertos com o mesmo peso visual — ver o comentário em
+// Todas as campanhas abertas com o mesmo peso visual — ver o comentário em
 // ProgramCard.tsx sobre por que a placa "Em destaque" saiu. Pager de traços no
 // lugar de Anterior/Próxima. Compartilhado entre /influencer/browse
 // (autenticado) e /programs (vitrine pública) — só o título e o destino do
@@ -54,11 +54,11 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
       {isLoading && <Skeleton />}
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar os programas. Tente novamente.</p>
+        <p className="text-sm text-destructive">Erro ao carregar as campanhas. Tente novamente.</p>
       )}
 
       {!isLoading && !isError && programs.length === 0 && (
-        <p className="text-sm text-kinetic-muted">Nenhum programa aberto agora. Volte em breve.</p>
+        <p className="text-sm text-kinetic-muted">Nenhuma campanha aberta agora. Volte em breve.</p>
       )}
 
       {!isLoading && !isError && programs.length > 0 && (
@@ -72,7 +72,7 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
                 key={c.id}
                 campaign={c}
                 // numeração contínua entre páginas: na 2ª página começa em 13,
-                // não em 01 — senão o mesmo número aparece em programas
+                // não em 01 — senão o mesmo número aparece em campanhas
                 // diferentes conforme se navega.
                 index={(shownPage - 1) * limit + i + 1}
                 hrefBuilder={hrefBuilder}

@@ -77,7 +77,7 @@ function CampaignHeader({
         {/* DRAFT tem três saídas. "Publicar" é a que faltava: sem ela, um
             rascunho salvo com "Agora não" no NewCampaignPage ficava preso em
             DRAFT pra sempre — o publish só existia naquele modal pós-criação.
-            Vem em lime porque é a ação que destrava o programa; apagar é a
+            Vem em lime porque é a ação que destrava a campanha; apagar é a
             saída destrutiva e fica em ghost, como antes. */}
         {status === 'DRAFT' && (
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -86,7 +86,7 @@ function CampaignHeader({
               onClick={onPublicar}
               className="font-mono text-[10px] uppercase tracking-widest text-lime underline-offset-4 transition-opacity hover:underline hover:opacity-80"
             >
-              Publicar programa
+              Publicar campanha
             </button>
             <Link
               to={`/brand/campaigns/${campaignId}/edit`}
@@ -129,11 +129,11 @@ function PublishCampaignModal({
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-7 pt-11">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Publicar programa?
+              Publicar campanha?
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O link de candidatura fica ativo na hora e creators já podem se inscrever. Depois de
-              publicado o programa não volta para rascunho e os detalhes não podem mais ser
+              publicada a campanha não volta para rascunho e os detalhes não podem mais ser
               editados.
             </p>
             {publish.isError && (

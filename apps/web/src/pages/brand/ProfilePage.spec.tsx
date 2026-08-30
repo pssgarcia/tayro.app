@@ -112,7 +112,7 @@ describe('ProfilePage', () => {
 
   it('mostra o preview ao vivo com o nome da marca', () => {
     render(<ProfilePage />);
-    expect(screen.getByText('Programa de')).toBeInTheDocument();
+    expect(screen.getByText('Campanha de')).toBeInTheDocument();
     expect(screen.getAllByText('Marca Fit').length).toBeGreaterThanOrEqual(1);
   });
 

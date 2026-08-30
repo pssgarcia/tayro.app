@@ -23,7 +23,7 @@ const sizeClasses: Record<Size, string> = {
 interface Props {
   label: string;
   value: React.ReactNode;
-  /** Linha de apoio abaixo do número (ex: "programas · 3 ativos"). */
+  /** Linha de apoio abaixo do número (ex: "campanhas · 3 ativas"). */
   sub?: React.ReactNode;
   size?: Size;
   /** 'plate' = sobre a placa clara; 'dark' = sobre o fundo do app. */

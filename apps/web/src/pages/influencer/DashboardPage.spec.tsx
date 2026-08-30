@@ -26,7 +26,7 @@ function makeApp(id: string, status: ApplicationStatus): MyApplication {
     appliedAt: '2026-08-20T10:00:00.000Z',
     reviewedAt: null,
     campaign: {
-      title: `Programa ${id}`,
+      title: `Campanha ${id}`,
       status: 'ACTIVE',
       deadline: null,
       offerType: 'CASH',
@@ -170,9 +170,9 @@ describe('DashboardPage — registro de candidaturas', () => {
     ]);
     renderPage();
 
-    expect(screen.getByText('Programa a')).toBeInTheDocument();
-    expect(screen.getByText('Programa c')).toBeInTheDocument();
-    expect(screen.queryByText('Programa d')).not.toBeInTheDocument();
+    expect(screen.getByText('Campanha a')).toBeInTheDocument();
+    expect(screen.getByText('Campanha c')).toBeInTheDocument();
+    expect(screen.queryByText('Campanha d')).not.toBeInTheDocument();
   });
 
   it('mostra a marca de cada candidatura', () => {
@@ -182,11 +182,11 @@ describe('DashboardPage — registro de candidaturas', () => {
     expect(screen.getByText('Marca a')).toBeInTheDocument();
   });
 
-  it('sem candidatura, oferece o caminho pra explorar programas', () => {
+  it('sem candidatura, oferece o caminho pra explorar campanhas', () => {
     mockData([]);
     renderPage();
 
-    expect(screen.getByRole('link', { name: /explore os programas/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /explore as campanhas/i })).toHaveAttribute(
       'href',
       '/influencer/browse',
     );

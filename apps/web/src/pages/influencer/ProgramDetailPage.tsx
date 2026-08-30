@@ -26,7 +26,7 @@ function Skeleton() {
 }
 
 // ─── Página ──────────────────────────────────────────────────────────────────
-// Detalhe do programa para a creator logada. É a tela de decisão: mostra os
+// Detalhe da campanha para a creator logada. É a tela de decisão: mostra os
 // termos completos ANTES de qualquer candidatura — o modal de apply só abre
 // daqui (o card do Abertos apenas navega para cá).
 
@@ -64,12 +64,12 @@ export default function ProgramDetailPage() {
 
       {isError && (
         <div className="py-16 text-center">
-          <p className="font-display font-semibold text-foreground">Programa não encontrado</p>
+          <p className="font-display font-semibold text-foreground">Campanha não encontrada</p>
           <p className="mt-2 text-sm text-kinetic-muted">
             Ele pode ter sido encerrado ou o link está desatualizado.
           </p>
           <Link to="/influencer/browse" className="mt-4 inline-block text-sm text-lime">
-            Ver programas abertos
+            Ver campanhas abertas
           </Link>
         </div>
       )}
@@ -87,7 +87,7 @@ export default function ProgramDetailPage() {
             </div>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-                Programa de
+                Campanha de
               </p>
               <p className="mt-1.5 font-display text-base font-semibold tracking-[-.03em] text-foreground">
                 {campaign.brand?.name ?? '—'}
@@ -152,7 +152,7 @@ export default function ProgramDetailPage() {
           )}
 
           <p className="mt-9 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            Sobre o programa
+            Sobre a campanha
           </p>
           <p className="mt-5 whitespace-pre-line break-words text-[15px] leading-relaxed text-kinetic-text">
             {campaign.description}
@@ -176,14 +176,14 @@ export default function ProgramDetailPage() {
             <div className="flex items-center gap-3">
               <StatusWord kind="application" status={myApplication.status} />
               <p className="text-sm text-kinetic-muted">
-                Você já se candidatou a este programa.{' '}
+                Você já se candidatou a esta campanha.{' '}
                 <Link to="/influencer/applications" className="text-lime hover:underline">
                   Ver candidatura
                 </Link>
               </p>
             </div>
           ) : campaign.status !== 'ACTIVE' ? (
-            <p className="text-sm text-kinetic-muted">Inscrições encerradas para este programa.</p>
+            <p className="text-sm text-kinetic-muted">Inscrições encerradas para esta campanha.</p>
           ) : (
             <button
               type="button"

@@ -35,7 +35,7 @@ export default function CampaignOverviewTab({
   const isCash = campaign.offerType === 'CASH' && campaign.offerAmount != null;
   const offerValue = formatOffer(campaign);
 
-  // Um segmento por vaga só funciona em programa pequeno; com 50 vagas viram
+  // Um segmento por vaga só funciona em campanha pequena; com 50 vagas viram
   // 50 tiras de 2px. Acima de 12, a barra passa a ser proporcional.
   const segmentTotal = Math.min(campaign.maxSpots, 12);
   const segmentFilled =
@@ -47,7 +47,7 @@ export default function CampaignOverviewTab({
     <div className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
       <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-14">
         <div className="min-w-0 flex-1">
-          <p className={monoLabel}>Sobre o programa</p>
+          <p className={monoLabel}>Sobre a campanha</p>
 
           {campaign.description ? (
             <p className="mt-5 whitespace-pre-line break-words text-[15px] leading-relaxed text-kinetic-text">

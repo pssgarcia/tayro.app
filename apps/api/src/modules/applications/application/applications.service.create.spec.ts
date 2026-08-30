@@ -1,7 +1,7 @@
 /**
  * ApplicationsService.create — candidatura autenticada
  *
- * Terceira porta de entrada de uma creator num programa (as outras duas são o
+ * Terceira porta de entrada de uma creator numa campanha (as outras duas são o
  * cadastro e a candidatura pública). Até 2026-08-24 era a única das três que
  * nunca disparava a busca do Instagram: a creator já existia, então ninguém
  * assumia a responsabilidade de atualizar o perfil dela.
@@ -78,7 +78,7 @@ describe('ApplicationsService.create', () => {
   });
 
   it('não agenda quando a candidatura não chega a ser criada', async () => {
-    // Programa encerrado: nada de queimar cota de API por candidatura recusada.
+    // Campanha encerrada: nada de queimar cota de API por candidatura recusada.
     prisma.campaign.findUnique.mockResolvedValue(
       campaignAtiva({ status: CampaignStatus.CLOSED }),
     );
@@ -89,7 +89,7 @@ describe('ApplicationsService.create', () => {
     expect(scheduleRefresh).not.toHaveBeenCalled();
   });
 
-  it('não agenda quando o programa não existe', async () => {
+  it('não agenda quando a campanha não existe', async () => {
     prisma.campaign.findUnique.mockResolvedValue(null);
 
     await expect(service.create('user-1', dto)).rejects.toThrow(
@@ -98,7 +98,7 @@ describe('ApplicationsService.create', () => {
     expect(scheduleRefresh).not.toHaveBeenCalled();
   });
 
-  it('não agenda quando o programa já está lotado', async () => {
+  it('não agenda quando a campanha já está lotada', async () => {
     prisma.campaign.findUnique.mockResolvedValue(
       campaignAtiva({ maxSpots: 1, _count: { applications: 1 } }),
     );

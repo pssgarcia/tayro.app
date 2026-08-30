@@ -60,8 +60,8 @@ Shape da resposta:
   — `content.pendingReview` e `rewards.pending` **não** geram placa própria, aparecem só como
   número no bloco "Resumo" (decisão deliberada: 3 cards âmbar iguais viravam ruído, 1 placa só
   pro mais urgente cria hierarquia).
-- "Resumo": 4 blocos de estatística (programas · candidaturas · conteúdos a revisar ·
-  recompensas), cada um com sublabel derivado (ex.: "N ativos", "N fechadas", "N entregues").
+- "Resumo": 4 blocos de estatística (campanhas · candidaturas · conteúdos a revisar ·
+  recompensas), cada um com sublabel derivado (ex.: "N ativas", "N fechadas", "N entregues").
 
 ## Acceptance Criteria
 - [x] Usuário sem perfil de marca recebe erro ao acessar o dashboard.
@@ -102,3 +102,4 @@ lido linha a linha neste retrofit — se for tocar a tela, confirmar que os 3 es
   interfaces/UI Behavior/Acceptance Criteria/Error Scenarios/Known Gaps/Test Coverage/Current
   Implementation) — sem mudança de comportamento. Spec mantida proporcionalmente pequena:
   capacidade sem máquina de estados própria não precisa de todas as seções infladas.
+- 2026-08-30 · terminologia de produto: "programa" passou a ser "campanha" em toda a copy visível (rótulos, botões, mensagens de erro, placeholders). Sem mudança de comportamento, rota, endpoint ou modelo de dados — só texto.

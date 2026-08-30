@@ -14,8 +14,8 @@ import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
 
-// Formulário do programa, compartilhado por "Novo programa" e "Editar
-// programa". Extraído do NewCampaignPage quando a edição ganhou tela —
+// Formulário da campanha, compartilhado por "Nova campanha" e "Editar
+// campanha". Extraído do NewCampaignPage quando a edição ganhou tela —
 // duplicar ~200 linhas de form + prévia era garantia de os dois divergirem na
 // primeira mudança de campo.
 
@@ -52,7 +52,7 @@ function OfferTypeToggle({
 // ─── Formulário ───────────────────────────────────────────────────────────────
 
 interface Props {
-  /** Prefill na edição; ausente em "Novo programa". */
+  /** Prefill na edição; ausente em "Nova campanha". */
   defaultValues?: CampaignFormValues;
   onSubmit: (payload: CreateCampaignPayload) => Promise<void>;
   onCancel: () => void;
@@ -117,7 +117,7 @@ export default function CampaignForm({
     <form onSubmit={handleSubmit(submit)}>
       <div className="max-w-[560px]">
         <h2 className="mb-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          O programa
+          A campanha
         </h2>
         <div className="flex flex-col gap-6">
           <KineticField

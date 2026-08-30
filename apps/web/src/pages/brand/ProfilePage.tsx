@@ -87,7 +87,7 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
             {watchedLogo && <img src={watchedLogo} alt="" className="h-full w-full object-cover" />}
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-[#6a6a64]">Programa de</p>
+            <p className="text-xs text-[#6a6a64]">Campanha de</p>
             <p className="mt-[4px] truncate font-display text-[21px] font-bold tracking-[-.045em] text-black">
               {watchedName || '—'}
             </p>

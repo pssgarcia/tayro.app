@@ -82,7 +82,7 @@ describe('ClaimAccountPage', () => {
     expect(screen.queryByLabelText(/criar senha/i)).not.toBeInTheDocument();
   });
 
-  it('preview com sucesso mostra a identidade (@handle, e-mail) e o programa da candidatura', () => {
+  it('preview com sucesso mostra a identidade (@handle, e-mail) e a campanha da candidatura', () => {
     renderPage();
     expect(screen.getByText('@thaismoreira')).toBeInTheDocument();
     expect(screen.getByText('thais@email.com')).toBeInTheDocument();

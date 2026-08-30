@@ -216,7 +216,7 @@ describe('CampaignDetailPage — encerrar/apagar', () => {
     renderPage([], { status });
 
     await waitFor(() => expect(screen.getByText('Basic Drop QA')).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /publicar programa/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /publicar campanha/i })).not.toBeInTheDocument();
   });
 
   it('clicar em "Encerrar campanha" abre a confirmação; "Cancelar" fecha sem chamar a mutation', async () => {
@@ -281,7 +281,7 @@ describe('CampaignDetailPage — publicar/editar rascunho', () => {
   it('campanha DRAFT oferece publicar e editar', async () => {
     renderPage([], { status: 'DRAFT' });
 
-    expect(await screen.findByRole('button', { name: /publicar programa/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /publicar campanha/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^editar$/i })).toHaveAttribute(
       'href',
       '/brand/campaigns/camp-1/edit',
@@ -292,17 +292,17 @@ describe('CampaignDetailPage — publicar/editar rascunho', () => {
     renderPage([], { status: 'ACTIVE' });
 
     await waitFor(() => expect(screen.getByText('Basic Drop QA')).toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /publicar programa/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /publicar campanha/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^editar$/i })).not.toBeInTheDocument();
   });
 
-  it('clicar em "Publicar programa" pede confirmação antes de chamar a mutation', async () => {
+  it('clicar em "Publicar campanha" pede confirmação antes de chamar a mutation', async () => {
     const publishMutate = vi.fn();
     renderPage([], { status: 'DRAFT' }, { publish: { mutate: publishMutate, isPending: false } });
 
-    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /publicar campanha/i }));
 
-    expect(await screen.findByText('Publicar programa?')).toBeInTheDocument();
+    expect(await screen.findByText('Publicar campanha?')).toBeInTheDocument();
     expect(publishMutate).not.toHaveBeenCalled();
   });
 
@@ -310,7 +310,7 @@ describe('CampaignDetailPage — publicar/editar rascunho', () => {
     const publishMutate = vi.fn((_id, opts) => opts?.onSuccess?.());
     renderPage([], { status: 'DRAFT' }, { publish: { mutate: publishMutate, isPending: false } });
 
-    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /publicar campanha/i }));
     fireEvent.click(await screen.findByRole('button', { name: /^publicar$/i }));
 
     expect(publishMutate).toHaveBeenCalledWith(
@@ -323,10 +323,10 @@ describe('CampaignDetailPage — publicar/editar rascunho', () => {
     const publishMutate = vi.fn();
     renderPage([], { status: 'DRAFT' }, { publish: { mutate: publishMutate, isPending: false } });
 
-    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /publicar campanha/i }));
     fireEvent.click(await screen.findByRole('button', { name: /cancelar/i }));
 
-    expect(screen.queryByText('Publicar programa?')).not.toBeInTheDocument();
+    expect(screen.queryByText('Publicar campanha?')).not.toBeInTheDocument();
     expect(publishMutate).not.toHaveBeenCalled();
   });
 
@@ -338,9 +338,9 @@ describe('CampaignDetailPage — publicar/editar rascunho', () => {
       { publish: { mutate: vi.fn(), isPending: false, isError: true } },
     );
 
-    fireEvent.click(await screen.findByRole('button', { name: /publicar programa/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /publicar campanha/i }));
 
     expect(await screen.findByText(/não foi possível publicar/i)).toBeInTheDocument();
-    expect(screen.getByText('Publicar programa?')).toBeInTheDocument();
+    expect(screen.getByText('Publicar campanha?')).toBeInTheDocument();
   });
 });

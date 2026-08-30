@@ -119,7 +119,7 @@ function AppShell() {
         <Route path="profile" element={<InfluencerProfilePage />} />
       </Route>
 
-      {/* Vitrine pública de programas — sem auth, sem layout (roadmap.md, AGORA #4) */}
+      {/* Vitrine pública de campanhas — sem auth, sem layout (roadmap.md, AGORA #4) */}
       <Route path="/programs" element={<BrowseProgramsPublicPage />} />
 
       {/* Rota pública de inscrição — sem auth, sem layout */}

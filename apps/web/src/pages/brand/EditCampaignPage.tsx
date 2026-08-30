@@ -5,13 +5,13 @@ import { useUpdateCampaign } from '../../hooks/useCampaigns';
 import CampaignForm from './CampaignForm';
 import { campaignToFormValues } from './campaignFormSchema';
 
-// Editar programa (PATCH /campaigns/:id). O endpoint existe desde o começo e
+// Editar campanha (PATCH /campaigns/:id). O endpoint existe desde o começo e
 // nunca teve tela — a marca criava um rascunho e não conseguia mais corrigir
 // nem um typo do título.
 //
 // Só DRAFT é editável: é regra do backend (400 em ACTIVE/CLOSED), então a tela
 // não tenta salvar o que a API vai recusar — mostra o motivo e devolve pro
-// detalhe. Programa publicado é contrato com quem já se candidatou.
+// detalhe. Campanha publicada é contrato com quem já se candidatou.
 
 export default function EditCampaignPage() {
   const { id = '' } = useParams<{ id: string }>();
@@ -37,7 +37,7 @@ export default function EditCampaignPage() {
 
       <main className="mx-auto max-w-5xl px-6 pb-10">
         <h1 className="mb-9 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
-          Editar programa
+          Editar campanha
         </h1>
 
         {isLoading && (
@@ -48,14 +48,14 @@ export default function EditCampaignPage() {
 
         {isError && (
           <p className="text-sm text-destructive">
-            Não foi possível carregar o programa. Tente novamente.
+            Não foi possível carregar a campanha. Tente novamente.
           </p>
         )}
 
         {!isLoading && !isError && campaign && campaign.status !== 'DRAFT' && (
           <div className="max-w-[520px]">
             <p className="text-sm text-kinetic-muted">
-              Este programa já foi publicado e não pode mais ser editado. Quem se candidatou viu
+              Esta campanha já foi publicada e não pode mais ser editada. Quem se candidatou viu
               estes termos — mudá-los agora quebraria o combinado.
             </p>
             <button
@@ -63,7 +63,7 @@ export default function EditCampaignPage() {
               onClick={backToDetail}
               className="mt-7 min-h-[52px] border border-kinetic-border px-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted transition-colors hover:border-foreground hover:text-foreground"
             >
-              Voltar ao programa
+              Voltar à campanha
             </button>
           </div>
         )}

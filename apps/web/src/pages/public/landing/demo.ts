@@ -145,7 +145,7 @@ export const DEMO_CREATORS: DemoCreator[] = [
 ];
 
 /**
- * O programa publicado pela marca — a mesma oferta que aparece no passo 01, no
+ * A campanha publicada pela marca — a mesma oferta que aparece no passo 01, no
  * link do passo 02 e na placa da candidatura no Story mobile. Um objeto só pra
  * não haver três valores diferentes contando a mesma história.
  */

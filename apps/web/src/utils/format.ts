@@ -220,7 +220,7 @@ export function creatorPostSrc(influencerId: string, position: number): string {
 /**
  * URL absoluta de uma rota pública, no domínio em que a aplicação está rodando.
  *
- * É o endereço que a marca copia pra divulgar o programa e que a creator manda
+ * É o endereço que a marca copia pra divulgar a campanha e que a creator manda
  * pras marcas — ou seja, sai do produto e vai pro mundo. Por isso ele não pode
  * ser um literal: até 2026-08-24 o código montava `https://tayro.app/...`, um
  * domínio que **nunca existiu** (NXDOMAIN). Todo link copiado desde a v0.29.0

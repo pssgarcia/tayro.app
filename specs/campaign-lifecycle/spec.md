@@ -115,7 +115,7 @@ precisa vir antes de rota parametrizada, senão "mine" seria interpretado como `
 ## UI Behavior
 `CampaignHeader` (dentro de `CampaignDetailPage`) deriva as ações visíveis do `status` da
 campanha:
-- `DRAFT`: "Publicar programa" · "Editar" (abre `/brand/campaigns/:id/edit`) · "Apagar rascunho".
+- `DRAFT`: "Publicar campanha" · "Editar" (abre `/brand/campaigns/:id/edit`) · "Apagar rascunho".
 - `ACTIVE`: só "Encerrar campanha".
 - `CLOSED` / `COMPLETED`: nenhuma ação — estado terminal.
 
@@ -220,3 +220,4 @@ Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
   "Behavior". Teste de DTO novo.
 - 2026-08-23 · `close()` e `remove()` ganharam teste de unidade (sucesso, pré-condição violada,
   não-dono, inexistente). Fecha o último `[ ]` de "toda transição tem teste".
+- 2026-08-30 · terminologia de produto: "programa" passou a ser "campanha" em toda a copy visível (rótulos, botões, mensagens de erro, placeholders). Sem mudança de comportamento, rota, endpoint ou modelo de dados — só texto.

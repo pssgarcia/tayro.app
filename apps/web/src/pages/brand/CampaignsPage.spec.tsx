@@ -26,7 +26,7 @@ function makeCampaign(
   return {
     ...campaignFixture,
     id,
-    title: `Programa ${id}`,
+    title: `Campanha ${id}`,
     status,
     maxSpots: 10,
     approvedCount: 0,
@@ -75,17 +75,17 @@ describe('CampaignsPage — estados de carga', () => {
     mockCampaigns(undefined, { isLoading: true });
     renderPage();
 
-    expect(screen.queryByText(/ainda não criou nenhum programa/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ainda não criou nenhuma campanha/i)).not.toBeInTheDocument();
   });
 
-  it('convida a criar o primeiro programa quando não há nenhum', () => {
+  it('convida a criar a primeira campanha quando não há nenhuma', () => {
     mockCampaigns([]);
     renderPage();
 
-    expect(screen.getByText(/ainda não criou nenhum programa/i)).toBeInTheDocument();
+    expect(screen.getByText(/ainda não criou nenhuma campanha/i)).toBeInTheDocument();
   });
 
-  it('leva pra criação de programa pelo botão Novo', () => {
+  it('leva pra criação de campanha pelo botão Novo', () => {
     mockCampaigns([]);
     renderPage();
 
@@ -102,13 +102,13 @@ describe('CampaignsPage — filtro por status', () => {
     makeCampaign('c', 'CLOSED'),
   ];
 
-  it('lista todos os programas na aba Todas', () => {
+  it('lista todas as campanhas na aba Todas', () => {
     mockCampaigns(todas());
     renderPage();
 
-    expect(screen.getAllByText('Programa a').length).toBeGreaterThan(0);
-    expect(screen.getByText('Programa d')).toBeInTheDocument();
-    expect(screen.getByText('Programa c')).toBeInTheDocument();
+    expect(screen.getAllByText('Campanha a').length).toBeGreaterThan(0);
+    expect(screen.getByText('Campanha d')).toBeInTheDocument();
+    expect(screen.getByText('Campanha c')).toBeInTheDocument();
   });
 
   it('filtra para rascunhos', () => {
@@ -117,22 +117,22 @@ describe('CampaignsPage — filtro por status', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Rascunho' }));
 
-    expect(screen.getByText('Programa d')).toBeInTheDocument();
-    expect(screen.queryByText('Programa c')).not.toBeInTheDocument();
+    expect(screen.getByText('Campanha d')).toBeInTheDocument();
+    expect(screen.queryByText('Campanha c')).not.toBeInTheDocument();
   });
 
-  it('explica quando o filtro não tem nenhum programa', () => {
+  it('explica quando o filtro não tem nenhuma campanha', () => {
     mockCampaigns([makeCampaign('a', 'ACTIVE')]);
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'Encerradas' }));
 
-    expect(screen.getByText(/nenhum programa com status "encerradas"/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhuma campanha com status "encerradas"/i)).toBeInTheDocument();
   });
 });
 
 // Regressão registrada em CLAUDE.md (v0.29.0): a placa vazava pra qualquer
-// aba. Ela É um programa ativo — aparecer em "Rascunho"/"Encerradas" faz
+// aba. Ela É uma campanha ativa — aparecer em "Rascunho"/"Encerradas" faz
 // parecer que existe um ativo naquele filtro.
 describe('CampaignsPage — placa em destaque', () => {
   const comAtivos = () => [
@@ -141,13 +141,13 @@ describe('CampaignsPage — placa em destaque', () => {
     makeCampaign('rascunho', 'DRAFT'),
   ];
 
-  it('destaca o programa ativo com maior taxa de preenchimento', () => {
+  it('destaca a campanha ativa com maior taxa de preenchimento', () => {
     mockCampaigns(comAtivos());
     renderPage();
 
     const placa = placaEmDestaque();
     expect(placa).not.toBeNull();
-    expect(within(placa as HTMLElement).getByText('Programa cheio')).toBeInTheDocument();
+    expect(within(placa as HTMLElement).getByText('Campanha cheio')).toBeInTheDocument();
   });
 
   it.each(['Rascunho', 'Encerradas'])('não mostra a placa na aba %s', (aba) => {
@@ -168,7 +168,7 @@ describe('CampaignsPage — placa em destaque', () => {
     expect(screen.getByRole('button', { name: /copiar link/i })).toBeInTheDocument();
   });
 
-  it('não mostra placa quando não há nenhum programa ativo', () => {
+  it('não mostra placa quando não há nenhuma campanha ativa', () => {
     mockCampaigns([makeCampaign('d', 'DRAFT'), makeCampaign('c', 'CLOSED')]);
     renderPage();
 
