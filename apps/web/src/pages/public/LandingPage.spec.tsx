@@ -145,9 +145,10 @@ describe('LandingPage', () => {
   });
 
   // O mock do redesign trazia "ALINHAMENTO DE MARCA — 94%" em destaque no herói.
-  // É o mesmo `matchScore` que a Fila calcula com `hash(id)`, sem regra pública
-  // de cálculo — o `vision.md` nº 5 proíbe. Numa página de marketing seria
-  // promessa, não enfeite. Este teste impede que volte por cópia do mock.
+  // É o mesmo `matchScore` que a Fila calculava com `hash(id)` (removido de lá
+  // em 2026-08-31), sem regra pública de cálculo — o `vision.md` nº 5 proíbe.
+  // Numa página de marketing seria promessa, não enfeite. Este teste impede
+  // que volte por cópia do mock.
   it('não exibe métrica de reputação fabricada', () => {
     renderAt();
     const texto = document.body.textContent ?? '';

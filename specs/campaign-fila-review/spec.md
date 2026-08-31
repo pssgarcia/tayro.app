@@ -27,10 +27,8 @@ comportamento de polling enquanto dados de Instagram ainda não chegaram.
 - Máquina de estados, guardas e endpoints de `Application` — ver `applications-pipeline`. Esta
   interface só consome (aprova/rejeita/pede refresh via os endpoints já descritos lá).
 - Busca de dados de Instagram em si (retry, staleness) — ver `instagram-sync`.
-- Cálculo real de afinidade entre creator e campanha. O que a tela chama de "Match Score" **não
-  é um cálculo real** — é um placeholder visual (hash determinístico do `application.id`,
-  mapeado pra 70–95%), decisão explícita registrada em comentário no próprio código pra não
-  fingir um cálculo real ainda. Não interpretar o número exibido como sinal de afinidade.
+- Cálculo de afinidade entre creator e campanha. Não existe — nem de verdade nem como
+  placeholder (ver Change History: "Match Score" foi removido em 2026-08-31).
 
 ## Domain
 Sem entidade própria. A tela lê `Application` (via `GET /applications/campaign/:id`) e reflete
@@ -103,14 +101,8 @@ negócio separada da apresentação).
 - [x] "Fechar revisão" no mobile não dispara navegação de rota.
 
 ## Known Gaps
-- **"Match Score" é placeholder E continua em inglês de propósito.** Foi o único rótulo deixado
-  de fora da tradução de 2026-08-23: traduzi-lo daria aparência de métrica nativa a um número
-  que não é calculado, o que agrava a contradição com `vision.md` nº 5 em vez de só mantê-la.
-  Decisão sobre remover ou manter está com o Pedro.
-- **"Match Score" é placeholder** (hash determinístico do id da candidatura, sem cálculo real) —
-  já registrado em "Out of Scope" como decisão deliberada, repetido aqui porque um número de 70
-  a 95 na tela é indistinguível de métrica real pra quem olha. Não tem teste de propósito: o que
-  vale travar é que ele não finge vir do dado da creator, não o valor em si.
+(O gap "Match Score" era placeholder sem cálculo real, com a decisão de remover ou manter em
+aberto com o Pedro — **fechado em 2026-08-31**: removido. Ver Change History.)
 (O gap "nenhum teste automatizado cobre esta capacidade", do retrofit de 2026-08-21, foi
 **fechado em 2026-08-23** — ver Test Coverage e Change History.)
 
@@ -158,8 +150,6 @@ props, nenhum hook mockado:
   `CandidateStory` é o mesmo componente nos dois modos; a barra de ação é gateada por
   `application.status === 'PENDING'`. O rótulo de status (`applicationStatusWord`) foi extraído
   de `CampaignFilaTab` pra `utils/format.ts` — desktop e mobile leem do mesmo lugar.
-- `matchScore` (placeholder, ver "Out of Scope"): `hash = hash*31 + charCode` sobre
-  `application.id`, depois `70 + hash % 26`.
 - "Bio Note" na UI mostra `application.message` (dado real da creator) — apesar do nome sugerir
   algo mais elaborado, não é um campo separado nem calculado.
 - Breakpoints Tailwind: desktop `hidden lg:grid`, mobile `lg:hidden`.
@@ -174,6 +164,11 @@ props, nenhum hook mockado:
   mas a candidatura já avançou e o botão reabilita), e o tally vinha zerado por isso.
 
 ## Change History
+- 2026-08-31 · "Match Score" removido (placa de detalhe, desktop). Era placeholder determinístico
+  (`hash(application.id)` mapeado pra 70–95%), sem regra de cálculo real — contradição registrada
+  com `vision.md` nº 5 desde o retrofit, decisão de remover ou manter estava com o Pedro. Decidido:
+  remover. `ProfilePlate` ganhou `aria-label="Detalhe da candidatura"` (via `KineticPlate`) pra
+  repor a âncora de teste que "Match Score" servia.
 - 2026-08-31 · telefone da creator (`influencer.phone`, ver `creator-discovery-and-apply`)
   passou a aparecer como link `tel:` logo abaixo do `@handle`, nas duas superfícies — mesmo
   tratamento condicional do `@handle` (some quando ausente, sem placeholder). 4 testes novos.

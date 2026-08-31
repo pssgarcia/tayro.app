@@ -44,7 +44,7 @@ export const campaignFormSchema = z
     title: z.string().min(3, 'Mínimo 3 caracteres'),
     description: z.string().min(10, 'Mínimo 10 caracteres'),
     briefUrl: z.string().url('URL inválida').or(z.literal('')).optional(),
-    niches: z.array(z.string()).min(1, 'Selecione ao menos um nicho'),
+    niches: z.array(z.string()),
     maxSpots: z.coerce.number().int().min(1, 'Mínimo 1 vaga'),
     // Comparação em string funciona pq yyyy-MM-dd ordena igual lexicograficamente.
     deadline: z

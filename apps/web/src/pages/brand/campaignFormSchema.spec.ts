@@ -80,3 +80,13 @@ describe('campaignFormSchema — deadline', () => {
     expect(campaignFormSchema.safeParse(makeValues('')).success).toBe(true);
   });
 });
+
+// Nicho deixou de ser obrigatório a pedido do Pedro (2026-08-31). O backend
+// já aceitava `niches: []` (sem `@ArrayMinSize` no DTO) — só o form barrava.
+describe('campaignFormSchema — niches', () => {
+  it('aceita campanha sem nenhum nicho selecionado', () => {
+    const result = campaignFormSchema.safeParse({ ...makeValues('2099-01-01'), niches: [] });
+
+    expect(result.success).toBe(true);
+  });
+});

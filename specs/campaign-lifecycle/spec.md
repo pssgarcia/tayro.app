@@ -3,7 +3,7 @@ slug: campaign-lifecycle
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-23
+last_updated: 2026-08-31
 implements:
   - apps/api/prisma/schema.prisma (model Campaign, enum CampaignStatus, enum OfferType)
   - apps/api/src/modules/campaigns/presentation/campaigns.controller.ts
@@ -38,7 +38,8 @@ incluindo os campos de oferta (`offer*`) e a visibilidade pública/privada por s
 ## Domain
 - `Campaign` pertence a um `Brand` (`brandId`, obrigatório).
 - Campos descritivos: `title`, `description` (ambos obrigatórios, texto livre), `briefUrl`
-  (opcional), `niches: string[]`.
+  (opcional), `niches: string[]` (sem mínimo — pode ficar vazio; nunca teve `@ArrayMinSize` no
+  DTO, só o formulário barrava com zero selecionados até 2026-08-31).
 - `maxSpots` — inteiro ≥ 1. Representa vagas para creators **aprovadas**, não o total de
   candidaturas recebidas (a contagem real de candidaturas é domínio de `applications-pipeline`).
 - `deadline` — data pura opcional (sem componente de hora).
@@ -115,9 +116,13 @@ precisa vir antes de rota parametrizada, senão "mine" seria interpretado como `
 ## UI Behavior
 `CampaignHeader` (dentro de `CampaignDetailPage`) deriva as ações visíveis do `status` da
 campanha:
-- `DRAFT`: "Publicar campanha" · "Editar" (abre `/brand/campaigns/:id/edit`) · "Apagar rascunho".
-- `ACTIVE`: só "Encerrar campanha".
-- `CLOSED` / `COMPLETED`: nenhuma ação — estado terminal.
+- `DRAFT`: "Publicar campanha" · "Editar" (abre `/brand/campaigns/:id/edit`) · "Apagar rascunho" —
+  os três abaixo do título, como texto.
+- `ACTIVE`: só "Encerrar campanha" — botão de verdade (borda, não texto sublinhado) no canto
+  superior direito, acima do contador de vagas.
+- `CLOSED` / `COMPLETED`: nenhuma ação — estado terminal. Em vez da ação, uma tag (borda, mono,
+  sem preenchimento — mesma linguagem dos botões do sistema) com o status (`campaignStatusWord`)
+  aparece ao lado do título, pra a tela não ficar muda sobre por que não há mais o que fazer ali.
 
 `EditCampaignPage` reusa o mesmo formulário de `NewCampaignPage`; fora de `DRAFT`, a tela não
 tenta submeter — mostra o motivo em vez de deixar a API recusar.
@@ -221,3 +226,15 @@ Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
 - 2026-08-23 · `close()` e `remove()` ganharam teste de unidade (sucesso, pré-condição violada,
   não-dono, inexistente). Fecha o último `[ ]` de "toda transição tem teste".
 - 2026-08-30 · terminologia de produto: "programa" passou a ser "campanha" em toda a copy visível (rótulos, botões, mensagens de erro, placeholders). Sem mudança de comportamento, rota, endpoint ou modelo de dados — só texto.
+- 2026-08-31 · `CampaignHeader` reposicionado, a pedido do Pedro. "Encerrar campanha" (`ACTIVE`)
+  virou botão de verdade (borda) no canto superior direito, acima do contador de vagas — antes
+  era texto sublinhado embaixo do título. `CLOSED`/`COMPLETED` ganharam uma tag de status
+  (borda, mesma linguagem visual) ao lado do título, ocupando o espaço que a ação ocuparia — a
+  primeira versão usou `StatusWord` (palavra solta, sem borda) e foi trocada por feedback visual
+  direto do Pedro ("não gostei do texto ao lado, melhora o visual"). Sem mudança de comportamento
+  de domínio, só layout.
+- 2026-08-31 · nicho deixou de ser obrigatório ao criar/editar campanha, a pedido do Pedro. O
+  backend nunca exigiu (`CreateCampaignDto.niches` não tem `@ArrayMinSize`, sempre aceitou `[]`)
+  — a barreira era só o `.min(1)` do `campaignFormSchema`, removido, junto do asterisco de
+  "obrigatório" ao lado do rótulo "Nichos". Toda tela que exibe nichos de campanha já era
+  condicional a `niches.length > 0`, então nenhuma tela quebra com o campo vazio.
