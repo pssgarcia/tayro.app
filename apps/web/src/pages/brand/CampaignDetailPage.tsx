@@ -5,7 +5,7 @@ import { useCloseCampaign, useDeleteCampaign, usePublishCampaign } from '../../h
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import type { Application, Campaign } from '../../types/api';
-import { daysUntil } from '../../utils/format';
+import { campaignStatusWord, daysUntil } from '../../utils/format';
 import CampaignFilaTab from './CampaignFilaTab';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
@@ -53,27 +53,27 @@ function CampaignHeader({
   onApagar: () => void;
 }) {
   const days = daysUntil(deadline);
+  // Terminal = sem ação nenhuma (CLOSED/COMPLETED) — o rótulo de status ocupa
+  // o espaço que a ação ocuparia, ao lado do título, pra a tela não ficar
+  // muda sobre por que não há mais o que fazer aqui.
+  const terminal = status === 'CLOSED' || status === 'COMPLETED';
 
   return (
-    <div className="flex items-end justify-between gap-4 px-4 pb-6 pt-4 sm:px-6">
+    <div className="flex items-start justify-between gap-4 px-4 pb-6 pt-4 sm:px-6">
       <div className="min-w-0">
-        <h1 className="font-display text-[32px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
-          {title}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-[32px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
+            {title}
+          </h1>
+          {terminal && (
+            <span className="inline-flex shrink-0 items-center self-center border border-kinetic-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+              {campaignStatusWord[status]}
+            </span>
+          )}
+        </div>
         <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
           {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
         </p>
-        {/* Ação de gestão do status - só existe transição pra estado ativo/rascunho,
-            CLOSED/COMPLETED não tem ação nenhuma (terminal). */}
-        {status === 'ACTIVE' && (
-          <button
-            type="button"
-            onClick={onEncerrar}
-            className="mt-3 font-mono text-[10px] uppercase tracking-widest text-kinetic-text underline underline-offset-4 transition-colors hover:text-foreground"
-          >
-            Encerrar campanha
-          </button>
-        )}
         {/* DRAFT tem três saídas. "Publicar" é a que faltava: sem ela, um
             rascunho salvo com "Agora não" no NewCampaignPage ficava preso em
             DRAFT pra sempre — o publish só existia naquele modal pós-criação.
@@ -104,10 +104,21 @@ function CampaignHeader({
           </div>
         )}
       </div>
-      <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground sm:text-[40px]">
-        {spotsUsed}
-        <span className="text-kinetic-muted">/{maxSpots}</span>
-      </p>
+      <div className="flex shrink-0 flex-col items-end gap-3">
+        {status === 'ACTIVE' && (
+          <button
+            type="button"
+            onClick={onEncerrar}
+            className="flex min-h-[38px] items-center border border-kinetic-border px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-foreground hover:text-foreground"
+          >
+            Encerrar campanha
+          </button>
+        )}
+        <p className="font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground sm:text-[40px]">
+          {spotsUsed}
+          <span className="text-kinetic-muted">/{maxSpots}</span>
+        </p>
+      </div>
     </div>
   );
 }

@@ -220,6 +220,31 @@ describe('CampaignDetailPage — encerrar/apagar', () => {
     expect(screen.queryByRole('button', { name: /publicar campanha/i })).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['CLOSED', 'Encerrada'],
+    ['COMPLETED', 'Concluída'],
+  ] as const)(
+    'campanha %s mostra o status ao lado do título, sem ação nenhuma pra substituir',
+    async (status, palavra) => {
+      renderPage([], { status });
+
+      const title = await screen.findByRole('heading', { name: 'Basic Drop QA' });
+      expect(within(title.parentElement as HTMLElement).getByText(palavra)).toBeInTheDocument();
+    },
+  );
+
+  it.each(['ACTIVE', 'DRAFT'] as const)(
+    'campanha %s não mostra status ao lado do título — a ação já diz o estado',
+    async (status) => {
+      renderPage([], { status });
+
+      const title = await screen.findByRole('heading', { name: 'Basic Drop QA' });
+      expect(
+        within(title.parentElement as HTMLElement).queryByText(/ativa|rascunho/i),
+      ).not.toBeInTheDocument();
+    },
+  );
+
   it('clicar em "Encerrar campanha" abre a confirmação; "Cancelar" fecha sem chamar a mutation', async () => {
     const closeMutate = vi.fn();
     renderPage([], { status: 'ACTIVE' }, { close: { mutate: closeMutate, isPending: false } });
