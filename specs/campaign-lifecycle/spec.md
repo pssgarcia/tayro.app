@@ -38,7 +38,8 @@ incluindo os campos de oferta (`offer*`) e a visibilidade pública/privada por s
 ## Domain
 - `Campaign` pertence a um `Brand` (`brandId`, obrigatório).
 - Campos descritivos: `title`, `description` (ambos obrigatórios, texto livre), `briefUrl`
-  (opcional), `niches: string[]`.
+  (opcional), `niches: string[]` (sem mínimo — pode ficar vazio; nunca teve `@ArrayMinSize` no
+  DTO, só o formulário barrava com zero selecionados até 2026-08-31).
 - `maxSpots` — inteiro ≥ 1. Representa vagas para creators **aprovadas**, não o total de
   candidaturas recebidas (a contagem real de candidaturas é domínio de `applications-pipeline`).
 - `deadline` — data pura opcional (sem componente de hora).
@@ -232,3 +233,8 @@ Arquivo: `apps/api/src/modules/campaigns/application/campaigns.service.spec.ts`.
   primeira versão usou `StatusWord` (palavra solta, sem borda) e foi trocada por feedback visual
   direto do Pedro ("não gostei do texto ao lado, melhora o visual"). Sem mudança de comportamento
   de domínio, só layout.
+- 2026-08-31 · nicho deixou de ser obrigatório ao criar/editar campanha, a pedido do Pedro. O
+  backend nunca exigiu (`CreateCampaignDto.niches` não tem `@ArrayMinSize`, sempre aceitou `[]`)
+  — a barreira era só o `.min(1)` do `campaignFormSchema`, removido, junto do asterisco de
+  "obrigatório" ao lado do rótulo "Nichos". Toda tela que exibe nichos de campanha já era
+  condicional a `niches.length > 0`, então nenhuma tela quebra com o campo vazio.
