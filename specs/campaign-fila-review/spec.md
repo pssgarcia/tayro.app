@@ -49,8 +49,13 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
   - **"Revisar"** (padrão): revisão em formato Story do Instagram — um candidato `PENDING` por
     vez, em tela cheia, cobrindo a navegação inferior do layout de marca. Navegação por toque nas
     laterais ou swipe horizontal. Aprovar ou rejeitar avança automaticamente pro próximo
-    candidato pendente. Barra de progresso em segmentos; tela de fim de fila mostra a contagem de
-    aprovados/rejeitados da sessão.
+    candidato pendente. Barra de progresso em segmentos; tela de fim de fila ("Revisão concluída
+    — Fila em dia.") mostra a contagem de aprovados/rejeitados da sessão — só aparece quando a
+    campanha **teve** candidatura (existiu o que revisar). Sem nenhuma candidatura (campanha
+    recém-publicada), mostra o mesmo estado vazio do modo "Todas" ("Nenhuma candidatura ainda.")
+    em vez de "Fila em dia" — as duas coisas pareciam a mesma condição (fila `PENDING` vazia) até
+    2026-08-31, mas são estados diferentes: uma diz "você revisou tudo", a outra diz "ainda não
+    tem o que revisar".
   - **"Todas"**: lista de **toda** candidatura da campanha, qualquer status, com o rótulo de
     status em português (fonte única `applicationStatusWord` em `utils/format.ts`, compartilhada
     com a lista Pipeline do desktop). Tocar numa linha abre o **mesmo** detalhe usado no modo
@@ -125,8 +130,10 @@ são dubladas:
 
 `apps/web/src/pages/brand/CampaignPipelineMobileStory.spec.tsx` — componente controlado por
 props, nenhum hook mockado:
-- [x] Recorte da fila (modo "Revisar"): só `PENDING`; sem pendente, cai direto no fim de fila;
-      nada de fim de fila prematuro durante o carregamento.
+- [x] Recorte da fila (modo "Revisar"): só `PENDING`; sem pendente **mas com candidatura
+      existente**, cai no fim de fila; nada de fim de fila prematuro durante o carregamento.
+- [x] Sem candidatura nenhuma (campanha recém-publicada), mostra "Nenhuma candidatura ainda." —
+      não o fim de fila, que implicaria uma revisão que nunca aconteceu.
 - [x] Modo "Todas": lista toda candidatura com o rótulo de status; mostra as decididas mesmo sem
       nenhuma `PENDING`; estado vazio; tocar numa linha abre o detalhe sem sair da revisão;
       detalhe de decidida não oferece Aprovar/Recusar; detalhe de `PENDING` ainda decide;
@@ -191,3 +198,11 @@ props, nenhum hook mockado:
   junto foi rejeitado — ver `decisions.md`). Adicionado o modo "Todas" (lista de toda candidatura
   + detalhe reusando `CandidateStory` em modo leitura pra decididas). `applicationStatusWord`
   movido pra `utils/format.ts`. 8 testes novos.
+- 2026-08-31 · bug reportado pelo Pedro: publicar uma campanha e abrir a Fila no mobile caía
+  direto em "Fila em dia" ("Revisão concluída" com 0/0/0), como se uma revisão tivesse
+  acontecido. `showCompletion` só olhava a fila `PENDING` vazia, sem distinguir "nunca teve
+  candidatura" (`applications.length === 0`) de "tinha e já foi toda decidida". Ganhou o guard
+  `applications.length > 0`; sem candidatura nenhuma, o modo "Revisar" mostra o mesmo "Nenhuma
+  candidatura ainda." que o modo "Todas" já mostrava (a inconsistência entre os dois modos era o
+  sintoma). 2 testes novos, 2 fixtures de teste corrigidos (usavam `[]` pra testar o fim de fila,
+  que era o próprio bug).

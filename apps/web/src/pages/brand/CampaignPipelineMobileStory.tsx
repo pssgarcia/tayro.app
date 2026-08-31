@@ -103,7 +103,16 @@ export default function CampaignPipelineMobileStory({
 
   // O candidato em detalhe agora — o mesmo `CandidateStory` serve os dois modos.
   const active = mode === 'review' ? (reviewDone ? null : reviewCurrent) : allCurrent;
-  const showCompletion = mode === 'review' && (reviewDone || !reviewCurrent);
+  // "Fila em dia" (CompletionState) é "revisão concluída" — só faz sentido
+  // quando existiu candidatura pra revisar. Sem isso (campanha recém-
+  // publicada, `applications` vazio), a fila PENDING também está vazia por
+  // construção e a condição antiga (só `reviewDone`) mostrava "Revisão
+  // concluída" com 0/0/0 igual a quando alguém de fato zerou a fila —
+  // MORDEU ao vivo (2026-08-31). O modo Todas já tinha a distinção certa
+  // (mensagem "Nenhuma candidatura ainda." só quando `applications` é
+  // vazio); o Revisar ganha o mesmo estado aqui.
+  const showCompletion = mode === 'review' && applications.length > 0 && (reviewDone || !reviewCurrent);
+  const showEmptyReview = mode === 'review' && applications.length === 0;
   const inAllDetail = mode === 'all' && allCurrent != null;
 
   function changeMode(next: Mode) {
@@ -255,6 +264,10 @@ export default function CampaignPipelineMobileStory({
             remaining={queue.length}
             onBack={onExit}
           />
+        ) : showEmptyReview ? (
+          <div className="flex flex-1 items-center justify-center px-8">
+            <p className="font-mono text-sm text-kinetic-muted">Nenhuma candidatura ainda.</p>
+          </div>
         ) : active ? (
           <CandidateStory
             key={active.id}
