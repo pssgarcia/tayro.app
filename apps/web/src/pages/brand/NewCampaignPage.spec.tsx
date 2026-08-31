@@ -186,7 +186,11 @@ describe('NewCampaignPage', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('não envia nada sem nicho selecionado', async () => {
+  // Nicho deixou de ser obrigatório a pedido do Pedro (2026-08-31) — antes
+  // este teste travava justamente o oposto ("não envia nada sem nicho
+  // selecionado"). O backend já aceitava `niches: []`, só o form barrava.
+  it('cria o rascunho sem nenhum nicho selecionado', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: draft } as any);
     renderPage();
 
     fireEvent.change(screen.getByLabelText(/título/i), { target: { value: 'Verão 2026' } });
@@ -197,7 +201,11 @@ describe('NewCampaignPage', () => {
     fireEvent.change(screen.getByLabelText(/valor \(r\$\)/i), { target: { value: '300' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar rascunho/i }));
 
-    expect(await screen.findByText(/selecione ao menos um nicho/i)).toBeInTheDocument();
-    expect(api.post).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        '/campaigns',
+        expect.objectContaining({ niches: [] }),
+      );
+    });
   });
 });

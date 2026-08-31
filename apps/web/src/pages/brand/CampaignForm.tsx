@@ -142,9 +142,7 @@ export default function CampaignForm({
             {...register('briefUrl')}
           />
           <div>
-            <p className="mb-3 text-[12px] text-[#75756E]">
-              Nichos<span className="ml-0.5 text-foreground">*</span>
-            </p>
+            <p className="mb-3 text-[12px] text-[#75756E]">Nichos</p>
             <Controller
               name="niches"
               control={control}
