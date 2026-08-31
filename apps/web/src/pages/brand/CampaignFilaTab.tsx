@@ -137,6 +137,14 @@ function ProfilePlate({
                   <ExternalLink size={12} className="shrink-0" />
                 </a>
               )}
+              {influencer.phone && (
+                <a
+                  href={`tel:${influencer.phone}`}
+                  className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
+                >
+                  {influencer.phone}
+                </a>
+              )}
             </div>
           </div>
           <div className="shrink-0 text-right">

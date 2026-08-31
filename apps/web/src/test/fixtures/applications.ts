@@ -13,6 +13,7 @@ export function makeApplication(
     name?: string;
     igFetchStatus?: 'PENDING' | 'OK' | 'FAILED' | null;
     message?: string | null;
+    phone?: string | null;
   } = {},
 ): Application {
   const {
@@ -20,6 +21,7 @@ export function makeApplication(
     name = `Creator ${id}`,
     igFetchStatus = 'OK',
     message = null,
+    phone = '11999990000',
   } = overrides;
 
   return {
@@ -34,6 +36,7 @@ export function makeApplication(
       id: `inf-${id}`,
       name,
       avatarUrl: null,
+      phone,
       instagramHandle: `creator${id}`,
       niches: ['fitness'],
       city: 'Belo Horizonte',

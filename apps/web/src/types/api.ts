@@ -15,6 +15,7 @@ export interface ApplicationInfluencer {
   id: string;
   name: string;
   avatarUrl: string | null;
+  phone: string | null;
   instagramHandle: string | null;
   niches: string[];
   city: string | null;

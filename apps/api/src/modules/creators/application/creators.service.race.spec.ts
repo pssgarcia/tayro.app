@@ -55,6 +55,7 @@ const applyDto = {
   igHandle: '@creator',
   email: 'creator@example.com',
   name: 'Creator',
+  phone: '11999990000',
   message: 'quero participar',
 };
 

@@ -3,7 +3,7 @@ slug: applications-pipeline
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-23
+last_updated: 2026-08-31
 implements:
   - apps/api/prisma/schema.prisma (model Application, enum ApplicationStatus)
   - apps/api/src/modules/applications/presentation/applications.controller.ts
@@ -166,11 +166,15 @@ Arquivo: `apps/api/src/modules/applications/application/applications.service.rac
 - Cooldown de refresh de IG lido via `ConfigService` (`IG_REFRESH_COOLDOWN_MINUTES`, default
   `'15'`), comparado contra `influencer.igFetchedAt` (carimbado em toda tentativa, sucesso ou
   falha — mecanismo completo descrito em `instagram-sync`).
-- `influencerSelect` (shape compartilhado de campos de IG) usado em `findByCampaign` e no
-  retorno de `refreshInfluencerIg`, pra manter o mesmo contrato de resposta.
+- `influencerSelect` (shape compartilhado de campos de IG, mais `name`/`phone`) usado em
+  `findByCampaign` e no retorno de `refreshInfluencerIg`, pra manter o mesmo contrato de
+  resposta. `phone` é o único contato direto com a creator fora do @ do Instagram — captado
+  hoje só na candidatura pública (`creator-discovery-and-apply`), pode vir `null`.
 - `useWithdrawApplication` é o hook que chama `PATCH /applications/:id/withdraw`.
 
 ## Change History
+- 2026-08-31 · `influencerSelect` passou a incluir `phone` — ver `creator-discovery-and-apply` →
+  Change History pro porquê do campo. Sem mudança de rota, guard ou contrato de erro.
 - 2026-08-24 · `POST /applications` passou a disparar a sincronização do Instagram. A creator já
   existia, então nenhum dos dois lados assumia a atualização do perfil dela — candidatura
   autenticada chegava na fila com dado velho, ou sem dado nenhum se a creator tinha entrado pelo

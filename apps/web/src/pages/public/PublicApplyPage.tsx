@@ -43,7 +43,13 @@ const schema = z.object({
         .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido — só letras, números, . e _'),
     ),
   email: z.string().email('E-mail inválido'),
-  name: z.string().optional(),
+  name: z.string().trim().min(1, 'Nome obrigatório').max(100, 'Nome muito longo'),
+  phone: z
+    .string()
+    .trim()
+    .min(1, 'Telefone obrigatório')
+    .max(20, 'Telefone muito longo')
+    .regex(/^[0-9()+\-\s]{8,20}$/, 'Telefone inválido — use apenas números, espaços, ( ) - ou +'),
   message: z.string().max(1000).optional(),
 });
 
@@ -166,7 +172,8 @@ export default function PublicApplyPage() {
       await api.post(`/programs/${id}/apply/public`, {
         igHandle: values.igHandle,
         email: values.email,
-        name: values.name || undefined,
+        name: values.name,
+        phone: values.phone,
         message: values.message || undefined,
       });
       setSubmitState({ kind: 'success', brandName: campaign?.brand?.name ?? 'A marca' });
@@ -378,11 +385,21 @@ export default function PublicApplyPage() {
                         {...register('email')}
                       />
                       <KineticField
-                        label="Seu nome (opcional)"
+                        label="Seu nome"
+                        required
                         placeholder="Como você se chama?"
                         autoComplete="name"
                         error={errors.name?.message}
                         {...register('name')}
+                      />
+                      <KineticField
+                        label="Telefone"
+                        required
+                        type="tel"
+                        placeholder="(11) 91234-5678"
+                        autoComplete="tel"
+                        error={errors.phone?.message}
+                        {...register('phone')}
                       />
                       <KineticTextarea
                         label="Mensagem para a marca (opcional)"

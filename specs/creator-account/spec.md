@@ -3,7 +3,7 @@ slug: creator-account
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-26
+last_updated: 2026-08-31
 implements:
   - apps/web/src/hooks/useInstagramHandleCheck.ts
   - apps/api/src/modules/auth/presentation/auth.controller.ts (POST /auth/register/influencer)
@@ -42,6 +42,11 @@ Campos: `name`, `avatarUrl?`, `bio?`, `instagramHandle?` (**único**, ver Behavi
 `niches: string[]`, `city?`, `publicProfileEnabled: boolean` (default `false` — `D-06`). Campos
 de cache de Instagram (`followersCount`, `igEngagementRate`, `igFetchStatus`, etc.) são
 **lidos** pelo perfil mas pertencem à capacidade `instagram-sync`.
+
+`phone?` também existe no modelo, mas **este fluxo não o lê nem o escreve** — nem o cadastro
+(`POST /auth/register/influencer`) nem `GET`/`PATCH /influencers/me` o incluem. É coletado só
+pela candidatura pública (ver `creator-discovery-and-apply`); uma creator que nunca passou por
+ali não tem telefone e não tem onde preenchê-lo aqui (ver Known Gaps).
 
 ## Behavior
 - Cadastro cria `User(role=INFLUENCER)` e `Influencer` como uma única operação.
@@ -143,6 +148,11 @@ Verificação do @ no cadastro:
   a conta nasce com status "em busca" e a sincronização não tem o que buscar — a creator aparece
   pra marca como "dados indisponíveis" permanentemente, pelo mesmo motivo do gap acima. Não é
   novo e não foi tratado neste desenho; registrado porque ficou visível ao desenhar a verificação.
+- **`phone` não tem tela.** Nem o cadastro nem `PATCH /influencers/me` pedem ou editam telefone
+  (ver Domain) — quem se cadastra direto (sem passar pela candidatura pública) nunca tem
+  telefone registrado, e não há como preenchê-lo depois. Decisão de escopo de 2026-08-31 (ver
+  `creator-discovery-and-apply` → Known Gaps): o pedido era só o formulário de candidatura;
+  estender a este fluxo é mudança separada.
 
 ## Test Coverage
 - `apps/api/src/modules/creators/application/creators.service.me.spec.ts` — `- [x]`
@@ -175,6 +185,10 @@ Verificação do @ no cadastro:
   `useInstagramHandleCheck` do `PublicApplyPage` (ver `creator-discovery-and-apply`).
 
 ## Change History
+- 2026-08-31 · schema ganhou `Influencer.phone String?` (ver `creator-discovery-and-apply`) —
+  este fluxo (cadastro + `PATCH /influencers/me`) não foi alterado, o campo simplesmente não é
+  lido nem escrito aqui. Documentado em Domain e Known Gaps pra quem procurar `phone` no schema
+  e assumir, por engano, que passa por este fluxo.
 - 2026-08-27 · **implementada** a verificação do @ no cadastro desenhada em 2026-08-26 (ver
   entrada abaixo). Bloqueio em `next()` quando `step === 0`; mensagem manual em
   `errors.instagramHandle`, limpa no próximo `onChange`. Todos os critérios novos das seções
