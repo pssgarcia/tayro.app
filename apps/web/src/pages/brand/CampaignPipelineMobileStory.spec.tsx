@@ -80,6 +80,21 @@ describe('CampaignPipelineMobileStory — recorte da fila', () => {
 
     expect(screen.queryByText(/fila em dia/i)).not.toBeInTheDocument();
   });
+
+  // Regressão (reportada pelo Pedro, 2026-08-31): publicar uma campanha nova
+  // e abrir a Fila no mobile caía direto em "Fila em dia" — "Revisão
+  // concluída" com 0/0/0, como se uma revisão tivesse acontecido. A condição
+  // antiga só olhava pra fila PENDING vazia, sem distinguir "nunca teve
+  // candidatura" de "tinha e já foi toda decidida". O modo Todas já acertava
+  // isso (mesma mensagem "Nenhuma candidatura ainda." de quando há alguém
+  // decidido — ver describe "modo Todas"); o Revisar que ficou pra trás.
+  it('sem nenhuma candidatura (campanha recém-publicada), mostra estado vazio — não "fim de fila"', () => {
+    renderStory([]);
+
+    expect(screen.queryByText(/fila em dia/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/revis[ãa]o conclu[íi]da/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Nenhuma candidatura ainda.')).toBeInTheDocument();
+  });
 });
 
 describe('CampaignPipelineMobileStory — navegação', () => {
@@ -485,7 +500,11 @@ describe('CampaignPipelineMobileStory — saída', () => {
 
   it('"Voltar para a campanha" no fim de fila também usa onExit', () => {
     const onExit = vi.fn();
-    renderStory([], { onExit });
+    // Fim de fila de verdade: existiu candidatura, já foi toda decidida —
+    // diferente do estado vazio (sem candidatura nenhuma), que não tem esse
+    // botão. `[]` era o fixture antigo daqui, mas isso testava o bug
+    // (ver describe "recorte da fila").
+    renderStory([makeApplication('a', { status: 'APPROVED' })], { onExit });
 
     fireEvent.click(screen.getByRole('button', { name: /voltar para a campanha/i }));
 

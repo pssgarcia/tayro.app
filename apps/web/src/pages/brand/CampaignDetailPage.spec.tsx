@@ -183,7 +183,10 @@ describe('CampaignDetailPage — aba Fila (pipeline + placa)', () => {
   it('sem candidatura nenhuma, mostra o estado vazio da Pipeline', async () => {
     renderPage([]);
 
-    expect(await screen.findByText('Nenhuma candidatura ainda.')).toBeInTheDocument();
+    // Escopado à aside do desktop: o mobile (mesmo DOM, só escondido por CSS
+    // em teste) mostra a MESMA mensagem no próprio estado vazio.
+    const aside = (await screen.findByText('Candidaturas')).closest('aside') as HTMLElement;
+    expect(await within(aside).findByText('Nenhuma candidatura ainda.')).toBeInTheDocument();
   });
 });
 
