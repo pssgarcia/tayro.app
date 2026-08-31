@@ -255,21 +255,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Os dois lados ───────────────────────────────────────────────── */}
-        <section aria-labelledby="sec-lados" className="border-b border-white/5">
-          <div className={cn(shell, 'py-20 sm:py-28')}>
-            <div className="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <SectionLabel id="sec-lados">os dois lados da parceria</SectionLabel>
-              <p className="max-w-[52ch] text-pretty text-base leading-relaxed text-kinetic-text">
-                A marca cria a oportunidade e a creator encontra. Cada uma vê a sua parte da mesma
-                campanha, do primeiro anúncio até o conteúdo entregue.
-              </p>
-            </div>
-
-            <DoisLados />
-          </div>
-        </section>
-
         {/* ── 03 · O produto (demonstração) ───────────────────────────────── */}
         <section aria-labelledby="sec-produto" className="border-b border-white/5 bg-kinetic-dark/40">
           <div className={cn(shell, 'py-20 sm:py-28')}>
@@ -284,6 +269,21 @@ export default function LandingPage() {
             </div>
 
             <DemoProduto />
+          </div>
+        </section>
+
+        {/* ── Os dois lados ───────────────────────────────────────────────── */}
+        <section aria-labelledby="sec-lados" className="border-b border-white/5">
+          <div className={cn(shell, 'py-20 sm:py-28')}>
+            <div className="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <SectionLabel id="sec-lados">os dois lados da parceria</SectionLabel>
+              <p className="max-w-[52ch] text-pretty text-base leading-relaxed text-kinetic-text">
+                A marca cria a oportunidade e a creator encontra. Cada uma vê a sua parte da mesma
+                campanha, do primeiro anúncio até o conteúdo entregue.
+              </p>
+            </div>
+
+            <DoisLados />
           </div>
         </section>
 
