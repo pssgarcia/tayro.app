@@ -14,11 +14,12 @@ import type { DemoCreator } from './demo';
 // argumento inteiro da página numa peça só — "o Instagram real dela do lado do
 // botão de aprovar".
 //
-// O que a Fila real tem e aqui NÃO tem: o "Match Score". Ele é um placeholder
-// determinístico (hash do id), sem regra de cálculo, e o `vision.md` nº 5
-// proíbe métrica de reputação fabricada. Numa página de marketing seria pior
-// ainda: viraria promessa. O espaço dele é ocupado pelo dado que existe de
-// verdade — seguidores, engajamento e os posts recentes.
+// Sem "Match Score": existiu na Fila real como placeholder determinístico
+// (hash do id, sem regra de cálculo), contradizia `vision.md` nº 5 e foi
+// removido de lá em 2026-08-31 — nunca existiu aqui também, de propósito
+// (numa página de marketing seria pior ainda: viraria promessa). O espaço
+// dele é ocupado pelo dado que existe de verdade — seguidores, engajamento e
+// os posts recentes.
 //
 // Nenhum metadado inventado: sem número de protocolo, sem contador. Só o que a
 // tela real mostra.

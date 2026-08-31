@@ -21,6 +21,8 @@ interface Props {
    * (o detalhe da candidatura na Fila); `div` no uso decorativo. */
   as?: 'div' | 'section';
   className?: string;
+  /** Nome acessível da região — só faz sentido com `as="section"`. */
+  ariaLabel?: string;
 }
 
 function Mark({ pos, edges }: { pos: string; edges: string }) {
@@ -33,9 +35,11 @@ export default function KineticPlate({
   flush,
   as: Tag = 'div',
   className,
+  ariaLabel,
 }: Props) {
   return (
     <Tag
+      aria-label={ariaLabel}
       className={cn(
         'relative rounded-lg bg-kinetic-light text-black',
         // As crop marks ocupam de 16px a 32px a partir de cada borda. O padding

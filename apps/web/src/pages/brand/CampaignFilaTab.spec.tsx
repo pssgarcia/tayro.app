@@ -69,8 +69,8 @@ function mockApplications(...respostas: Application[][]) {
   vi.mocked(api.get).mockResolvedValue({ data: ultima } as any);
 }
 
-/** A placa clara do desktop — identificada pelo rótulo exclusivo dela. */
-const plate = () => screen.getByText('Match Score').closest('section') as HTMLElement;
+/** A placa clara do desktop — identificada pelo nome acessível da região. */
+const plate = () => screen.getByRole('region', { name: 'Detalhe da candidatura' });
 
 beforeEach(() => {
   vi.useFakeTimers();

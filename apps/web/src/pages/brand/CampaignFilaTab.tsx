@@ -31,21 +31,14 @@ import type { Application, Campaign } from '../../types/api';
 // formato Story, só candidaturas PENDING (decidida sai, próxima ocupa a
 // posição sozinha). Sem TopNav/Footer próprios — já está dentro do
 // BrandLayout (sidebar) + CampaignHeader (título/prazo/vagas já aparecem ali
-// em cima, por isso não repetimos aqui). Match score é placeholder (hash do
-// id, não existe cálculo real); "Bio Note" mostra a mensagem real da
+// em cima, por isso não repetimos aqui). "Bio Note" mostra a mensagem real da
 // candidatura em vez de texto inventado — ver CampaignPipelineMobileStory.tsx
-// pro mesmo raciocínio do lado mobile.
+// pro mesmo raciocínio do lado mobile. "Match Score" existiu como placeholder
+// (hash do id, sem cálculo real) e foi removido em 2026-08-31 — contradizia
+// vision.md nº 5 (nada de métrica de reputação fabricada).
 
 const POLL_INTERVAL_MS = 6_000;
 const POLL_TIMEOUT_MS = 45_000;
-
-function placeholderMatchScore(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return 70 + (hash % 26); // 70–95, só pra dar variedade visual entre cards
-}
 
 // ─── Lista Pipeline ────────────────────────────────────────────────────────────
 
@@ -107,7 +100,6 @@ function ProfilePlate({
   const cooldownWait = extractCooldownWait(refreshIgError);
   const igLoading = influencer.igFetchStatus === 'PENDING';
   const igFailed = influencer.igFetchStatus === 'FAILED' || influencer.igFetchStatus === null;
-  const matchScore = placeholderMatchScore(application.id);
   const posts = Array.from({ length: 6 }, (_, i) => influencer.igRecentPosts?.[i] ?? null);
 
   return (
@@ -117,43 +109,39 @@ function ProfilePlate({
     // posts). `min-h-0` no meio é o que faz o overflow-y-auto respeitar a
     // altura em vez de estourar o card (mesma causa do bug corrigido no
     // mobile em CampaignPipelineMobileStory.tsx).
-    <KineticPlate as="section" marks="all" flush className="flex h-full min-h-0 flex-col">
+    <KineticPlate
+      as="section"
+      marks="all"
+      flush
+      ariaLabel="Detalhe da candidatura"
+      className="flex h-full min-h-0 flex-col"
+    >
       <div className="min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-300">
-              {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
-            </div>
-            <div className="min-w-0">
-              <h2 className="truncate text-2xl font-bold tracking-tight">{influencer.name}</h2>
-              {handle && (
-                <a
-                  href={`https://instagram.com/${handle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
-                >
-                  @{handle}
-                  <ExternalLink size={12} className="shrink-0" />
-                </a>
-              )}
-              {influencer.phone && (
-                <a
-                  href={`tel:${influencer.phone}`}
-                  className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
-                >
-                  {influencer.phone}
-                </a>
-              )}
-            </div>
+        <div className="mb-6 flex min-w-0 items-center gap-4">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-300">
+            {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
           </div>
-          <div className="shrink-0 text-right">
-            <p className="mb-1 font-mono text-xs uppercase tracking-widest text-gray-500">
-              Match Score
-            </p>
-            <CountUp>
-              <span className="text-2xl font-bold">{matchScore}%</span>
-            </CountUp>
+          <div className="min-w-0">
+            <h2 className="truncate text-2xl font-bold tracking-tight">{influencer.name}</h2>
+            {handle && (
+              <a
+                href={`https://instagram.com/${handle}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
+              >
+                @{handle}
+                <ExternalLink size={12} className="shrink-0" />
+              </a>
+            )}
+            {influencer.phone && (
+              <a
+                href={`tel:${influencer.phone}`}
+                className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
+              >
+                {influencer.phone}
+              </a>
+            )}
           </div>
         </div>
 
