@@ -450,6 +450,14 @@ function CandidateStory({
                 <ExternalLink size={12} className="shrink-0" />
               </a>
             )}
+            {influencer.phone && (
+              <a
+                href={`tel:${influencer.phone}`}
+                className="pointer-events-auto mt-1 flex w-fit items-center gap-1 font-mono text-sm text-kinetic-text transition-colors hover:text-white"
+              >
+                {influencer.phone}
+              </a>
+            )}
             {(influencer.city || influencer.niches.length > 0) && (
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-kinetic-text">
                 {influencer.city && (

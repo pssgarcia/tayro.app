@@ -18,6 +18,7 @@ const applyDto = {
   igHandle: 'creator',
   email: 'creator@example.com',
   name: 'Creator',
+  phone: '11999990000',
   message: 'quero participar',
 };
 
@@ -112,6 +113,7 @@ describe('CreatorsService — emissão de claim token', () => {
         userId: 'user-1',
         name: 'Creator',
         instagramHandle: 'creator',
+        phone: '11999990000',
       }); // lookup do influencer existente pelo userId
 
     await service.applyPublic('camp-1', applyDto);
@@ -143,6 +145,7 @@ describe('CreatorsService — emissão de claim token', () => {
         userId: 'user-1',
         name: 'Creator',
         instagramHandle: 'creator',
+        phone: '11999990000',
       });
 
     await service.applyPublic('camp-1', applyDto);

@@ -26,6 +26,7 @@ const applyDto = {
   igHandle: 'creator',
   email: 'creator@example.com',
   name: 'Creator',
+  phone: '11999990000',
   message: 'quero participar',
 };
 
@@ -125,6 +126,7 @@ describe('CreatorsService — candidatura pública resiste a falha acessória', 
         userId: 'user-1',
         name: 'Creator',
         instagramHandle: 'creator',
+        phone: '11999990000',
       });
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',

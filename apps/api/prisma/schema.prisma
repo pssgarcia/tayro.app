@@ -121,6 +121,10 @@ model Influencer {
   name                 String
   avatarUrl            String?
   bio                  String?
+  // Contato direto pra marca falar com a creator fora do produto — capturado
+  // hoje só na candidatura pública (ver spec creator-discovery-and-apply);
+  // outros fluxos de criação de conta ainda não coletam.
+  phone                String?
   instagramHandle      String?        @unique
   tiktokHandle         String?
   followersCount       Int?

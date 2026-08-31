@@ -3,7 +3,7 @@ slug: creator-discovery-and-apply
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-28
+last_updated: 2026-08-31
 implements:
   - apps/web/src/hooks/useInstagramHandleCheck.ts
   - apps/api/src/modules/campaigns/presentation/campaigns.controller.ts
@@ -45,6 +45,13 @@ Não introduz modelo próprio. Opera sobre `Campaign` (ver `campaign-lifecycle`)
 `User`/`Influencer` sob demanda no primeiro apply de um handle/e-mail nunca visto (conta
 `CLAIMABLE`, ver `account-claim`) e cria `Application` (ver `applications-pipeline`).
 
+`Influencer.name` e `Influencer.phone` são obrigatórios **neste fluxo** (campo de formulário,
+não constraint de banco — `phone` é `String?` no schema porque outros caminhos de criação de
+conta ainda não o coletam, ver Known Gaps). `phone` existe pra dar à marca um contato direto com
+a creator além do @ do Instagram — é exposto na Fila de revisão (ver `campaign-fila-review`,
+`applications-pipeline` → `influencerSelect`), nunca no perfil público (`getPublicProfile` não o
+inclui).
+
 ## Behavior
 
 ### Três superfícies, uma listagem
@@ -68,8 +75,10 @@ Não introduz modelo próprio. Opera sobre `Campaign` (ver `campaign-lifecycle`)
    claim concluído), reaplicar a um programa reemite e reenvia o link de definição de senha
    automaticamente — é o único jeito de recuperar um link de claim expirado hoje (ver
    `account-claim`).
-5. Se a pessoa já tem conta de creator sem handle de Instagram registrado (cadastro criado por
-   outro caminho), o handle usado nesta candidatura passa a ser o dela.
+5. Se a pessoa já tem conta de creator sem handle de Instagram e/ou sem telefone registrado
+   (cadastro criado por outro caminho, que ainda não coleta telefone), o handle e/ou o telefone
+   usados nesta candidatura passam a ser os dela — só preenche o que estiver faltando, nunca
+   sobrescreve um valor que ela já tinha.
 6. Se a pessoa nunca existiu no sistema, uma conta de creator é criada (com senha que ninguém
    conhece — ver `account-claim`) e um e-mail de definição de senha é enviado.
 7. **Concorrência:** duas candidaturas simultâneas com o mesmo handle/e-mail nunca resultam em
@@ -141,7 +150,9 @@ A verificação do @ usa `GET /ig/handle/:handle` (pública, com limite próprio
   campanha não `ACTIVE` e sem candidatura → "Inscrições encerradas", sem CTA; caso contrário →
   botão que abre o modal de candidatura autenticada.
 - `/apply/:id` (público, sem layout compartilhado): formulário com handle do Instagram,
-  e-mail, nome opcional e mensagem opcional.
+  e-mail, nome, telefone (os quatro obrigatórios) e mensagem opcional. Nome e telefone viraram
+  obrigatórios em 2026-08-31 — telefone é o único contato direto que a marca tem hoje pra falar
+  com a creator fora do produto (ver Change History).
 - **Verificação do @ no formulário público**, na ordem em que as coisas acontecem:
   1. Enquanto a pessoa digita, nada é verificado — verificar a cada tecla consulta um monte de
      prefixos que por acaso são o @ de outra pessoa (e responderiam "existe", dando um verde
@@ -181,6 +192,11 @@ A verificação do @ usa `GET /ig/handle/:handle` (pública, com limite próprio
 - [x] Falha ao gravar a própria candidatura continua propagando como erro.
 - [ ] Conta de creator existente sem handle de Instagram tem o handle preenchido ao se
       candidatar por este fluxo — comportamento implementado, sem teste dedicado (ver Known Gaps).
+- [x] Formulário público não envia sem nome; sem telefone; ou com telefone em formato inválido —
+      nenhuma requisição de candidatura sai do navegador nesses três casos.
+- [ ] Conta de creator existente sem telefone tem o telefone preenchido ao se candidatar por
+      este fluxo — comportamento implementado (mesmo padrão do handle acima), sem teste
+      dedicado (ver Known Gaps).
 
 Verificação do @ no formulário público:
 - [x] @ com desfecho "não existe" não envia a candidatura — nenhuma requisição de candidatura
@@ -216,9 +232,15 @@ Verificação do @ no formulário público:
 (O gap "sem teste de frontend para `PublicApplyPage`" foi **fechado em 2026-08-23** — a
 superfície de maior risco da capacidade, única sem guard e que cria conta, passou a ter
 cobertura. Ver Test Coverage.)
-- **Branch "preenche o handle de uma conta existente sem handle" sem teste dedicado** —
-  implementado (`creators.service.ts`, dentro de `findOrCreateInfluencer`), mas nenhum dos
-  specs existentes exercita esse caminho especificamente.
+- **Branch "preenche o handle (ou o telefone) de uma conta existente que não tem" sem teste
+  dedicado** — implementado (`creators.service.ts`, dentro de `findOrCreateInfluencer`), mas
+  nenhum dos specs existentes exercita esse caminho especificamente.
+- **`Influencer.phone` só é coletado por este fluxo.** Cadastro direto (`creator-account`) e
+  candidatura autenticada (via `ApplyModal`, `applications-pipeline`) não pedem telefone —
+  uma creator que nunca passou pelo apply público não tem telefone registrado, e não há tela
+  de perfil onde ela possa preenchê-lo depois (o campo não está em `PATCH /influencers/me`).
+  Decisão consciente de escopo (2026-08-31): o pedido era só este formulário; ampliar para os
+  outros dois caminhos e para a edição de perfil é mudança separada.
 - Nenhuma tela de detalhe pública própria existe: `/apply/:id` cumpre esse papel também pro
   visitante anônimo. Não é gap — é a decisão de escopo registrada em `roadmap.md`.
 
@@ -240,7 +262,13 @@ cobertura. Ver Test Coverage.)
   placa sem navegar, [x] handle e e-mail inválidos barrados antes da API, [x] respostas
   `409` (com e sem mensagem usável), `429` e `500`, [x] formulário continua disponível pra nova
   tentativa após erro.
-- [ ] Branch de preenchimento de handle em conta existente — não existe teste dedicado.
+- [ ] Branch de preenchimento de handle/telefone em conta existente — não existe teste dedicado.
+- `apps/api/src/shared/validation/dto-maxlength.spec.ts` → `describe('PublicApplyDto')` —
+  [x] name vazio rejeitado, [x] phone vazio rejeitado, [x] phone acima de 20 chars rejeitado,
+  [x] phone com caractere inválido rejeitado (junto dos limites de `message`/`name`/`email` já
+  existentes).
+- `PublicApplyPage.spec.tsx` ganhou 3 casos (2026-08-31): [x] envio sem nome bloqueado, [x] envio
+  sem telefone bloqueado, [x] telefone com caractere inválido bloqueado — nenhum chama a API.
 
 Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage — verificação do @ do Instagram')`:
 - [x] Desfecho "não existe" bloqueia: a rota de candidatura não é chamada.
@@ -258,6 +286,12 @@ Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage
 ## Current Implementation
 - `CreatorsService.applyPublic` → `findOrCreateInfluencer` (resolve por
   `instagramHandle` `@unique`, depois por `email` `@unique` do `User`) → cria `Application`.
+- `name`/`phone` são obrigatórios no `PublicApplyDto` (`@IsNotEmpty`); `phone` validado por
+  regex simples (`/^[0-9()+\-\s]{8,20}$/`, mesma regra no zod do frontend) — não valida DDD nem
+  formato brasileiro específico, só bloqueia texto claramente não numérico. Ao criar conta nova,
+  os dois vão direto pro `Influencer.create`. Ao reaproveitar conta existente (achada por
+  handle ou por e-mail), só o que estiver faltando (`instagramHandle`/`phone`) é gravado — nunca
+  sobrescreve um valor que a creator já tinha.
 - Colisão concorrente é tratada capturando `PrismaClientKnownRequestError` código `P2002` e
   rebuscando via `findExistingInfluencer` em vez de deixar vazar `500`.
 - Criação de conta nova: `bcrypt.hash(randomUUID())` como senha, token de claim gerado por
@@ -278,6 +312,16 @@ Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage
   não duas cópias divergindo.
 
 ## Change History
+- 2026-08-31 · **nome e telefone viraram obrigatórios em `/apply/:id`** (pedido do Pedro). Nome
+  já era gravado no `Influencer` desde sempre (com fallback pro handle quando ausente — fallback
+  removido, agora sempre vem do formulário); telefone é campo novo (`Influencer.phone String?`,
+  migration `add_influencer_phone`) porque a marca não tinha nenhum contato direto com a
+  creator — só o @ do Instagram, que não é canal garantido de resposta. Exposto no
+  `influencerSelect` (`applications-pipeline`) e mostrado como link `tel:` ao lado do @ na Fila
+  (`campaign-fila-review`, desktop e mobile) — sem essa ponta, o dado ficaria só no banco e não
+  cumpriria o motivo de existir. **Não** exposto em `getPublicProfile` (dado de contato não é
+  perfil público). Backfill de conta existente segue o mesmo padrão já usado pro handle (regra 5
+  de Behavior) — só preenche o que falta, nunca sobrescreve.
 - 2026-08-28 — listagem passa de linhas pra grade de cards (as duas superfícies: `/influencer/browse` e `/programs`). Conteúdo e destino do link inalterados; muda o arranjo e o peso da oferta.
 - 2026-08-28 · **placa "Em destaque" removida da listagem de programas abertos** (as duas
   superfícies, `/influencer/browse` e `/programs`). O primeiro programa da página virava placa

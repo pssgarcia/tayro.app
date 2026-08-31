@@ -34,6 +34,7 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
       igHandle: 'anafitness',
       email: 'ana@email.com',
       name: 'Ana Fitness',
+      phone: '(11) 91234-5678',
       message: 'Adoraria colaborar!',
     };
 
@@ -64,6 +65,32 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
         email: longEmail,
       });
       expect(hasError(errors, 'email')).toBe(true);
+    });
+
+    it('rejeita name vazio', async () => {
+      const errors = await validateDto(PublicApplyDto, { ...valid, name: '' });
+      expect(hasError(errors, 'name')).toBe(true);
+    });
+
+    it('rejeita phone vazio', async () => {
+      const errors = await validateDto(PublicApplyDto, { ...valid, phone: '' });
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+
+    it('rejeita phone acima de 20 chars', async () => {
+      const errors = await validateDto(PublicApplyDto, {
+        ...valid,
+        phone: '1'.repeat(21),
+      });
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+
+    it('rejeita phone com caracteres inválidos', async () => {
+      const errors = await validateDto(PublicApplyDto, {
+        ...valid,
+        phone: 'não é telefone',
+      });
+      expect(hasError(errors, 'phone')).toBe(true);
     });
   });
 

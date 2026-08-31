@@ -23,6 +23,7 @@ export const influencerSelect = {
   id: true,
   name: true,
   avatarUrl: true,
+  phone: true,
   instagramHandle: true,
   niches: true,
   city: true,

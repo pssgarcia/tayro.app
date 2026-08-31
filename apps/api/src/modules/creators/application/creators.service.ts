@@ -214,10 +214,16 @@ export class CreatorsService {
       }
 
       if (existing) {
-        if (!existing.instagramHandle) {
+        // Preenche só o que falta — conta criada por outro caminho (cadastro,
+        // apply autenticado) pode não ter handle ou telefone ainda. Nunca
+        // sobrescreve um valor que a pessoa já tem.
+        const missing: Prisma.InfluencerUpdateInput = {};
+        if (!existing.instagramHandle) missing.instagramHandle = dto.igHandle;
+        if (!existing.phone) missing.phone = dto.phone;
+        if (Object.keys(missing).length > 0) {
           return this.prisma.influencer.update({
             where: { id: existing.id },
-            data: { instagramHandle: dto.igHandle },
+            data: missing,
           });
         }
         return existing;
@@ -236,7 +242,8 @@ export class CreatorsService {
           claimTokenExpiresAt: claimToken.expiresAt,
           influencer: {
             create: {
-              name: dto.name ?? dto.igHandle,
+              name: dto.name,
+              phone: dto.phone,
               instagramHandle: dto.igHandle,
               igFetchStatus: IgFetchStatus.PENDING,
             },
