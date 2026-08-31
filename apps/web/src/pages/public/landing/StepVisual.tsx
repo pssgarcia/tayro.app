@@ -15,7 +15,14 @@ import { DEMO_CREATORS, DEMO_PROGRAMA } from './demo';
 // falava de um link que a página nunca mostrava.
 
 const Moldura = ({ children, canto }: { children: React.ReactNode; canto: string }) => (
-  <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden border border-kinetic-border bg-kinetic-dark p-5">
+  // `min-h` garante espaço pro passo 02 (a placa com "Copiar link" é o
+  // conteúdo mais alto dos três) — sem ele, `aspect-video` sozinho corta a
+  // base da placa em qualquer viewport abaixo de ~440px de largura (todo
+  // celular em pé). Combinar os dois é seguro: aspect-ratio cede pro
+  // min-height quando o conteúdo exige mais altura do que a proporção 16:9
+  // daria, e nas larguras onde 16:9 já é alto o suficiente o `min-h` não
+  // muda nada.
+  <div className="relative flex aspect-video min-h-[260px] w-full items-center justify-center overflow-hidden border border-kinetic-border bg-kinetic-dark p-5">
     {children}
     <span
       aria-hidden="true"
