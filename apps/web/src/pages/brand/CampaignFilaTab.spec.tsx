@@ -122,6 +122,26 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     expect(within(plate()).getByText('Bia')).toBeInTheDocument();
   });
 
+  it('mostra o telefone da creator como link tel: na placa de detalhe', async () => {
+    mockApplications([makeApplication('a', { name: 'Ana' })]);
+    renderTab();
+    await settle();
+
+    const link = within(plate()).getByRole('link', { name: '11999990000' });
+    expect(link).toHaveAttribute('href', 'tel:11999990000');
+  });
+
+  it('não mostra link de telefone quando a creator não tem telefone', async () => {
+    mockApplications([makeApplication('a', { name: 'Ana', phone: null })]);
+    renderTab();
+    await settle();
+
+    const telLinks = within(plate())
+      .getAllByRole('link')
+      .filter((el) => el.getAttribute('href')?.startsWith('tel:'));
+    expect(telLinks).toHaveLength(0);
+  });
+
   it('mostra empty state quando a campanha não tem candidatura', async () => {
     mockApplications([]);
     renderTab();

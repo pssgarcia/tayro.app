@@ -64,6 +64,7 @@ function makeApplication(i: number, overrides: Partial<Application> = {}): Appli
       id: `inf-${i}`,
       name: `Creator ${i}`,
       avatarUrl: null,
+      phone: null,
       instagramHandle: `creator${i}`,
       niches: [],
       city: null,

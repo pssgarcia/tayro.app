@@ -1,6 +1,7 @@
 import {
   IsString,
   IsEmail,
+  IsNotEmpty,
   IsOptional,
   MaxLength,
   Matches,
@@ -27,11 +28,20 @@ export class PublicApplyDto {
   @MaxLength(254)
   email: string;
 
-  @ApiPropertyOptional({ example: 'Ana Fitness' })
-  @IsOptional()
+  @ApiProperty({ example: 'Ana Fitness' })
   @IsString()
+  @IsNotEmpty({ message: 'Nome obrigatório' })
   @MaxLength(100)
-  name?: string;
+  name: string;
+
+  @ApiProperty({ example: '(11) 91234-5678' })
+  @IsString()
+  @IsNotEmpty({ message: 'Telefone obrigatório' })
+  @MaxLength(20)
+  @Matches(/^[0-9()+\-\s]{8,20}$/, {
+    message: 'Telefone inválido — use apenas números, espaços, ( ) - ou +',
+  })
+  phone: string;
 
   @ApiPropertyOptional({ example: 'Já uso os produtos e adoraria colaborar!' })
   @IsOptional()

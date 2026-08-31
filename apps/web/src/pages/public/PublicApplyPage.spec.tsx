@@ -77,10 +77,12 @@ const httpError = (status: number, message?: string) => ({
 
 async function preencherEEnviar(
   user: ReturnType<typeof userEvent.setup>,
-  overrides: { handle?: string; email?: string } = {},
+  overrides: { handle?: string; email?: string; name?: string; phone?: string } = {},
 ) {
   await user.type(screen.getByLabelText(/@ do instagram/i), overrides.handle ?? 'anafit');
   await user.type(screen.getByLabelText(/e-mail/i), overrides.email ?? 'ana@email.com');
+  await user.type(screen.getByLabelText(/seu nome/i), overrides.name ?? 'Ana Fitness');
+  await user.type(screen.getByLabelText(/telefone/i), overrides.phone ?? '11999990000');
   await user.click(screen.getByRole('button', { name: /quero participar/i }));
 }
 
@@ -134,7 +136,8 @@ describe('PublicApplyPage — envio da candidatura', () => {
       expect(api.post).toHaveBeenCalledWith('/programs/camp-1/apply/public', {
         igHandle: 'anafit',
         email: 'ana@email.com',
-        name: undefined,
+        name: 'Ana Fitness',
+        phone: '11999990000',
         message: undefined,
       }),
     );
@@ -189,6 +192,47 @@ describe('PublicApplyPage — envio da candidatura', () => {
     await preencherEEnviar(user, { email: 'nao-e-email' });
 
     expect(await screen.findByText(/e-mail inválido/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  // Nome e telefone são obrigatórios: a marca precisa desse contato pra falar
+  // com a creator depois, não só do @ do Instagram.
+  it('recusa envio sem nome, sem chamar a API', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Lilo');
+
+    await user.type(screen.getByLabelText(/@ do instagram/i), 'anafit');
+    await user.type(screen.getByLabelText(/e-mail/i), 'ana@email.com');
+    await user.type(screen.getByLabelText(/telefone/i), '11999990000');
+    await user.click(screen.getByRole('button', { name: /quero participar/i }));
+
+    expect(await screen.findByText(/nome obrigatório/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('recusa envio sem telefone, sem chamar a API', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Lilo');
+
+    await user.type(screen.getByLabelText(/@ do instagram/i), 'anafit');
+    await user.type(screen.getByLabelText(/e-mail/i), 'ana@email.com');
+    await user.type(screen.getByLabelText(/seu nome/i), 'Ana Fitness');
+    await user.click(screen.getByRole('button', { name: /quero participar/i }));
+
+    expect(await screen.findByText(/telefone obrigatório/i)).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('recusa telefone com caractere inválido sem chamar a API', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Lilo');
+
+    await preencherEEnviar(user, { phone: 'não é telefone' });
+
+    expect(await screen.findByText(/telefone inválido/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
   });
 });
@@ -308,6 +352,12 @@ describe('PublicApplyPage — verificação do @ do Instagram', () => {
     });
     fireEvent.change(screen.getByLabelText(/e-mail/i), {
       target: { value: 'ana@email.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/seu nome/i), {
+      target: { value: 'Ana Fitness' },
+    });
+    fireEvent.change(screen.getByLabelText(/telefone/i), {
+      target: { value: '11999990000' },
     });
     fireEvent.click(screen.getByRole('button', { name: /quero participar/i }));
 

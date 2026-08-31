@@ -3,7 +3,7 @@ slug: campaign-fila-review
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-27
+last_updated: 2026-08-31
 implements:
   - apps/web/src/pages/brand/CampaignFilaTab.tsx
   - apps/web/src/pages/brand/CampaignPipelineMobileStory.tsx
@@ -66,6 +66,10 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
 - Nas duas superfícies o `@handle` da creator é um link pro perfil dela no Instagram
   (`https://instagram.com/<handle>`, `target="_blank"`) — a marca abre o Instagram real se
   quiser antes de decidir.
+- Logo abaixo do `@handle`, quando `influencer.phone` existe, aparece como link `tel:<phone>` —
+  é o único contato direto que a marca tem com a creator (ver `creator-discovery-and-apply`).
+  Ausente pra quem se candidatou antes do campo existir ou por um caminho que ainda não coleta
+  telefone; nesse caso a linha simplesmente não aparece, sem placeholder.
 - "Fechar revisão" no modo mobile não navega pra outra rota — só sai do modo imersivo de volta
   pro corpo normal da aba (a Fila já é a rota atual).
 - A escolha entre as duas superfícies é só o breakpoint — não há um terceiro layout
@@ -124,6 +128,8 @@ são dubladas:
 - [x] Poll para depois de 45s contínuos (verificado por mutação: desligar o teto no componente
       faz este teste falhar).
 - [x] Cronômetro zera quando o IG chega — fila pendente futura volta a pollar do zero.
+- [x] Telefone da creator aparece como link `tel:` na placa de detalhe; some quando `phone`
+      é `null`.
 
 `apps/web/src/pages/brand/CampaignPipelineMobileStory.spec.tsx` — componente controlado por
 props, nenhum hook mockado:
@@ -142,6 +148,7 @@ props, nenhum hook mockado:
       conta em dobro. Ações desabilitadas com decisão em voo.
 - [x] Estados de IG: OK, `FAILED`, `null` tratado como falha, cooldown 429 bloqueando o botão.
 - [x] Saída: "Fechar revisão" e "Voltar para a campanha" chamam `onExit`, sem navegação.
+- [x] Telefone da creator aparece como link `tel:`; some quando `phone` é `null`.
 
 ## Current Implementation
 - Constantes `POLL_INTERVAL_MS = 6_000` / `POLL_TIMEOUT_MS = 45_000`, definidas em
@@ -167,6 +174,9 @@ props, nenhum hook mockado:
   mas a candidatura já avançou e o botão reabilita), e o tally vinha zerado por isso.
 
 ## Change History
+- 2026-08-31 · telefone da creator (`influencer.phone`, ver `creator-discovery-and-apply`)
+  passou a aparecer como link `tel:` logo abaixo do `@handle`, nas duas superfícies — mesmo
+  tratamento condicional do `@handle` (some quando ausente, sem placeholder). 4 testes novos.
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD. Mudança conceitual: seção "API / Interfaces" foi
   omitida de propósito (capacidade sem endpoint próprio — os endpoints consumidos já estão

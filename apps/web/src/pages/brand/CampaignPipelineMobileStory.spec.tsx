@@ -176,6 +176,22 @@ describe('CampaignPipelineMobileStory — identidade', () => {
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
   });
+
+  it('mostra o telefone da creator como link tel:', () => {
+    renderStory([makeApplication('a', { name: 'Ana' })]);
+
+    const link = screen.getByRole('link', { name: '11999990000' });
+    expect(link).toHaveAttribute('href', 'tel:11999990000');
+  });
+
+  it('não mostra link de telefone quando a creator não tem telefone', () => {
+    renderStory([makeApplication('a', { name: 'Ana', phone: null })]);
+
+    const telLinks = screen
+      .getAllByRole('link')
+      .filter((el) => el.getAttribute('href')?.startsWith('tel:'));
+    expect(telLinks).toHaveLength(0);
+  });
 });
 
 describe('CampaignPipelineMobileStory — painel de detalhes', () => {
