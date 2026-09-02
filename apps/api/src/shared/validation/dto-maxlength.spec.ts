@@ -10,6 +10,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { PublicApplyDto } from '../../modules/creators/application/dtos/public-apply.dto';
 import { LoginDto } from '../../modules/auth/application/dtos/login.dto';
+import { ChangePasswordDto } from '../../modules/auth/application/dtos/change-password.dto';
 import { RegisterBrandDto } from '../../modules/auth/application/dtos/register-brand.dto';
 import { RegisterInfluencerDto } from '../../modules/auth/application/dtos/register-influencer.dto';
 import { CreateCampaignDto } from '../../modules/campaigns/application/dtos/create-campaign.dto';
@@ -109,6 +110,40 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
         password: 'a'.repeat(73),
       });
       expect(hasError(errors, 'password')).toBe(true);
+    });
+  });
+
+  describe('ChangePasswordDto', () => {
+    it('aceita as duas senhas dentro do limite do bcrypt (72)', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'a'.repeat(72),
+        newPassword: 'b'.repeat(72),
+      });
+      expect(errors).toHaveLength(0);
+    });
+
+    it('rejeita currentPassword acima de 72 chars', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'a'.repeat(73),
+        newPassword: 'senhaNova123',
+      });
+      expect(hasError(errors, 'currentPassword')).toBe(true);
+    });
+
+    it('rejeita newPassword acima de 72 chars', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'senhaAtual123',
+        newPassword: 'a'.repeat(73),
+      });
+      expect(hasError(errors, 'newPassword')).toBe(true);
+    });
+
+    it('rejeita newPassword abaixo de 8 chars', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'senhaAtual123',
+        newPassword: 'curta12',
+      });
+      expect(hasError(errors, 'newPassword')).toBe(true);
     });
   });
 

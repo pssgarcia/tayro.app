@@ -152,3 +152,29 @@ describe('ProfilePage', () => {
     expect(btn).toBeEnabled();
   });
 });
+
+describe('ProfilePage — seção Conta', () => {
+  it('mostra a row "Senha" na seção Conta', () => {
+    render(<ProfilePage />);
+    expect(screen.getByRole('button', { name: /^senha/i })).toBeInTheDocument();
+  });
+
+  it('clicar em "Senha" abre o modal de trocar senha', () => {
+    render(<ProfilePage />);
+    fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
+    expect(screen.getByRole('dialog', { name: /trocar senha/i })).toBeInTheDocument();
+  });
+
+  // Regressão: a seção Conta não participa do form de perfil — abrir/fechar
+  // o modal de senha não pode habilitar o "Salvar" do perfil sem nada a salvar.
+  it('abrir e fechar o modal de senha não habilita o "Salvar" do perfil', () => {
+    render(<ProfilePage />);
+    const saveButton = screen.getByRole('button', { name: /^salvar$/i });
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
+
+    expect(saveButton).toBeDisabled();
+  });
+});

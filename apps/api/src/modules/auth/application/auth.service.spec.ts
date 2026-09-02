@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -445,6 +449,129 @@ describe('AuthService', () => {
       await expect(
         service.resetPassword({ token: rawToken, password: 'senhaSegura1' }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  // ─── changePassword ───────────────────────────────────────────────────────────
+
+  describe('changePassword', () => {
+    it('senha atual correta grava a nova senha (hash, nunca texto puro) e retorna tokens', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({ password: currentHash });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      const result = await service.changePassword(user.id, {
+        currentPassword: 'senhaAtual1',
+        newPassword: 'senhaNova2',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      const firstUpdateData = prisma.user.update.mock.calls[0][0].data;
+      expect(firstUpdateData.password).not.toBe('senhaNova2');
+      expect(await bcrypt.compare('senhaNova2', firstUpdateData.password)).toBe(
+        true,
+      );
+    });
+
+    it('zera o par de reset e o de claim no mesmo update — troca consciente encerra links pendentes', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({ password: currentHash });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      await service.changePassword(user.id, {
+        currentPassword: 'senhaAtual1',
+        newPassword: 'senhaNova2',
+      });
+
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: user.id },
+          data: expect.objectContaining({
+            resetTokenHash: null,
+            resetTokenExpiresAt: null,
+            claimTokenHash: null,
+            claimTokenExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it('rotaciona o refreshTokenHash — deixa outros dispositivos deslogados', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({
+        password: currentHash,
+        refreshTokenHash: 'hash-do-dispositivo-antigo',
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      await service.changePassword(user.id, {
+        currentPassword: 'senhaAtual1',
+        newPassword: 'senhaNova2',
+      });
+
+      // 2º update é o do buildAuthResponse, gravando o novo refreshTokenHash
+      const sessionUpdateData = prisma.user.update.mock.calls[1][0].data;
+      expect(sessionUpdateData.refreshTokenHash).not.toBe(
+        'hash-do-dispositivo-antigo',
+      );
+    });
+
+    it('senha atual incorreta lança UnauthorizedException e não grava nada', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash }),
+      );
+
+      await expect(
+        service.changePassword('user-abc', {
+          currentPassword: 'senhaErrada',
+          newPassword: 'senhaNova2',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('usuário inexistente lança UnauthorizedException', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.changePassword('ghost', {
+          currentPassword: 'qualquer',
+          newPassword: 'senhaNova2',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('conta desativada lança UnauthorizedException', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash, isActive: false }),
+      );
+
+      await expect(
+        service.changePassword('user-abc', {
+          currentPassword: 'senhaAtual1',
+          newPassword: 'senhaNova2',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('nova senha igual à atual lança BadRequestException e não grava nada', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash }),
+      );
+
+      await expect(
+        service.changePassword('user-abc', {
+          currentPassword: 'senhaAtual1',
+          newPassword: 'senhaAtual1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.user.update).not.toHaveBeenCalled();
     });
   });
 
