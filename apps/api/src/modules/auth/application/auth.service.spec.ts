@@ -8,6 +8,7 @@ import { IgFetchStatus, Prisma, UserRole } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 
 const makeUser = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'user-abc',
@@ -24,6 +25,7 @@ describe('AuthService', () => {
   let prisma: jest.Mocked<any>;
   let jwt: jest.Mocked<JwtService>;
   let scheduleRefresh: jest.Mock;
+  let sendPasswordReset: jest.Mock;
 
   beforeEach(async () => {
     prisma = {
@@ -36,6 +38,7 @@ describe('AuthService', () => {
 
     jwt = { sign: jest.fn().mockReturnValue('mocked-token') } as any;
     scheduleRefresh = jest.fn();
+    sendPasswordReset = jest.fn().mockResolvedValue(undefined);
 
     const config = {
       getOrThrow: jest.fn().mockReturnValue('test-secret'),
@@ -48,6 +51,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: config },
         { provide: InstagramSyncService, useValue: { scheduleRefresh } },
+        { provide: EmailService, useValue: { sendPasswordReset } },
       ],
     }).compile();
 
@@ -311,6 +315,136 @@ describe('AuthService', () => {
       await expect(service.getClaimPreview(rawToken)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  // ─── forgotPassword ───────────────────────────────────────────────────────────
+
+  describe('forgotPassword', () => {
+    it('para e-mail desconhecido, não escreve no banco nem manda e-mail (anti-enumeração)', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await service.forgotPassword({ email: 'fantasma@example.com' });
+
+      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(sendPasswordReset).not.toHaveBeenCalled();
+    });
+
+    it('para conta desativada, não escreve no banco nem manda e-mail (mesmo tratamento de e-mail desconhecido)', async () => {
+      prisma.user.findUnique.mockResolvedValue(makeUser({ isActive: false }));
+
+      await service.forgotPassword({ email: 'creator@example.com' });
+
+      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(sendPasswordReset).not.toHaveBeenCalled();
+    });
+
+    it('para usuário ativo existente, gera e grava o par resetToken e manda o e-mail com a URL', async () => {
+      const user = makeUser();
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      await service.forgotPassword({ email: user.email });
+
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: user.id },
+          data: expect.objectContaining({
+            resetTokenHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+            resetTokenExpiresAt: expect.any(Date),
+          }),
+        }),
+      );
+
+      const { resetTokenExpiresAt } = prisma.user.update.mock.calls[0][0].data;
+      const deltaMs = resetTokenExpiresAt.getTime() - Date.now();
+      expect(deltaMs).toBeGreaterThan(55 * 60 * 1000); // ~1h, com folga
+      expect(deltaMs).toBeLessThanOrEqual(60 * 60 * 1000);
+
+      expect(sendPasswordReset).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: user.email,
+          resetUrl: expect.stringContaining('/reset-password?token='),
+        }),
+      );
+    });
+
+    it('nunca lança, mesmo se o envio do e-mail falhar (best-effort)', async () => {
+      const user = makeUser();
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+      sendPasswordReset.mockRejectedValueOnce(new Error('Resend fora do ar'));
+
+      await expect(
+        service.forgotPassword({ email: user.email }),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  // ─── resetPassword ────────────────────────────────────────────────────────────
+
+  describe('resetPassword', () => {
+    it('define a nova senha, zera o resetToken e retorna tokens (auto-login)', async () => {
+      const rawToken = 'raw-reset-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const futureDate = new Date(Date.now() + 60_000);
+      const user = makeUser({
+        resetTokenHash: tokenHash,
+        resetTokenExpiresAt: futureDate,
+      });
+
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      const result = await service.resetPassword({
+        token: rawToken,
+        password: 'novaSenhaSegura1',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { resetTokenHash: tokenHash },
+      });
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: user.id },
+          data: expect.objectContaining({
+            resetTokenHash: null,
+            resetTokenExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it('lança UnauthorizedException quando o token não existe', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword({
+          token: 'inexistente',
+          password: 'senhaSegura1',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('lança UnauthorizedException quando o token expirou', async () => {
+      const rawToken = 'raw-reset-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const pastDate = new Date(Date.now() - 60_000);
+
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ resetTokenHash: tokenHash, resetTokenExpiresAt: pastDate }),
+      );
+
+      await expect(
+        service.resetPassword({ token: rawToken, password: 'senhaSegura1' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

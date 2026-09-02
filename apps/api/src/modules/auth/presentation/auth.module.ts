@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { DatabaseModule } from '../../../shared/infrastructure/database/database.module';
 import { InstagramModule } from '../../instagram/instagram.module';
+import { EmailModule } from '../../email/email.module';
 import { AuthService } from '../application/auth.service';
 import { AuthController } from './auth.controller';
 import { JwtAccessStrategy } from '../infrastructure/strategies/jwt-access.strategy';
@@ -14,6 +15,7 @@ import { JwtRefreshStrategy } from '../infrastructure/strategies/jwt-refresh.str
     PassportModule,
     JwtModule.register({}),
     InstagramModule,
+    EmailModule,
   ],
   providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
   controllers: [AuthController],

@@ -15,6 +15,11 @@ interface ClaimAccountEmailParams {
   claimUrl: string;
 }
 
+interface PasswordResetEmailParams {
+  to: string;
+  resetUrl: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -60,6 +65,21 @@ export class EmailService {
         <p>Sua conta na plataforma já existe — falta só definir uma senha para acessar.</p>
         <p><a href="${params.claimUrl}">Clique aqui para definir sua senha</a></p>
         <p>O link expira em 7 dias.</p>
+      `,
+    });
+  }
+
+  // Sem nome personalizado de propósito: ao contrário do claim (só
+  // influencer), reset serve BRAND e INFLUENCER, e buscar o nome exigiria um
+  // include extra sem necessidade real pra um e-mail transacional de segurança.
+  async sendPasswordReset(params: PasswordResetEmailParams): Promise<void> {
+    await this.sendBestEffort({
+      to: params.to,
+      subject: 'Redefinir sua senha',
+      html: `
+        <p>Recebemos um pedido para redefinir a senha da sua conta.</p>
+        <p><a href="${params.resetUrl}">Clique aqui para definir uma nova senha</a></p>
+        <p>O link expira em 1 hora. Se você não pediu isso, ignore este e-mail.</p>
       `,
     });
   }

@@ -88,6 +88,12 @@ model User {
   // ou conta criada por registro normal (sempre teve senha usável).
   claimTokenHash      String?   @unique
   claimTokenExpiresAt DateTime?
+  // Recuperação de senha de conta já existente (diferente do claim: aqui já
+  // existe uma senha usável, não é a 1ª definição). Par separado de
+  // propósito — os dois fluxos podem estar em voo simultaneamente pra
+  // mesma conta sem interferir um no outro.
+  resetTokenHash      String?   @unique
+  resetTokenExpiresAt DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

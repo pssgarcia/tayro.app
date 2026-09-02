@@ -147,7 +147,10 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     renderTab();
     await settle();
 
-    expect(screen.getByText(/nenhuma candidatura ainda/i)).toBeInTheDocument();
+    // Escopado à aside do desktop: o mobile (mesmo DOM, só escondido por CSS
+    // em teste) mostra a MESMA mensagem no próprio estado vazio.
+    const aside = screen.getByText('Candidaturas').closest('aside') as HTMLElement;
+    expect(within(aside).getByText(/nenhuma candidatura ainda/i)).toBeInTheDocument();
     expect(screen.getByText(/selecione uma candidatura/i)).toBeInTheDocument();
   });
 

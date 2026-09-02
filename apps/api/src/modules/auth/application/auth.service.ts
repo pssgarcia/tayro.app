@@ -10,12 +10,20 @@ import * as crypto from 'crypto';
 import { IgFetchStatus, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
+import { EmailService } from '../../email/email.service';
 import { RegisterBrandDto } from './dtos/register-brand.dto';
 import { RegisterInfluencerDto } from './dtos/register-influencer.dto';
 import { LoginDto } from './dtos/login.dto';
 import { ClaimAccountDto } from './dtos/claim-account.dto';
+import { ForgotPasswordDto } from './dtos/forgot-password.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 type AuthUser = { id: string; email: string; role: UserRole };
+
+// Janela curta de propósito: quem pede reset está travado agora, não é um
+// "venha quando quiser" como o claim (7 dias) — reduz o tempo em que um
+// e-mail interceptado pode virar tomada de conta.
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora
 
 @Injectable()
 export class AuthService {
@@ -24,6 +32,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly instagramSync: InstagramSyncService,
+    private readonly emailService: EmailService,
   ) {}
 
   async registerBrand(dto: RegisterBrandDto) {
@@ -221,6 +230,69 @@ export class AuthService {
       hasIgAvatar: Boolean(user.influencer.igProfilePicUrl),
       campaignTitle: latestApplication?.campaign.title ?? null,
     };
+  }
+
+  /**
+   * Emite token de recuperação de senha, se e-mail achar conta ativa. Sempre
+   * resolve sem lançar — nunca revela pro chamador se o e-mail existe
+   * (anti-enumeração): conta CLAIMABLE é tratada igual a qualquer outra.
+   */
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user || !user.isActive) return;
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetTokenHash: tokenHash, resetTokenExpiresAt: expiresAt },
+    });
+
+    const frontendUrl = this.config.getOrThrow<string>('FRONTEND_URL');
+    try {
+      await this.emailService.sendPasswordReset({
+        to: user.email,
+        resetUrl: `${frontendUrl}/reset-password?token=${rawToken}`,
+      });
+    } catch {
+      // sendBestEffort do EmailService já engole falha do provider; este
+      // catch é só uma segunda rede — o endpoint sempre responde OK.
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(dto.token)
+      .digest('hex');
+
+    const user = await this.prisma.user.findUnique({
+      where: { resetTokenHash: tokenHash },
+    });
+
+    if (
+      !user ||
+      !user.resetTokenExpiresAt ||
+      user.resetTokenExpiresAt < new Date()
+    ) {
+      throw new UnauthorizedException('Link inválido ou expirado');
+    }
+
+    const hash = await bcrypt.hash(dto.password, 12);
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hash, resetTokenHash: null, resetTokenExpiresAt: null },
+    });
+
+    return this.buildAuthResponse(updated);
   }
 
   async refreshTokens(userId: string, incomingToken: string) {
