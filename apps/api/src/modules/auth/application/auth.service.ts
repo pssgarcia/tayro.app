@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import { LoginDto } from './dtos/login.dto';
 import { ClaimAccountDto } from './dtos/claim-account.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 
 type AuthUser = { id: string; email: string; role: UserRole };
 
@@ -290,6 +292,46 @@ export class AuthService {
     const updated = await this.prisma.user.update({
       where: { id: user.id },
       data: { password: hash, resetTokenHash: null, resetTokenExpiresAt: null },
+    });
+
+    return this.buildAuthResponse(updated);
+  }
+
+  /**
+   * Troca de senha por quem já está autenticada — exige a senha atual
+   * (diferente do reset: aqui a prova de identidade é a senha, não um
+   * token de e-mail). Rotaciona a sessão: derruba qualquer outro
+   * dispositivo logado, de graça, porque refreshTokenHash é único por
+   * conta. Zera também o par de claim — trocar a senha conscientemente
+   * encerra qualquer convite de claim ainda pendente pra essa conta.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    if (!(await bcrypt.compare(dto.currentPassword, user.password))) {
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException('A nova senha deve ser diferente da atual');
+    }
+
+    const hash = await bcrypt.hash(dto.newPassword, 12);
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hash,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+        claimTokenHash: null,
+        claimTokenExpiresAt: null,
+      },
     });
 
     return this.buildAuthResponse(updated);

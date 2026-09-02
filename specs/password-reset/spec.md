@@ -36,8 +36,9 @@ conta CLAIMABLE.
 - Como a conta é criada e como o claim funciona — ver `account-claim`. Reset é um par
   independente de token (`resetTokenHash`/`resetTokenExpiresAt`), não reaproveita
   `claimTokenHash`/`claimTokenExpiresAt`.
-- Trocar senha ou e-mail estando logada — não existe ainda (ver `CLAUDE.md` → Pendente, bloco
-  LGPD).
+- Trocar senha estando logada — ver `password-change` (capacidade própria, com verificação da
+  senha atual, diferente do reset que prova identidade via token de e-mail).
+- Trocar e-mail estando logada — não existe ainda (ver `CLAUDE.md` → Pendente, bloco LGPD).
 - Preview de identidade antes do formulário — decisão deliberada de não ter, ver Known Gaps.
 - Cooldown de emissão por e-mail além do throttle por IP — ver Known Gaps.
 

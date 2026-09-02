@@ -245,6 +245,23 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   do reset redireciona pro painel do papel (`BRAND`→`/brand`, `INFLUENCER`→`/influencer`) via
   `redirectPath` — extraído de `LoginPage` pra `utils/redirectPath.ts`, agora com 2 consumidores.
   Spec nova: `specs/password-reset/spec.md`. 360 testes API + 534 web; lint/typecheck limpos.
+- **Trocar senha logada (2026-09-02):** primeiro item do Bloco 1 de LGPD, o mais urgente
+  ("segurança antes de LGPD"). `POST /auth/change-password` (`JwtAuthGuard` + `AUTH_THROTTLE` —
+  o endpoint roda `bcrypt.compare` a cada tentativa, sem throttle vira oráculo de força-bruta
+  barato mesmo autenticado): exige a senha atual, rejeita nova senha igual à atual (`400`), zera
+  os pares de reset **e de claim** (troca consciente encerra qualquer link pendente), reemite
+  sessão — o que **derruba qualquer outro dispositivo logado** de graça, porque
+  `refreshTokenHash` é único por conta. Achado no caminho, não corrigido ainda: o mesmo buraco
+  existe do lado do reset por e-mail (`resetPassword` não zera o par de claim) — registrado como
+  Known Gap em `specs/password-change`, fica pra edição separada de `specs/password-reset`.
+  Frontend: seção "Conta" (`AccountSection.tsx`, novo `components/account/`) nas duas
+  `ProfilePage.tsx`, no lugar do bloco só-leitura de e-mail — row "Senha" abre
+  `ChangePasswordModal.tsx`. Modal **sem `<form>`** de propósito (vive aninhado dentro do form de
+  Perfil; `<form>` aninhado é HTML inválido) — primário chama `handleSubmit` via `onClick`,
+  mesmo truque que o `KineticEditField` já usava. Regressão nova: `AuthController` ganhou teste
+  de guard (`auth.controller.guards.spec.ts`) — a regra "guard em toda rota autenticada" não
+  tinha rede nenhuma até aqui. Spec nova: `specs/password-change/spec.md`.
+  374 testes API + 549 web; lint/typecheck limpos.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
@@ -258,7 +275,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
 - **Ícones PWA são placeholder** (monograma "T" lime/dark gerado, não é o mark oficial do TAYRO — produto só tem wordmark texto hoje). Trocar `apps/web/src/assets/pwa-icon.svg` e rodar `npx pwa-assets-generator` de novo quando houver logomark definitivo. `public/favicon.svg`/`icons.svg` antigos (roxos, off-brand) ficaram órfãos — não referenciados em lugar nenhum, podem ser removidos.
 - **Furos de ponta a ponta — auditoria de toda rota da API contra o que o front consome (feita 2026-08-13, REVALIDADA contra o develop em 2026-08-14, pós-v0.37.0):**
-  - **LGPD:** sem trocar senha/e-mail logada, sem deletar conta, sem exportar dados, e **sem política de privacidade / termos / captura de consentimento** em lugar nenhum. Levantamento completo (o quê e por quê, com a ordem sugerida) em `.claude/knowledge/roadmap.md` → "LGPD"; a decisão de apagar vs. anonimizar conta é a `D-E` em `decisions.md`, ABERTA. Trocar senha é o mais urgente e é **segurança antes de LGPD**: hoje senha vazada não tem como ser trocada.
+  - **LGPD:** sem trocar e-mail logada, sem deletar conta, sem exportar dados, e **sem política de privacidade / termos / captura de consentimento** em lugar nenhum. Levantamento completo (o quê e por quê, com a ordem sugerida) em `.claude/knowledge/roadmap.md` → "LGPD"; a decisão de apagar vs. anonimizar conta é a `D-E` em `decisions.md`, ABERTA. **Trocar senha logada fechado em 2026-09-02** (era o mais urgente, "segurança antes de LGPD") — ver "Feito". Trocar e-mail e exportar dados seguem os próximos do mesmo levantamento.
   - **Marca não descobre creators.** CRM "creator-first" sem busca/listagem: o controller `creators` só expõe `:handle/public`. A marca só vê quem se candidatou — `/c/:handle` só é alcançável por link direto que a creator mande (o link em si já é clicável no perfil dela desde 2026-08-14, ver "Feito"). É a maior lacuna de produto que sobra; passar pelo `/feature` antes de virar código.
   - **`GET /submissions/application/:applicationId` não tem consumidor nenhum** no front (ownership dupla brand-ou-creator implementada e testada, sem uso).
 - **Dívida de modelo de dados sem superfície — decisão: NÃO mexer por ora, dropar tabela é irreversível e não urge:**
@@ -307,11 +324,11 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - Fila (identidade "Kinetic Editorial", ver "Feito"): `CampaignFilaTab.tsx` — desktop lista Pipeline (toda candidatura, qualquer status) + placa clara com detalhe/approve/reject; `CampaignPipelineMobileStory.tsx` — mobile com alternador **"Revisar"** (Story em tela cheia, só PENDING, toque/swipe, painel "Ver posts", fim de fila com contagem) / **"Todas"** (lista de toda candidatura com rótulo de status → detalhe reusa `CandidateStory`; decidida abre em leitura). 3 estados IG (PENDING/FAILED+retry/OK) nos dois, poll-while-PENDING (6s/45s) compartilhado
   - Visão Geral (CampaignOverviewTab) · Conteúdos (CampaignContentTab, aprovar/recusar/revisão) · Recompensas (CampaignRewardsTab, modal de registro + issue/deliver)
 - /brand/campaigns (lista+filtro) · /brand/campaigns/new (form rhf+zod, toggle CASH/PRODUCT, centavos, modal publicar + link /apply/:id) · **/brand/campaigns/:id/edit** (EditCampaignPage — mesmo `CampaignForm` do "novo", prefill via `campaignToFormValues`; fora de DRAFT não mostra form, mostra o motivo)
-- /brand/profile (ProfilePage: rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches, padrão 2a; email read-only, salvar só habilita se dirty)
+- /brand/profile (ProfilePage: rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches, padrão 2a; salvar só habilita se dirty; seção "Conta" fora do form — e-mail read-only, "Senha" abre `ChangePasswordModal` desde 2026-09-02, ver "Feito")
 - /apply/:id (página pública: oferta, form, estados 201/409/429) — responsivo (px-4 sm:px-6, min-h-[44px] no CTA, break-words na descrição)
 - **/programs (v0.34.0):** vitrine pública, sem guard — mesma listagem de `/influencer/browse` (`ProgramsList`, **grade de cards** desde 2026-08-28), card leva pro `/apply/:id` se anônimo ou pro detalhe autenticado se já houver sessão de creator. Linkado do `LoginPage`.
 - **Creator (v0.8.0):** InfluencerLayout + InfluencerGuard · /register/influencer (rhf+zod, NicheSelector, erro inline por `field` vindo do 409) · /influencer (minhas candidaturas via `useMyApplications`)
-- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; email read-only)
+- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; seção "Conta" fora do form — e-mail read-only, "Senha" abre `ChangePasswordModal` desde 2026-09-02, ver "Feito")
 - **Creator (v0.10.0, revisto na v0.31.0 e em 2026-08-28):** /influencer/browse (**lista uniforme, sem placa em destaque** — não existe critério de curadoria; ver "Decisões de domínio"; ProgramCard só navega, não candidata) · /influencer/programs/:id (detalhe: oferta na placa, prazo/vagas, nichos, descrição; CTA "Quero participar" abre o ApplyModal; se já houver candidatura, StatusPill + link)
 - **Creator (v0.13.0):** /influencer/dashboard (nova home/index) — 3 pills de resumo, últimas 4 candidaturas, recompensas PENDING+ISSUED. Nav 4 itens.
 - **Creator (v0.14.0):** /influencer/submissions — lista com status + feedback, modal "Enviar conteúdo". Nav 5 itens (+ Conteúdo).
