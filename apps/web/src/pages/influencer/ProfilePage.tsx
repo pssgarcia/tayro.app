@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ExternalLink, Lock, Check } from 'lucide-react';
+import { ExternalLink, Check } from 'lucide-react';
 import axios from 'axios';
 import { useInfluencerProfile, useUpdateInfluencerProfile } from '../../hooks/useInfluencerProfile';
 import type { InfluencerProfile, UpdateInfluencerPayload } from '../../types/api';
@@ -10,6 +10,7 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
 import KineticEditField from '../../components/primitives/kinetic/KineticEditField';
 import KineticEditNiches from '../../components/primitives/kinetic/KineticEditNiches';
+import AccountSection from '../../components/account/AccountSection';
 import { formatEngagement, formatNumberParts, publicUrl, publicUrlLabel } from '../../utils/format';
 import { cn } from '../../lib/utils';
 
@@ -330,10 +331,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
       <div className="my-[26px] h-px bg-muted" />
 
-      <div className="flex items-center gap-2.5 text-kinetic-muted">
-        <Lock size={13} className="shrink-0" />
-        <p className="flex-1 text-sm">{profile.email}</p>
-      </div>
+      <AccountSection email={profile.email} />
 
       <button
         type="submit"

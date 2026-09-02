@@ -29,7 +29,9 @@ Cadastro de conta de creator e edição do perfil associado, incluindo o toggle 
 
 ## Out of Scope
 - Edição de `instagramHandle` — nunca existiu um fluxo dedicado (ver Known Gaps).
-- Troca de e-mail/senha logada, exclusão de conta — mesmos gaps de `brand-account`.
+- Trocar senha logada — ver `password-change` (capacidade própria, 2026-09-02).
+- Trocar e-mail logado — ver `email-change` (capacidade própria, 2026-09-02).
+- Exclusão de conta — mesmo gap de `brand-account` (bloqueado por `D-E`, `ABERTA`).
 - Sincronização de dados do Instagram (seguidores, engajamento, feed) — ver `instagram-sync`;
   este fluxo só lê esses campos, nunca escreve. A **verificação de existência do @** também
   pertence àquela capacidade; aqui só está descrito o que o cadastro faz com o desfecho.
@@ -185,6 +187,9 @@ Verificação do @ no cadastro:
   `useInstagramHandleCheck` do `PublicApplyPage` (ver `creator-discovery-and-apply`).
 
 ## Change History
+- 2026-09-02 · row "E-mail" da seção "Conta" (`AccountSection`) virou clicável — ver `email-change`.
+- 2026-09-02 · `ProfilePage.tsx` passou a embutir `AccountSection` (seção "Conta") no lugar do
+  antigo bloco só-leitura de e-mail. Trocar senha logada fechado — ver `password-change`.
 - 2026-08-31 · schema ganhou `Influencer.phone String?` (ver `creator-discovery-and-apply`) —
   este fluxo (cadastro + `PATCH /influencers/me`) não foi alterado, o campo simplesmente não é
   lido nem escrito aqui. Documentado em Domain e Known Gaps pra quem procurar `phone` no schema

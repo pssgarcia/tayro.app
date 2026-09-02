@@ -245,6 +245,66 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   do reset redireciona pro painel do papel (`BRAND`→`/brand`, `INFLUENCER`→`/influencer`) via
   `redirectPath` — extraído de `LoginPage` pra `utils/redirectPath.ts`, agora com 2 consumidores.
   Spec nova: `specs/password-reset/spec.md`. 360 testes API + 534 web; lint/typecheck limpos.
+- **Trocar senha logada (2026-09-02):** primeiro item do Bloco 1 de LGPD, o mais urgente
+  ("segurança antes de LGPD"). `POST /auth/change-password` (`JwtAuthGuard` + `AUTH_THROTTLE` —
+  o endpoint roda `bcrypt.compare` a cada tentativa, sem throttle vira oráculo de força-bruta
+  barato mesmo autenticado): exige a senha atual, rejeita nova senha igual à atual (`400`), zera
+  os pares de reset **e de claim** (troca consciente encerra qualquer link pendente), reemite
+  sessão — o que **derruba qualquer outro dispositivo logado** de graça, porque
+  `refreshTokenHash` é único por conta. Achado no caminho (mesmo buraco do lado do reset por
+  e-mail — `resetPassword` não zerava o par de claim) **fechado em 2026-09-02 no `/review`**, ver
+  entrada própria abaixo.
+  Frontend: seção "Conta" (`AccountSection.tsx`, novo `components/account/`) nas duas
+  `ProfilePage.tsx`, no lugar do bloco só-leitura de e-mail — row "Senha" abre
+  `ChangePasswordModal.tsx`. Modal **sem `<form>`** de propósito (vive aninhado dentro do form de
+  Perfil; `<form>` aninhado é HTML inválido) — primário chama `handleSubmit` via `onClick`,
+  mesmo truque que o `KineticEditField` já usava. Regressão nova: `AuthController` ganhou teste
+  de guard (`auth.controller.guards.spec.ts`) — a regra "guard em toda rota autenticada" não
+  tinha rede nenhuma até aqui. Spec nova: `specs/password-change/spec.md`.
+  374 testes API + 549 web; lint/typecheck limpos.
+- **Trocar e-mail logado (2026-09-02):** segundo item do Bloco 1 de LGPD, na sequência de trocar
+  senha. `POST /auth/change-email` (`JwtAuthGuard` + `AUTH_THROTTLE`): exige a senha atual, rejeita
+  e-mail igual ao atual (`400`), **sem check-then-act** (constraint `@unique` é a única fonte de
+  verdade, mesmo padrão de `registerBrand`/`registerInfluencer` — `P2002`→`409` com
+  `field: 'email'`), zera o par de reset, avisa o e-mail **ANTIGO** da troca (best-effort,
+  `sendEmailChanged` novo no `EmailService`) e reemite sessão (o JWT carrega `email` no payload).
+  Frontend: row "E-mail" da seção "Conta" (antes só-leitura) abre `ChangeEmailModal.tsx` — mesmo
+  shell sem `<form>` do `ChangePasswordModal`; `409` aparece inline no campo de e-mail (usa o
+  `field` do erro, mesmo padrão do cadastro), não como mensagem genérica. Sucesso invalida os
+  dois query keys de perfil (`brandProfileKeys`/`influencerProfileKeys`) — o componente não sabe
+  o papel de quem está logado. Achado: `ChangeEmailModal` usa `useQueryClient` de verdade, então
+  os testes de `ProfilePage` passaram a envolver um `QueryClientProvider` real na árvore (os
+  hooks de dado continuam mockados). Spec nova: `specs/email-change/spec.md`; `password-reset`/
+  `password-change`/`brand-account`/`creator-account` atualizadas. 391 testes API + 565 web;
+  lint/typecheck limpos.
+- **Fix: reset de senha por e-mail não zerava o par de claim (2026-09-02, achado no `/review`):**
+  conta CLAIMABLE que resetasse a senha por `/forgot-password` (em vez de clicar no link de
+  claim original) deixava esse link — válido por 7 dias — ainda funcional depois; quem tivesse
+  acesso àquele primeiro e-mail (encaminhado, caixa compartilhada, comprometida depois) podia
+  `POST /auth/claim` com o token antigo e definir uma senha nova por conta própria, mesmo com a
+  titular já tendo resetado a dela. `resetPassword` agora zera `claimTokenHash`/
+  `claimTokenExpiresAt` junto com o par de reset — mesma limpeza que `changePassword` já fazia.
+  `specs/password-reset` atualizada (Behavior/Domain/Acceptance Criteria/Change History);
+  `specs/password-change` (Known Gap fechado) e `specs/account-claim` (Domain) também. 392
+  testes API; lint/typecheck limpos.
+- **Creators aprovadas, cross-campanha + WhatsApp (2026-09-02):** fecha um gap que o `/feature`
+  tinha avaliado como `DEPOIS` em 2026-08-27 (sem marca real pra confirmar) — o Pedro pediu pra
+  seguir mesmo assim, cortando o pedido original de chat in-app (contrariava `D-08`) por um botão
+  que abre o WhatsApp (reforça `D-08`: "WhatsApp já existe e ganha"). `GET /applications/approved`
+  (Brand) agrega `Application.APPROVED` por creator entre TODAS as campanhas da marca — uma única
+  query, agrupamento em memória, sem N+1, sem modelo/migration novo. Nova tela `/brand/creators`
+  (nav "Creators", 4º item) em lista + placa (mesmo padrão de Entregas): media kit completo da
+  creator selecionada + botão "Falar no WhatsApp". `whatsappLinkFromPhone` (`utils/format.ts`)
+  converte o telefone livre (`Influencer.phone`, sem DDI) num link `wa.me` — heurística BR (10-11
+  dígitos ganham `55`; qualquer outra contagem não renderiza o botão, nunca um link quebrado).
+  **Pedido extra do Pedro, mesma sessão:** o mesmo ícone de WhatsApp foi levado também pro canto
+  superior direito da placa/foto na Fila (`CampaignFilaTab` desktop + `CampaignPipelineMobileStory`
+  mobile) — reforço do `tel:` que já existia ali, não substituto; contato de um toque sem sair da
+  tela de decisão. `WhatsAppIcon` (SVG próprio — `lucide-react` não tem glifos de marca) existia
+  só dentro da landing; promovido pra `components/primitives/WhatsAppIcon.tsx` e compartilhado
+  entre landing/Fila/Creators em vez de duplicado. Specs: `creator-roster` (nova) e
+  `campaign-fila-review`/`applications-pipeline` (atualizadas). 399 testes API + 582 web;
+  lint/typecheck limpos.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
@@ -258,7 +318,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
 - **Ícones PWA são placeholder** (monograma "T" lime/dark gerado, não é o mark oficial do TAYRO — produto só tem wordmark texto hoje). Trocar `apps/web/src/assets/pwa-icon.svg` e rodar `npx pwa-assets-generator` de novo quando houver logomark definitivo. `public/favicon.svg`/`icons.svg` antigos (roxos, off-brand) ficaram órfãos — não referenciados em lugar nenhum, podem ser removidos.
 - **Furos de ponta a ponta — auditoria de toda rota da API contra o que o front consome (feita 2026-08-13, REVALIDADA contra o develop em 2026-08-14, pós-v0.37.0):**
-  - **LGPD:** sem trocar senha/e-mail logada, sem deletar conta, sem exportar dados, e **sem política de privacidade / termos / captura de consentimento** em lugar nenhum. Levantamento completo (o quê e por quê, com a ordem sugerida) em `.claude/knowledge/roadmap.md` → "LGPD"; a decisão de apagar vs. anonimizar conta é a `D-E` em `decisions.md`, ABERTA. Trocar senha é o mais urgente e é **segurança antes de LGPD**: hoje senha vazada não tem como ser trocada.
+  - **LGPD:** sem deletar conta, sem exportar dados, e **sem política de privacidade / termos / captura de consentimento** em lugar nenhum. Levantamento completo (o quê e por quê, com a ordem sugerida) em `.claude/knowledge/roadmap.md` → "LGPD"; a decisão de apagar vs. anonimizar conta é a `D-E` em `decisions.md`, ABERTA. **Trocar senha logada e trocar e-mail logado fechados em 2026-09-02** (senha era o mais urgente, "segurança antes de LGPD") — ver "Feito". Exportar dados segue o próximo do mesmo levantamento.
   - **Marca não descobre creators.** CRM "creator-first" sem busca/listagem: o controller `creators` só expõe `:handle/public`. A marca só vê quem se candidatou — `/c/:handle` só é alcançável por link direto que a creator mande (o link em si já é clicável no perfil dela desde 2026-08-14, ver "Feito"). É a maior lacuna de produto que sobra; passar pelo `/feature` antes de virar código.
   - **`GET /submissions/application/:applicationId` não tem consumidor nenhum** no front (ownership dupla brand-ou-creator implementada e testada, sem uso).
 - **Dívida de modelo de dados sem superfície — decisão: NÃO mexer por ora, dropar tabela é irreversível e não urge:**
@@ -300,18 +360,19 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 
 ## Telas prontas (frontend) — não reconstruir
 - **/ (LandingPage, 2026-08-29):** porta de entrada pública, standalone, Kinetic. Anônimo vê a landing; logado redireciona pro painel do papel. 7 seções (hero · o problema · como funciona · os dois lados · demonstração interativa · CTA · footer), componentes locais em `pages/public/landing/`, fotos geradas em `assets/landing/`. Header = ícone de conta → Entrar/Criar conta. CTA principal = WhatsApp com ícone (`config/contact.ts`, degrada pra `/register/brand` sem `VITE_CONTACT_WHATSAPP`); secundário → `/programs`. Ver "Feito".
-- /login + /register/brand (AuthLayout; /register → /register/brand) · BrandLayout (sidebar Dashboard/Campanhas/Perfil) + BrandGuard
+- /login + /register/brand (AuthLayout; /register → /register/brand) · BrandLayout (sidebar Dashboard/Creators/Campanhas/Perfil) + BrandGuard
+- **/brand/creators (2026-09-02):** `ApprovedCreatorsPage` — lista + placa de toda creator aprovada em qualquer campanha da marca (agregação cross-campanha via `GET /applications/approved`). Placa = media kit completo (avatar, @handle, seguidores, engajamento, posts recentes, campanhas em que foi aprovada) + botão "Falar no WhatsApp" (`wa.me`, via `whatsappLinkFromPhone`). Ver "Feito".
 - **/forgot-password + /reset-password (2026-09-02):** AuthLayout, fora de guards. `/forgot-password` (campo único de e-mail; sucesso troca o form por mensagem genérica que nunca revela se o e-mail existe) e `/reset-password?token=` (sem preview, direto pro form de senha; sucesso autentica e redireciona pro painel do papel via `redirectPath`). "Esqueci minha senha?" no `LoginPage` leva pro primeiro. Ver "Feito".
 - /brand/dashboard (DashboardPage — **Kinetic**: placa com o número de candidaturas na fila + Resumo em 4 `StatFigure`, lado a lado no desktop, empilhado no celular)
 - /brand/campaigns/:id → 4 abas, **todas em Kinetic** desde 2026-08-28 (header com ações derivadas do status: "Encerrar campanha" se ACTIVE; "Publicar campanha" + "Editar" + "Apagar rascunho" se DRAFT; nenhuma se CLOSED/COMPLETED):
   - Fila (identidade "Kinetic Editorial", ver "Feito"): `CampaignFilaTab.tsx` — desktop lista Pipeline (toda candidatura, qualquer status) + placa clara com detalhe/approve/reject; `CampaignPipelineMobileStory.tsx` — mobile com alternador **"Revisar"** (Story em tela cheia, só PENDING, toque/swipe, painel "Ver posts", fim de fila com contagem) / **"Todas"** (lista de toda candidatura com rótulo de status → detalhe reusa `CandidateStory`; decidida abre em leitura). 3 estados IG (PENDING/FAILED+retry/OK) nos dois, poll-while-PENDING (6s/45s) compartilhado
   - Visão Geral (CampaignOverviewTab) · Conteúdos (CampaignContentTab, aprovar/recusar/revisão) · Recompensas (CampaignRewardsTab, modal de registro + issue/deliver)
 - /brand/campaigns (lista+filtro) · /brand/campaigns/new (form rhf+zod, toggle CASH/PRODUCT, centavos, modal publicar + link /apply/:id) · **/brand/campaigns/:id/edit** (EditCampaignPage — mesmo `CampaignForm` do "novo", prefill via `campaignToFormValues`; fora de DRAFT não mostra form, mostra o motivo)
-- /brand/profile (ProfilePage: rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches, padrão 2a; email read-only, salvar só habilita se dirty)
+- /brand/profile (ProfilePage: rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches, padrão 2a; salvar só habilita se dirty; seção "Conta" fora do form — "E-mail" e "Senha" abrem `ChangeEmailModal`/`ChangePasswordModal` desde 2026-09-02, ver "Feito")
 - /apply/:id (página pública: oferta, form, estados 201/409/429) — responsivo (px-4 sm:px-6, min-h-[44px] no CTA, break-words na descrição)
 - **/programs (v0.34.0):** vitrine pública, sem guard — mesma listagem de `/influencer/browse` (`ProgramsList`, **grade de cards** desde 2026-08-28), card leva pro `/apply/:id` se anônimo ou pro detalhe autenticado se já houver sessão de creator. Linkado do `LoginPage`.
 - **Creator (v0.8.0):** InfluencerLayout + InfluencerGuard · /register/influencer (rhf+zod, NicheSelector, erro inline por `field` vindo do 409) · /influencer (minhas candidaturas via `useMyApplications`)
-- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; email read-only)
+- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; seção "Conta" fora do form — "E-mail" e "Senha" abrem `ChangeEmailModal`/`ChangePasswordModal` desde 2026-09-02, ver "Feito")
 - **Creator (v0.10.0, revisto na v0.31.0 e em 2026-08-28):** /influencer/browse (**lista uniforme, sem placa em destaque** — não existe critério de curadoria; ver "Decisões de domínio"; ProgramCard só navega, não candidata) · /influencer/programs/:id (detalhe: oferta na placa, prazo/vagas, nichos, descrição; CTA "Quero participar" abre o ApplyModal; se já houver candidatura, StatusPill + link)
 - **Creator (v0.13.0):** /influencer/dashboard (nova home/index) — 3 pills de resumo, últimas 4 candidaturas, recompensas PENDING+ISSUED. Nav 4 itens.
 - **Creator (v0.14.0):** /influencer/submissions — lista com status + feedback, modal "Enviar conteúdo". Nav 5 itens (+ Conteúdo).

@@ -238,3 +238,22 @@ export function publicUrl(path: string): string {
 export function publicUrlLabel(path: string): string {
   return `${window.location.host}${path}`;
 }
+
+/**
+ * Link `wa.me` a partir do telefone da creator (`Influencer.phone`), texto
+ * livre sem código de país (ex: "(11) 91234-5678", capturado no `/apply`
+ * público — ver `creator-discovery-and-apply`). Heurística assume Brasil:
+ * 10-11 dígitos (DDD + telefone) sem DDI ganham o prefixo `55`; 12-13 dígitos
+ * já começando com `55` são usados como estão. Qualquer outra contagem
+ * devolve `null` — nunca um link quebrado (quem chama não renderiza o botão).
+ */
+export function whatsappLinkFromPhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+
+  const digits = phone.replace(/\D/g, '');
+
+  if (/^55\d{10,11}$/.test(digits)) return `https://wa.me/${digits}`;
+  if (/^\d{10,11}$/.test(digits)) return `https://wa.me/55${digits}`;
+
+  return null;
+}

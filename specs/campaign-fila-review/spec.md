@@ -3,7 +3,7 @@ slug: campaign-fila-review
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-31
+last_updated: 2026-09-02
 implements:
   - apps/web/src/pages/brand/CampaignFilaTab.tsx
   - apps/web/src/pages/brand/CampaignPipelineMobileStory.tsx
@@ -73,6 +73,14 @@ o `influencer.igFetchStatus` de cada uma pra decidir se ainda precisa pollar.
   é o único contato direto que a marca tem com a creator (ver `creator-discovery-and-apply`).
   Ausente pra quem se candidatou antes do campo existir ou por um caminho que ainda não coleta
   telefone; nesse caso a linha simplesmente não aparece, sem placeholder.
+- **Canto superior direito da placa/foto:** quando `influencer.phone` produz um link de WhatsApp
+  válido (`whatsappLinkFromPhone`, ver `creator-roster`), aparece um ícone redondo que abre uma
+  conversa no WhatsApp (`wa.me`) em nova aba. É reforço do `tel:` acima, não substituto — a marca
+  que já está decidindo (aprovar/recusar) tem o contato à mão sem precisar rolar até o rodapé nem
+  sair da tela pra outra aba procurar o número. Some junto com o `tel:` quando o telefone é
+  ausente ou não produz um link válido. No mobile, fica sobre a foto (mesmas coordenadas do
+  desktop, canto superior direito), acima das zonas de toque prev/next — reclama pointer events
+  só pra si.
 - "Fechar revisão" no modo mobile não navega pra outra rota — só sai do modo imersivo de volta
   pro corpo normal da aba (a Fila já é a rota atual).
 - A escolha entre as duas superfícies é só o breakpoint — não há um terceiro layout
@@ -104,6 +112,9 @@ negócio separada da apresentação).
       `PENDING`; para depois de 45s contínuos nessa condição.
 - [x] O cronômetro de 45s reinicia se, a qualquer momento, deixar de haver alguém pendente.
 - [x] "Fechar revisão" no mobile não dispara navegação de rota.
+- [x] Ícone de WhatsApp no canto superior direito da placa/foto aparece só quando o telefone
+      produz um link válido; ausente quando `phone` é `null` ou não-whatsappável, nas duas
+      superfícies.
 
 ## Known Gaps
 (O gap "Match Score" era placeholder sem cálculo real, com a decisão de remover ou manter em
@@ -127,6 +138,8 @@ são dubladas:
 - [x] Cronômetro zera quando o IG chega — fila pendente futura volta a pollar do zero.
 - [x] Telefone da creator aparece como link `tel:` na placa de detalhe; some quando `phone`
       é `null`.
+- [x] Ícone de WhatsApp no canto da placa com o link certo quando o telefone é válido; ausente
+      sem telefone.
 
 `apps/web/src/pages/brand/CampaignPipelineMobileStory.spec.tsx` — componente controlado por
 props, nenhum hook mockado:
@@ -148,6 +161,7 @@ props, nenhum hook mockado:
 - [x] Estados de IG: OK, `FAILED`, `null` tratado como falha, cooldown 429 bloqueando o botão.
 - [x] Saída: "Fechar revisão" e "Voltar para a campanha" chamam `onExit`, sem navegação.
 - [x] Telefone da creator aparece como link `tel:`; some quando `phone` é `null`.
+- [x] Ícone de WhatsApp com o link certo quando o telefone é válido; ausente sem telefone.
 
 ## Current Implementation
 - Constantes `POLL_INTERVAL_MS = 6_000` / `POLL_TIMEOUT_MS = 45_000`, definidas em
@@ -171,6 +185,11 @@ props, nenhum hook mockado:
   mas a candidatura já avançou e o botão reabilita), e o tally vinha zerado por isso.
 
 ## Change History
+- 2026-09-02 · Ícone de WhatsApp (`WhatsAppIcon`, `whatsappLinkFromPhone`, ambos compartilhados
+  com `creator-roster`) no canto superior direito da placa (desktop) e da foto (mobile) — pedido
+  do Pedro após o desenho de `creator-roster`, pra dar o mesmo contato de um toque também aqui,
+  não só na visão agregada nova. Reforço do `tel:` já existente, não substituto. 4 testes novos
+  (2 desktop + 2 mobile).
 - 2026-08-31 · "Match Score" removido (placa de detalhe, desktop). Era placeholder determinístico
   (`hash(application.id)` mapeado pra 70–95%), sem regra de cálculo real — contradição registrada
   com `vision.md` nº 5 desde o retrofit, decisão de remover ou manter estava com o Pedro. Decidido:

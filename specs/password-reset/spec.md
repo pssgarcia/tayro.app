@@ -36,18 +36,21 @@ conta CLAIMABLE.
 - Como a conta é criada e como o claim funciona — ver `account-claim`. Reset é um par
   independente de token (`resetTokenHash`/`resetTokenExpiresAt`), não reaproveita
   `claimTokenHash`/`claimTokenExpiresAt`.
-- Trocar senha ou e-mail estando logada — não existe ainda (ver `CLAUDE.md` → Pendente, bloco
-  LGPD).
+- Trocar senha estando logada — ver `password-change` (capacidade própria, com verificação da
+  senha atual, diferente do reset que prova identidade via token de e-mail).
+- Trocar e-mail estando logada — não existe ainda (ver `CLAUDE.md` → Pendente, bloco LGPD).
 - Preview de identidade antes do formulário — decisão deliberada de não ter, ver Known Gaps.
 - Cooldown de emissão por e-mail além do throttle por IP — ver Known Gaps.
 
 ## Domain
 Par `resetTokenHash`/`resetTokenExpiresAt` em `User`, separado de `claimTokenHash`/
-`claimTokenExpiresAt` porque os dois fluxos podem estar em voo simultaneamente pra mesma conta
-sem interferir um no outro (ex.: uma conta CLAIMABLE que também pede reset). Token bruto (32
-bytes aleatórios, hex) só existe em trânsito na URL do e-mail; o banco guarda só o hash SHA-256
-— mesmo padrão do claim e do refresh token. TTL fixo de 1 hora, mais curto que os 7 dias do
-claim: quem pede reset está travado agora, não é um "venha quando quiser".
+`claimTokenExpiresAt` — token diferente, storage diferente, os dois podem estar em voo
+simultaneamente pra mesma conta (ex.: uma conta CLAIMABLE que também pede reset) sem colidir na
+emissão. Mas **consumir** um reset encerra um claim pendente da mesma conta (ver Behavior/Change
+History, 2026-09-02): a senha nova definida de qualquer jeito supera o convite de claim antigo.
+Token bruto (32 bytes aleatórios, hex) só existe em trânsito na URL do e-mail; o banco guarda só
+o hash SHA-256 — mesmo padrão do claim e do refresh token. TTL fixo de 1 hora, mais curto que os
+7 dias do claim: quem pede reset está travado agora, não é um "venha quando quiser".
 
 ## Behavior
 1. **Emissão** (`forgotPassword`) — busca conta ativa pelo e-mail. Se não existir, ou estiver
@@ -55,16 +58,17 @@ claim: quem pede reset está travado agora, não é um "venha quando quiser".
    sabe disso: a resposta é sempre a mesma. Se existir: gera token, grava o par com expiração em
    1h, manda e-mail com o link. Envio é best-effort — falha do provedor nunca propaga.
 2. **Consumo** (`resetPassword`) — token válido e não expirado: define a nova senha, zera o par
-   `resetTokenHash`/`resetTokenExpiresAt` e autentica automaticamente (mesmo mecanismo de sessão
-   do login/claim). Não toca em `claimTokenHash`/`claimTokenExpiresAt`.
+   `resetTokenHash`/`resetTokenExpiresAt` **e o par `claimTokenHash`/`claimTokenExpiresAt`**
+   (fechado em 2026-09-02 — ver Change History) e autentica automaticamente (mesmo mecanismo de
+   sessão do login/claim).
 3. **Token não encontrado ou expirado** — mesma mensagem genérica nos dois casos, sem
    diferenciar "nunca existiu" de "expirou" (anti-enumeração, mesmo padrão do claim).
 4. **Reemissão** — pedir reset de novo antes de consumir o token anterior sobrescreve o par no
    banco; o token antigo vira órfão (não bate mais com nada salvo), sem passo explícito de
    invalidação — mesma consequência do claim.
 5. **Conta CLAIMABLE pedindo reset** — tratada como qualquer outra conta: emite token de reset
-   normalmente. Consumir só mexe no par de reset, nunca no par de claim — os dois ficam
-   independentes.
+   normalmente. Consumir zera os dois pares (reset e claim) — um link de claim antigo, ainda
+   dentro dos 7 dias, deixa de valer assim que a conta ganha senha por outro caminho.
 
 ## API / Interfaces
 
@@ -87,7 +91,8 @@ sempre pra `/influencer`. Ambas usuárias já autenticadas são redirecionadas a
 - [x] Consumir um token válido zera o par de reset e autentica a conta na mesma resposta.
 - [x] Token inexistente ou expirado retorna `401` com a mesma mensagem genérica.
 - [x] Sucesso no reset redireciona pro painel certo do papel (`BRAND`/`INFLUENCER`).
-- [x] Conta CLAIMABLE consegue completar reset sem que isso afete o par de claim.
+- [x] Consumir um reset também zera o par de claim — um link de claim pendente da mesma conta
+      deixa de ser válido depois.
 
 ## Error Scenarios
 - Token inexistente ou expirado (consumo) → `401`, mensagem genérica de link inválido/expirado.
@@ -112,8 +117,8 @@ sempre pra `/influencer`. Ambas usuárias já autenticadas são redirecionadas a
 - `apps/api/src/modules/auth/application/auth.service.spec.ts` → `describe('forgotPassword')`
   — `- [x]` e-mail desconhecido não escreve nem envia, `- [x]` conta desativada idem, `- [x]`
   conta ativa grava o par e envia o e-mail, `- [x]` nunca lança mesmo se o e-mail falhar.
-  `describe('resetPassword')` — `- [x]` sucesso, `- [x]` token inexistente, `- [x]` token
-  expirado.
+  `describe('resetPassword')` — `- [x]` sucesso, `- [x]` zera o par de claim junto (2026-09-02),
+  `- [x]` token inexistente, `- [x]` token expirado.
 - `apps/api/src/modules/auth/presentation/auth.controller.throttle.spec.ts` — `- [x]`
   `forgotPassword`/`resetPassword` carregam `AUTH_THROTTLE`.
 - `apps/api/src/modules/email/email.service.spec.ts` — `- [x]` `sendPasswordReset` manda o link
@@ -138,5 +143,12 @@ sempre pra `/influencer`. Ambas usuárias já autenticadas são redirecionadas a
   `useMutation`), não há hook dedicado porque não há GET/preview nesta capacidade.
 
 ## Change History
+- 2026-09-02 · `resetPassword` passou a zerar também o par `claimTokenHash`/
+  `claimTokenExpiresAt`. Achado no `/review` do PR de `password-change`/`email-change`: uma
+  conta CLAIMABLE que resetasse a senha por e-mail (em vez de clicar no link de claim original)
+  deixava esse link de claim válido pelo resto dos 7 dias — quem tivesse acesso àquele primeiro
+  e-mail (encaminhado, caixa compartilhada, comprometida depois) podia `POST /auth/claim` com o
+  token antigo e definir uma senha nova por conta própria, mesmo depois de a titular já ter
+  resetado a sua. Simetria com `changePassword`, que já fazia essa limpeza desde 2026-09-02.
 - 2026-09-02 · implementação inicial — endpoints, telas, migration `resetTokenHash`/
   `resetTokenExpiresAt`, link "Esqueci minha senha?" de volta no Login.

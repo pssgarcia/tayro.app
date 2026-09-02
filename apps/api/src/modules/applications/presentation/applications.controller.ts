@@ -44,6 +44,16 @@ export class ApplicationsController {
     return this.applicationsService.findMine(user.id);
   }
 
+  @Get('approved')
+  @UseGuards(RolesGuard)
+  @Roles('BRAND')
+  @ApiOperation({
+    summary: 'Creators aprovadas em qualquer campanha da marca (Brand)',
+  })
+  findApproved(@CurrentUser() user: { id: string }) {
+    return this.applicationsService.findApprovedForBrand(user.id);
+  }
+
   @Get('campaign/:campaignId')
   @UseGuards(RolesGuard)
   @Roles('BRAND')

@@ -28,7 +28,8 @@ decidir se aplica.
 Cadastro de conta de marca e edição do perfil associado.
 
 ## Out of Scope
-- Troca de e-mail ou senha logada — gap de LGPD conhecido, ver `CLAUDE.md` → "Pendente".
+- Trocar senha logada — ver `password-change` (capacidade própria, 2026-09-02).
+- Trocar e-mail logado — ver `email-change` (capacidade própria, 2026-09-02).
 - Exclusão ou anonimização de conta — bloqueado por `D-E` (`ABERTA`).
 - Verificação de e-mail no cadastro — não existe fluxo de confirmação.
 
@@ -88,12 +89,9 @@ validado no frontend (Zod) — a API aceita qualquer string ≤2048 caracteres.
 - Excesso de tentativas de cadastro pelo mesmo IP → `429` (throttle de `/auth/*`).
 
 ## Known Gaps
-- **Sem troca de e-mail nem de senha pela conta logada.** `email` não aparece em nenhum DTO de
-  update e não existe endpoint de troca/recuperação de senha — quem perde a senha fica fora do
-  produto. É gap de produto compartilhado com `creator-account`, listado em
-  `.claude/knowledge/roadmap.md` (bloco LGPD, item 1).
-(O check-then-act na verificação de e-mail, registrado no retrofit de 2026-08-21, foi
-**corrigido em 2026-08-23** — ver Change History.)
+Trocar senha logada e trocar e-mail logado **foram fechados em 2026-09-02** — ver
+`password-change`/`email-change`. (O check-then-act na verificação de e-mail no cadastro,
+registrado no retrofit de 2026-08-21, foi **corrigido em 2026-08-23** — ver Change History.)
 
 ## Test Coverage
 - `apps/api/src/modules/brands/application/brands.service.spec.ts` — `- [x]` `getMe`/`updateMe`.
@@ -114,6 +112,9 @@ validado no frontend (Zod) — a API aceita qualquer string ≤2048 caracteres.
   mesmo padrão do "404 vira 403" usado no `GET`.
 
 ## Change History
+- 2026-09-02 · row "E-mail" da seção "Conta" (`AccountSection`) virou clicável — ver `email-change`.
+- 2026-09-02 · `ProfilePage.tsx` passou a embutir `AccountSection` (seção "Conta") no lugar do
+  antigo bloco só-leitura de e-mail. Trocar senha logada fechado — ver `password-change`.
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD — sem mudança de comportamento; a checagem de
   e-mail não-atômica, antes narrada dentro de "Endpoints", agora é `Known Gap` explícito com

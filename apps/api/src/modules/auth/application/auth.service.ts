@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -17,6 +18,8 @@ import { LoginDto } from './dtos/login.dto';
 import { ClaimAccountDto } from './dtos/claim-account.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
+import { ChangeEmailDto } from './dtos/change-email.dto';
 
 type AuthUser = { id: string; email: string; role: UserRole };
 
@@ -268,6 +271,14 @@ export class AuthService {
     }
   }
 
+  /**
+   * Consumir um reset zera também o par de claim (não só o de reset) — achado
+   * no /review de 2026-09-02: uma conta CLAIMABLE que resetasse a senha por
+   * e-mail em vez de clicar no link de claim original deixava esse link
+   * (válido por 7 dias) ainda funcional depois, permitindo a quem tivesse
+   * acesso àquele primeiro e-mail definir uma senha nova por conta própria.
+   * Mesma limpeza que changePassword já faz.
+   */
   async resetPassword(dto: ResetPasswordDto) {
     const tokenHash = crypto
       .createHash('sha256')
@@ -289,8 +300,121 @@ export class AuthService {
     const hash = await bcrypt.hash(dto.password, 12);
     const updated = await this.prisma.user.update({
       where: { id: user.id },
-      data: { password: hash, resetTokenHash: null, resetTokenExpiresAt: null },
+      data: {
+        password: hash,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+        claimTokenHash: null,
+        claimTokenExpiresAt: null,
+      },
     });
+
+    return this.buildAuthResponse(updated);
+  }
+
+  /**
+   * Troca de senha por quem já está autenticada — exige a senha atual
+   * (diferente do reset: aqui a prova de identidade é a senha, não um
+   * token de e-mail). Rotaciona a sessão: derruba qualquer outro
+   * dispositivo logado, de graça, porque refreshTokenHash é único por
+   * conta. Zera também o par de claim — trocar a senha conscientemente
+   * encerra qualquer convite de claim ainda pendente pra essa conta.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    if (!(await bcrypt.compare(dto.currentPassword, user.password))) {
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException('A nova senha deve ser diferente da atual');
+    }
+
+    const hash = await bcrypt.hash(dto.newPassword, 12);
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hash,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+        claimTokenHash: null,
+        claimTokenExpiresAt: null,
+      },
+    });
+
+    return this.buildAuthResponse(updated);
+  }
+
+  /**
+   * Troca de e-mail por quem já está autenticada — exige a senha atual
+   * (mesma prova de identidade do changePassword). Sem check-then-act: a
+   * constraint @unique de email é a única fonte de verdade, mesmo padrão de
+   * registerBrand/registerInfluencer. Avisa o e-mail ANTIGO da troca
+   * (best-effort) e reemite sessão — o access token carrega email no
+   * payload, então sem reemitir o front mostraria o e-mail velho por até
+   * JWT_ACCESS_EXPIRES_IN.
+   */
+  async changeEmail(userId: string, dto: ChangeEmailDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    if (!(await bcrypt.compare(dto.password, user.password))) {
+      throw new UnauthorizedException('Senha incorreta');
+    }
+
+    if (dto.email === user.email) {
+      throw new BadRequestException('Este já é o seu e-mail');
+    }
+
+    const oldEmail = user.email;
+
+    let updated;
+    try {
+      updated = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: dto.email,
+          resetTokenHash: null,
+          resetTokenExpiresAt: null,
+        },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new ConflictException({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'Este e-mail já está em uso',
+          field: 'email',
+        });
+      }
+      throw err;
+    }
+
+    try {
+      await this.emailService.sendEmailChanged({
+        to: oldEmail,
+        newEmail: dto.email,
+      });
+    } catch {
+      // sendBestEffort do EmailService já engole falha do provider; este
+      // catch é só uma segunda rede — a troca já foi gravada e não pode
+      // ser desfeita por causa de um e-mail que não saiu.
+    }
 
     return this.buildAuthResponse(updated);
   }

@@ -30,6 +30,20 @@ export interface ApplicationInfluencer {
 
 export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
 
+// ─── Creators aprovadas, cross-campanha (specs/creator-roster) ────────────────
+
+export interface ApprovedCreatorApproval {
+  applicationId: string;
+  campaignId: string;
+  campaignTitle: string;
+  reviewedAt: string | null;
+}
+
+export interface ApprovedCreator {
+  influencer: ApplicationInfluencer;
+  approvals: ApprovedCreatorApproval[];
+}
+
 export interface Application {
   id: string;
   campaignId: string;

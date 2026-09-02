@@ -356,3 +356,14 @@ não de validação do próprio campo que a pessoa está preenchendo). Pedro rat
 essa versão escopada em 2026-08-26. **Vai para `/architect`** — decidir: throttle/custo de cota
 na validação síncrona (rota pública sem auth), e evitar pagar a RapidAPI duas vezes (validação
 no submit + `scheduleRefresh` que dispara ao criar a candidatura).
+
+**Reafirmação · 2026-09-02 · `PROPOSTA`:** Pedro trouxe de novo a "tela dedicada de aprovadas",
+desta vez somada a um pedido de chat in-app ("conseguir conversar com elas"), motivado por
+"depois de aprovar a creator, ela se perde, só dá pra ver pela fila". Veredito do `/feature`
+não muda: `DEPOIS` pra tela dedicada (0 marcas reais desde 2026-08-27, nada mudou), `NÃO` pro
+chat (contradiz `D-08`, `FIRME` — "WhatsApp já existe e ganha"). **Fato que enfraquece ainda
+mais o pedido:** desde 2026-08-31 a Fila (desktop e mobile) já mostra @handle e telefone
+(`tel:` clicável) de toda candidatura, aprovada inclusive — a intenção real de "conversar" já
+tem um caminho de um toque, sem in-app messaging. **Não ressuscitar** sem: (a) item 0 do
+roadmap rodando com marca real, e (b) marca real operando 2+ campanhas simultâneas e sentindo
+falta específica de agregação cross-campanha (o que a Fila por-campanha já não resolve).

@@ -10,6 +10,8 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { PublicApplyDto } from '../../modules/creators/application/dtos/public-apply.dto';
 import { LoginDto } from '../../modules/auth/application/dtos/login.dto';
+import { ChangePasswordDto } from '../../modules/auth/application/dtos/change-password.dto';
+import { ChangeEmailDto } from '../../modules/auth/application/dtos/change-email.dto';
 import { RegisterBrandDto } from '../../modules/auth/application/dtos/register-brand.dto';
 import { RegisterInfluencerDto } from '../../modules/auth/application/dtos/register-influencer.dto';
 import { CreateCampaignDto } from '../../modules/campaigns/application/dtos/create-campaign.dto';
@@ -106,6 +108,75 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
     it('rejeita senha acima de 72 chars (truncamento do bcrypt)', async () => {
       const errors = await validateDto(LoginDto, {
         email: 'a@b.com',
+        password: 'a'.repeat(73),
+      });
+      expect(hasError(errors, 'password')).toBe(true);
+    });
+  });
+
+  describe('ChangePasswordDto', () => {
+    it('aceita as duas senhas dentro do limite do bcrypt (72)', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'a'.repeat(72),
+        newPassword: 'b'.repeat(72),
+      });
+      expect(errors).toHaveLength(0);
+    });
+
+    it('rejeita currentPassword acima de 72 chars', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'a'.repeat(73),
+        newPassword: 'senhaNova123',
+      });
+      expect(hasError(errors, 'currentPassword')).toBe(true);
+    });
+
+    it('rejeita newPassword acima de 72 chars', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'senhaAtual123',
+        newPassword: 'a'.repeat(73),
+      });
+      expect(hasError(errors, 'newPassword')).toBe(true);
+    });
+
+    it('rejeita newPassword abaixo de 8 chars', async () => {
+      const errors = await validateDto(ChangePasswordDto, {
+        currentPassword: 'senhaAtual123',
+        newPassword: 'curta12',
+      });
+      expect(hasError(errors, 'newPassword')).toBe(true);
+    });
+  });
+
+  describe('ChangeEmailDto', () => {
+    it('aceita payload válido', async () => {
+      const errors = await validateDto(ChangeEmailDto, {
+        email: 'novo@example.com',
+        password: 'a'.repeat(72),
+      });
+      expect(errors).toHaveLength(0);
+    });
+
+    it('rejeita email acima de 254 chars', async () => {
+      const longEmail = `${'a'.repeat(250)}@x.com`;
+      const errors = await validateDto(ChangeEmailDto, {
+        email: longEmail,
+        password: 'senhaAtual123',
+      });
+      expect(hasError(errors, 'email')).toBe(true);
+    });
+
+    it('rejeita email malformado', async () => {
+      const errors = await validateDto(ChangeEmailDto, {
+        email: 'não-é-email',
+        password: 'senhaAtual123',
+      });
+      expect(hasError(errors, 'email')).toBe(true);
+    });
+
+    it('rejeita password acima de 72 chars', async () => {
+      const errors = await validateDto(ChangeEmailDto, {
+        email: 'novo@example.com',
         password: 'a'.repeat(73),
       });
       expect(hasError(errors, 'password')).toBe(true);
