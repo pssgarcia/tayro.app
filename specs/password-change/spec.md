@@ -90,13 +90,6 @@ página (regressão coberta em teste).
 - `429` excesso de tentativas pelo mesmo IP (throttle de `/auth/*`).
 
 ## Known Gaps
-- **Achado ao implementar, não corrigido aqui de propósito:** hoje, se uma conta CLAIMABLE
-  (link de claim válido por 7 dias) passar por `/forgot-password` + `/reset-password`, o link de
-  claim original continua tecnicamente válido depois — `resetPassword` só zera o par de reset,
-  nunca o de claim (decisão deliberada registrada em `password-reset`, pra manter os dois fluxos
-  independentes). `changePassword` fecha esse mesmo buraco pro caminho de troca autenticada, mas
-  o caminho de reset por e-mail continua exposto. Fechar isso em `resetPassword` é mudança de
-  `Behavior` de `password-reset` — pedido de mudança separado, não decidido silenciosamente aqui.
 - Sem 2FA, sem lista/revogação seletiva de sessões (o modelo só guarda um `refreshTokenHash` por
   conta — "derrubar todo mundo" é a única opção, não "derrubar só o dispositivo X").
 - Sem e-mail de aviso ("sua senha foi alterada") — poderia ser um `sendBestEffort` a mais no
@@ -129,5 +122,8 @@ página (regressão coberta em teste).
   ponto de extensão pro próximo item do Bloco 1 (trocar e-mail).
 
 ## Change History
+- 2026-09-02 · Known Gap sobre `resetPassword` não zerar o par de claim foi **fechado** — ver
+  `specs/password-reset` → Change History. Os dois fluxos de troca de senha (autenticado e por
+  e-mail) agora encerram um claim pendente do mesmo jeito.
 - 2026-09-02 · implementação inicial — endpoint, service, seção "Conta" no Perfil (marca e
   creator), modal de troca de senha, guard de regressão novo (`auth.controller.guards.spec.ts`).

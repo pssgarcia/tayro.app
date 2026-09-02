@@ -428,6 +428,43 @@ describe('AuthService', () => {
       );
     });
 
+    // Achado no /review de 2026-09-02: uma conta CLAIMABLE que resetasse a
+    // senha por e-mail deixava o link de claim original (7 dias) ainda
+    // válido — quem tivesse acesso a esse primeiro e-mail podia definir uma
+    // senha nova por conta própria depois. resetPassword agora fecha esse
+    // convite junto, mesma limpeza que changePassword já fazia.
+    it('zera também o par de claim, fechando qualquer convite pendente', async () => {
+      const rawToken = 'raw-reset-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const futureDate = new Date(Date.now() + 60_000);
+      const user = makeUser({
+        resetTokenHash: tokenHash,
+        resetTokenExpiresAt: futureDate,
+        claimTokenHash: 'hash-de-um-claim-ainda-pendente',
+        claimTokenExpiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+      });
+
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(user);
+
+      await service.resetPassword({
+        token: rawToken,
+        password: 'novaSenhaSegura1',
+      });
+
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            claimTokenHash: null,
+            claimTokenExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
     it('lança UnauthorizedException quando o token não existe', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
