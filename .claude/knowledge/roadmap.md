@@ -82,7 +82,7 @@ número é trabalho de 10 minutos e é a única evidência de funil que o produt
 
 ## PRÓXIMO — antes do lançamento
 
-### Paridade mobile da Fila — ver aprovadas/recusadas no celular `[EM IMPLEMENTAÇÃO — ratificado 2026-08-27]`
+### Paridade mobile da Fila — ver aprovadas/recusadas no celular `[ENTREGUE em 2026-08-27 — sai do PRÓXIMO na próxima revisão]`
 `[FATO — verificado 2026-08-27]` A Fila **desktop** (`CampaignFilaTab`) lista toda candidatura de
 qualquer status; a Fila **mobile** (`CampaignPipelineMobileStory`) filtra `status === 'PENDING'`
 e **não tem superfície nenhuma** pra ver quem já foi aprovado ou recusado. Como o produto é

@@ -118,6 +118,58 @@ export class ApplicationsService {
     });
   }
 
+  /**
+   * Creators aprovadas em QUALQUER campanha da marca, agrupadas por creator.
+   * Uma única query (sem N+1); o agrupamento por influencerId acontece em
+   * memória logo depois, preservando a ordem vinda do banco (reviewedAt
+   * desc) — a creator com a aprovação mais recente fica primeiro.
+   * Ver specs/creator-roster.
+   */
+  async findApprovedForBrand(userId: string) {
+    const brand = await this.findBrandOrFail(userId);
+
+    const approved = await this.prisma.application.findMany({
+      where: {
+        status: ApplicationStatus.APPROVED,
+        campaign: { brandId: brand.id },
+      },
+      orderBy: { reviewedAt: 'desc' },
+      include: {
+        influencer: { select: influencerSelect },
+        campaign: { select: { id: true, title: true } },
+      },
+    });
+
+    const byInfluencer = new Map<
+      string,
+      {
+        influencer: (typeof approved)[number]['influencer'];
+        approvals: Array<{
+          applicationId: string;
+          campaignId: string;
+          campaignTitle: string;
+          reviewedAt: Date | null;
+        }>;
+      }
+    >();
+
+    for (const app of approved) {
+      const entry = byInfluencer.get(app.influencerId) ?? {
+        influencer: app.influencer,
+        approvals: [],
+      };
+      entry.approvals.push({
+        applicationId: app.id,
+        campaignId: app.campaign.id,
+        campaignTitle: app.campaign.title,
+        reviewedAt: app.reviewedAt,
+      });
+      byInfluencer.set(app.influencerId, entry);
+    }
+
+    return Array.from(byInfluencer.values());
+  }
+
   async findByCampaign(campaignId: string, userId: string) {
     const campaign = await this.prisma.campaign.findUnique({
       where: { id: campaignId },
@@ -325,6 +377,13 @@ export class ApplicationsService {
   }
 
   // ─── Helpers privados ────────────────────────────────────────────────────────
+
+  private async findBrandOrFail(userId: string) {
+    const brand = await this.prisma.brand.findUnique({ where: { userId } });
+    if (!brand)
+      throw new ForbiddenException('User does not have a brand profile');
+    return brand;
+  }
 
   private async findInfluencerOrFail(userId: string) {
     const influencer = await this.prisma.influencer.findUnique({

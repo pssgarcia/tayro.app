@@ -27,6 +27,9 @@ manual dos dados de Instagram da creator a partir de uma candidatura.
 ## Out of Scope
 - Interface de revisão (desktop Pipeline / mobile Story) — ver `campaign-fila-review`. Esta spec
   cobre só o backend e a UI de retirar candidatura (lado creator).
+- Visão agregada de creators aprovadas entre campanhas (UI, agrupamento, botão de WhatsApp) —
+  ver `creator-roster`. Esta spec cobre só o endpoint de leitura (`GET /applications/approved`)
+  que a alimenta.
 - Comportamento do provider de Instagram (retry, staleness, fallback) — ver `instagram-sync`.
 - Ciclo de vida da própria `Campaign` (`DRAFT`/`ACTIVE`/`CLOSED`) — ver `campaign-lifecycle`.
 - Registro de resultado da parceria (`PartnershipResult`) — ver "Known Gaps": existe no schema
@@ -94,6 +97,7 @@ Controller `applications`, prefixo `/api/v1`, todas as rotas atrás de `JwtAuthG
 | PATCH | `/applications/:id/reject` | `BRAND`, dona da campanha | `PENDING → REJECTED` |
 | PATCH | `/applications/:id/withdraw` | `INFLUENCER`, dona | `PENDING → WITHDRAWN` |
 | PATCH | `/applications/:id/refresh-ig` | `BRAND`, dona da campanha | Dispara atualização de IG, sujeito a cooldown; throttle adicional de 3 chamadas/5min por IP |
+| GET | `/applications/approved` | `BRAND` | Todas as candidaturas `APPROVED` de todas as campanhas da marca, agrupadas por creator — ver `creator-roster` |
 
 ## UI Behavior
 Toda linha `PENDING` em `MyApplicationsPage` (não só a candidatura em destaque) tem ação
@@ -173,6 +177,10 @@ Arquivo: `apps/api/src/modules/applications/application/applications.service.rac
 - `useWithdrawApplication` é o hook que chama `PATCH /applications/:id/withdraw`.
 
 ## Change History
+- 2026-09-02 · `+ GET /applications/approved` (agregação por creator, sem novo campo/modelo) —
+  alimenta a visão cross-campanha em `creator-roster`. Desenhado no `/architect` a pedido do
+  Pedro, que optou por seguir mesmo com o veredito `DEPOIS` do `/feature` (ver `decisions.md`,
+  reafirmação de 2026-09-02) — decisão dele de construir na frente da evidência.
 - 2026-08-31 · `influencerSelect` passou a incluir `phone` — ver `creator-discovery-and-apply` →
   Change History pro porquê do campo. Sem mudança de rota, guard ou contrato de erro.
 - 2026-08-24 · `POST /applications` passou a disparar a sincronização do Instagram. A creator já

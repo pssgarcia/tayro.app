@@ -14,12 +14,14 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
+import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
 import CampaignPipelineMobileStory from './CampaignPipelineMobileStory';
 import {
   creatorAvatarSrc,
   creatorPostSrc,
   formatEngagement,
   formatNumberParts,
+  whatsappLinkFromPhone,
 } from '../../utils/format';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
@@ -98,6 +100,7 @@ function ProfilePlate({
   const followers =
     influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
   const cooldownWait = extractCooldownWait(refreshIgError);
+  const waLink = whatsappLinkFromPhone(influencer.phone);
   const igLoading = influencer.igFetchStatus === 'PENDING';
   const igFailed = influencer.igFetchStatus === 'FAILED' || influencer.igFetchStatus === null;
   const posts = Array.from({ length: 6 }, (_, i) => influencer.igRecentPosts?.[i] ?? null);
@@ -117,32 +120,48 @@ function ProfilePlate({
       className="flex h-full min-h-0 flex-col"
     >
       <div className="min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="mb-6 flex min-w-0 items-center gap-4">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-300">
-            {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
+        <div className="mb-6 flex min-w-0 items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-gray-300">
+              {avatarSrc && <img src={avatarSrc} alt="" className="h-full w-full object-cover" />}
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-2xl font-bold tracking-tight">{influencer.name}</h2>
+              {handle && (
+                <a
+                  href={`https://instagram.com/${handle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
+                >
+                  @{handle}
+                  <ExternalLink size={12} className="shrink-0" />
+                </a>
+              )}
+              {influencer.phone && (
+                <a
+                  href={`tel:${influencer.phone}`}
+                  className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
+                >
+                  {influencer.phone}
+                </a>
+              )}
+            </div>
           </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-2xl font-bold tracking-tight">{influencer.name}</h2>
-            {handle && (
-              <a
-                href={`https://instagram.com/${handle}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
-              >
-                @{handle}
-                <ExternalLink size={12} className="shrink-0" />
-              </a>
-            )}
-            {influencer.phone && (
-              <a
-                href={`tel:${influencer.phone}`}
-                className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
-              >
-                {influencer.phone}
-              </a>
-            )}
-          </div>
+          {/* Contato de um toque sem sair da placa — reforço do link tel: já
+              acima, não substituto (D-08: WhatsApp em vez de chat próprio).
+              Ver specs/creator-roster. */}
+          {waLink && (
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chamar no WhatsApp"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105"
+            >
+              <WhatsAppIcon size={16} />
+            </a>
+          )}
         </div>
 
         <div className="mb-6 border-b border-gray-300 pb-6">

@@ -12,9 +12,11 @@ import {
   formatEngagement,
   formatNumberParts,
   formatOffer,
+  whatsappLinkFromPhone,
 } from '../../utils/format';
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
+import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
 
@@ -404,6 +406,7 @@ function CandidateStory({
   const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
   const avatarSrc = creatorAvatarSrc(influencer);
+  const waLink = whatsappLinkFromPhone(influencer.phone);
   const followers =
     influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
   const igLoading = influencer.igFetchStatus === 'PENDING';
@@ -446,6 +449,23 @@ function CandidateStory({
             aria-label="Próximo candidato"
             className="absolute inset-y-0 right-0 w-1/2"
           />
+
+          {/* Contato de um toque no canto superior direito — mesmo lugar do
+              desktop (CampaignFilaTab.tsx). Fica ACIMA das zonas de
+              toque prev/next (é o próximo irmão no DOM) e reclama pointer
+              events só pra si, senão um toque nele avançaria o candidato. */}
+          {waLink && (
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chamar no WhatsApp"
+              onClick={(e) => e.stopPropagation()}
+              className="pointer-events-auto absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105"
+            >
+              <WhatsAppIcon size={16} />
+            </a>
+          )}
 
           {/* Identidade sobre o gradiente */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 px-5 pb-5">
