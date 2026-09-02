@@ -30,6 +30,7 @@ describe('AuthService', () => {
   let jwt: jest.Mocked<JwtService>;
   let scheduleRefresh: jest.Mock;
   let sendPasswordReset: jest.Mock;
+  let sendEmailChanged: jest.Mock;
 
   beforeEach(async () => {
     prisma = {
@@ -43,6 +44,7 @@ describe('AuthService', () => {
     jwt = { sign: jest.fn().mockReturnValue('mocked-token') } as any;
     scheduleRefresh = jest.fn();
     sendPasswordReset = jest.fn().mockResolvedValue(undefined);
+    sendEmailChanged = jest.fn().mockResolvedValue(undefined);
 
     const config = {
       getOrThrow: jest.fn().mockReturnValue('test-secret'),
@@ -55,7 +57,10 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: config },
         { provide: InstagramSyncService, useValue: { scheduleRefresh } },
-        { provide: EmailService, useValue: { sendPasswordReset } },
+        {
+          provide: EmailService,
+          useValue: { sendPasswordReset, sendEmailChanged },
+        },
       ],
     }).compile();
 
@@ -572,6 +577,225 @@ describe('AuthService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
       expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── changeEmail ──────────────────────────────────────────────────────────────
+
+  describe('changeEmail', () => {
+    const p2002 = () =>
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '6.19.3',
+        meta: { target: 'User_email_key' },
+      });
+
+    it('senha correta e e-mail livre gravam o e-mail novo e zeram o par de reset', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({
+        password: currentHash,
+        email: 'antigo@example.com',
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue({
+        ...user,
+        email: 'novo@example.com',
+      });
+
+      const result = await service.changeEmail(user.id, {
+        email: 'novo@example.com',
+        password: 'senhaAtual1',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: user.id },
+          data: expect.objectContaining({
+            email: 'novo@example.com',
+            resetTokenHash: null,
+            resetTokenExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it('o token novo é assinado com o e-mail NOVO no payload', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({
+        password: currentHash,
+        email: 'antigo@example.com',
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue({
+        ...user,
+        email: 'novo@example.com',
+      });
+
+      await service.changeEmail(user.id, {
+        email: 'novo@example.com',
+        password: 'senhaAtual1',
+      });
+
+      // jwt.sign é jest.fn(); a regra acusa mesmo assim (mesmo caso
+      // documentado em ig-handle.controller.spec.ts).
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jwt.sign).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'novo@example.com' }),
+        expect.anything(),
+      );
+    });
+
+    it('rotaciona o refreshTokenHash', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({
+        password: currentHash,
+        email: 'antigo@example.com',
+        refreshTokenHash: 'hash-do-dispositivo-antigo',
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue({
+        ...user,
+        email: 'novo@example.com',
+      });
+
+      await service.changeEmail(user.id, {
+        email: 'novo@example.com',
+        password: 'senhaAtual1',
+      });
+
+      const sessionUpdateData = prisma.user.update.mock.calls[1][0].data;
+      expect(sessionUpdateData.refreshTokenHash).not.toBe(
+        'hash-do-dispositivo-antigo',
+      );
+    });
+
+    it('avisa o e-mail ANTIGO da troca, nunca o novo', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({
+        password: currentHash,
+        email: 'antigo@example.com',
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue({
+        ...user,
+        email: 'novo@example.com',
+      });
+
+      await service.changeEmail(user.id, {
+        email: 'novo@example.com',
+        password: 'senhaAtual1',
+      });
+
+      expect(sendEmailChanged).toHaveBeenCalledWith({
+        to: 'antigo@example.com',
+        newEmail: 'novo@example.com',
+      });
+    });
+
+    it('senha incorreta lança UnauthorizedException e não grava nada', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash, email: 'antigo@example.com' }),
+      );
+
+      await expect(
+        service.changeEmail('user-abc', {
+          email: 'novo@example.com',
+          password: 'senhaErrada',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('e-mail já em uso (P2002) lança ConflictException com field=email', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash, email: 'antigo@example.com' }),
+      );
+      prisma.user.update.mockRejectedValue(p2002());
+
+      const err = await service
+        .changeEmail('user-abc', {
+          email: 'ocupado@example.com',
+          password: 'senhaAtual1',
+        })
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(ConflictException);
+      expect((err as ConflictException).getResponse()).toMatchObject({
+        statusCode: 409,
+        field: 'email',
+      });
+    });
+
+    it('propaga erro que não é P2002 sem virar 409', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash, email: 'antigo@example.com' }),
+      );
+      prisma.user.update.mockRejectedValue(new Error('connection lost'));
+
+      await expect(
+        service.changeEmail('user-abc', {
+          email: 'novo@example.com',
+          password: 'senhaAtual1',
+        }),
+      ).rejects.toThrow('connection lost');
+    });
+
+    it('e-mail igual ao atual lança BadRequestException e não grava nada', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({ password: currentHash, email: 'mesmo@example.com' }),
+      );
+
+      await expect(
+        service.changeEmail('user-abc', {
+          email: 'mesmo@example.com',
+          password: 'senhaAtual1',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('conta desativada lança UnauthorizedException', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      prisma.user.findUnique.mockResolvedValue(
+        makeUser({
+          password: currentHash,
+          email: 'antigo@example.com',
+          isActive: false,
+        }),
+      );
+
+      await expect(
+        service.changeEmail('user-abc', {
+          email: 'novo@example.com',
+          password: 'senhaAtual1',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('nunca lança, mesmo se o envio do aviso falhar (best-effort)', async () => {
+      const currentHash = await bcrypt.hash('senhaAtual1', 12);
+      const user = makeUser({
+        password: currentHash,
+        email: 'antigo@example.com',
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue({
+        ...user,
+        email: 'novo@example.com',
+      });
+      sendEmailChanged.mockRejectedValueOnce(new Error('Resend fora do ar'));
+
+      await expect(
+        service.changeEmail(user.id, {
+          email: 'novo@example.com',
+          password: 'senhaAtual1',
+        }),
+      ).resolves.toHaveProperty('accessToken');
     });
   });
 

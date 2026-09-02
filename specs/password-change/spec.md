@@ -31,7 +31,7 @@ atual antes de aceitar a nova.
 - Recuperação de senha sem estar logada — ver `password-reset` (prova identidade via token de
   e-mail, não via senha atual).
 - Primeira definição de senha de conta CLAIMABLE — ver `account-claim`.
-- Trocar e-mail — ainda não existe (`CLAUDE.md` → Pendente).
+- Trocar e-mail — ver `email-change` (capacidade própria, 2026-09-02).
 - 2FA, lista/revogação seletiva de sessões, histórico de senhas usadas.
 
 ## Domain

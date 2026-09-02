@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProfilePage from './ProfilePage';
 import * as hooks from '../../hooks/useBrandProfile';
 import type { BrandProfile } from '../../types/api';
@@ -42,6 +43,18 @@ function mockHooks(
   } as any);
 }
 
+// QueryClientProvider real (não mockado): ChangeEmailModal usa useQueryClient
+// de verdade pra invalidar os dois caches de perfil — os hooks de dado
+// continuam mockados acima, só o client em si precisa existir na árvore.
+function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ProfilePage />
+    </QueryClientProvider>,
+  );
+}
+
 /** Abre a row "Nome da marca", edita no modal e salva. */
 function editNameTo(newValue: string) {
   fireEvent.click(screen.getByRole('button', { name: /^nome da marca/i }));
@@ -69,18 +82,18 @@ beforeEach(() => {
 describe('ProfilePage', () => {
   it('mostra skeleton enquanto carrega', () => {
     mockHooks({ isLoading: true });
-    const { container } = render(<ProfilePage />);
+    const { container } = renderPage();
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('mostra erro em isError', () => {
     mockHooks({ isError: true, isLoading: false });
-    render(<ProfilePage />);
+    renderPage();
     expect(screen.getByText(/erro ao carregar o perfil/i)).toBeInTheDocument();
   });
 
   it('mostra os dados do perfil na placa e nas rows de "Editar"; email é texto', () => {
-    render(<ProfilePage />);
+    renderPage();
     expect(screen.getAllByText('Marca Fit').length).toBeGreaterThan(1);
     expect(screen.getByText('https://marca.com')).toBeInTheDocument();
     expect(screen.getAllByText('marca@exemplo.com').length).toBeGreaterThan(0);
@@ -88,7 +101,7 @@ describe('ProfilePage', () => {
   });
 
   it('abrir a row "Nichos" mostra os nichos do perfil selecionados no modal', () => {
-    render(<ProfilePage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /^nichos/i }));
     const dialog = screen.getByRole('dialog', { name: 'Nichos' });
 
@@ -111,13 +124,13 @@ describe('ProfilePage', () => {
   });
 
   it('mostra o preview ao vivo com o nome da marca', () => {
-    render(<ProfilePage />);
+    renderPage();
     expect(screen.getByText('Campanha de')).toBeInTheDocument();
     expect(screen.getAllByText('Marca Fit').length).toBeGreaterThanOrEqual(1);
   });
 
   it('botão salvar da página começa desabilitado e habilita depois de editar um campo', () => {
-    render(<ProfilePage />);
+    renderPage();
     const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
@@ -126,7 +139,7 @@ describe('ProfilePage', () => {
   });
 
   it('salva enviando o payload com os nichos selecionados', async () => {
-    render(<ProfilePage />);
+    renderPage();
 
     toggleNicheInModal('crossfit');
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
@@ -144,7 +157,7 @@ describe('ProfilePage', () => {
   });
 
   it('habilita salvar ao alternar um nicho no modal (dirty)', () => {
-    render(<ProfilePage />);
+    renderPage();
     const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
@@ -155,12 +168,25 @@ describe('ProfilePage', () => {
 
 describe('ProfilePage — seção Conta', () => {
   it('mostra a row "Senha" na seção Conta', () => {
-    render(<ProfilePage />);
+    renderPage();
     expect(screen.getByRole('button', { name: /^senha/i })).toBeInTheDocument();
   });
 
+  it('mostra a row "E-mail" clicável com o e-mail atual', () => {
+    renderPage();
+    const row = screen.getByRole('button', { name: /^e-mail/i });
+    expect(within(row).getByText('marca@exemplo.com')).toBeInTheDocument();
+  });
+
+  it('clicar em "E-mail" abre o modal de trocar e-mail com o valor pré-preenchido', () => {
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: /^e-mail/i }));
+    const dialog = screen.getByRole('dialog', { name: /trocar e-mail/i });
+    expect(within(dialog).getByLabelText(/novo e-mail/i)).toHaveValue('marca@exemplo.com');
+  });
+
   it('clicar em "Senha" abre o modal de trocar senha', () => {
-    render(<ProfilePage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
     expect(screen.getByRole('dialog', { name: /trocar senha/i })).toBeInTheDocument();
   });
@@ -168,11 +194,22 @@ describe('ProfilePage — seção Conta', () => {
   // Regressão: a seção Conta não participa do form de perfil — abrir/fechar
   // o modal de senha não pode habilitar o "Salvar" do perfil sem nada a salvar.
   it('abrir e fechar o modal de senha não habilita o "Salvar" do perfil', () => {
-    render(<ProfilePage />);
+    renderPage();
     const saveButton = screen.getByRole('button', { name: /^salvar$/i });
     expect(saveButton).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
+
+    expect(saveButton).toBeDisabled();
+  });
+
+  it('abrir e fechar o modal de e-mail não habilita o "Salvar" do perfil', () => {
+    renderPage();
+    const saveButton = screen.getByRole('button', { name: /^salvar$/i });
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /^e-mail/i }));
     fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
 
     expect(saveButton).toBeDisabled();

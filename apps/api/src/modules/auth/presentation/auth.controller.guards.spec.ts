@@ -15,7 +15,7 @@ const getGuards = (method: keyof AuthController): unknown[] =>
     | undefined) ?? [];
 
 describe('AuthController — guard em rota autenticada', () => {
-  it.each(['changePassword', 'logout'] as const)(
+  it.each(['changePassword', 'changeEmail', 'logout'] as const)(
     'exige JwtAuthGuard em %s',
     (method) => {
       expect(getGuards(method)).toContain(JwtAuthGuard);

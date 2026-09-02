@@ -19,6 +19,7 @@ import { ClaimAccountDto } from './dtos/claim-account.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
+import { ChangeEmailDto } from './dtos/change-email.dto';
 
 type AuthUser = { id: string; email: string; role: UserRole };
 
@@ -333,6 +334,73 @@ export class AuthService {
         claimTokenExpiresAt: null,
       },
     });
+
+    return this.buildAuthResponse(updated);
+  }
+
+  /**
+   * Troca de e-mail por quem já está autenticada — exige a senha atual
+   * (mesma prova de identidade do changePassword). Sem check-then-act: a
+   * constraint @unique de email é a única fonte de verdade, mesmo padrão de
+   * registerBrand/registerInfluencer. Avisa o e-mail ANTIGO da troca
+   * (best-effort) e reemite sessão — o access token carrega email no
+   * payload, então sem reemitir o front mostraria o e-mail velho por até
+   * JWT_ACCESS_EXPIRES_IN.
+   */
+  async changeEmail(userId: string, dto: ChangeEmailDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    if (!(await bcrypt.compare(dto.password, user.password))) {
+      throw new UnauthorizedException('Senha incorreta');
+    }
+
+    if (dto.email === user.email) {
+      throw new BadRequestException('Este já é o seu e-mail');
+    }
+
+    const oldEmail = user.email;
+
+    let updated;
+    try {
+      updated = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: dto.email,
+          resetTokenHash: null,
+          resetTokenExpiresAt: null,
+        },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new ConflictException({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'Este e-mail já está em uso',
+          field: 'email',
+        });
+      }
+      throw err;
+    }
+
+    try {
+      await this.emailService.sendEmailChanged({
+        to: oldEmail,
+        newEmail: dto.email,
+      });
+    } catch {
+      // sendBestEffort do EmailService já engole falha do provider; este
+      // catch é só uma segunda rede — a troca já foi gravada e não pode
+      // ser desfeita por causa de um e-mail que não saiu.
+    }
 
     return this.buildAuthResponse(updated);
   }

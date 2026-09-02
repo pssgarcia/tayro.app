@@ -20,6 +20,11 @@ interface PasswordResetEmailParams {
   resetUrl: string;
 }
 
+interface EmailChangedParams {
+  to: string;
+  newEmail: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -80,6 +85,20 @@ export class EmailService {
         <p>Recebemos um pedido para redefinir a senha da sua conta.</p>
         <p><a href="${params.resetUrl}">Clique aqui para definir uma nova senha</a></p>
         <p>O link expira em 1 hora. Se você não pediu isso, ignore este e-mail.</p>
+      `,
+    });
+  }
+
+  // Manda pro endereço ANTIGO (params.to é sempre o e-mail de antes da troca,
+  // nunca o novo) — é o alerta de segurança que dá à conta legítima a chance
+  // de reagir se a troca não foi ela.
+  async sendEmailChanged(params: EmailChangedParams): Promise<void> {
+    await this.sendBestEffort({
+      to: params.to,
+      subject: 'O e-mail da sua conta foi alterado',
+      html: `
+        <p>O e-mail da sua conta foi alterado para <strong>${params.newEmail}</strong>.</p>
+        <p>Se você não fez essa alteração, entre em contato com a gente imediatamente.</p>
       `,
     });
   }

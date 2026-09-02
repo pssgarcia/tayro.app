@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProfilePage from './ProfilePage';
 import * as hooks from '../../hooks/useInfluencerProfile';
 import type { InfluencerProfile } from '../../types/api';
@@ -52,6 +53,18 @@ function mockHooks(
   } as any);
 }
 
+// QueryClientProvider real (não mockado): ChangeEmailModal usa useQueryClient
+// de verdade pra invalidar os dois caches de perfil — os hooks de dado
+// continuam mockados acima, só o client em si precisa existir na árvore.
+function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ProfilePage />
+    </QueryClientProvider>,
+  );
+}
+
 /** Abre a row "Nome", edita no modal e salva — fecha o modal. */
 function editNameTo(newValue: string) {
   fireEvent.click(screen.getByRole('button', { name: /^nome/i }));
@@ -69,18 +82,18 @@ beforeEach(() => {
 describe('Creator ProfilePage', () => {
   it('mostra skeleton enquanto carrega', () => {
     mockHooks({ isLoading: true });
-    const { container } = render(<ProfilePage />);
+    const { container } = renderPage();
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('mostra erro em isError', () => {
     mockHooks({ isError: true, isLoading: false });
-    render(<ProfilePage />);
+    renderPage();
     expect(screen.getByText(/erro ao carregar o perfil/i)).toBeInTheDocument();
   });
 
   it('mostra os dados do perfil na placa e nas rows de "Editar"; email é texto', () => {
-    render(<ProfilePage />);
+    renderPage();
     // "Ana Silva" aparece na placa-preview E na row "Nome"
     expect(screen.getAllByText('Ana Silva').length).toBeGreaterThan(1);
     expect(screen.getByText('Belo Horizonte')).toBeInTheDocument();
@@ -89,14 +102,14 @@ describe('Creator ProfilePage', () => {
   });
 
   it('clicar numa row abre um modal placa-formulário pra editar aquele campo', () => {
-    render(<ProfilePage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /^nome/i }));
     const dialog = screen.getByRole('dialog', { name: 'Nome' });
     expect(within(dialog).getByLabelText('Nome')).toHaveValue('Ana Silva');
   });
 
   it('editar e salvar no modal atualiza a row e a placa em destaque (ao vivo após salvar)', () => {
-    render(<ProfilePage />);
+    renderPage();
     editNameTo('Ana Renovada');
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -105,7 +118,7 @@ describe('Creator ProfilePage', () => {
   });
 
   it('cancelar no modal não altera o valor', () => {
-    render(<ProfilePage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /^nome/i }));
     const dialog = screen.getByRole('dialog', { name: 'Nome' });
     fireEvent.change(within(dialog).getByLabelText('Nome'), { target: { value: 'Rascunho' } });
@@ -117,7 +130,7 @@ describe('Creator ProfilePage', () => {
   });
 
   it('botão salvar da página começa desabilitado e habilita depois de editar um campo', () => {
-    render(<ProfilePage />);
+    renderPage();
     const btn = screen.getByRole('button', { name: /^salvar$/i });
     expect(btn).toBeDisabled();
 
@@ -126,7 +139,7 @@ describe('Creator ProfilePage', () => {
   });
 
   it('o toggle de perfil público reflete o estado e habilita salvar ao alternar', () => {
-    render(<ProfilePage />);
+    renderPage();
     const toggle = screen.getByRole('switch', {
       name: /tornar meu perfil público/i,
     });
@@ -138,7 +151,7 @@ describe('Creator ProfilePage', () => {
   });
 
   it('salva enviando publicProfileEnabled=true após ativar o toggle (LGPD)', async () => {
-    render(<ProfilePage />);
+    renderPage();
 
     fireEvent.click(screen.getByRole('switch', { name: /tornar meu perfil público/i }));
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
@@ -157,12 +170,25 @@ describe('Creator ProfilePage', () => {
 
 describe('Creator ProfilePage — seção Conta', () => {
   it('mostra a row "Senha" na seção Conta', () => {
-    render(<ProfilePage />);
+    renderPage();
     expect(screen.getByRole('button', { name: /^senha/i })).toBeInTheDocument();
   });
 
+  it('mostra a row "E-mail" clicável com o e-mail atual', () => {
+    renderPage();
+    const row = screen.getByRole('button', { name: /^e-mail/i });
+    expect(within(row).getByText('ana@exemplo.com')).toBeInTheDocument();
+  });
+
+  it('clicar em "E-mail" abre o modal de trocar e-mail com o valor pré-preenchido', () => {
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: /^e-mail/i }));
+    const dialog = screen.getByRole('dialog', { name: /trocar e-mail/i });
+    expect(within(dialog).getByLabelText(/novo e-mail/i)).toHaveValue('ana@exemplo.com');
+  });
+
   it('clicar em "Senha" abre o modal de trocar senha', () => {
-    render(<ProfilePage />);
+    renderPage();
     fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
     expect(screen.getByRole('dialog', { name: /trocar senha/i })).toBeInTheDocument();
   });
@@ -170,11 +196,22 @@ describe('Creator ProfilePage — seção Conta', () => {
   // Regressão: a seção Conta não participa do form de perfil — abrir/fechar
   // o modal de senha não pode habilitar o "Salvar" do perfil sem nada a salvar.
   it('abrir e fechar o modal de senha não habilita o "Salvar" do perfil', () => {
-    render(<ProfilePage />);
+    renderPage();
     const saveButton = screen.getByRole('button', { name: /^salvar$/i });
     expect(saveButton).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
+
+    expect(saveButton).toBeDisabled();
+  });
+
+  it('abrir e fechar o modal de e-mail não habilita o "Salvar" do perfil', () => {
+    renderPage();
+    const saveButton = screen.getByRole('button', { name: /^salvar$/i });
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /^e-mail/i }));
     fireEvent.click(screen.getByRole('button', { name: /^cancelar$/i }));
 
     expect(saveButton).toBeDisabled();
@@ -186,7 +223,7 @@ describe('Creator ProfilePage — seção Conta', () => {
 describe('Creator ProfilePage — link do perfil público', () => {
   it('com perfil público ativo, o endereço vira link de verdade', () => {
     mockHooks({ data: { ...baseProfile, publicProfileEnabled: true } });
-    render(<ProfilePage />);
+    renderPage();
 
     const link = screen.getByRole('link', { name: /\/c\/anafit/i });
     expect(link).toHaveAttribute('href', '/c/anafit');
@@ -199,7 +236,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     mockHooks({ data: { ...baseProfile, publicProfileEnabled: true } });
-    render(<ProfilePage />);
+    renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: /copiar link/i }));
 
@@ -211,7 +248,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
   // privado (anti-enumeração) — linkar aqui mandaria a creator pro 404.
   it('com perfil privado não oferece link, explica que precisa ativar', () => {
     mockHooks({ data: { ...baseProfile, publicProfileEnabled: false } });
-    render(<ProfilePage />);
+    renderPage();
 
     expect(screen.queryByRole('link', { name: /\/c\//i })).not.toBeInTheDocument();
     expect(screen.getByText(/ative para as marcas encontrarem você/i)).toBeInTheDocument();
@@ -221,7 +258,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
   // não salvo, o backend continua devolvendo 404 pra esse handle.
   it('ligar o toggle sem salvar ainda não oferece o link', () => {
     mockHooks({ data: { ...baseProfile, publicProfileEnabled: false } });
-    render(<ProfilePage />);
+    renderPage();
 
     fireEvent.click(screen.getByRole('switch', { name: /tornar meu perfil público/i }));
 
@@ -232,7 +269,7 @@ describe('Creator ProfilePage — link do perfil público', () => {
     mockHooks({
       data: { ...baseProfile, instagramHandle: null, publicProfileEnabled: true },
     });
-    render(<ProfilePage />);
+    renderPage();
 
     expect(screen.queryByRole('link', { name: /\/c\//i })).not.toBeInTheDocument();
     expect(screen.getByText(/adicione seu @ do instagram/i)).toBeInTheDocument();
