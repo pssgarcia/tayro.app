@@ -1,12 +1,14 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Activity, Crosshair, Flag, LogOut } from 'lucide-react';
+import { Activity, Crosshair, Flag, LogOut, Users } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { cn } from '../../lib/utils';
 
-// Rótulos e ícones do redesign 2a (README §Telas 2, 13, 14, 16): 3 itens.
+// Rótulos e ícones do redesign 2a (README §Telas 2, 13, 14, 16), +"Creators"
+// (specs/creator-roster, 2026-09-02) — visão agregada de aprovadas, cross-campanha.
 const navItems = [
   { to: '/brand/dashboard', icon: Activity, label: 'Leitura' },
+  { to: '/brand/creators', icon: Users, label: 'Creators' },
   { to: '/brand/campaigns', icon: Crosshair, label: 'Campanhas' },
   { to: '/brand/profile', icon: Flag, label: 'Marca' },
 ];

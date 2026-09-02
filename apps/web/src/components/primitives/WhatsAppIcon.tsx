@@ -1,6 +1,8 @@
 // Glifo do WhatsApp. Não vem do `lucide-react` — a biblioteca removeu marcas
 // de terceiros. Fica aqui como SVG inline porque o papel dele é dizer PRA ONDE
-// o botão leva: sem o ícone, "Quero conversar" não avisa que abre o WhatsApp.
+// o botão leva: sem o ícone, um link de contato não avisa que abre o WhatsApp.
+// Compartilhado entre a landing (CTA de contato com a TAYRO) e as telas da
+// marca (contato com a creator — ver specs/creator-roster).
 export default function WhatsAppIcon({ size = 15 }: { size?: number }) {
   return (
     <svg

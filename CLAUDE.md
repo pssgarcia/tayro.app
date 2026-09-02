@@ -287,6 +287,24 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   `specs/password-reset` atualizada (Behavior/Domain/Acceptance Criteria/Change History);
   `specs/password-change` (Known Gap fechado) e `specs/account-claim` (Domain) também. 392
   testes API; lint/typecheck limpos.
+- **Creators aprovadas, cross-campanha + WhatsApp (2026-09-02):** fecha um gap que o `/feature`
+  tinha avaliado como `DEPOIS` em 2026-08-27 (sem marca real pra confirmar) — o Pedro pediu pra
+  seguir mesmo assim, cortando o pedido original de chat in-app (contrariava `D-08`) por um botão
+  que abre o WhatsApp (reforça `D-08`: "WhatsApp já existe e ganha"). `GET /applications/approved`
+  (Brand) agrega `Application.APPROVED` por creator entre TODAS as campanhas da marca — uma única
+  query, agrupamento em memória, sem N+1, sem modelo/migration novo. Nova tela `/brand/creators`
+  (nav "Creators", 4º item) em lista + placa (mesmo padrão de Entregas): media kit completo da
+  creator selecionada + botão "Falar no WhatsApp". `whatsappLinkFromPhone` (`utils/format.ts`)
+  converte o telefone livre (`Influencer.phone`, sem DDI) num link `wa.me` — heurística BR (10-11
+  dígitos ganham `55`; qualquer outra contagem não renderiza o botão, nunca um link quebrado).
+  **Pedido extra do Pedro, mesma sessão:** o mesmo ícone de WhatsApp foi levado também pro canto
+  superior direito da placa/foto na Fila (`CampaignFilaTab` desktop + `CampaignPipelineMobileStory`
+  mobile) — reforço do `tel:` que já existia ali, não substituto; contato de um toque sem sair da
+  tela de decisão. `WhatsAppIcon` (SVG próprio — `lucide-react` não tem glifos de marca) existia
+  só dentro da landing; promovido pra `components/primitives/WhatsAppIcon.tsx` e compartilhado
+  entre landing/Fila/Creators em vez de duplicado. Specs: `creator-roster` (nova) e
+  `campaign-fila-review`/`applications-pipeline` (atualizadas). 399 testes API + 582 web;
+  lint/typecheck limpos.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
@@ -342,7 +360,8 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 
 ## Telas prontas (frontend) — não reconstruir
 - **/ (LandingPage, 2026-08-29):** porta de entrada pública, standalone, Kinetic. Anônimo vê a landing; logado redireciona pro painel do papel. 7 seções (hero · o problema · como funciona · os dois lados · demonstração interativa · CTA · footer), componentes locais em `pages/public/landing/`, fotos geradas em `assets/landing/`. Header = ícone de conta → Entrar/Criar conta. CTA principal = WhatsApp com ícone (`config/contact.ts`, degrada pra `/register/brand` sem `VITE_CONTACT_WHATSAPP`); secundário → `/programs`. Ver "Feito".
-- /login + /register/brand (AuthLayout; /register → /register/brand) · BrandLayout (sidebar Dashboard/Campanhas/Perfil) + BrandGuard
+- /login + /register/brand (AuthLayout; /register → /register/brand) · BrandLayout (sidebar Dashboard/Creators/Campanhas/Perfil) + BrandGuard
+- **/brand/creators (2026-09-02):** `ApprovedCreatorsPage` — lista + placa de toda creator aprovada em qualquer campanha da marca (agregação cross-campanha via `GET /applications/approved`). Placa = media kit completo (avatar, @handle, seguidores, engajamento, posts recentes, campanhas em que foi aprovada) + botão "Falar no WhatsApp" (`wa.me`, via `whatsappLinkFromPhone`). Ver "Feito".
 - **/forgot-password + /reset-password (2026-09-02):** AuthLayout, fora de guards. `/forgot-password` (campo único de e-mail; sucesso troca o form por mensagem genérica que nunca revela se o e-mail existe) e `/reset-password?token=` (sem preview, direto pro form de senha; sucesso autentica e redireciona pro painel do papel via `redirectPath`). "Esqueci minha senha?" no `LoginPage` leva pro primeiro. Ver "Feito".
 - /brand/dashboard (DashboardPage — **Kinetic**: placa com o número de candidaturas na fila + Resumo em 4 `StatFigure`, lado a lado no desktop, empilhado no celular)
 - /brand/campaigns/:id → 4 abas, **todas em Kinetic** desde 2026-08-28 (header com ações derivadas do status: "Encerrar campanha" se ACTIVE; "Publicar campanha" + "Editar" + "Apagar rascunho" se DRAFT; nenhuma se CLOSED/COMPLETED):

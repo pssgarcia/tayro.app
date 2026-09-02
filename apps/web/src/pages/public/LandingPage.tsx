@@ -12,7 +12,7 @@ import DoisLados from './landing/DoisLados';
 import HeaderAccountMenu from './landing/HeaderAccountMenu';
 import { CandidaturaPainel } from './landing/CandidaturaPlate';
 import { HERO_CREATOR } from './landing/demo';
-import WhatsAppIcon from './landing/WhatsAppIcon';
+import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
 
 // ─── Landing / porta de entrada ──────────────────────────────────────────────
 // `/` não é redirect pro login: quem digita o domínio chega numa página que

@@ -207,6 +207,19 @@ describe('CampaignPipelineMobileStory — identidade', () => {
       .filter((el) => el.getAttribute('href')?.startsWith('tel:'));
     expect(telLinks).toHaveLength(0);
   });
+
+  it('mostra o link de WhatsApp quando a creator tem telefone', () => {
+    renderStory([makeApplication('a', { name: 'Ana', phone: '11999990000' })]);
+
+    const link = screen.getByRole('link', { name: /whatsapp/i });
+    expect(link).toHaveAttribute('href', 'https://wa.me/5511999990000');
+  });
+
+  it('não mostra o link de WhatsApp quando a creator não tem telefone', () => {
+    renderStory([makeApplication('a', { name: 'Ana', phone: null })]);
+
+    expect(screen.queryByRole('link', { name: /whatsapp/i })).not.toBeInTheDocument();
+  });
 });
 
 describe('CampaignPipelineMobileStory — painel de detalhes', () => {

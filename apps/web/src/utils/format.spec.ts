@@ -11,6 +11,7 @@ import {
   formatPercent,
   publicUrl,
   publicUrlLabel,
+  whatsappLinkFromPhone,
 } from './format';
 
 describe('formatNumber', () => {
@@ -207,6 +208,38 @@ describe('creatorAvatarSrc', () => {
   it('devolve null sem foto nenhuma (quem chama mostra as iniciais)', () => {
     expect(creatorAvatarSrc({ id: 'inf-1' })).toBeNull();
     expect(creatorAvatarSrc({ id: 'inf-1', igProfilePicUrl: null, avatarUrl: null })).toBeNull();
+  });
+});
+
+describe('whatsappLinkFromPhone', () => {
+  // Influencer.phone é texto livre sem código de país (ex: "(11) 91234-5678",
+  // capturado no /apply público). wa.me exige o número completo com DDI.
+  it('prefixa 55 num telefone BR com máscara e sem DDI (11 dígitos)', () => {
+    expect(whatsappLinkFromPhone('(11) 91234-5678')).toBe('https://wa.me/5511912345678');
+  });
+
+  it('prefixa 55 num telefone BR de 10 dígitos (fixo, sem o 9)', () => {
+    expect(whatsappLinkFromPhone('11 1234-5678')).toBe('https://wa.me/551112345678');
+  });
+
+  it('não prefixa de novo quando o DDI já está presente', () => {
+    expect(whatsappLinkFromPhone('+55 11 91234-5678')).toBe('https://wa.me/5511912345678');
+  });
+
+  it('devolve null pra contagem de dígitos que a heurística não cobre', () => {
+    expect(whatsappLinkFromPhone('123')).toBeNull();
+    expect(whatsappLinkFromPhone('123456789012345')).toBeNull();
+  });
+
+  it('devolve null sem telefone', () => {
+    expect(whatsappLinkFromPhone(null)).toBeNull();
+    expect(whatsappLinkFromPhone(undefined)).toBeNull();
+    expect(whatsappLinkFromPhone('')).toBeNull();
+  });
+
+  it('nunca devolve um link com caracteres que não sejam dígito', () => {
+    const link = whatsappLinkFromPhone('(11) 91234-5678')!;
+    expect(link).toMatch(/^https:\/\/wa\.me\/\d+$/);
   });
 });
 

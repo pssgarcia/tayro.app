@@ -19,6 +19,7 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import DashboardPage from './pages/brand/DashboardPage';
 import ProfilePage from './pages/brand/ProfilePage';
 import CampaignsPage from './pages/brand/CampaignsPage';
+import ApprovedCreatorsPage from './pages/brand/ApprovedCreatorsPage';
 import CampaignDetailPage from './pages/brand/CampaignDetailPage';
 import NewCampaignPage from './pages/brand/NewCampaignPage';
 import EditCampaignPage from './pages/brand/EditCampaignPage';
@@ -97,6 +98,7 @@ function AppShell() {
       >
         <Route index element={<Navigate to="/brand/campaigns" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="creators" element={<ApprovedCreatorsPage />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/new" element={<NewCampaignPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />

@@ -142,6 +142,23 @@ describe('CampaignFilaTab — lista Pipeline (desktop)', () => {
     expect(telLinks).toHaveLength(0);
   });
 
+  it('mostra o ícone de WhatsApp no canto da placa quando a creator tem telefone', async () => {
+    mockApplications([makeApplication('a', { name: 'Ana', phone: '11999990000' })]);
+    renderTab();
+    await settle();
+
+    const link = within(plate()).getByRole('link', { name: /whatsapp/i });
+    expect(link).toHaveAttribute('href', 'https://wa.me/5511999990000');
+  });
+
+  it('não mostra o ícone de WhatsApp quando a creator não tem telefone', async () => {
+    mockApplications([makeApplication('a', { name: 'Ana', phone: null })]);
+    renderTab();
+    await settle();
+
+    expect(within(plate()).queryByRole('link', { name: /whatsapp/i })).not.toBeInTheDocument();
+  });
+
   it('mostra empty state quando a campanha não tem candidatura', async () => {
     mockApplications([]);
     renderTab();
