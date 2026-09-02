@@ -7,6 +7,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
+import { redirectPath } from '../../utils/redirectPath';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
@@ -23,12 +24,6 @@ type FormValues = z.infer<typeof schema>;
 interface LoginResponse {
   accessToken: string;
   user: AuthUser;
-}
-
-function redirectPath(role: AuthUser['role']): string {
-  if (role === 'BRAND') return '/brand';
-  if (role === 'INFLUENCER') return '/influencer';
-  return '/';
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -117,13 +112,9 @@ export default function LoginPage() {
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
           </div>
 
-          {/* O secundário "Esqueci" do mock saiu daqui: não existe fluxo de
-              recuperação de senha (nem endpoint nem tela), então o botão ficava
-              clicável em produção sem fazer nada. Botão morto é pior que botão
-              ausente — quem esquece a senha ao menos não perde tempo tentando.
-              Volta quando POST /auth/forgot-password existir. */}
           <KineticActions
             actions={[
+              { label: 'Esqueci minha senha', to: '/forgot-password' },
               {
                 label: isSubmitting ? 'Entrando…' : 'Entrar',
                 type: 'submit',
