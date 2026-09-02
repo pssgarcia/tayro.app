@@ -62,6 +62,22 @@ describe('EmailService', () => {
     );
   });
 
+  it('sendPasswordReset manda o link de redefinir senha', async () => {
+    await service.sendPasswordReset({
+      to: 'creator@example.com',
+      resetUrl: 'https://tayro-app.vercel.app/reset-password?token=xyz789',
+    });
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'creator@example.com',
+        html: expect.stringContaining(
+          'https://tayro-app.vercel.app/reset-password?token=xyz789',
+        ),
+      }),
+    );
+  });
+
   it('falha no provider é engolida (best-effort) — não lança', async () => {
     sendMock.mockRejectedValueOnce(new Error('Resend fora do ar'));
 

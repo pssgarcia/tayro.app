@@ -24,12 +24,10 @@ describe('LoginPage', () => {
     expect(link).toHaveAttribute('href', '/programs');
   });
 
-  // Regressão: o mock previa um secundário "Esqueci", mas não existe fluxo de
-  // recuperação de senha (nem endpoint nem tela). O botão ficava clicável em
-  // produção sem fazer nada. Só volta junto com o fluxo de verdade.
-  it('não oferece "Esqueci" enquanto não houver recuperação de senha', () => {
+  it('oferece "Esqueci minha senha?" apontando para /forgot-password', () => {
     renderPage();
 
-    expect(screen.queryByRole('button', { name: /esqueci/i })).not.toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /esqueci minha senha/i });
+    expect(link).toHaveAttribute('href', '/forgot-password');
   });
 });

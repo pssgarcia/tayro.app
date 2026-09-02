@@ -21,6 +21,8 @@ import { RegisterBrandDto } from '../application/dtos/register-brand.dto';
 import { RegisterInfluencerDto } from '../application/dtos/register-influencer.dto';
 import { LoginDto } from '../application/dtos/login.dto';
 import { ClaimAccountDto } from '../application/dtos/claim-account.dto';
+import { ForgotPasswordDto } from '../application/dtos/forgot-password.dto';
+import { ResetPasswordDto } from '../application/dtos/reset-password.dto';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -78,6 +80,32 @@ export class AuthController {
   })
   async claimPreview(@Param('token') token: string) {
     return this.authService.getClaimPreview(token);
+  }
+
+  @Post('forgot-password')
+  @Throttle({ default: AUTH_THROTTLE })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicitar link de recuperação de senha' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto);
+    return {
+      message: 'Se este e-mail existir, enviaremos um link de recuperação.',
+    };
+  }
+
+  @Post('reset-password')
+  @Throttle({ default: AUTH_THROTTLE })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Definir nova senha via token de recuperação (auto-login)',
+  })
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.resetPassword(dto);
+    this.setRefreshCookie(res, result.refreshToken);
+    return { accessToken: result.accessToken, user: result.user };
   }
 
   @Post('login')
