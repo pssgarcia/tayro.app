@@ -271,6 +271,14 @@ export class AuthService {
     }
   }
 
+  /**
+   * Consumir um reset zera também o par de claim (não só o de reset) — achado
+   * no /review de 2026-09-02: uma conta CLAIMABLE que resetasse a senha por
+   * e-mail em vez de clicar no link de claim original deixava esse link
+   * (válido por 7 dias) ainda funcional depois, permitindo a quem tivesse
+   * acesso àquele primeiro e-mail definir uma senha nova por conta própria.
+   * Mesma limpeza que changePassword já faz.
+   */
   async resetPassword(dto: ResetPasswordDto) {
     const tokenHash = crypto
       .createHash('sha256')
@@ -292,7 +300,13 @@ export class AuthService {
     const hash = await bcrypt.hash(dto.password, 12);
     const updated = await this.prisma.user.update({
       where: { id: user.id },
-      data: { password: hash, resetTokenHash: null, resetTokenExpiresAt: null },
+      data: {
+        password: hash,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+        claimTokenHash: null,
+        claimTokenExpiresAt: null,
+      },
     });
 
     return this.buildAuthResponse(updated);

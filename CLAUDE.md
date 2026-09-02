@@ -251,9 +251,9 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   barato mesmo autenticado): exige a senha atual, rejeita nova senha igual à atual (`400`), zera
   os pares de reset **e de claim** (troca consciente encerra qualquer link pendente), reemite
   sessão — o que **derruba qualquer outro dispositivo logado** de graça, porque
-  `refreshTokenHash` é único por conta. Achado no caminho, não corrigido ainda: o mesmo buraco
-  existe do lado do reset por e-mail (`resetPassword` não zera o par de claim) — registrado como
-  Known Gap em `specs/password-change`, fica pra edição separada de `specs/password-reset`.
+  `refreshTokenHash` é único por conta. Achado no caminho (mesmo buraco do lado do reset por
+  e-mail — `resetPassword` não zerava o par de claim) **fechado em 2026-09-02 no `/review`**, ver
+  entrada própria abaixo.
   Frontend: seção "Conta" (`AccountSection.tsx`, novo `components/account/`) nas duas
   `ProfilePage.tsx`, no lugar do bloco só-leitura de e-mail — row "Senha" abre
   `ChangePasswordModal.tsx`. Modal **sem `<form>`** de propósito (vive aninhado dentro do form de
@@ -277,6 +277,16 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   hooks de dado continuam mockados). Spec nova: `specs/email-change/spec.md`; `password-reset`/
   `password-change`/`brand-account`/`creator-account` atualizadas. 391 testes API + 565 web;
   lint/typecheck limpos.
+- **Fix: reset de senha por e-mail não zerava o par de claim (2026-09-02, achado no `/review`):**
+  conta CLAIMABLE que resetasse a senha por `/forgot-password` (em vez de clicar no link de
+  claim original) deixava esse link — válido por 7 dias — ainda funcional depois; quem tivesse
+  acesso àquele primeiro e-mail (encaminhado, caixa compartilhada, comprometida depois) podia
+  `POST /auth/claim` com o token antigo e definir uma senha nova por conta própria, mesmo com a
+  titular já tendo resetado a dela. `resetPassword` agora zera `claimTokenHash`/
+  `claimTokenExpiresAt` junto com o par de reset — mesma limpeza que `changePassword` já fazia.
+  `specs/password-reset` atualizada (Behavior/Domain/Acceptance Criteria/Change History);
+  `specs/password-change` (Known Gap fechado) e `specs/account-claim` (Domain) também. 392
+  testes API; lint/typecheck limpos.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)

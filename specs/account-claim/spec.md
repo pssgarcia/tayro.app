@@ -37,7 +37,9 @@ Estado binário em `User`, não um enum dedicado: "aguardando claim" = `claimTok
 preenchido; "claimada" (ou nunca precisou) = `claimTokenHash = null`. `claimTokenExpiresAt`
 guarda o vencimento (TTL de 7 dias a partir da emissão). O token bruto (32 bytes aleatórios,
 hexadecimal) só existe em trânsito, na URL do e-mail; o banco guarda apenas o hash SHA-256 —
-mesmo padrão do refresh token.
+mesmo padrão do refresh token. Além do consumo explícito (`POST /auth/claim`), o par também é
+zerado como efeito colateral de `password-reset`/`password-change` (2026-09-02) — definir senha
+por qualquer caminho encerra um claim pendente da mesma conta.
 
 ## Behavior
 
