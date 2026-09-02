@@ -78,6 +78,20 @@ describe('EmailService', () => {
     );
   });
 
+  it('sendEmailChanged avisa o destinatário citando o novo endereço', async () => {
+    await service.sendEmailChanged({
+      to: 'antigo@example.com',
+      newEmail: 'novo@example.com',
+    });
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'antigo@example.com',
+        html: expect.stringContaining('novo@example.com'),
+      }),
+    );
+  });
+
   it('falha no provider é engolida (best-effort) — não lança', async () => {
     sendMock.mockRejectedValueOnce(new Error('Resend fora do ar'));
 

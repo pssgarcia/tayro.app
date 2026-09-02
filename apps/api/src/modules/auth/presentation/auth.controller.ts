@@ -24,6 +24,7 @@ import { ClaimAccountDto } from '../application/dtos/claim-account.dto';
 import { ForgotPasswordDto } from '../application/dtos/forgot-password.dto';
 import { ResetPasswordDto } from '../application/dtos/reset-password.dto';
 import { ChangePasswordDto } from '../application/dtos/change-password.dto';
+import { ChangeEmailDto } from '../application/dtos/change-email.dto';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -123,6 +124,24 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.changePassword(user.id, dto);
+    this.setRefreshCookie(res, result.refreshToken);
+    return { accessToken: result.accessToken, user: result.user };
+  }
+
+  @Post('change-email')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: AUTH_THROTTLE })
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Trocar e-mail logado (exige a senha atual, auto-login)',
+  })
+  async changeEmail(
+    @CurrentUser() user: { id: string },
+    @Body() dto: ChangeEmailDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.changeEmail(user.id, dto);
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }
