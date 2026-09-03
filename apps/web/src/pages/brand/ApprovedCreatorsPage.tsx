@@ -171,9 +171,24 @@ export default function ApprovedCreatorsPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
-      <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-        Creators
-      </h1>
+      {/* A contagem vive AQUI, não sobre a lista: no celular a lista fica logo
+          abaixo do título, e um rótulo mono "Creators · 1" ali repetia a
+          palavra do <h1> duas vezes na mesma dobra. O <ul> mantém o
+          `aria-label` — quem usa leitor de tela continua sabendo o que a lista
+          é sem depender de um rótulo visível. */}
+      <div className="flex items-baseline gap-3">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Creators
+        </h1>
+        {creators.length > 0 && (
+          // Ao lado de um título de 30/36px, o mono de 11px dos rótulos de
+          // seção some. Aqui a contagem não é rótulo, é um número lido junto
+          // com o título — acompanha a escala dele.
+          <span className="font-mono text-base tabular-nums text-kinetic-muted sm:text-lg">
+            · {creators.length}
+          </span>
+        )}
+      </div>
 
       <div className="my-8 h-px bg-kinetic-gray" />
 
@@ -194,9 +209,6 @@ export default function ApprovedCreatorsPage() {
           {/* Lista primeiro no DOM: no celular ela fica acima da placa, então
               tocar numa linha atualiza uma placa que já está à vista. */}
           <aside className="w-full lg:order-2 lg:w-[340px] lg:shrink-0">
-            <p className="mb-5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-              Creators · {creators.length}
-            </p>
             <ul aria-label="Creators com candidatura aprovada" className="flex flex-col gap-0.5">
               {creators.map((creator) => {
                 const rowAvatar = creatorAvatarSrc(creator.influencer);

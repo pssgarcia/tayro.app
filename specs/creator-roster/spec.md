@@ -90,6 +90,10 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
   detalhe com o media kit completo da creator selecionada + o botão de WhatsApp. No mobile, a
   lista vem antes da placa no DOM (mesmo padrão da aba Entregas) — tocar numa linha atualiza uma
   placa que já está no campo de visão, sem navegação de página.
+- A contagem de creators fica ao lado do título da página, não como rótulo da lista: no celular
+  a lista aparece na mesma dobra do `<h1>` "Creators", e um rótulo mono "Creators · N" ali repetia
+  a palavra duas vezes. A lista mantém o `aria-label` (leitor de tela não depende do rótulo
+  visível).
 - A placa mostra o telefone como link `tel:` abaixo do @handle (mesma linha de contato da placa
   da Fila). Sem telefone, no lugar do link aparece "Telefone não informado" — a ausência do botão
   de WhatsApp precisa ter um motivo visível, senão parece defeito da tela. Desde 2026-09-02 toda
@@ -179,6 +183,8 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
 - 2026-09-02 · O telefone deixou de ser exclusivo do apply público: o cadastro de creator passou
   a exigi-lo e o Perfil a permitir editá-lo (`creator-account`). Nada muda nesta capacidade além
   de "Telefone não informado" deixar de ser o caso comum com o tempo.
+- 2026-09-02 · "Creators" aparecia duas vezes na mesma dobra no celular (título + rótulo mono da
+  lista). A contagem subiu pro título e o rótulo visível da lista saiu; o `aria-label` continua.
 - 2026-09-02 · Correções da 1ª conferência em produção (reportadas pelo Pedro). (1) **Copy no
   feminino** — "Todas as creators já aprovadas", "Nenhuma creator aprovada ainda", o `aria-label`
   "Creators aprovadas" e o rótulo "Aprovada em N campanhas" assumiam o gênero de quem se
