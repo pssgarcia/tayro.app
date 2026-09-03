@@ -20,9 +20,9 @@ Matar a decisão manual da marca sobre com qual creator trabalhar, e no mesmo mo
 
 ## Positioning
 
-CRM creator-first de marketing de influência para marca pequena/média com produto físico que **já** recebe candidatura espontânea de creator e decide na mão — não é ferramenta de discovery/garimpo (não compete com GRIN/Modash) e não é agência (não intermedia, não cobra comissão, não cura quem contratar).
+Plataforma creator-first de marketing de influência para marca pequena/média com produto físico que **já** recebe candidatura espontânea de creator e decide na mão — não é ferramenta de discovery/garimpo (não compete com GRIN/Modash) e não é agência (não intermedia, não cobra comissão, não cura quem contratar).
 
-Frase de posicionamento `[HIPÓTESE — nunca dita a um cliente real]`: "Pra marca pequena que já recebe candidatura de creator e decide na mão: o TAYRO é o CRM que mostra o Instagram real de cada candidata do lado do botão de aprovar, e transforma cada parceria fechada em histórico verificado — pra ela e pra creator."
+Frase de posicionamento `[HIPÓTESE — nunca dita a um cliente real]`: "Pra marca pequena que já recebe candidatura de creator e decide na mão: o TAYRO é a plataforma que mostra o Instagram real de cada candidata do lado do botão de aprovar, e transforma cada parceria fechada em histórico verificado — pra ela e pra creator."
 
 Mecanismo diferente que um concorrente não copiaria com verdade: media kit vivo (perfil de creator que se atualiza sozinho a partir do Instagram real) + oferta definida pela marca antes da candidatura (sem leilão, sem negociação constrangedora).
 

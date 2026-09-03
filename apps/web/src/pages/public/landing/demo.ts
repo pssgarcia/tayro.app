@@ -66,6 +66,10 @@ export interface DemoCreator {
   recompensa: { tipo: RewardType; valor: string; nota: string };
   /** O conteúdo que a creator envia depois de aprovada. */
   entrega: { tipo: 'REEL' | 'VIDEO' | 'IMAGE' | 'STORY'; legenda: string };
+  /** O que a marca informa depois da entrega — fecha o histórico da creator
+   *  (diferenciais nº2/nº3 do `positioning.md`). Números DECLARADOS pela
+   *  marca, nunca medidos pelo tayro; a demonstração diz isso em texto. */
+  resultado: { reach: number; impressions: number; couponsUsed: number; nota: string };
 }
 
 /**
@@ -86,6 +90,12 @@ export const HERO_CREATOR: DemoCreator = {
   posts: feedDe(0, 1, 2, 3, 4, 5),
   recompensa: { tipo: 'MONETARY', valor: 'R$ 300,00', nota: 'Pix combinado para o dia 15.' },
   entrega: { tipo: 'REEL', legenda: 'Minha rotina de treino em casa em 30 segundos.' },
+  resultado: {
+    reach: 18_200,
+    impressions: 24_600,
+    couponsUsed: 41,
+    nota: 'Melhor entrega da campanha. Vamos repetir no próximo drop.',
+  },
 };
 
 export const DEMO_CREATORS: DemoCreator[] = [
@@ -102,6 +112,12 @@ export const DEMO_CREATORS: DemoCreator[] = [
     posts: feedDe(0, 3, 6, 9, 1, 4),
     recompensa: { tipo: 'MONETARY', valor: 'R$ 280,00', nota: 'Pix combinado para o dia 15.' },
     entrega: { tipo: 'REEL', legenda: 'Reel com a rotina de treino da semana.' },
+    resultado: {
+      reach: 9_800,
+      impressions: 13_100,
+      couponsUsed: 18,
+      nota: 'Engajamento acima da média das outras creators da campanha.',
+    },
   },
   {
     id: 'demo-2',
@@ -115,6 +131,12 @@ export const DEMO_CREATORS: DemoCreator[] = [
     posts: feedDe(2, 5, 8, 11, 0, 3),
     recompensa: { tipo: 'MONETARY', valor: 'R$ 450,00', nota: 'Pix enviado.' },
     entrega: { tipo: 'IMAGE', legenda: 'Carrossel com o antes e depois da rotina alimentar.' },
+    resultado: {
+      reach: 22_400,
+      impressions: 31_900,
+      couponsUsed: 63,
+      nota: 'Maior número de cupons usados entre as creators aprovadas.',
+    },
   },
   {
     id: 'demo-3',
@@ -128,6 +150,12 @@ export const DEMO_CREATORS: DemoCreator[] = [
     posts: feedDe(6, 7, 8, 9, 10, 11),
     recompensa: { tipo: 'PRODUCT', valor: 'Kit Whey 900g', nota: 'Envio pelos Correios.' },
     entrega: { tipo: 'STORY', legenda: 'Sequência de 3 stories no treino longo de domingo.' },
+    resultado: {
+      reach: 7_100,
+      impressions: 9_400,
+      couponsUsed: 9,
+      nota: 'Público bem alinhado com a campanha, mesmo com poucos seguidores.',
+    },
   },
   {
     id: 'demo-4',
@@ -141,6 +169,12 @@ export const DEMO_CREATORS: DemoCreator[] = [
     posts: feedDe(9, 4, 7, 1, 10, 6),
     recompensa: { tipo: 'DISCOUNT', valor: 'Cupom CAIO20 (20% off)', nota: 'Válido por 60 dias.' },
     entrega: { tipo: 'VIDEO', legenda: 'Vídeo de 1 minuto com a série de mobilidade.' },
+    resultado: {
+      reach: 14_700,
+      impressions: 19_300,
+      couponsUsed: 27,
+      nota: 'Vídeo salvo bastante, boa reativação de seguidor antigo.',
+    },
   },
 ];
 
@@ -173,10 +207,13 @@ export const contentTypeWord: Record<DemoCreator['entrega']['tipo'], string> = {
   STORY: 'Story',
 };
 
-/** Estado de uma parceria em andamento na demonstração. */
+/** Estado de uma parceria em andamento na demonstração. `resultado` usa o
+ *  mesmo vocabulário derivado do produto real (`PartnershipResultState`):
+ *  não é enum do banco, é "a marca já informou ou ainda deve". */
 export interface DemoParceria {
   recompensa: RewardStatus;
   conteudo: ContentStatus;
+  resultado: 'PENDING' | 'REGISTERED';
 }
 
 /** Iniciais pro fallback de avatar — mesmo recurso que o produto usa quando a

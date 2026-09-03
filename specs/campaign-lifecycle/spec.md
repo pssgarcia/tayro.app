@@ -21,7 +21,7 @@ related_decisions: [D-05]
 
 ## Objective
 Retrofit — sem processo `/feature` original registrado; comportamento descrito a partir do
-código em produção. `Campaign` é a entidade central do CRM: a marca publica uma oferta e a
+código em produção. `Campaign` é a entidade central do produto: a marca publica uma oferta e a
 creator se candidata a ela (ver `applications-pipeline`). A regra de que a oferta (`offer*`) é
 definida **antes** de qualquer candidatura, e é a fonte de verdade do que a creator recebe, é
 `D-05` — mata negociação constrangedora e leilão de preço; é o diferencial nº4 do produto.

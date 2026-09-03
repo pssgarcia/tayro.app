@@ -65,9 +65,9 @@ prática. Decidir ANTES de escrever o endpoint.
 
 ## Decisões de produto
 
-### D-01 · ~2026-06 · CRM de creators, não marketplace transacional
+### D-01 · ~2026-06 · Plataforma de gestão de creators, não marketplace transacional
 **Motivo:** a dor central observada é **avaliar candidata**, não conectar oferta e demanda.
-Marketplace exige liquidez dos dois lados desde o dia 1; CRM entrega valor com uma marca só.
+Marketplace exige liquidez dos dois lados desde o dia 1; gestão de creators entrega valor com uma marca só.
 **Status:** `FIRME` · **Revisar se:** entrevistas mostrarem que a marca não tem candidatura
 espontânea suficiente — aí o problema é discovery e a tese cai.
 

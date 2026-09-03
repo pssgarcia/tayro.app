@@ -153,6 +153,8 @@ const CICLO: { lado: 'marca' | 'creator'; texto: string }[] = [
   { lado: 'marca', texto: 'Registra a recompensa da parceria' },
   { lado: 'creator', texto: 'Envia o conteúdo combinado' },
   { lado: 'marca', texto: 'Recebe e revisa o conteúdo' },
+  { lado: 'marca', texto: 'Informa o resultado da parceria' },
+  { lado: 'creator', texto: 'Vê o resultado no histórico do seu perfil' },
 ];
 
 function Ciclo() {

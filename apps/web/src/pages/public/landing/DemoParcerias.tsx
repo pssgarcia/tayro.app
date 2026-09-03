@@ -1,6 +1,8 @@
-import { Banknote, Gift, Package, Tag, Truck } from 'lucide-react';
+import { Banknote, BarChart3, Gift, Package, Tag, Truck } from 'lucide-react';
+import StatFigure from '../../../components/primitives/kinetic/StatFigure';
 import StatusWord from '../../../components/primitives/kinetic/StatusWord';
 import { cn } from '../../../lib/utils';
+import { formatNumberParts } from '../../../utils/format';
 import type { ContentStatus, RewardStatus, RewardType } from '../../../types/api';
 import CreatorAvatar from './CreatorAvatar';
 import {
@@ -11,13 +13,14 @@ import {
   type DemoParceria,
 } from './demo';
 
-// ─── Abas Recompensas e Conteúdos da demonstração ────────────────────────────
-// As duas capacidades que vêm DEPOIS da decisão, e que a landing não contava.
+// ─── Abas Recompensas, Conteúdos e Resultado da demonstração ─────────────────
+// As três capacidades que vêm DEPOIS da decisão, e que a landing não contava.
 // Não são cards genéricos de SaaS: reproduzem o comportamento real de
-// `CampaignRewardsTab` e `CampaignContentTab`, com o mesmo vocabulário
-// (Pendente → Emitida → Entregue; Em análise → Aprovado/Recusado/Revisar) e as
-// mesmas ações ("Marcar como emitida", "Confirmar entrega", "Aprovar",
-// "Revisão", "Recusar"), inclusive os ícones que o produto usa.
+// `CampaignRewardsTab`, `CampaignContentTab` e `CampaignResultsTab`, com o
+// mesmo vocabulário (Pendente → Emitida → Entregue; Em análise →
+// Aprovado/Recusado/Revisar; A informar → Informado) e as mesmas ações
+// ("Marcar como emitida", "Confirmar entrega", "Aprovar", "Revisão",
+// "Recusar", "Informar resultado"), inclusive os ícones que o produto usa.
 //
 // A parceria só existe aqui depois que a candidatura foi aprovada na Fila — é
 // essa continuidade que mostra a evolução dentro do produto, em vez de listar
@@ -204,5 +207,103 @@ export function DemoConteudos({
         );
       })}
     </Lista>
+  );
+}
+
+// ─── Resultado ───────────────────────────────────────────────────────────────
+// Fecha os diferenciais nº2 (histórico) e nº3 (transparência bilateral) do
+// `positioning.md`: é aqui que a marca devolve pra creator o que a parceria
+// deu. Igual à `CampaignResultsTab` real, a marca digita o número, não a
+// gente mede. A demonstração pula o modal (aqui um clique já preenche os
+// números de exemplo) mas mantém o vocabulário e a ressalva de honestidade.
+
+function Metrica({ label, valor }: { label: string; valor: number }) {
+  const { value, suffix } = formatNumberParts(valor);
+  return (
+    <StatFigure
+      size="sm"
+      label={label}
+      value={
+        <>
+          {value}
+          {suffix}
+        </>
+      }
+    />
+  );
+}
+
+export function DemoResultados({
+  parcerias,
+  onInformar,
+}: {
+  parcerias: Record<string, DemoParceria>;
+  onInformar: (creatorId: string) => void;
+}) {
+  const ativos = DEMO_CREATORS.filter((c) => parcerias[c.id]);
+
+  if (ativos.length === 0) {
+    return (
+      <Vazio>
+        Nenhuma parceria aprovada ainda. Aprove uma candidatura na Fila e o resultado dela aparece
+        aqui pra ser informado.
+      </Vazio>
+    );
+  }
+
+  return (
+    <div className="max-w-[1080px]">
+      <p className="mb-6 text-pretty text-sm leading-relaxed text-kinetic-muted">
+        Os números são informados pela marca. O tayro não mede alcance nem impressão. Eles
+        aparecem pra creator sempre, e no perfil público dela só quando a marca libera.
+      </p>
+
+      <Lista>
+        {ativos.map((creator) => {
+          const status = parcerias[creator.id].resultado;
+          const { reach, impressions, couponsUsed, nota } = creator.resultado;
+
+          return (
+            <Bloco key={creator.id}>
+              <div className="flex items-start justify-between gap-4">
+                <Cabecalho creator={creator} />
+                <StatusWord kind="partnershipResult" status={status} />
+              </div>
+
+              {status === 'PENDING' ? (
+                <div className="mt-5 border-t border-kinetic-gray pt-4">
+                  <p className="text-pretty text-sm leading-relaxed text-kinetic-text">
+                    Você ainda não informou o que esta parceria deu. É o que transforma a
+                    candidatura aprovada em histórico da creator.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onInformar(creator.id)}
+                    className={cn('mt-4', acaoPrimaria)}
+                  >
+                    <BarChart3 size={13} />
+                    Informar resultado
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-5 border-t border-kinetic-gray pt-4">
+                  <div className="flex flex-wrap gap-x-6 gap-y-4">
+                    <Metrica label="Alcance" valor={reach} />
+                    <Metrica label="Impressões" valor={impressions} />
+                    <Metrica label="Cupons" valor={couponsUsed} />
+                  </div>
+                  <p className="mt-4 border-l-2 border-kinetic-gray pl-3 text-pretty text-xs leading-relaxed text-kinetic-text">
+                    &ldquo;{nota}&rdquo;
+                  </p>
+                  <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+                    Informado pela marca · aparece no perfil público dela
+                  </p>
+                </div>
+              )}
+            </Bloco>
+          );
+        })}
+      </Lista>
+    </div>
   );
 }

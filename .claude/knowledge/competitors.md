@@ -45,9 +45,9 @@ A planilha está.
 |---|---|
 | **O que é** | Discovery: base grande de perfis pesquisável por filtro (nicho, audiência, país) |
 | **Forte** | Busca e dados de audiência. Self-serve, entrada mais barata que enterprise |
-| **Fraco** | Fraco em CRM — resolve "quem eu chamo", não "como eu gerencio quem topou". Sem fluxo de candidatura/aprovação/entrega |
+| **Fraco** | Fraco em gestão de relacionamento pós-candidatura: resolve "quem eu chamo", não "como eu gerencio quem topou". Sem fluxo de candidatura/aprovação/entrega |
 | **Ameaça pra nós** | Média-baixa, e **complementar mais que concorrente**: quem usa Modash ainda precisa gerir depois |
-| **A verificar** | Cobertura de perfis brasileiros · adicionaram CRM? |
+| **A verificar** | Cobertura de perfis brasileiros · adicionaram gestão de candidatura? |
 
 > Observação estratégica: GRIN e Modash ocupam pontas opostas (gestão enterprise × discovery),
 > e nenhum dos dois ataca **avaliação de candidatura espontânea de micro-creator**. Se isso se
@@ -71,7 +71,7 @@ A planilha está.
 | **Geografia** | Brasil, produto em português. Nenhuma menção a operação fora do Brasil. |
 | **Nicho fitness/wellness** | Não encontrado. Marcas citadas nas fontes (iFood, Kaspersky, Atom Educação) são de food delivery, segurança digital e edtech — nenhuma de fitness/wellness. Produto se posiciona como genérico ("qualquer marca", "qualquer criador"), não vertical. |
 | **Reclame Aqui** | Empresa (`APP CONTY LTDA`) tem página, não verificada/sem selo, e sem reclamações suficientes pra calcular reputação no período fev–jul/2026 — sinal fraco (baixo volume/visibilidade), não prova de bom atendimento. |
-| **Sobreposição com TAYRO** | Ambos conectam marca e creator no Brasil e lidam com pagamento/recompensa. Onde diverge: Conty é fundamentalmente **discovery + marketplace de missões em escala** (marca busca creator por perfil/audiência/objetivo; qualquer pessoa participa, sem precisar de audiência grande) — é exatamente o jogo que o TAYRO define como fora de escopo (comparável a Modash, não ao nosso "depois da candidatura"). Não achamos evidência de media kit vivo, histórico de parceria verificado e portátil, ou "oferta definida antes da candidatura" — os 4 diferenciais que o TAYRO reivindica. Conty é generalista (qualquer nicho, qualquer marca) com growth via VC e mecânica gamificada de volume; TAYRO é vertical (fitness/wellness) e via avaliação individual de poucas creators. Autodescrição da empresa é "Uber da Creator Economy" — jogo de escala/marketplace, não de CRM de relacionamento. |
+| **Sobreposição com TAYRO** | Ambos conectam marca e creator no Brasil e lidam com pagamento/recompensa. Onde diverge: Conty é fundamentalmente **discovery + marketplace de missões em escala** (marca busca creator por perfil/audiência/objetivo; qualquer pessoa participa, sem precisar de audiência grande) — é exatamente o jogo que o TAYRO define como fora de escopo (comparável a Modash, não ao nosso "depois da candidatura"). Não achamos evidência de media kit vivo, histórico de parceria verificado e portátil, ou "oferta definida antes da candidatura" — os 4 diferenciais que o TAYRO reivindica. Conty é generalista (qualquer nicho, qualquer marca) com growth via VC e mecânica gamificada de volume; TAYRO é vertical (fitness/wellness) e via avaliação individual de poucas creators. Autodescrição da empresa é "Uber da Creator Economy" — jogo de escala/marketplace, não de gestão de relacionamento. |
 | **A verificar** | Preço real (site bloqueou fetch — tentar via captura de tela ou contato direto); se algum plano/feature específico ataca fitness; headcount real (LinkedIn não retornou dado). |
 
 ---
@@ -83,8 +83,8 @@ descontinuados, renomeados ou adquiridos** — tratar como pista, não como fato
 
 - Squid · Airfluencers · Influency.me · Celebryts · Brandlovrs · YOUPIX (parece consultoria/mídia, não ferramenta)
 
-Pra cada um, responder: existe hoje? preço? atende marca pequena ou só grande? tem CRM ou só
-discovery? tem lado creator? cobra da creator?
+Pra cada um, responder: existe hoje? preço? atende marca pequena ou só grande? tem gestão de
+candidatura ou só discovery? tem lado creator? cobra da creator?
 
 **Concorrentes indiretos a investigar junto:** plataformas de permuta/campanha por produto,
 grupos de WhatsApp e Telegram de "vagas pra creator", e agências que vendem o serviço completo.
@@ -110,4 +110,4 @@ só com escolher um cliente cuja dor já passou do limite.
 | Data | O que mudou | Fonte |
 |---|---|---|
 | 2026-08-06 | Arquivo criado, tudo não verificado | — |
-| 2026-08-23 | Adicionado Conty (appconty.com) como concorrente investigado — nota da pesquisa pra continuar orientando: não focado em fitness, é discovery+marketplace de missões (não CRM pós-candidatura), tração autodeclarada e inconsistente entre 3 fontes (não verificável) | ver relatório `researcher` 2026-08-23 |
+| 2026-08-23 | Adicionado Conty (appconty.com) como concorrente investigado — nota da pesquisa pra continuar orientando: não focado em fitness, é discovery+marketplace de missões (não gestão pós-candidatura), tração autodeclarada e inconsistente entre 3 fontes (não verificável) | ver relatório `researcher` 2026-08-23 |

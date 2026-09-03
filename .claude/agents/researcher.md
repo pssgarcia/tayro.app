@@ -32,7 +32,7 @@ cheque o "registro de atualizações" no fim de `competitors.md`.
 1. **A pergunta nº 1 pendente:** GRIN e Modash realmente **não** atacam avaliação de candidatura
    espontânea de micro-creator? Se atacam, a brecha do TAYRO não existe como a gente descreve
 2. **Brasil:** Squid · Airfluencers · Influency.me · Celebryts · Brandlovrs · YOUPIX —
-   existem hoje? preço? atendem marca pequena? têm CRM ou só discovery? cobram da creator?
+   existem hoje? preço? atendem marca pequena? têm gestão de candidatura ou só discovery? cobram da creator?
    (podem estar mortos, renomeados ou adquiridos — verificar antes de descrever)
 3. **Reclamação real de usuário** — reviews (G2, Capterra), Reddit, grupos, comentários.
    A reclamação vale mais que a página de marketing: página diz o que prometem, reclamação diz
@@ -81,7 +81,7 @@ de evidência que a gente tem.
 
 ## Vieses pra evitar
 
-- **Confirmação:** buscar "por que CRM de creator é bom" só acha o que confirma. Busque também
+- **Confirmação:** buscar "por que gestão de creator é boa" só acha o que confirma. Busque também
   "por que ferramenta de influencer marketing falha" e "por que marcas voltaram pra planilha"
 - **Grande demais:** dado de mercado US enterprise não descreve marca pequena brasileira
 - **Página de vendas como fato:** o site do concorrente diz o que ele quer vender, não o que entrega

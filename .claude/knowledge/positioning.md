@@ -49,7 +49,7 @@ um lugar que contradiz a visão:
 |---|---|
 | **Enterprise / grande anunciante** | Quer integração, SSO, contrato, compliance e time de sucesso do cliente. É o jogo do GRIN. Perdemos por preço reverso e por não ter estrutura |
 | **Agência** (por ora) | Precisa de multi-cliente, que o produto não tem. Ver questão aberta acima — pode virar cliente depois de uma decisão explícita, não por acidente |
-| **Marca que quer garimpar creator** | Quem chega buscando "me acha 50 influenciadoras fitness" quer discovery (Modash), não CRM. Nosso valor começa **depois** que a candidata apareceu |
+| **Marca que quer garimpar creator** | Quem chega buscando "me acha 50 influenciadoras fitness" quer discovery (Modash), não gestão pós-candidatura. Nosso valor começa **depois** que a candidata apareceu |
 | **Creator como pagante** | Ela é usuária essencial, nunca fonte de receita. Ver `vision.md`, "nunca" nº 1 |
 | **Marca sem tração nenhuma** | Se não recebe candidatura, o produto fica vazio e a culpa parece nossa. Não temos demand-gen |
 | **Quem quer serviço, não ferramenta** | "Vocês rodam a campanha pra mim?" = agência. Ver `vision.md`, "nunca" nº 8 |
@@ -102,7 +102,7 @@ informar resultado é hipótese — a mais importante a testar junto do item #0 
 ## Posicionamento em uma frase
 
 > Pra marca pequena que já recebe candidatura de creator e decide na mão:
-> o TAYRO é o CRM que mostra o Instagram real de cada candidata do lado do botão de aprovar,
+> o TAYRO é a plataforma que mostra o Instagram real de cada candidata do lado do botão de aprovar,
 > e transforma cada parceria fechada em histórico verificado — pra ela e pra creator.
 
 `[HIPÓTESE]` — nunca foi dita pra um cliente real. Testar nas primeiras 5 entrevistas: se a
