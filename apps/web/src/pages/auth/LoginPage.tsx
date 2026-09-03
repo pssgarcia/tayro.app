@@ -112,7 +112,12 @@ export default function LoginPage() {
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
           </div>
 
+          {/* `compact`: em 360px "Esqueci minha senha" não cabe em meia barra
+              com o mono de 12px e tracking largo — quebrava em duas linhas
+              ("ESQUECI MINHA / SENHA") coladas no bloco lime. O tipo encolhe
+              só abaixo de sm; no desktop a barra é a de sempre. */}
           <KineticActions
+            compact
             actions={[
               { label: 'Esqueci minha senha', to: '/forgot-password' },
               {

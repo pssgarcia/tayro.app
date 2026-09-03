@@ -39,12 +39,24 @@ const bia: ApprovedCreator = {
   ...ana,
   influencer: { ...ana.influencer, id: 'inf-2', name: 'Bia Creator', phone: null },
   approvals: [
-    { applicationId: 'app-2', campaignId: 'camp-1', campaignTitle: 'Campanha Verão', reviewedAt: '2026-08-20T10:00:00.000Z' },
-    { applicationId: 'app-3', campaignId: 'camp-2', campaignTitle: 'Campanha Inverno', reviewedAt: '2026-08-25T10:00:00.000Z' },
+    {
+      applicationId: 'app-2',
+      campaignId: 'camp-1',
+      campaignTitle: 'Campanha Verão',
+      reviewedAt: '2026-08-20T10:00:00.000Z',
+    },
+    {
+      applicationId: 'app-3',
+      campaignId: 'camp-2',
+      campaignTitle: 'Campanha Inverno',
+      reviewedAt: '2026-08-25T10:00:00.000Z',
+    },
   ],
 };
 
-function mockHook(overrides: Partial<{ data: ApprovedCreator[]; isLoading: boolean; isError: boolean }> = {}) {
+function mockHook(
+  overrides: Partial<{ data: ApprovedCreator[]; isLoading: boolean; isError: boolean }> = {},
+) {
   vi.mocked(hooks.useApprovedCreators).mockReturnValue({
     data: [],
     isLoading: false,
@@ -58,9 +70,21 @@ beforeEach(() => {
 });
 
 describe('ApprovedCreatorsPage', () => {
-  it('mostra empty state quando nenhuma creator foi aprovada ainda', () => {
+  it('mostra empty state quando nenhuma candidatura foi aprovada ainda', () => {
     render(<ApprovedCreatorsPage />);
-    expect(screen.getByText(/nenhuma creator aprovada ainda/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhuma candidatura aprovada ainda/i)).toBeInTheDocument();
+  });
+
+  // Regressão de copy: a tela dizia "Todas as creators já aprovadas",
+  // "Nenhuma creator aprovada", "Creators aprovadas" — todas assumindo o
+  // gênero de quem se candidatou. A concordância tem que ser com a palavra
+  // CANDIDATURA, nunca com a pessoa (regra do CLAUDE.md).
+  it('não usa copy que assume o gênero de quem se candidatou', () => {
+    mockHook({ data: [ana, bia] });
+    const { container } = render(<ApprovedCreatorsPage />);
+
+    expect(container.textContent).not.toMatch(/creators? (já )?aprovadas?/i);
+    expect(container.textContent).not.toMatch(/aprovada em \d+ campanha/i);
   });
 
   it('mostra erro ao falhar o carregamento', () => {
@@ -73,7 +97,7 @@ describe('ApprovedCreatorsPage', () => {
     mockHook({ data: [ana, bia] });
     render(<ApprovedCreatorsPage />);
 
-    const lista = within(screen.getByRole('list', { name: 'Creators aprovadas' }));
+    const lista = within(screen.getByRole('list', { name: 'Creators com candidatura aprovada' }));
     expect(lista.getByText('Ana Creator')).toBeInTheDocument();
     expect(lista.getByText('Bia Creator')).toBeInTheDocument();
 
@@ -81,13 +105,44 @@ describe('ApprovedCreatorsPage', () => {
     expect(screen.getByText('@ana.creator')).toBeInTheDocument();
   });
 
-  it('mostra em quantas campanhas cada creator foi aprovada', () => {
+  it('mostra quantas candidaturas aprovadas cada creator tem', () => {
     mockHook({ data: [ana, bia] });
     render(<ApprovedCreatorsPage />);
 
-    const lista = within(screen.getByRole('list', { name: 'Creators aprovadas' }));
-    expect(lista.getByText(/1 campanha$/i)).toBeInTheDocument();
-    expect(lista.getByText(/2 campanhas/i)).toBeInTheDocument();
+    const lista = within(screen.getByRole('list', { name: 'Creators com candidatura aprovada' }));
+    expect(lista.getByText('1 candidatura aprovada')).toBeInTheDocument();
+    expect(lista.getByText('2 candidaturas aprovadas')).toBeInTheDocument();
+  });
+
+  // Regressão: a placa mostrava `followersCount` cru. Uma conta de milhões
+  // renderizava "5400000" em display 36px e saía cortada da meia placa.
+  it('mostra seguidores no formato compacto', () => {
+    mockHook({
+      data: [{ ...ana, influencer: { ...ana.influencer, followersCount: 5_400_000 } }],
+    });
+    render(<ApprovedCreatorsPage />);
+
+    expect(screen.getByText('5,4M')).toBeInTheDocument();
+    expect(screen.queryByText('5400000')).not.toBeInTheDocument();
+  });
+
+  it('mostra o telefone da creator como link tel: na placa', () => {
+    mockHook({ data: [ana] });
+    render(<ApprovedCreatorsPage />);
+
+    expect(screen.getByRole('link', { name: '(11) 91234-5678' })).toHaveAttribute(
+      'href',
+      'tel:(11) 91234-5678',
+    );
+  });
+
+  // Sem telefone não há botão de WhatsApp — e a placa precisa dizer POR QUÊ,
+  // senão a ausência do botão parece defeito da tela.
+  it('diz que o telefone não foi informado quando não há telefone', () => {
+    mockHook({ data: [bia] });
+    render(<ApprovedCreatorsPage />);
+
+    expect(screen.getByText('Telefone não informado')).toBeInTheDocument();
   });
 
   it('clicar numa linha troca a creator exibida na placa', () => {
@@ -107,7 +162,7 @@ describe('ApprovedCreatorsPage', () => {
     expect(link).toHaveAttribute('href', 'https://wa.me/5511912345678');
   });
 
-  it('não mostra botão de WhatsApp quando a creator não tem telefone', () => {
+  it('não mostra botão de WhatsApp quando não há telefone', () => {
     mockHook({ data: [bia] });
     render(<ApprovedCreatorsPage />);
 
