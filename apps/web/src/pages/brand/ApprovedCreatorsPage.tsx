@@ -8,7 +8,12 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
-import { creatorAvatarSrc, formatEngagement, whatsappLinkFromPhone } from '../../utils/format';
+import {
+  creatorAvatarSrc,
+  formatEngagement,
+  formatNumberParts,
+  whatsappLinkFromPhone,
+} from '../../utils/format';
 import type { ApprovedCreator } from '../../types/api';
 
 // ─── Creators — visão agregada de aprovadas cross-campanha (specs/creator-roster) ──
@@ -18,8 +23,12 @@ import type { ApprovedCreator } from '../../types/api';
 // integralmente o media kit (avatar, seguidores, engajamento, posts) — não é
 // uma tela nova de dado, é um recorte novo do mesmo dado.
 
+// Fala da CANDIDATURA, não da pessoa: "aprovada" concorda com a palavra
+// candidatura, não com quem se candidatou (regra de copy do CLAUDE.md — nada
+// de assumir o gênero de quem usa o produto). Como o par (campanha, creator) é
+// único, a contagem de candidaturas aprovadas é a de campanhas.
 function approvalsLabel(count: number): string {
-  return count === 1 ? 'Aprovada em 1 campanha' : `Aprovada em ${count} campanhas`;
+  return count === 1 ? '1 candidatura aprovada' : `${count} candidaturas aprovadas`;
 }
 
 // ─── Placa: a creator selecionada ─────────────────────────────────────────────
@@ -29,9 +38,11 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
   const avatarSrc = creatorAvatarSrc(influencer);
   const waLink = whatsappLinkFromPhone(influencer.phone);
+  const followers =
+    influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
 
   return (
-    <KineticPlate as="section" marks="all" flush ariaLabel="Media kit da creator">
+    <KineticPlate as="section" marks="all" flush ariaLabel="Media kit">
       <div className="px-6 pb-8 pt-11 sm:px-8">
         {/* Sem ícone de WhatsApp aqui em cima: nesta página o contato JÁ é a
             ação principal da placa (barra "Falar no WhatsApp" na base) — um
@@ -58,12 +69,33 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
                 <ExternalLink size={12} className="shrink-0" />
               </a>
             )}
+            {/* Telefone é o canal que essa tela existe pra abrir — mostrar só o
+                botão de WhatsApp escondia o dado (e, quando não há telefone,
+                escondia também o MOTIVO de não haver botão). Mesmo link `tel:`
+                da placa da Fila. */}
+            {influencer.phone ? (
+              <a
+                href={`tel:${influencer.phone}`}
+                className="mt-1 flex w-fit items-center gap-1 font-mono text-sm text-gray-600 transition-colors hover:text-black"
+              >
+                {influencer.phone}
+              </a>
+            ) : (
+              <p className="mt-1 font-mono text-sm text-gray-500">Telefone não informado</p>
+            )}
           </div>
         </div>
 
         <div className="mb-6 grid grid-cols-2 gap-6 border-b border-gray-300 pb-6">
-          {influencer.followersCount != null && (
-            <StatFigure label="Seguidores" value={influencer.followersCount} tone="plate" />
+          {/* Compacto ("5,4M"), como na Fila e no perfil público: o número cru
+              de uma conta com milhões de seguidores não cabe em meia placa e
+              saía cortado. */}
+          {followers && (
+            <StatFigure
+              label="Seguidores"
+              value={`${followers.value}${followers.suffix}`}
+              tone="plate"
+            />
           )}
           {influencer.igEngagementRate != null && (
             <StatFigure
@@ -142,21 +174,18 @@ export default function ApprovedCreatorsPage() {
       <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
         Creators
       </h1>
-      <p className="mt-2 max-w-lg text-sm text-kinetic-muted">
-        Todas as creators já aprovadas, em qualquer campanha, num lugar só.
-      </p>
 
       <div className="my-8 h-px bg-kinetic-gray" />
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar as creators. Tente novamente.</p>
+        <p className="text-sm text-destructive">Erro ao carregar os dados. Tente novamente.</p>
       )}
 
       {!isError && creators.length === 0 && (
         <EmptyState
           icon={<Users size={20} />}
-          title="Nenhuma creator aprovada ainda"
-          description="Aprove uma candidatura na Fila de alguma campanha para vê-la aqui."
+          title="Nenhuma candidatura aprovada ainda"
+          description="Aprove uma candidatura na Fila de alguma campanha para ver o media kit aqui."
         />
       )}
 
@@ -168,7 +197,7 @@ export default function ApprovedCreatorsPage() {
             <p className="mb-5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
               Creators · {creators.length}
             </p>
-            <ul aria-label="Creators aprovadas" className="flex flex-col gap-0.5">
+            <ul aria-label="Creators com candidatura aprovada" className="flex flex-col gap-0.5">
               {creators.map((creator) => {
                 const rowAvatar = creatorAvatarSrc(creator.influencer);
                 return (

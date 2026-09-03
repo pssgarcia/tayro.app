@@ -86,10 +86,20 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
 
 ## UI Behavior
 - Nav da marca ganha um 4º item, "Creators" (`/brand/creators`).
-- Lista + placa: linha por creator (nome, @handle, "aprovada em N campanha(s)") e uma placa de
+- Lista + placa: linha por creator (nome, avatar, "N candidatura(s) aprovada(s)") e uma placa de
   detalhe com o media kit completo da creator selecionada + o botão de WhatsApp. No mobile, a
   lista vem antes da placa no DOM (mesmo padrão da aba Entregas) — tocar numa linha atualiza uma
   placa que já está no campo de visão, sem navegação de página.
+- A placa mostra o telefone como link `tel:` abaixo do @handle (mesma linha de contato da placa
+  da Fila). Sem telefone, no lugar do link aparece "Telefone não informado" — a ausência do botão
+  de WhatsApp precisa ter um motivo visível, senão parece defeito da tela. Hoje a maioria das
+  creators cai nesse caso: `Influencer.phone` só é coletado no apply público, e só desde
+  2026-08-31 (ver `creator-discovery-and-apply` → Known Gaps).
+- Seguidores aparecem no formato compacto ("5,4M", "8,2k"), o mesmo de `formatNumberParts` já
+  usado na Fila e no perfil público — o número cru de uma conta com milhões de seguidores estoura
+  a meia largura da placa e sai cortado.
+- Copy da tela nunca concorda com o gênero de quem se candidatou: a concordância é com a palavra
+  "candidatura" ("1 candidatura aprovada"), nunca com a creator ("aprovada em 1 campanha").
 - Vazio: nenhuma creator aparece até a marca ter pelo menos uma aprovação em qualquer campanha.
 - Erro de rede: mensagem de erro (`text-destructive`), sem botão de retry manual — mesmo padrão
   do `DashboardPage` (não é um padrão novo desta tela). React Query tenta de novo sozinho segundo
@@ -104,6 +114,10 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
 - [x] Lista vem ordenada pela aprovação mais recente primeiro.
 - [x] Botão de WhatsApp aparece só quando o telefone produz um link válido; ausente (não
       quebrado) quando o telefone é nulo ou tem contagem de dígitos que a heurística não cobre.
+- [x] Telefone existente aparece na placa como link `tel:`; telefone ausente vira o texto
+      "Telefone não informado" em vez de nada.
+- [x] Contagem de seguidores acima de mil é abreviada, nunca renderizada crua.
+- [x] Nenhum texto da tela assume o gênero de quem se candidatou.
 - [x] Usuário autenticado sem perfil de marca recebe `403` ao chamar o endpoint.
 
 ## Error Scenarios
@@ -135,8 +149,11 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
 - [x] `whatsappLinkFromPhone` (`format.spec.ts`) — 10/11 dígitos sem DDI, 12/13 com `55`, contagem
       inválida → `null`, telefone ausente → `null`, nunca produz caractere não-dígito. 6 testes.
 - [x] `ApprovedCreatorsPage.spec.tsx` — empty state, erro, lista + placa abrindo a primeira
-      creator, contagem de campanhas por creator, seleção troca a placa, botão de WhatsApp
-      presente com o `href` certo / ausente sem telefone. 7 testes.
+      creator, contagem de candidaturas aprovadas por creator, seleção troca a placa, botão de
+      WhatsApp presente com o `href` certo / ausente sem telefone, telefone como link `tel:`,
+      "Telefone não informado" sem telefone, seguidores abreviados, copy sem gênero de pessoa.
+      11 testes — os 4 últimos validados por mutação (desligar a correção no componente faz o
+      teste falhar).
 - [ ] Teste de guard do endpoint no controller dedicado (mesmo padrão de
       `auth.controller.guards.spec.ts`) — não escrito; o guard segue o mesmo `@UseGuards` já usado
       em todas as outras rotas `BRAND` do controller, sem teste dedicado por rota (convenção atual
@@ -158,6 +175,17 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
 - `whatsappLinkFromPhone` em `utils/format.ts`, ao lado de `creatorAvatarSrc`/`creatorPostSrc`.
 
 ## Change History
+- 2026-09-02 · Correções da 1ª conferência em produção (reportadas pelo Pedro). (1) **Copy no
+  feminino** — "Todas as creators já aprovadas", "Nenhuma creator aprovada ainda", o `aria-label`
+  "Creators aprovadas" e o rótulo "Aprovada em N campanhas" assumiam o gênero de quem se
+  candidatou; toda a tela passou a concordar com "candidatura". (2) **Seguidores cortados** — a
+  placa renderizava `followersCount` cru; conta de milhões (5,4M) estourava a meia largura em
+  display 36px. Passou a usar `formatNumberParts`, como a Fila. (3) **Telefone invisível** — a
+  placa nunca mostrou o telefone, só o botão de WhatsApp, que por sua vez não aparece quando
+  `phone` é nulo (o caso da maioria das creators hoje): a tela ficava sem nenhum sinal de
+  contato e sem explicar por quê. Agora mostra o link `tel:` ou "Telefone não informado".
+  (4) Subtítulo "Todas as creators já aprovadas, em qualquer campanha, num lugar só" removido a
+  pedido do Pedro — o `<h1>` e o contador da lista já dizem o que a tela é.
 - 2026-09-02 · Implementado conforme desenhado (TDD): endpoint + service (7 testes), página +
   hook + util (13 testes web). `WhatsAppIcon` — que já existia como SVG local da landing (o
   `lucide-react` não tem glifos de marca) — foi promovido pra

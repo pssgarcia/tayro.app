@@ -305,6 +305,21 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   entre landing/Fila/Creators em vez de duplicado. Specs: `creator-roster` (nova) e
   `campaign-fila-review`/`applications-pipeline` (atualizadas). 399 testes API + 582 web;
   lint/typecheck limpos.
+- **Correções da aba Creators, 1ª conferência em produção (2026-09-02):** quatro achados do Pedro
+  na tela recém-entregue. (1) **Copy no feminino** — "Todas as creators já aprovadas", "Nenhuma
+  creator aprovada ainda", o `aria-label` "Creators aprovadas" e o rótulo "Aprovada em N
+  campanhas" assumiam o gênero de quem se candidatou; agora a concordância é com **candidatura**
+  ("1 candidatura aprovada"), regra que já valia no resto do produto e que essa tela nova quebrou.
+  (2) **Seguidores cortados** — a placa era o ÚNICO lugar do produto renderizando `followersCount`
+  cru; uma conta de milhões ("5400000") estourava a meia largura em display 36px. Passou a usar
+  `formatNumberParts` ("5,4M"), como Fila e perfil público. (3) **Telefone e WhatsApp invisíveis**
+  — não era bug de fiação: a placa nunca chegou a renderizar o telefone (só o botão de WhatsApp,
+  que depende de `phone`), e **`Influencer.phone` é nulo pra praticamente todo mundo** (só é
+  coletado no apply público, e só desde 2026-08-31 — conferido no banco de dev: 3 de 21 creators
+  têm telefone). Agora a placa mostra o link `tel:` quando há telefone e "Telefone não informado"
+  quando não há — a ausência do botão precisa ter motivo visível. (4) Subtítulo "…em qualquer
+  campanha, num lugar só" removido a pedido dele. 4 testes novos, validados por mutação; spec
+  `creator-roster` atualizada (UI Behavior, Acceptance Criteria, Change History). 589 testes web.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
