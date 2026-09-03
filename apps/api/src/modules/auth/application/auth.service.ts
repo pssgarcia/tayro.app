@@ -95,6 +95,7 @@ export class AuthService {
           influencer: {
             create: {
               name: dto.name,
+              phone: dto.phone,
               instagramHandle: dto.instagramHandle,
               niches: dto.niches ?? [],
               // PENDING desde o nascimento: o front trata null como falha, e

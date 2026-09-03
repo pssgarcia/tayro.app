@@ -87,6 +87,17 @@ describe('ApprovedCreatorsPage', () => {
     expect(container.textContent).not.toMatch(/aprovada em \d+ campanha/i);
   });
 
+  // Regressão: o rótulo mono da lista dizia "Creators · N" logo abaixo do
+  // <h1> "Creators" — no celular a lista fica na mesma dobra do título e a
+  // palavra aparecia duas vezes. A contagem subiu pro título.
+  it('não repete a palavra "Creators" na tela', () => {
+    mockHook({ data: [ana, bia] });
+    const { container } = render(<ApprovedCreatorsPage />);
+
+    expect(container.textContent?.match(/creators/gi) ?? []).toHaveLength(1);
+    expect(screen.getByText('· 2')).toBeInTheDocument();
+  });
+
   it('mostra erro ao falhar o carregamento', () => {
     mockHook({ isError: true });
     render(<ApprovedCreatorsPage />);

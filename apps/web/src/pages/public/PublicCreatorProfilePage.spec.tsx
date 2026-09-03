@@ -26,6 +26,7 @@ function makeProfile(over: Partial<PublicCreatorProfile> = {}): PublicCreatorPro
       { url: 'https://ig.com/p1', thumbnail: 'https://ig.com/t1.jpg', likes: 10, comments: 2 },
     ],
     igFetchStatus: 'OK',
+    phone: null,
     completedPartnerships: 3,
     results: [],
     ...over,
@@ -151,6 +152,43 @@ describe('PublicCreatorProfilePage', () => {
     expect(screen.getByText(/quer creators como ana flávia/i)).toBeInTheDocument();
     const cta = screen.getByRole('link', { name: /crie sua campanha/i });
     expect(cta).toHaveAttribute('href', '/register/brand');
+  });
+
+  // ─── CTA do rodapé ──────────────────────────────────────────────────────
+  // O telefone sai junto do resto do perfil público (perfil privado é 404 e
+  // não expõe nada) — ver specs/public-creator-profile.
+
+  it('com telefone, o CTA vira "Falar no WhatsApp" e o cadastro de marca fica como saída secundária', () => {
+    mockProfile({ data: makeProfile({ phone: '(11) 91234-5678' }) });
+    renderPage();
+
+    expect(screen.getByRole('link', { name: /falar no whatsapp/i })).toHaveAttribute(
+      'href',
+      'https://wa.me/5511912345678',
+    );
+    expect(screen.getByRole('link', { name: /crie sua campanha no tayro/i })).toHaveAttribute(
+      'href',
+      '/register/brand',
+    );
+    expect(screen.queryByText(/quer creators como/i)).not.toBeInTheDocument();
+  });
+
+  it('sem telefone, o CTA segue sendo "Crie sua campanha"', () => {
+    mockProfile({ data: makeProfile({ phone: null }) });
+    renderPage();
+
+    expect(screen.queryByRole('link', { name: /whatsapp/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^crie sua campanha$/i })).toBeInTheDocument();
+  });
+
+  // Telefone que a heurística não consegue converter não vira link quebrado:
+  // cai no CTA de sempre (mesma regra da placa em /brand/creators).
+  it('telefone que não produz link válido cai no CTA de sempre', () => {
+    mockProfile({ data: makeProfile({ phone: '123' }) });
+    renderPage();
+
+    expect(screen.queryByRole('link', { name: /whatsapp/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^crie sua campanha$/i })).toBeInTheDocument();
   });
 
   it('usa o proxy same-origin quando igProfilePicUrl existe', () => {

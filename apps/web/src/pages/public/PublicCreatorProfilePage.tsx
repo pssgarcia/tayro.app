@@ -1,10 +1,16 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { usePublicCreatorProfile } from '../../hooks/usePublicCreatorProfile';
-import { creatorAvatarSrc, formatEngagement, formatNumberParts } from '../../utils/format';
+import {
+  creatorAvatarSrc,
+  formatEngagement,
+  formatNumberParts,
+  whatsappLinkFromPhone,
+} from '../../utils/format';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import ThumbGrid from '../../components/primitives/ThumbGrid';
+import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -91,6 +97,7 @@ export default function PublicCreatorProfilePage() {
   const { data: profile, isLoading, isError } = usePublicCreatorProfile(handle);
 
   const igHandle = profile?.handle?.replace(/^@+/, '');
+  const whatsappLink = whatsappLinkFromPhone(profile?.phone);
   const avatarSrc = profile ? creatorAvatarSrc(profile) : null;
   const initials = (profile?.name ?? '')
     .trim()
@@ -214,15 +221,45 @@ export default function PublicCreatorProfilePage() {
 
             <div className="my-[30px] h-px bg-muted" />
 
-            <p className="text-center text-sm text-kinetic-muted">
-              Quer creators como {profile.name}?
-            </p>
-            <Link
-              to="/register/brand"
-              className="mt-5 flex min-h-[56px] w-full items-center justify-center bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
-            >
-              Crie sua campanha
-            </Link>
+            {/* O contato direto é a ação mais útil pra quem chegou aqui pelo
+                link que a própria creator mandou. O telefone só chega nesta
+                página com o perfil público ligado (privado é 404 uniforme);
+                sem telefone cadastrado, o CTA segue sendo o de sempre. O
+                "Crie sua campanha" não some: vira saída secundária. */}
+            {whatsappLink ? (
+              <>
+                <p className="text-center text-sm text-kinetic-muted">
+                  Fale direto com {profile.name}.
+                </p>
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 flex min-h-[56px] w-full items-center justify-center gap-2 bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
+                >
+                  <WhatsAppIcon size={16} />
+                  Falar no WhatsApp
+                </a>
+                <Link
+                  to="/register/brand"
+                  className="mt-5 block text-center text-sm text-kinetic-muted underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                >
+                  Crie sua campanha no tayro
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-center text-sm text-kinetic-muted">
+                  Quer creators como {profile.name}?
+                </p>
+                <Link
+                  to="/register/brand"
+                  className="mt-5 flex min-h-[56px] w-full items-center justify-center bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
+                >
+                  Crie sua campanha
+                </Link>
+              </>
+            )}
           </div>
         )}
       </main>

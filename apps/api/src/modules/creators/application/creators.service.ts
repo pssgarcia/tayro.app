@@ -120,6 +120,10 @@ export class CreatorsService {
       igEngagementRate: influencer.igEngagementRate,
       igRecentPosts: influencer.igRecentPosts,
       igFetchStatus: influencer.igFetchStatus,
+      // Sai junto do resto: `publicProfileEnabled` é o consentimento único de
+      // publicar identidade + contato. Um opt-in separado só pro telefone foi
+      // avaliado e recusado (Pedro, 2026-09-02) — ver spec.
+      phone: influencer.phone,
       completedPartnerships,
       results,
     };
@@ -136,6 +140,7 @@ export class CreatorsService {
         avatarUrl: true,
         bio: true,
         city: true,
+        phone: true,
         niches: true,
         instagramHandle: true, // read-only aqui (não editável neste fluxo)
         tiktokHandle: true,
@@ -162,6 +167,10 @@ export class CreatorsService {
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.bio !== undefined) data.bio = dto.bio;
     if (dto.city !== undefined) data.city = dto.city;
+    // Vazio limpa (null), não guarda string vazia: o front decide se mostra o
+    // telefone por `phone == null`, e "" apareceria como um link tel: vazio
+    // pra marca. Ver specs/creator-roster.
+    if (dto.phone !== undefined) data.phone = dto.phone || null;
     if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
     if (dto.niches !== undefined) data.niches = dto.niches;
     if (dto.tiktokHandle !== undefined) data.tiktokHandle = dto.tiktokHandle;

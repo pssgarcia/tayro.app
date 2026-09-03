@@ -41,17 +41,30 @@ Cadastro de conta de creator e edição do perfil associado, incluindo o toggle 
 livremente, com uma exceção deliberada.
 
 Campos: `name`, `avatarUrl?`, `bio?`, `instagramHandle?` (**único**, ver Behavior), `tiktokHandle?`,
-`niches: string[]`, `city?`, `publicProfileEnabled: boolean` (default `false` — `D-06`). Campos
-de cache de Instagram (`followersCount`, `igEngagementRate`, `igFetchStatus`, etc.) são
-**lidos** pelo perfil mas pertencem à capacidade `instagram-sync`.
+`niches: string[]`, `city?`, `phone?`, `publicProfileEnabled: boolean` (default `false` —
+`D-06`). Campos de cache de Instagram
+(`followersCount`, `igEngagementRate`, `igFetchStatus`, etc.) são **lidos** pelo perfil mas
+pertencem à capacidade `instagram-sync`.
 
-`phone?` também existe no modelo, mas **este fluxo não o lê nem o escreve** — nem o cadastro
-(`POST /auth/register/influencer`) nem `GET`/`PATCH /influencers/me` o incluem. É coletado só
-pela candidatura pública (ver `creator-discovery-and-apply`); uma creator que nunca passou por
-ali não tem telefone e não tem onde preenchê-lo aqui (ver Known Gaps).
+`phone` e `instagramHandle` continuam `String?` **no schema** (contas criadas antes de
+2026-09-02 podem não ter), mas os dois são **obrigatórios no formulário de cadastro** desde essa
+data — a nulidade da coluna é histórico, não escolha de produto. `phone` é editável em
+`PATCH /influencers/me`; `instagramHandle` não (ver Behavior).
+
+`publicProfileEnabled` governa também a saída do **telefone** em `/c/:handle` — é o
+consentimento único de publicar identidade e contato. Ver `public-creator-profile`.
 
 ## Behavior
 - Cadastro cria `User(role=INFLUENCER)` e `Influencer` como uma única operação.
+- **`instagramHandle` e `phone` são obrigatórios no cadastro** (desde 2026-09-02). O handle é a
+  chave de tudo que a creator ganha aqui — media kit vivo, seguidores, engajamento, posts e o
+  perfil público em `/c/:handle`; sem ele a conta nascia sem nada disso e a marca via "Dados do
+  Instagram indisponíveis" pra sempre. O telefone é o contato que a marca usa depois de aprovar
+  (`creator-roster`). O handle continua passando pela verificação de existência no Instagram
+  antes de avançar o passo (`D-19`, ver `instagram-sync`).
+- **Apagar o telefone é permitido**: `PATCH /influencers/me` com `phone: ""` grava `null`. Sem
+  isso, um telefone digitado errado seria impossível de remover. String vazia nunca é
+  persistida — o front decide o que mostrar por `phone == null`.
 - `instagramHandle` é **imutável** por este fluxo de edição de perfil — é a única proteção
   contra a creator quebrar, sem querer, o link público (`/c/:handle`) ou a chave de cache do
   Instagram. Handle é normalizado no cadastro (prefixo `@` removido, minúsculas, sem espaços
@@ -79,10 +92,10 @@ ali não tem telefone e não tem onde preenchê-lo aqui (ver Known Gaps).
 
 | Método | Rota | Guard | Notas |
 |---|---|---|---|
-| POST | `/auth/register/influencer` | público, throttle 5/15min por IP | `email`, `password` (8–72), `name` (≤100), `instagramHandle?` (≤30, normalizado antes de validar), `niches?` (≤20 itens, ≤50 chars cada). Retorna `{ accessToken, user }` + cookie httpOnly de refresh. |
+| POST | `/auth/register/influencer` | público, throttle 5/15min por IP | `email`, `password` (8–72), `name` (≤100), `phone` (≤20, formato de telefone), `instagramHandle` (≤30, normalizado antes de validar, alfabeto do Instagram) — os cinco **obrigatórios** —, `niches?` (≤20 itens, ≤50 chars cada). Retorna `{ accessToken, user }` + cookie httpOnly de refresh. |
 | GET | `/ig/handle/:handle` | público, limite de taxa próprio | Verificação de existência do @ usada pelo cadastro. Contrato pertence a `instagram-sync`, não duplicado aqui. |
 | GET | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Perfil completo + `email` achatado de `user.email`. |
-| PATCH | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Campos: `name`, `bio`, `city`, `avatarUrl`, `niches`, `tiktokHandle`, `publicProfileEnabled`. **`instagramHandle` não é aceito neste endpoint.** Grava só o que foi enviado. Retorna o mesmo shape de `GET /influencers/me`. |
+| PATCH | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Campos: `name`, `bio`, `city`, `avatarUrl`, `niches`, `tiktokHandle`, `phone` (vazio apaga → `null`), `publicProfileEnabled`. **`instagramHandle` não é aceito neste endpoint.** Grava só o que foi enviado. Retorna o mesmo shape de `GET /influencers/me`. |
 
 ## UI Behavior
 - **Cadastro** (`/register/influencer`): 3 passos (Identidade+handle → Acesso → Nichos).
@@ -146,15 +159,14 @@ Verificação do @ no cadastro:
   de alguém ficar preso a um @ errado, mas não fecha o gap: quem trocou de @ no Instagram depois
   de se cadastrar continua sem saída, e o desfecho "indeterminado" ainda deixa passar um erro de
   digitação quando o provedor está fora do ar.
-- **Cadastro sem `instagramHandle` é aceito e não tem como corrigir depois.** O campo é opcional,
-  a conta nasce com status "em busca" e a sincronização não tem o que buscar — a creator aparece
-  pra marca como "dados indisponíveis" permanentemente, pelo mesmo motivo do gap acima. Não é
-  novo e não foi tratado neste desenho; registrado porque ficou visível ao desenhar a verificação.
-- **`phone` não tem tela.** Nem o cadastro nem `PATCH /influencers/me` pedem ou editam telefone
-  (ver Domain) — quem se cadastra direto (sem passar pela candidatura pública) nunca tem
-  telefone registrado, e não há como preenchê-lo depois. Decisão de escopo de 2026-08-31 (ver
-  `creator-discovery-and-apply` → Known Gaps): o pedido era só o formulário de candidatura;
-  estender a este fluxo é mudança separada.
+- **Contas criadas antes de 2026-09-02 podem estar sem `instagramHandle`.** O campo passou a ser
+  obrigatório no cadastro nessa data, mas a coluna segue anulável e **não existe fluxo de edição
+  de handle** — quem se cadastrou sem ele continua aparecendo pra marca como "dados
+  indisponíveis", sem saída pela interface. Fechar isso é um fluxo dedicado de troca de handle
+  (ver Out of Scope), não uma extensão do Perfil.
+- **Contas antigas sem `phone` agora têm como preencher** (row "Telefone" no Perfil), mas ninguém
+  as avisa disso — não há prompt, banner ou e-mail. Na prática só preenche quem entrar no Perfil
+  por conta própria.
 
 ## Test Coverage
 - `apps/api/src/modules/creators/application/creators.service.me.spec.ts` — `- [x]`
@@ -211,3 +223,8 @@ Verificação do @ no cadastro:
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD — sem mudança de comportamento; conflito de e-mail
   e de handle viraram critérios de aceitação separados e verificáveis.
+- 2026-09-02 · `instagramHandle` e `phone` viraram **obrigatórios no cadastro** (pedido do Pedro);
+  `phone` ganhou row de edição no Perfil (única saída pras contas antigas sem telefone) e um
+  telefone passou a sair no perfil público junto do `publicProfileEnabled` (ver
+  `public-creator-profile`). Dois Known Gaps de 2026-08-27/31 fechados; sobra o de contas antigas
+  sem handle, que exigiria fluxo de troca de handle.

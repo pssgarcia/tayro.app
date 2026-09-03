@@ -114,6 +114,7 @@ export interface InfluencerProfile {
   avatarUrl: string | null;
   bio: string | null;
   city: string | null;
+  phone: string | null;
   niches: string[];
   instagramHandle: string | null; // read-only neste fluxo
   tiktokHandle: string | null;
@@ -139,6 +140,8 @@ export interface PublicCreatorProfile {
   igEngagementRate: number | null;
   igRecentPosts: IgPost[] | null;
   igFetchStatus: IgFetchStatus | null;
+  /** Só sai quando o perfil está público (o endpoint devolve 404 se não). */
+  phone: string | null;
   completedPartnerships: number;
   results: {
     reach: number | null;
@@ -154,6 +157,8 @@ export interface UpdateInfluencerPayload {
   avatarUrl?: string;
   bio?: string;
   city?: string;
+  /** String vazia apaga o telefone (a API grava null). */
+  phone?: string;
   niches?: string[];
   tiktokHandle?: string;
   publicProfileEnabled?: boolean;
@@ -306,7 +311,7 @@ export interface Campaign {
   niches: string[];
   maxSpots: number;
   offerType: OfferType | null;
-  offerAmount: number | null;      // centavos
+  offerAmount: number | null; // centavos
   offerDeadlineDays: number | null;
   offerDescription: string | null;
   offerCommissionPercent: number | null;
