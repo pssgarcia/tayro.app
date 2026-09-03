@@ -282,6 +282,16 @@ Verificação de existência de @:
   externa é feita.
 
 ## Known Gaps
+- **Em desenvolvimento não existe foto de perfil nem thumbnail que carregue.** O provedor stub
+  (default em dev) devolve `profilePicUrl: null` e thumbnails apontando para um host externo
+  que não está na allow-list do proxy. Efeito: nenhuma superfície do produto mostra foto
+  localmente (0 de 21 creators do banco de dev têm `igProfilePicUrl`), e toda tela cai nas
+  iniciais. **Não é bug de produto** (em produção o provedor real devolve a foto e o proxy a
+  serve), mas gera relato recorrente de "a foto não aparece" e mantém o caminho do proxy e do
+  `IgImage` sem exercício local. Uma saída sem relaxar a allow-list seria o stub devolver um
+  marcador que o proxy reconhece e responde com imagem gerada por nós, sem nenhuma requisição
+  externa. Não decidido.
+
 - **(RESOLVIDO 2026-08-29) O mapeamento `404 → NOT_FOUND` era cru demais e gerava falso
   negativo em produção.** A verificação em prod com tráfego real (que faltava fazer) mostrou
   que `ramondinopro` (~7M seguidores, conta verificada e real) responde `404` — a RapidAPI não

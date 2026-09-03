@@ -49,7 +49,7 @@ um lugar que contradiz a visão:
 |---|---|
 | **Enterprise / grande anunciante** | Quer integração, SSO, contrato, compliance e time de sucesso do cliente. É o jogo do GRIN. Perdemos por preço reverso e por não ter estrutura |
 | **Agência** (por ora) | Precisa de multi-cliente, que o produto não tem. Ver questão aberta acima — pode virar cliente depois de uma decisão explícita, não por acidente |
-| **Marca que quer garimpar creator** | Quem chega buscando "me acha 50 influenciadoras fitness" quer discovery (Modash), não CRM. Nosso valor começa **depois** que a candidata apareceu |
+| **Marca que quer garimpar creator** | Quem chega buscando "me acha 50 influenciadoras fitness" quer discovery (Modash), não gestão pós-candidatura. Nosso valor começa **depois** que a candidata apareceu |
 | **Creator como pagante** | Ela é usuária essencial, nunca fonte de receita. Ver `vision.md`, "nunca" nº 1 |
 | **Marca sem tração nenhuma** | Se não recebe candidatura, o produto fica vazio e a culpa parece nossa. Não temos demand-gen |
 | **Quem quer serviço, não ferramenta** | "Vocês rodam a campanha pra mim?" = agência. Ver `vision.md`, "nunca" nº 8 |
@@ -64,36 +64,45 @@ Quatro, na ordem em que defendemos:
 
 2. **Histórico verificado e portátil** — parcerias entregues ficam registradas e viajam com a
    creator. É o único ativo que cresce com o tempo e não é copiável.
-   `[PARCIALMENTE FALSO HOJE — ver "Dívida de posicionamento" abaixo]`
+   `[FATO — implementado 2026-09-03: a marca informa o resultado, ele entra no perfil público
+   com o nome dela ao lado, e a contagem de parcerias concluídas tem regra pública de cálculo.
+   Ressalva honesta: o número é DECLARADO pela marca, não medido por nós — e a interface diz
+   isso. "Verificado" aqui significa "atestado por quem pagou", não "medido pelo tayro"]`
 
 3. **Transparência bilateral** — a marca devolve resultado pra creator (alcance, cupons usados).
    Inverte a relação padrão, em que a creator entrega e nunca fica sabendo de nada.
-   `[NÃO IMPLEMENTADO — ver abaixo]`
+   `[FATO — implementado 2026-09-03: registrar resultado é devolvê-lo; a creator sempre vê e é
+   avisada por e-mail, e vê também quando a marca escolheu não torná-lo público. Só num
+   sentido: ela não avalia a marca — ver specs/partnership-results → Known Gaps]`
 
 4. **Oferta antes da candidatura** — valor, tipo e prazo definidos e visíveis antes de ela se
    candidatar. Mata a negociação constrangedora e o "depois a gente vê".
    `[FATO — implementado, é invariante de domínio]`
 
-### Dívida de posicionamento (importante)
+### Dívida de posicionamento — PAGA em 2026-09-03 (com uma ressalva que fica)
 
-Dos quatro diferenciais, **dois e meio existem em produção**.
+Até 2026-09-03 este bloco dizia que dos quatro diferenciais só **dois e meio** existiam em
+produção: `PartnershipResult` estava no banco e nenhum serviço escrevia nele, então os
+diferenciais **2 e 3** eram promessa de pitch. `[FATO — era verdade de 2026-08-06 a
+2026-09-03]`
 
-O modelo `PartnershipResult` (alcance, impressões, cupons usados) existe no banco, mas
-**nenhum serviço escreve nele** — não há tela pra marca registrar resultado nem pra creator ver.
-`[FATO — verificado em 2026-08-06: PartnershipResult aparece só no schema.prisma e num count;
-não existe módulo, controller ou service que crie um registro]`
+Os quatro existem em produção agora. `D-D` foi decidida (`D-21`) e a capacidade foi construída
+— ver `specs/partnership-results`.
 
-Consequência direta: os diferenciais **2 e 3** são hoje promessa de pitch, não produto.
-"Histórico verificado" sem resultado registrado é só uma contagem de candidaturas aprovadas.
+**A ressalva que não some, e que precisa ser dita do mesmo jeito numa conversa de venda:** o
+número de alcance é **informado pela marca**, não medido pelo tayro. "Histórico verificado"
+significa *atestado por quem pagou* — o que já é mais do que print de story, e é o máximo que
+se pode afirmar sem a API oficial do Instagram. Vender isso como métrica auditada seria
+exatamente o que a `vision.md` nº 5 proíbe, e a própria interface do produto não permite
+(todo número aparece com "informado por <marca>" ao lado).
 
-Isso não é bug, é **a maior lacuna entre o que a gente diz que é e o que a gente é**. Está no
-`roadmap.md` como candidato número 1 — e qualquer feature nova deveria justificar por que vem
-antes disso.
+**O que continua não medido:** zero marcas reais usaram a capacidade. Que a marca *queira*
+informar resultado é hipótese — a mais importante a testar junto do item #0 do `roadmap.md`.
 
 ## Posicionamento em uma frase
 
 > Pra marca pequena que já recebe candidatura de creator e decide na mão:
-> o TAYRO é o CRM que mostra o Instagram real de cada candidata do lado do botão de aprovar,
+> o TAYRO é a plataforma que mostra o Instagram real de cada candidata do lado do botão de aprovar,
 > e transforma cada parceria fechada em histórico verificado — pra ela e pra creator.
 
 `[HIPÓTESE]` — nunca foi dita pra um cliente real. Testar nas primeiras 5 entrevistas: se a

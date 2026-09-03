@@ -49,6 +49,19 @@ export const rewardStatusWord: Record<RewardStatus, string> = {
 };
 
 /**
+ * Estado do resultado de uma parceria, da ótica da MARCA: ou ela já informou
+ * o resultado, ou ainda deve. Não é um enum do banco — é derivado da presença
+ * do registro (`result === null`). Mora aqui porque vocabulário de status é
+ * fonte única neste projeto, ao lado dos outros cinco.
+ */
+export type PartnershipResultState = 'PENDING' | 'REGISTERED';
+
+export const partnershipResultWord: Record<PartnershipResultState, string> = {
+  PENDING: 'A informar',
+  REGISTERED: 'Informado',
+};
+
+/**
  * O MESMO status de recompensa, dito da ótica da creator. Não é drift de
  * vocabulário: pra marca `PENDING` é trabalho que ela ainda não fez ("Pendente")
  * e `ISSUED` é trabalho feito ("Emitida"); pra creator os dois são espera, e o
@@ -80,7 +93,7 @@ export const INSTAGRAM_HANDLE_FORMAT = /^[a-zA-Z0-9_.]{1,30}$/;
  * creator e edição de perfil. Espelha `shared/validation/phone.ts` na API.
  */
 export const PHONE_FORMAT = /^[0-9()+\-\s]{8,20}$/;
-export const PHONE_FORMAT_MESSAGE = 'Telefone inválido — use apenas números, espaços, ( ) - ou +';
+export const PHONE_FORMAT_MESSAGE = 'Telefone inválido: use apenas números, espaços, ( ) - ou +';
 
 /** 8200 → "8.2k" | 1500000 → "1.5M" | 800 → "800" */
 export function formatNumber(n: number): string {

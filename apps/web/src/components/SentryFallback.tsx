@@ -13,7 +13,7 @@ export default function SentryFallback({ onReset }: SentryFallbackProps) {
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center">
       <h1 className="text-lg font-semibold text-foreground">Algo quebrou nesta tela.</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        O erro foi registrado. Tenta recarregar — se continuar, volta daqui a pouco.
+        O erro foi registrado. Tenta recarregar. Se continuar, volta daqui a pouco.
       </p>
       <button
         type="button"

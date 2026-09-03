@@ -214,4 +214,13 @@ describe('ProfilePage — seção Conta', () => {
 
     expect(saveButton).toBeDisabled();
   });
+  // Mesmo defeito que a placa da creator tinha: sem logo, um retângulo cinza
+  // vazio em vez das iniciais que o resto do produto mostra.
+  it('sem logo, a placa mostra as iniciais da marca', () => {
+    mockHooks({ data: { ...baseProfile, logoUrl: null } });
+    renderPage();
+
+    expect(screen.getByText('MF')).toBeInTheDocument();
+    expect(document.querySelector('img')).toBeNull();
+  });
 });

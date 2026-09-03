@@ -135,13 +135,28 @@ describe('LandingPage', () => {
     expect(texto).not.toMatch(/transpar[êe]ncia bilateral/i);
   });
 
-  it('sustenta a página nos 3 diferenciais que existem em produção', () => {
+  it('sustenta a página nos 4 diferenciais que existem em produção', () => {
     renderAt();
     const texto = (document.body.textContent ?? '').toLowerCase();
 
     expect(texto).toContain('instagram real'); // media kit vivo
     expect(texto).toContain('oferta já definida'); // oferta antes da candidatura
     expect(texto).toContain('sem precisar criar conta'); // candidatura sem conta prévia
+    expect(texto).toContain('histórico'); // histórico + transparência bilateral (2026-09-03)
+  });
+
+  // Os números do resultado são DIGITADOS pela marca, nunca medidos pelo
+  // tayro (`vision.md` nº5, `positioning.md` nº2). A ressalva mora dentro da
+  // aba Resultado (só existe depois de clicar nela), não é promessa de topo.
+  it('a aba Resultado diz que o número é informado pela marca, não medido pelo tayro', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    await user.click(screen.getByRole('button', { name: /^resultado$/i }));
+    const texto = (document.body.textContent ?? '').toLowerCase();
+
+    expect(texto).toMatch(/informad[ao]s? pel[ao] marca/);
+    expect(texto).toMatch(/n[ãa]o mede/);
   });
 
   // O mock do redesign trazia "ALINHAMENTO DE MARCA — 94%" em destaque no herói.
@@ -206,8 +221,12 @@ describe('LandingPage', () => {
     expect(screen.getByText(/se candidata pelo link/i)).toBeInTheDocument();
     expect(screen.getByText(/decide com o instagram da creator do lado/i)).toBeInTheDocument();
     expect(screen.getByText(/envia o conteúdo combinado/i)).toBeInTheDocument();
-    // O ciclo FECHA: o conteúdo volta pra marca.
     expect(screen.getByText(/recebe e revisa o conteúdo/i)).toBeInTheDocument();
+    // O ciclo FECHA de volta na creator: ela recebe o resultado, não só a
+    // marca recebendo o conteúdo. É a transparência bilateral do
+    // `positioning.md` nº3 — sem isto o ciclo conta só metade da história.
+    expect(screen.getByText(/informa o resultado da parceria/i)).toBeInTheDocument();
+    expect(screen.getByText(/vê o resultado no histórico do seu perfil/i)).toBeInTheDocument();
   });
 
   // O lado da creator não pode virar promessa de marketing. São os "nunca" do
@@ -272,6 +291,31 @@ describe('LandingPage', () => {
 
     await user.click(screen.getByRole('button', { name: /^conteúdos$/i }));
     expect(screen.getByText(new RegExp(primeira.entrega.legenda, 'i'))).toBeInTheDocument();
+  });
+
+  // A aba Resultado é o que fecha os diferenciais nº2/nº3: aprovar abre a
+  // parceria "a informar", e informar preenche os números de exemplo.
+  it('aprovar abre a parceria também na aba Resultado, como "a informar"', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    const primeira = DEMO_CREATORS[0];
+    await user.click(aprovarNaPlaca());
+
+    await user.click(screen.getByRole('button', { name: /^resultado$/i }));
+
+    // Escopado pelo botão "Informar resultado" (só existe nesta aba) em vez
+    // do nome: o nome da creator também aparece em "os dois lados", que fica
+    // sempre no DOM. `ativos` preserva a ordem de DEMO_CREATORS, então o
+    // primeiro bloco é o da creator que acabamos de aprovar.
+    const bloco = screen
+      .getAllByRole('button', { name: /informar resultado/i })[0]
+      .closest('li') as HTMLElement;
+    expect(within(bloco).getByText(primeira.nome)).toBeInTheDocument();
+    expect(within(bloco).getByText(/a informar/i)).toBeInTheDocument();
+
+    await user.click(within(bloco).getByRole('button', { name: /informar resultado/i }));
+    expect(within(bloco).getByText(new RegExp(primeira.resultado.nota, 'i'))).toBeInTheDocument();
   });
 
   it('a recompensa avança pelo mesmo caminho do produto: pendente → emitida → entregue', async () => {

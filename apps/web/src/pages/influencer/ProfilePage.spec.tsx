@@ -17,6 +17,7 @@ const baseProfile: InfluencerProfile = {
   name: 'Ana Silva',
   email: 'ana@exemplo.com',
   avatarUrl: null,
+  igProfilePicUrl: null,
   bio: 'Treino funcional.',
   city: 'Belo Horizonte',
   phone: null,
@@ -181,11 +182,14 @@ describe('Creator ProfilePage', () => {
   // aprovar (specs/creator-roster). Quem se cadastrou antes de 2026-09-02 tem
   // o campo vazio, e esta é a única superfície onde dá pra preencher.
 
+  // Desde 2026-09-03 o telefone aparece em DUAS superfícies (a prévia da placa
+  // e esta linha), então a consulta tem que dizer onde está olhando.
   it('mostra o telefone salvo na row "Telefone"', () => {
     mockHooks({ data: { ...baseProfile, phone: '(11) 91234-5678' } });
     renderPage();
 
-    expect(screen.getByText('(11) 91234-5678')).toBeInTheDocument();
+    const row = screen.getByRole('button', { name: /telefone/i });
+    expect(within(row).getByText('(11) 91234-5678')).toBeInTheDocument();
   });
 
   it('salva o telefone editado na row', async () => {
@@ -328,5 +332,68 @@ describe('Creator ProfilePage — link do perfil público', () => {
 
     expect(screen.queryByRole('link', { name: /\/c\//i })).not.toBeInTheDocument();
     expect(screen.getByText(/adicione seu @ do instagram/i)).toBeInTheDocument();
+  });
+  // ─── A placa promete "é exatamente isso que a marca vê" ───────────────────
+  // Até 2026-09-03 ela mentia em dois pontos: ignorava a foto do Instagram (só
+  // olhava o `avatarUrl` manual, vazio em 21 das 21 creators do banco de dev) e
+  // não mostrava o telefone, que a marca lê como link tel: na Fila.
+
+  describe('placa de preview', () => {
+    it('mostra a foto do Instagram pelo proxy, nunca a URL da CDN direto', () => {
+      mockHooks({
+        data: {
+          ...baseProfile,
+          igProfilePicUrl: 'https://scontent.cdninstagram.com/foto.jpg',
+        },
+      });
+      renderPage();
+
+      const foto = screen.getByRole('presentation', { hidden: true });
+      expect(foto).toHaveAttribute('src', '/api/v1/ig/avatar/inf-1');
+    });
+
+    it('sem foto nenhuma, cai nas iniciais em vez de um quadrado vazio', () => {
+      mockHooks({ data: { ...baseProfile, igProfilePicUrl: null, avatarUrl: null } });
+      renderPage();
+
+      expect(screen.getByText('AS')).toBeInTheDocument();
+      expect(document.querySelector('img')).toBeNull();
+    });
+
+    it('a foto do Instagram vence o avatarUrl manual, como no resto do produto', () => {
+      mockHooks({
+        data: {
+          ...baseProfile,
+          igProfilePicUrl: 'https://scontent.cdninstagram.com/foto.jpg',
+          avatarUrl: 'https://exemplo.com/manual.jpg',
+        },
+      });
+      renderPage();
+
+      expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
+        'src',
+        '/api/v1/ig/avatar/inf-1',
+      );
+    });
+
+    it('mostra o telefone que a marca vê', () => {
+      mockHooks({ data: { ...baseProfile, phone: '(11) 91234-5678' } });
+      renderPage();
+
+      const placa = within(
+        screen.getByRole('region', { name: 'Prévia do que a marca vê' }),
+      );
+      expect(placa.getByText('(11) 91234-5678')).toBeInTheDocument();
+    });
+
+    it('sem telefone, diz o que a marca lê: "Telefone não informado"', () => {
+      mockHooks({ data: { ...baseProfile, phone: null } });
+      renderPage();
+
+      const placa = within(
+        screen.getByRole('region', { name: 'Prévia do que a marca vê' }),
+      );
+      expect(placa.getByText('Telefone não informado')).toBeInTheDocument();
+    });
   });
 });

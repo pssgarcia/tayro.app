@@ -10,6 +10,7 @@ import CampaignFilaTab from './CampaignFilaTab';
 import CampaignOverviewTab from './CampaignOverviewTab';
 import CampaignContentTab from './CampaignContentTab';
 import CampaignRewardsTab from './CampaignRewardsTab';
+import CampaignResultsTab from './CampaignResultsTab';
 import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
@@ -19,12 +20,18 @@ import { cn } from '../../lib/utils';
 // Renomeadas no redesign 2a: Candidaturas→Fila, Visão Geral→Briefing,
 // Conteúdos→Entregas, Recompensas→Pagamento. Só a Fila muda de comportamento
 // nesse passo — as outras três mantêm o conteúdo atual, só o rótulo muda.
+//
+// "Resultado" entrou por último e fecha o ciclo na ordem em que ele acontece:
+// escolher (Fila) → combinar (Briefing) → receber (Entregas) → pagar
+// (Pagamento) → informar o que deu (Resultado). O `KineticTabs` já rola na
+// horizontal, que é o que faz 5 rótulos em mono caberem em 360px.
 
 const TABS = [
   { id: 'queue', label: 'Fila' },
   { id: 'briefing', label: 'Briefing' },
   { id: 'content', label: 'Entregas' },
   { id: 'payment', label: 'Pagamento' },
+  { id: 'results', label: 'Resultado' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -315,6 +322,7 @@ export default function CampaignDetailPage() {
         )}
         {activeTab === 'content' && <CampaignContentTab campaignId={campaignId} />}
         {activeTab === 'payment' && <CampaignRewardsTab campaignId={campaignId} />}
+        {activeTab === 'results' && <CampaignResultsTab campaignId={campaignId} />}
       </div>
 
       {openModal === 'publish' && (

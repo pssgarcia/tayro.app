@@ -21,7 +21,7 @@ export class PublicApplyDto {
   @MaxLength(30)
   @Matches(INSTAGRAM_HANDLE_FORMAT, {
     message:
-      'Handle inválido — sem @, apenas letras, números, pontos e underscores',
+      'Handle inválido: sem @, apenas letras, números, pontos e underscores',
   })
   @Transform(({ value }) =>
     (value as string).replace(/^@+/, '').toLowerCase().trim(),

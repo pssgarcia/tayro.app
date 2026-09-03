@@ -95,7 +95,7 @@ export class ApplicationsController {
   @Roles('BRAND')
   @Throttle({ default: { limit: 3, ttl: 300_000 } }) // 3 chamadas por 5 min por IP
   @ApiOperation({
-    summary: 'Atualizar dados de IG da creator — sujeito a cooldown (Brand)',
+    summary: 'Atualizar dados de IG da creator, sujeito a cooldown (Brand)',
   })
   refreshIg(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.applicationsService.refreshInfluencerIg(id, user.id);

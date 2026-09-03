@@ -209,4 +209,79 @@ describe('PublicCreatorProfilePage', () => {
 
     expect(screen.getByText('AF')).toBeInTheDocument();
   });
+  // ─── Histórico de parcerias (diferencial nº 2) ────────────────────────────
+  // Até esta mudança o `results[]` chegava na resposta e a página NUNCA o
+  // renderizava — a vitrine do histórico não existia.
+
+  describe('histórico de parcerias', () => {
+    const parceria = {
+      reach: 12400,
+      impressions: null,
+      couponsUsed: 37,
+      note: 'Melhor entrega da campanha.',
+      createdAt: '2026-09-01T10:00:00.000Z',
+      brandName: 'Lilo Suplementos',
+      campaignTitle: 'Campanha de Verão',
+    };
+
+    it('mostra a parceria com marca, campanha, números e nota', () => {
+      mockProfile({ data: makeProfile({ results: [parceria] }) });
+      renderPage();
+
+      const secao = screen.getByRole('region', { name: /histórico de parcerias/i });
+      expect(secao).toBeInTheDocument();
+      expect(screen.getByText('Lilo Suplementos')).toBeInTheDocument();
+      expect(screen.getByText('Campanha de Verão')).toBeInTheDocument();
+      expect(screen.getByText('Alcance')).toBeInTheDocument();
+      expect(screen.getByText('12,4')).toBeInTheDocument();
+      expect(screen.getByText('Melhor entrega da campanha.')).toBeInTheDocument();
+    });
+
+    // A regra do `vision.md` nº 5: número no perfil não pode parecer medido
+    // por nós. Toda parceria diz quem informou.
+    it('atribui o número a quem o informou', () => {
+      mockProfile({ data: makeProfile({ results: [parceria] }) });
+      renderPage();
+
+      expect(
+        screen.getByText(/informado por lilo suplementos em/i),
+      ).toBeInTheDocument();
+    });
+
+    it('não inventa métrica que a marca não informou', () => {
+      mockProfile({ data: makeProfile({ results: [parceria] }) });
+      renderPage();
+
+      expect(screen.queryByText('Impressões')).not.toBeInTheDocument();
+      expect(screen.queryByText('0')).not.toBeInTheDocument();
+    });
+
+    it('sem parceria publicada, a seção não aparece', () => {
+      mockProfile({ data: makeProfile({ results: [] }) });
+      renderPage();
+
+      expect(
+        screen.queryByRole('region', { name: /histórico de parcerias/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    // "Parcerias concluídas" sem regra dizível seria score fabricado.
+    it('explica em público como a contagem de parcerias é calculada', () => {
+      mockProfile({ data: makeProfile({ completedPartnerships: 3 }) });
+      renderPage();
+
+      expect(
+        screen.getByText(/candidatura aprovada com conteúdo aprovado pela marca/i),
+      ).toBeInTheDocument();
+    });
+
+    it('não explica regra nenhuma quando a contagem é zero', () => {
+      mockProfile({ data: makeProfile({ completedPartnerships: 0 }) });
+      renderPage();
+
+      expect(
+        screen.queryByText(/candidatura aprovada com conteúdo aprovado pela marca/i),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

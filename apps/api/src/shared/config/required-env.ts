@@ -48,6 +48,6 @@ export function assertRequiredEnv(
   throw new Error(
     `Variáveis de ambiente obrigatórias ausentes em produção: ${missing.join(', ')}. ` +
       'Elas são lidas durante requisições, então a ausência não apareceria no ' +
-      'boot — apareceria como 500 para o usuário.',
+      'boot, apareceria como 500 para o usuário.',
   );
 }

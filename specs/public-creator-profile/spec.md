@@ -3,12 +3,12 @@ slug: public-creator-profile
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-09-03
 implements:
   - apps/api/src/modules/creators/presentation/creators.controller.ts
   - apps/api/src/modules/creators/application/creators.service.ts
   - apps/web/src/pages/public/PublicCreatorProfilePage.tsx
-related_decisions: [D-06, D-D]
+related_decisions: [D-06, D-21]
 ---
 
 # Perfil público da creator (media kit vivo)
@@ -17,16 +17,17 @@ related_decisions: [D-06, D-D]
 Retrofit — sem processo `/feature` original registrado. Fecha uma promessa quebrada: a tela de
 perfil da creator já anunciava `tayro.app/c/{handle}` como texto antes de a rota existir. É o
 "media kit vivo" que sustenta o diferencial de posicionamento "histórico verificado"
-(`vision.md`), ainda que hoje a parte de resultado de parceria esteja praticamente sem uso real
-(ver Known Gaps).
+(`vision.md`) — e desde 2026-09-03 sustenta de fato: os resultados de parceria passaram a ter
+escritor e a ser renderizados aqui (ver `partnership-results`).
 
 ## Scope
 Leitura pública (sem autenticação) do perfil de uma creator por handle, incluindo identidade,
 métricas de Instagram e histórico de parcerias visível.
 
 ## Out of Scope
-- Registro de resultado de parceria (quem escreve `PartnershipResult`) — não existe hoje, ver
-  Known Gaps.
+- Registro de resultado de parceria (quem escreve, corrige e libera `PartnershipResult`, e o
+  controle da creator sobre cada item) — ver `partnership-results`. Esta spec cobre só a
+  leitura pública.
 - Edição do próprio perfil pela creator — isso é `creator-account`.
 
 **Endereço público:** o domínio nunca é literal no código. Todo endereço que sai do produto —
@@ -54,11 +55,17 @@ creators que preferem não aparecer.
 ### O que a leitura expõe
 Identidade (nome, avatar, bio, nichos, cidade), métricas de Instagram (seguidores, engajamento,
 status da busca, posts recentes) e:
-- **Parcerias concluídas** — contagem de candidaturas aprovadas que têm pelo menos um conteúdo
-  aprovado associado. É uma aproximação calculada a cada leitura, não um status próprio
-  armazenado.
-- **Resultados de parceria** — só os que a marca marcou explicitamente como visíveis para a
-  creator; nunca todos os resultados registrados.
+- **Parcerias concluídas** — contagem de candidaturas aprovadas que tenham pelo menos um
+  conteúdo aprovado **ou** um resultado informado pela marca. É calculada a cada leitura, não um
+  status próprio armazenado. A regra é **dita em texto na própria página** — contagem de
+  reputação sem regra pública de cálculo é o que `vision.md` nº 5 proíbe. `[MUDOU 2026-09-03:
+  antes só contava conteúdo aprovado; a metade nova é o resultado informado, ver
+  partnership-results]`
+- **Resultados de parceria** — só os que têm os DOIS consentimentos: a marca liberou a
+  publicação **e** a creator não escondeu aquele item. Cada um sai com o nome da marca e o
+  título da campanha (número sem autor não é histórico verificável), e sem os flags de
+  consentimento, que são controle e não conteúdo. Ver `partnership-results` pro modelo de
+  visibilidade completo.
 - **Telefone** — sai junto do resto. `publicProfileEnabled` é o consentimento **único** de
   publicar identidade e contato: quem liga o perfil público publica também o telefone, se tiver
   um cadastrado. Um segundo opt-in só pro telefone chegou a ser implementado e foi **removido
@@ -95,12 +102,18 @@ nunca um link quebrado, mesma regra de `creator-roster`.
 - [x] Handle inexistente retorna `404` com mensagem genérica.
 - [x] Handle existente com `publicProfileEnabled=false` retorna `404` com a **mesma** mensagem
       genérica do caso anterior.
-- [x] `results[]` nunca inclui um resultado com `visibleToCreator=false`.
-- [x] `completedPartnerships` conta só candidaturas aprovadas com conteúdo aprovado associado.
+- [x] `results[]` nunca inclui resultado sem consentimento da marca nem resultado que a creator
+      escondeu.
+- [x] `results[]` não expõe os flags de consentimento.
+- [x] Todo resultado publicado diz qual marca o informou.
+- [x] `completedPartnerships` conta candidatura aprovada com conteúdo aprovado **ou** com
+      resultado informado, e conta cada parceria uma única vez.
+- [x] A regra de cálculo de `completedPartnerships` aparece em texto na página, e só quando a
+      contagem é maior que zero.
 - [x] A leitura completa (perfil + parcerias) usa uma única query — sem uma consulta adicional
       por parceria.
-- [ ] O 404 uniforme (inexistente vs. privado) e o filtro de `results[]` têm teste de unidade
-      no nível do serviço — hoje só a performance da query está coberta ali (ver Test Coverage).
+- [x] O 404 uniforme (inexistente vs. privado) e o filtro de `results[]` têm teste de unidade
+      no nível do serviço. `[FECHADO 2026-09-03]`
 
 ## Error Scenarios
 - Handle inexistente → `404`, mensagem genérica.
@@ -112,21 +125,17 @@ nunca um link quebrado, mesma regra de `creator-roster`.
   data o mesmo flag passou a publicá-lo, sem novo aviso a essas creators. Decisão consciente do
   Pedro (ver Change History), não esquecimento. Se algum dia houver política de privacidade
   (`roadmap.md` → LGPD), este é um dos pontos a cobrir.
-- **`PartnershipResult` não tem escritor.** Nenhum código do repositório cria ou atualiza essa
-  tabela — `results[]` na resposta é, hoje, sempre `[]` na prática. "Histórico verificado"
-  (diferencial nº2 do produto) não é entregue de fato por esta capacidade sozinha; falta o
-  fluxo de registro, e isso está bloqueado por `D-D` (ABERTA em `decisions.md`) — ainda não foi
-  decidido o que conta como "verificado" nem quem atesta.
 - **OG tags por creator** (preview rico ao compartilhar o link) não existem — é uma SPA sem
   SSR, `index.html` só tem OG estático/genérico. Sem prioridade definida.
-- **O 404 uniforme e o filtro `visibleToCreator` não têm teste de unidade no serviço.** A
-  cobertura de frontend confirma o comportamento visual (mesma mensagem nos dois casos), mas
-  não prova a regra no nível da API com entradas reais.
+- **Números do histórico não são verificáveis.** São declarados pela marca; a página atribui
+  cada número a ela justamente por isso. Ver `partnership-results` → Known Gaps.
 
 ## Test Coverage
 - `apps/api/src/modules/creators/application/creators.service.race.spec.ts` →
   `describe('getPublicProfile()')` — [x] uma única query para perfil + parcerias (guarda de
-  N+1). [ ] Não cobre o 404 uniforme nem o filtro `visibleToCreator`.
+  N+1); [x] telefone exposto/nulo e perfil privado; [x] filtro dos dois consentimentos, flags
+  não expostos, atribuição à marca; [x] as quatro combinações da regra de contagem e a contagem
+  incluindo resultado não-público; [x] 404 uniforme entre handle inexistente e perfil privado.
 - `apps/web/src/pages/public/PublicCreatorProfilePage.spec.tsx` — cobertura de UI (hook
   mockado): [x] skeleton de carregamento, [x] mensagem idêntica pra inexistente/privado
   (via `isError`), [x] identidade/nichos/bio, [x] link do handle pro Instagram real, [x] os 3
@@ -145,6 +154,12 @@ nunca um link quebrado, mesma regra de `creator-roster`.
   `avatarUrl` são nulos.
 
 ## Change History
+- 2026-09-03 · o histórico de parcerias passou a existir de verdade nesta página: `results[]`
+  ganhou escritor (`partnership-results`), passou a ser renderizado (nunca era) e o filtro
+  virou "marca liberou E creator não escondeu", no lugar do removido `visibleToCreator`. A
+  contagem de parcerias concluídas passou a incluir parceria com resultado informado, e a
+  regra de cálculo virou texto visível na página. Known Gap de "PartnershipResult sem escritor"
+  fechado; o de teste de serviço do 404 uniforme e do filtro, também.
 - 2026-09-02 · Telefone passa a aparecer no perfil público e o CTA do rodapé vira "Falar no
   WhatsApp" quando ele existe. Um opt-in separado (`publicPhoneEnabled`) foi implementado e
   então **removido a pedido do Pedro**, que optou por publicar o telefone junto do

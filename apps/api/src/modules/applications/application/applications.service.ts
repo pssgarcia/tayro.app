@@ -322,7 +322,7 @@ export class ApplicationsService {
       err.code === 'P2025'
     ) {
       return new ConflictException(
-        'Esta candidatura já foi decidida — recarregue para ver o status atual',
+        'Esta candidatura já foi decidida. Recarregue para ver o status atual',
       );
     }
     return err;

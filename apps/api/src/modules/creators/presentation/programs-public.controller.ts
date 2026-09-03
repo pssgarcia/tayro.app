@@ -22,7 +22,7 @@ export class ProgramsPublicController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Candidatura pública à campanha — sem login (Creator)',
+    summary: 'Candidatura pública à campanha: sem login (Creator)',
   })
   applyPublic(@Param('id') campaignId: string, @Body() dto: PublicApplyDto) {
     return this.creatorsService.applyPublic(campaignId, dto);
