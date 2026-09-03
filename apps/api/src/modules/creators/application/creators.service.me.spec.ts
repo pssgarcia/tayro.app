@@ -81,6 +81,26 @@ describe('CreatorsService — perfil (me)', () => {
     expect(result.phone).toBe('(11) 91234-5678');
   });
 
+  // A foto do TAYRO é a do Instagram (regra única em `creatorAvatarSrc` no
+  // front). Sem `igProfilePicUrl` no SELECT, o Perfil da creator não tem como
+  // mostrar a mesma foto que a marca vê na Fila: a placa dele prometia em
+  // texto "é exatamente isso que a marca vê" e mostrava um quadrado vazio.
+  //
+  // A asserção é sobre o SELECT, não sobre o retorno: o mock devolve o objeto
+  // inteiro ignorando o `select`, então um teste que olha o resultado passa
+  // com o campo faltando de verdade. Foi o que aconteceu na 1ª versão deste
+  // teste.
+  it('getMe pede a foto do Instagram e o id que monta a URL do proxy', async () => {
+    prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
+
+    await service.getMe('user-1');
+
+    const select = prisma.influencer.findUnique.mock.calls[0][0]
+      .select as Record<string, unknown>;
+    expect(select.igProfilePicUrl).toBe(true);
+    expect(select.id).toBe(true);
+  });
+
   it('getMe lança Forbidden quando o usuário não tem perfil de influencer', async () => {
     prisma.influencer.findUnique.mockResolvedValue(null);
 

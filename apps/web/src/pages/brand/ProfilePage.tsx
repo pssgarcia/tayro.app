@@ -57,6 +57,14 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
   const watchedWebsite = watch('website');
   const watchedNiches = watch('niches');
 
+  const initials = (watchedName || profile.name || '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+
   const onSubmit = async (values: FormValues) => {
     const payload: UpdateBrandPayload = {
       name: values.name,
@@ -84,8 +92,16 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
       {/* Placa — preview ao vivo do cabeçalho do link público (/apply/:id) */}
       <KineticPlate marks="all" className="max-w-[520px]">
         <div className="flex items-center gap-3.5">
-          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-[#cfcfc8]">
-            {watchedLogo && <img src={watchedLogo} alt="" className="h-full w-full object-cover" />}
+          {/* Sem logo, iniciais em vez de um retângulo cinza vazio: mesmo
+              fallback que o resto do produto usa para creator sem foto. */}
+          <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-[#cfcfc8]">
+            {watchedLogo ? (
+              <img src={watchedLogo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-display text-[19px] font-semibold text-[#6a6a64]">
+                {initials || '?'}
+              </span>
+            )}
           </div>
           <div className="min-w-0">
             <p className="text-xs text-[#6a6a64]">Campanha de</p>

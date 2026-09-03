@@ -43,13 +43,20 @@ Roteiro pronto em `customer-interviews.md`. Custo: ~5 conversas de 30min.
 > Cofundador falando: se você só fizer um item deste roadmap neste mês, faz esse.
 > É o único que muda o que todos os outros deveriam ser.
 
-### 2. Fechar o diferencial nº 2/nº 3 — registro de resultado de parceria
-`PartnershipResult` existe no banco e **nada escreve nele** `[FATO — verificado 2026-08-06]`.
-Sem isso, "histórico verificado" e "transparência bilateral" são slide, não produto — metade
-do que a gente diz que é.
-Escopo mínimo: marca registra resultado ao concluir (alcance, cupons usados, nota) → aparece
-no perfil da creator e pra ela.
-**Depende de `D-D`** (definir o que é "verificado") — decisão antes de código.
+### 2. Fechar o diferencial nº 2/nº 3 — registro de resultado de parceria — `ENTREGUE em 2026-09-03`
+Era o item que dizia: `PartnershipResult` existe no banco e **nada escreve nele**
+`[FATO — verificado 2026-08-06]`; sem isso, "histórico verificado" e "transparência bilateral"
+eram slide, não produto — metade do que a gente diz que é.
+**`D-D` foi decidida pelo Pedro em 2026-09-03** (registrada como `D-21`) e a capacidade foi
+implementada no mesmo dia: a marca informa o resultado numa aba própria do detalhe da campanha,
+a creator **sempre** vê no Registro dela (e é avisada por e-mail), e a vitrine pública de
+`/c/:handle` exige os dois consentimentos. A contagem de "parcerias concluídas" ganhou regra
+pública dita na própria página, e os números aparecem sempre atribuídos à marca que os informou
+— o tayro não mede nada disso. Ver `specs/partnership-results` e `CLAUDE.md` → Feito.
+> **O que isto NÃO mediu:** nenhuma marca real usou. O aprendizado desta entrega só começa com
+> o item #0 rodando — se marca nenhuma informar resultado espontaneamente, o problema é de
+> incentivo, não de tela (gatilho de revisão da `D-21`).
+Sai do AGORA na próxima revisão deste arquivo.
 
 ### 3. E-mail real em produção
 `EMAIL_PROVIDER=stub` significa que **nenhum e-mail chega pra ninguém** hoje: aprovação, recusa,

@@ -5,7 +5,9 @@ import { MemoryRouter } from 'react-router-dom';
 import MyApplicationsPage from './MyApplicationsPage';
 import * as hooks from '../../hooks/useMyApplications';
 import * as submissionHooks from '../../hooks/useMySubmissions';
-import type { MyApplication } from '../../types/api';
+import * as partnershipHooks from '../../hooks/usePartnershipResults';
+import * as profileHooks from '../../hooks/useInfluencerProfile';
+import type { MyApplication, MyPartnershipResult } from '../../types/api';
 
 vi.mock('../../hooks/useMyApplications', () => ({
   useMyApplications: vi.fn(),
@@ -17,6 +19,32 @@ vi.mock('../../hooks/useMySubmissions', () => ({
   useMySubmissions: vi.fn(),
   mySubmissionKeys: { all: ['submissions', 'mine'] },
 }));
+
+vi.mock('../../hooks/usePartnershipResults', () => ({
+  useMyPartnershipResults: vi.fn(),
+  useSetResultVisibility: vi.fn(),
+  partnershipKeys: { mine: ['partnership-results', 'mine'] },
+}));
+
+vi.mock('../../hooks/useInfluencerProfile', () => ({
+  useInfluencerProfile: vi.fn(),
+  influencerProfileKeys: { me: ['influencer', 'profile'] },
+}));
+
+const baseResult: MyPartnershipResult = {
+  id: 'res-1',
+  applicationId: 'app-1',
+  campaignId: 'camp-1',
+  campaignTitle: 'Campanha Verão',
+  brandName: 'Marca Fit',
+  reach: 12400,
+  impressions: null,
+  couponsUsed: 37,
+  note: 'Melhor entrega da campanha.',
+  brandAllowsPublic: true,
+  hiddenByCreator: false,
+  createdAt: '2026-09-01T10:00:00.000Z',
+};
 
 const baseApp: MyApplication = {
   id: 'app-1',
@@ -40,7 +68,14 @@ const baseApp: MyApplication = {
 
 const withdrawMutate = vi.fn();
 
-function mockHooks(apps: MyApplication[] = [], withdrawState: Record<string, unknown> = {}) {
+const setVisibilityMutate = vi.fn();
+
+function mockHooks(
+  apps: MyApplication[] = [],
+  withdrawState: Record<string, unknown> = {},
+  results: MyPartnershipResult[] = [],
+  publicProfileEnabled = true,
+) {
   vi.mocked(hooks.useMyApplications).mockReturnValue({
     data: apps,
     isLoading: false,
@@ -57,6 +92,20 @@ function mockHooks(apps: MyApplication[] = [], withdrawState: Record<string, unk
     data: [],
     isLoading: false,
     isError: false,
+  } as any);
+  vi.mocked(partnershipHooks.useMyPartnershipResults).mockReturnValue({
+    data: results,
+    isLoading: false,
+    isError: false,
+  } as any);
+  vi.mocked(partnershipHooks.useSetResultVisibility).mockReturnValue({
+    mutate: setVisibilityMutate,
+    isPending: false,
+    isError: false,
+  } as any);
+  vi.mocked(profileHooks.useInfluencerProfile).mockReturnValue({
+    data: { publicProfileEnabled },
+    isLoading: false,
   } as any);
 }
 
@@ -217,5 +266,81 @@ describe('MyApplicationsPage', () => {
     // já eram APPROVED).
     expect(screen.queryByText('Campanha Verão')).not.toBeInTheDocument();
     expect(screen.getAllByText('Campanha Inverno')).toHaveLength(2);
+  });
+  // ─── Resultados das parcerias (transparência bilateral) ───────────────────
+
+  describe('resultados das parcerias', () => {
+    it('não ocupa espaço quando nenhuma marca informou resultado', () => {
+      mockHooks([baseApp]);
+      renderPage();
+
+      expect(screen.queryByText(/resultados das parcerias/i)).not.toBeInTheDocument();
+    });
+
+    it('mostra o que a marca informou, com o nome de quem informou', () => {
+      mockHooks([baseApp], {}, [baseResult]);
+      renderPage();
+
+      const secao = within(
+        screen.getByRole('region', { name: /resultados das parcerias/i }),
+      );
+      expect(secao.getByText('Marca Fit')).toBeInTheDocument();
+      expect(secao.getByText('Alcance')).toBeInTheDocument();
+      expect(secao.getByText('12,4')).toBeInTheDocument();
+      expect(secao.getByText('Melhor entrega da campanha.')).toBeInTheDocument();
+      expect(secao.getByText(/informado por marca fit em/i)).toBeInTheDocument();
+    });
+
+    it('a creator vê o resultado mesmo sem a marca ter liberado a vitrine', () => {
+      mockHooks([baseApp], {}, [{ ...baseResult, brandAllowsPublic: false }]);
+      renderPage();
+
+      expect(screen.getByText('12,4')).toBeInTheDocument();
+      // E fica sabendo que existe, mas não é público — os dois lados à vista.
+      expect(
+        screen.getByText(/não liberou este resultado para o seu perfil público/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /ocultar do meu perfil/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('esconde o resultado do próprio perfil', () => {
+      mockHooks([baseApp], {}, [baseResult]);
+      renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: /ocultar do meu perfil/i }));
+
+      expect(setVisibilityMutate).toHaveBeenCalledWith({ id: 'res-1', hidden: true });
+    });
+
+    it('mostra de novo o que estava escondido', () => {
+      mockHooks([baseApp], {}, [{ ...baseResult, hiddenByCreator: true }]);
+      renderPage();
+
+      fireEvent.click(screen.getByRole('button', { name: /mostrar no meu perfil/i }));
+
+      expect(setVisibilityMutate).toHaveBeenCalledWith({ id: 'res-1', hidden: false });
+    });
+
+    // A guarda contra promessa falsa: com o perfil público desligado,
+    // /c/:handle é 404 pra qualquer visitante.
+    it('avisa quando o perfil público está desligado, em vez de prometer vitrine', () => {
+      mockHooks([baseApp], {}, [baseResult], false);
+      renderPage();
+
+      expect(screen.getByText(/seu perfil público está desligado/i)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /ligar no perfil/i })).toHaveAttribute(
+        'href',
+        '/influencer/profile',
+      );
+    });
+
+    it('não avisa nada disso quando o perfil público está ligado', () => {
+      mockHooks([baseApp], {}, [baseResult], true);
+      renderPage();
+
+      expect(screen.queryByText(/seu perfil público está desligado/i)).not.toBeInTheDocument();
+    });
   });
 });

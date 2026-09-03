@@ -79,7 +79,7 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               Ao publicar, o link de candidatura fica ativo na hora e creators já podem se
               inscrever. Depois de publicada a campanha não volta para rascunho e os detalhes não
-              podem mais ser editados — se preferir, publique depois, pelo detalhe da campanha.
+              podem mais ser editados. Se preferir, publique depois, pelo detalhe da campanha.
             </p>
           </div>
           <KineticActions

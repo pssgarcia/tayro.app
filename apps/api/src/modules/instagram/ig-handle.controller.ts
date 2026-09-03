@@ -52,7 +52,7 @@ export class IgHandleController {
 
     if (!INSTAGRAM_HANDLE_FORMAT.test(handle)) {
       throw new BadRequestException(
-        'Handle inválido — sem @, apenas letras, números, pontos e underscores',
+        'Handle inválido: sem @, apenas letras, números, pontos e underscores',
       );
     }
 

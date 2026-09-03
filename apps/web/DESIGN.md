@@ -132,6 +132,10 @@ Onde o 2a é contido e silencioso, o Kinetic é **editorial**: tipografia mais o
 | `StatFigure` | `StatBlock` | Rótulo mono caixa alta **em cima**, número embaixo (o 2a inverte) |
 | `KineticRow` | linhas soltas | A linha é um **alvo**: selecionada ganha `kinetic-dark` + borda `kinetic-gray` |
 | `KineticSegments` | `SegmentBar` | Segmentos retos, sem `rounded-sm` |
+| `KineticFact` | — | Irmão do `StatFigure` pra valor em **texto** ("30 dias após aprovação"), que não ganha escala de display |
+| `KineticTabs` | `TabsUnderline` | Rótulo mono caixa alta, `overflow-x-auto` — 4+ abas em mono não cabem em 360px |
+| `KineticField` / `KineticTextarea` | `PlateField` / `PlateTextarea` | Rótulo mono caixa alta; o textarea cresce sozinho (`scrollHeight`) e encaminha ref |
+| `KineticToggle` | `Toggle` local do Perfil | `role="switch"` + `aria-checked` (estado por cor sozinho é o bug de a11y que o `NicheSelector` já teve) e variante `tone="plate"` pro consentimento sobre a placa clara |
 
 ### As 6 regras
 
@@ -142,13 +146,17 @@ Onde o 2a é contido e silencioso, o Kinetic é **editorial**: tipografia mais o
 5. **Foto p&b sobre a placa clara** — fora dela (hero do Story mobile, grade do feed), a cores. **Exceção: a landing (`/`) usa foto COLORIDA também sobre a placa** — decisão do Pedro em 2026-08-29, vale só ali. Nas telas do produto a regra continua valendo.
 6. **Tudo em português** — inglês sobrou só em nome de token e de variável. Ver `CLAUDE.md` → Design system.
 
+### Sem travessão
+
+O TAYRO não usa travessão (—) em texto que o usuário lê. Em copy nova, use ponto, dois-pontos, vírgula ou parênteses. Vale pra tela, mensagem de erro da API e e-mail. `apps/web/src/copy-sem-travessao.spec.ts` falha o CI se voltar (o gêmeo dele vive na API). Duas exceções, escritas no teste: comentário de código e o `—` sozinho que marca valor vazio (oferta em branco, taxa sem candidatura).
+
 ### Caixa alta vem do CSS, não do texto
 
 Rótulo mono é escrito em minúsculas no JSX e sobe pra caixa alta com `uppercase`. O texto no DOM continua sendo o que a pessoa escreveu — busca por texto em teste e leitor de tela não mudam. Não escrever `"CONTEÚDOS A REVISAR"` no JSX.
 
 ### Status: um vocabulário só
 
-Os quatro mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignStatusWord`, `contentStatusWord`, `rewardStatusWord`) e são a fonte única. A migração unificou o vocabulário: onde o 2a dizia "Análise"/"Fechada" para candidatura, o Kinetic diz **"Pendente"/"Aprovada"** — as mesmas palavras que a marca já lê na Fila. Conteúdo concorda no masculino ("Aprovado"); candidatura, campanha e recompensa no feminino. A exceção deliberada é o `creatorRewardStatusWord`: o MESMO status de recompensa dito da ótica de quem espera ("A receber"/"A caminho") em vez da de quem paga ("Pendente"/"Emitida"). Não unificar — são perspectivas, não drift. Recompensa é o único domínio com **dois** estados acionáveis (`PENDING` pede emitir, `ISSUED` pede confirmar entrega) — os dois saem em lime.
+Os mapas vivem em `utils/format.ts` (`applicationStatusWord`, `campaignStatusWord`, `contentStatusWord`, `rewardStatusWord`, `creatorRewardStatusWord`, `partnershipResultWord`) e são a fonte única. `partnershipResultWord` é o único **derivado**, não vindo de enum do banco: a parceria tem resultado informado ou não ("Informado"/"A informar"). A migração unificou o vocabulário: onde o 2a dizia "Análise"/"Fechada" para candidatura, o Kinetic diz **"Pendente"/"Aprovada"** — as mesmas palavras que a marca já lê na Fila. Conteúdo concorda no masculino ("Aprovado"); candidatura, campanha e recompensa no feminino. A exceção deliberada é o `creatorRewardStatusWord`: o MESMO status de recompensa dito da ótica de quem espera ("A receber"/"A caminho") em vez da de quem paga ("Pendente"/"Emitida"). Não unificar — são perspectivas, não drift. Recompensa é o único domínio com **dois** estados acionáveis (`PENDING` pede emitir, `ISSUED` pede confirmar entrega) — os dois saem em lime.
 
 ### A landing tem componentes próprios
 

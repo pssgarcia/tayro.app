@@ -26,7 +26,7 @@ const MEDIA_LABELS: Record<MediaType, string> = {
 
 const schema = z.object({
   applicationId: z.string().uuid('Selecione uma candidatura aprovada'),
-  mediaUrl: z.string().url('URL inválida — inclua https://').max(2048, 'URL muito longa'),
+  mediaUrl: z.string().url('URL inválida: inclua https://').max(2048, 'URL muito longa'),
   mediaType: z.enum(['IMAGE', 'VIDEO', 'REEL', 'STORY'] as const),
   caption: z.string().max(2200, 'Máximo 2200 caracteres').optional(),
 });
@@ -157,7 +157,7 @@ function SubmitModal({
                   <option value="">Selecione…</option>
                   {approvedApps.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.campaign.title} — {a.campaign.brand.name}
+                      {a.campaign.title} · {a.campaign.brand.name}
                     </option>
                   ))}
                 </PlateSelectField>

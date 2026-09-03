@@ -45,7 +45,7 @@ const schema = z.object({
         .string()
         .min(1, '@ do Instagram obrigatório')
         .max(30, 'Máximo 30 caracteres')
-        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido — só letras, números, . e _'),
+        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido: só letras, números, . e _'),
     ),
   niches: z.array(z.string()),
 });
@@ -151,7 +151,7 @@ export default function RegisterInfluencerPage() {
         if (outcome === 'NOT_FOUND') {
           setError('instagramHandle', {
             type: 'manual',
-            message: 'Usuário não encontrado no Instagram — confira o @',
+            message: 'Usuário não encontrado no Instagram. Confira o @',
           });
           return;
         }
@@ -172,7 +172,7 @@ export default function RegisterInfluencerPage() {
       : instagramHandleAlreadyChecked && handleCheck.result === 'FOUND'
         ? 'Perfil encontrado no Instagram'
         : instagramHandleAlreadyChecked && handleCheck.result === 'UNKNOWN'
-          ? 'Não deu para confirmar agora — você pode continuar'
+          ? 'Não deu para confirmar agora. Você pode continuar'
           : undefined;
   const instagramHandleHintTone =
     instagramHandleAlreadyChecked && handleCheck.result === 'FOUND' ? 'success' : 'muted';

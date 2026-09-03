@@ -90,7 +90,7 @@ export class RewardsService {
 
     if (reward.status !== RewardStatus.PENDING) {
       throw new BadRequestException(
-        'Only pending rewards can be removed — an issued reward was already announced to the creator',
+        'Only pending rewards can be removed. An issued reward was already announced to the creator',
       );
     }
 

@@ -3,7 +3,7 @@ slug: applications-pipeline
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-31
+last_updated: 2026-09-03
 implements:
   - apps/api/prisma/schema.prisma (model Application, enum ApplicationStatus)
   - apps/api/src/modules/applications/presentation/applications.controller.ts
@@ -32,8 +32,9 @@ manual dos dados de Instagram da creator a partir de uma candidatura.
   que a alimenta.
 - Comportamento do provider de Instagram (retry, staleness, fallback) — ver `instagram-sync`.
 - Ciclo de vida da própria `Campaign` (`DRAFT`/`ACTIVE`/`CLOSED`) — ver `campaign-lifecycle`.
-- Registro de resultado da parceria (`PartnershipResult`) — ver "Known Gaps": existe no schema
-  mas nenhum código deste módulo (nem de nenhum outro) escreve nele.
+- Registro de resultado da parceria (`PartnershipResult`, relação 1:1 com `Application`) — ver
+  `partnership-results`. Esta spec cobre a candidatura; o resultado é capacidade própria desde
+  2026-09-03.
 
 ## Domain
 - `Application` liga `Campaign` + `Influencer`. Campos: `message` (opcional, mensagem da
@@ -143,9 +144,13 @@ reaplicar) em vez de perguntar "tem certeza?", e fica aberto em caso de erro pra
   `decisions.md` — é mitigado só com um aviso forte no `WithdrawModal` antes da ação, não com
   uma forma de desfazer depois. Tratar como decisão pendente, não como comportamento definitivo
   aceito.
-- **`PartnershipResult`** (relação 1:1 opcional com `Application` no schema) não é escrito por
-  nenhum código do produto — faz parte do escopo ainda não implementado de "histórico
-  verificado" (`decisions.md` D-D, `ABERTA`).
+- ~~`PartnershipResult` não é escrito por nenhum código do produto~~ — **fechado em
+  2026-09-03**: a capacidade existe (`partnership-results`), implementando `D-21`.
+
+## Change History
+- 2026-09-03 · `PartnershipResult` deixou de ser modelo sem escritor: virou a capacidade
+  `partnership-results`, ancorada na candidatura aprovada. Nada do ciclo de vida da candidatura
+  mudou — só o Known Gap fechou.
 
 ## Test Coverage
 Arquivo: `apps/api/src/modules/applications/application/applications.service.race.spec.ts`.

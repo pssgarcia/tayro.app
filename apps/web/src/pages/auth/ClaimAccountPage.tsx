@@ -128,7 +128,7 @@ export default function ClaimAccountPage() {
 
   if (!token) {
     return (
-      <InvalidLinkMessage message="Link inválido — falta o token de acesso. Confira o link do e-mail." />
+      <InvalidLinkMessage message="Link inválido: falta o token de acesso. Confira o link do e-mail." />
     );
   }
 

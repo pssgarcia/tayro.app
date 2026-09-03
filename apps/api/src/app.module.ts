@@ -8,6 +8,7 @@ import { CampaignsModule } from './modules/campaigns/presentation/campaigns.modu
 import { ApplicationsModule } from './modules/applications/presentation/applications.module';
 import { ContentModule } from './modules/content/presentation/content.module';
 import { RewardsModule } from './modules/rewards/presentation/rewards.module';
+import { PartnershipResultsModule } from './modules/partnerships/presentation/partnership-results.module';
 import { CreatorsModule } from './modules/creators/presentation/creators.module';
 import { DashboardModule } from './modules/dashboard/presentation/dashboard.module';
 import { BrandsModule } from './modules/brands/presentation/brands.module';
@@ -35,6 +36,7 @@ import { BrandsModule } from './modules/brands/presentation/brands.module';
     ApplicationsModule,
     ContentModule,
     RewardsModule,
+    PartnershipResultsModule,
     CreatorsModule,
     DashboardModule,
     BrandsModule,

@@ -315,7 +315,7 @@ function RemoveRewardModal({
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O registro de <span className="font-medium text-black">{reward.value}</span> para{' '}
               <span className="font-medium text-black">{reward.influencer.name}</span> some pra
-              sempre, e some também da lista de recompensas dela. Não dá pra desfazer — mas você
+              sempre, e some também da lista de recompensas dela. Não dá pra desfazer, mas você
               pode registrar de novo.
             </p>
             {isError && (

@@ -94,7 +94,7 @@ consentimento único de publicar identidade e contato. Ver `public-creator-profi
 |---|---|---|---|
 | POST | `/auth/register/influencer` | público, throttle 5/15min por IP | `email`, `password` (8–72), `name` (≤100), `phone` (≤20, formato de telefone), `instagramHandle` (≤30, normalizado antes de validar, alfabeto do Instagram) — os cinco **obrigatórios** —, `niches?` (≤20 itens, ≤50 chars cada). Retorna `{ accessToken, user }` + cookie httpOnly de refresh. |
 | GET | `/ig/handle/:handle` | público, limite de taxa próprio | Verificação de existência do @ usada pelo cadastro. Contrato pertence a `instagram-sync`, não duplicado aqui. |
-| GET | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Perfil completo + `email` achatado de `user.email`. |
+| GET | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Perfil completo + `email` achatado de `user.email`. Inclui `igProfilePicUrl` e `id`, que são o que permite a tela mostrar a MESMA foto que a marca vê (a foto sai pelo proxy, nunca pela URL da CDN). |
 | PATCH | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Campos: `name`, `bio`, `city`, `avatarUrl`, `niches`, `tiktokHandle`, `phone` (vazio apaga → `null`), `publicProfileEnabled`. **`instagramHandle` não é aceito neste endpoint.** Grava só o que foi enviado. Retorna o mesmo shape de `GET /influencers/me`. |
 
 ## UI Behavior
@@ -112,8 +112,15 @@ consentimento único de publicar identidade e contato. Ver `public-creator-profi
     neutro e deixa seguir; "existe" mostra confirmação discreta, sem seguidores nem foto. Campo
     vazio avança sem verificar nada.
   - Digitar não dispara verificação, e o mesmo @ não é verificado duas vezes na mesma tela.
-- **Perfil** (`/influencer/profile`): placa de "preview ao vivo" (nome, avatar, `@handle`
-  somente leitura com link externo, seguidores/engajamento quando disponíveis, bio, nichos) +
+- **Perfil** (`/influencer/profile`): placa de "preview ao vivo" que promete em texto "é
+  exatamente isso que a marca vê", e por isso mostra o mesmo conjunto que a marca lê na Fila e
+  em `/brand/creators`: **foto do Instagram** (servida pelo proxy; `avatarUrl` manual é só
+  fallback; sem nenhuma das duas, iniciais do nome, nunca um retângulo vazio), nome, `@handle`
+  somente leitura com link externo, **telefone** (ou "Telefone não informado", a mesma frase
+  que a marca lê quando falta), seguidores/engajamento quando disponíveis, bio e nichos. A
+  placa é região nomeada ("Prévia do que a marca vê"). `[CORRIGIDO 2026-09-03: a placa
+  ignorava `igProfilePicUrl` e não mostrava telefone, então a promessa era falsa nos dois
+  pontos]` +
   linhas "Editar" por campo (exceto `instagramHandle`) + toggle de perfil público com link de
   compartilhamento ao lado. O link de compartilhamento só aparece quando existe
   `instagramHandle` **e** o perfil está confirmadamente público no servidor (não no estado do
@@ -121,6 +128,12 @@ consentimento único de publicar identidade e contato. Ver `public-creator-profi
   ligado mas ainda não salvo. Botão "Salvar" só habilita quando há alteração pendente.
 
 ## Acceptance Criteria
+- [x] A placa de prévia mostra a foto do Instagram pelo proxy, e nunca a URL da CDN no `src`.
+- [x] Sem foto do Instagram e sem `avatarUrl`, a placa mostra as iniciais do nome.
+- [x] A placa mostra o telefone, e diz "Telefone não informado" quando não há.
+- [x] `GET /influencers/me` pede `igProfilePicUrl` e `id` no `select` (verificado sobre os
+      argumentos da consulta, não sobre o retorno: mock devolve o objeto inteiro e um teste de
+      retorno passaria com o campo faltando).
 - [x] Cadastro com e-mail já em uso retorna `409` com o campo identificado (`email`) e não cria
       `User` nem `Influencer`.
 - [x] Cadastro com `instagramHandle` já em uso retorna `409` com o campo identificado
@@ -199,6 +212,12 @@ Verificação do @ no cadastro:
   `useInstagramHandleCheck` do `PublicApplyPage` (ver `creator-discovery-and-apply`).
 
 ## Change History
+- 2026-09-03 · a prévia do Perfil passou a mostrar a foto do Instagram e o telefone. Antes
+  olhava só o `avatarUrl` (campo manual, vazio em 21 das 21 creators do banco de dev), então
+  era um retângulo cinza para todo mundo, sem nem as iniciais que o resto do produto usa, e o
+  telefone não aparecia em lugar nenhum da placa embora a marca o veja como link `tel:`.
+  `getMe` passou a selecionar `igProfilePicUrl`. A placa virou região nomeada, o que também deu
+  escopo estável aos testes (o telefone agora existe em duas superfícies da mesma tela).
 - 2026-09-02 · row "E-mail" da seção "Conta" (`AccountSection`) virou clicável — ver `email-change`.
 - 2026-09-02 · `ProfilePage.tsx` passou a embutir `AccountSection` (seção "Conta") no lugar do
   antigo bloco só-leitura de e-mail. Trocar senha logada fechado — ver `password-change`.

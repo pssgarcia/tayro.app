@@ -338,5 +338,191 @@ describe('CreatorsService — race conditions', () => {
         NotFoundException,
       );
     });
+    // ─── Histórico de parcerias (D-21, fecha D-D) ──────────────────────────
+    // A vitrine pública exige DOIS consentimentos: o da marca (`brandAllowsPublic`
+    // — alcance e cupons são dado comercial dela) e o da creator, que pode
+    // esconder item a item (`hiddenByCreator`) sem desligar o perfil inteiro.
+    // Faltando qualquer um, o resultado não aparece — sobra a contagem.
+
+    const makeResult = (overrides: Record<string, unknown> = {}) => ({
+      id: 'res-1',
+      reach: 12400,
+      impressions: null,
+      couponsUsed: 37,
+      note: 'Melhor entrega da campanha.',
+      brandAllowsPublic: true,
+      hiddenByCreator: false,
+      createdAt: new Date('2026-09-01'),
+      ...overrides,
+    });
+
+    const makePartnership = (overrides: Record<string, unknown> = {}) => ({
+      result: null,
+      submissions: [],
+      campaign: {
+        title: 'Campanha de Verão',
+        brand: { name: 'Lilo Suplementos' },
+      },
+      ...overrides,
+    });
+
+    it('publica o resultado com a marca e a campanha que o atestaram', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [makePartnership({ result: makeResult() })],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.results).toEqual([
+        expect.objectContaining({
+          reach: 12400,
+          couponsUsed: 37,
+          note: 'Melhor entrega da campanha.',
+          brandName: 'Lilo Suplementos',
+          campaignTitle: 'Campanha de Verão',
+        }),
+      ]);
+    });
+
+    it('não publica resultado que a marca não liberou', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [
+            makePartnership({
+              result: makeResult({ brandAllowsPublic: false }),
+            }),
+          ],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.results).toEqual([]);
+    });
+
+    it('não publica resultado que a creator escondeu', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [
+            makePartnership({ result: makeResult({ hiddenByCreator: true }) }),
+          ],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.results).toEqual([]);
+    });
+
+    it('não expõe os flags de consentimento na vitrine — são controle, não conteúdo', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [makePartnership({ result: makeResult() })],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.results[0]).not.toHaveProperty('brandAllowsPublic');
+      expect(profile.results[0]).not.toHaveProperty('hiddenByCreator');
+    });
+
+    // ─── Regra pública de "parceria concluída" (vision.md nº 5) ────────────
+    // Precisa ser computável e dizível: candidatura aprovada com conteúdo
+    // aprovado OU com resultado informado pela marca. As duas metades são atos
+    // da marca — nenhuma é auto-declarada pela creator.
+
+    it('conta parceria aprovada com conteúdo aprovado', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [makePartnership({ submissions: [{ id: 'sub-1' }] })],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.completedPartnerships).toBe(1);
+    });
+
+    it('conta parceria com resultado registrado mesmo sem conteúdo aprovado', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [makePartnership({ result: makeResult() })],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.completedPartnerships).toBe(1);
+    });
+
+    it('conta a mesma parceria uma vez só quando tem conteúdo E resultado', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [
+            makePartnership({
+              submissions: [{ id: 'sub-1' }],
+              result: makeResult(),
+            }),
+          ],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.completedPartnerships).toBe(1);
+    });
+
+    it('não conta parceria sem conteúdo aprovado nem resultado', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({ applications: [makePartnership()] }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.completedPartnerships).toBe(0);
+    });
+
+    // A contagem é agregada e não revela marca, número nem nota. Amarrá-la ao
+    // consentimento de vitrine tornaria o histórico da creator refém de a
+    // marca lembrar de marcar uma caixa.
+    it('conta parceria cujo resultado não é público — a contagem não expõe conteúdo', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({
+          applications: [
+            makePartnership({
+              result: makeResult({ brandAllowsPublic: false }),
+            }),
+          ],
+        }),
+      );
+
+      const profile = await service.getPublicProfile('@creator');
+
+      expect(profile.completedPartnerships).toBe(1);
+      expect(profile.results).toEqual([]);
+    });
+
+    // ─── 404 uniforme (Known Gap fechado) ─────────────────────────────────
+    // Handle inexistente e perfil privado precisam ser indistinguíveis: a
+    // diferença permitiria descobrir handles reais de quem preferiu não
+    // aparecer.
+    it('handle inexistente e perfil privado devolvem a MESMA mensagem', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(null);
+      const inexistente = await service
+        .getPublicProfile('@ninguem')
+        .catch((e: Error) => e.message);
+
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({ publicProfileEnabled: false }),
+      );
+      const privado = await service
+        .getPublicProfile('@creator')
+        .catch((e: Error) => e.message);
+
+      expect(inexistente).toBe(privado);
+    });
   });
 });

@@ -45,7 +45,7 @@ const schema = z.object({
       z
         .string()
         .max(30, 'Handle muito longo')
-        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido — só letras, números, . e _'),
+        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido: só letras, números, . e _'),
     ),
   email: z.string().email('E-mail inválido'),
   name: z.string().trim().min(1, 'Nome obrigatório').max(100, 'Nome muito longo'),
@@ -154,7 +154,7 @@ export default function PublicApplyPage() {
       : handleAlreadyChecked && handleCheck.result === 'FOUND'
         ? 'Perfil encontrado no Instagram'
         : handleAlreadyChecked && handleCheck.result === 'UNKNOWN'
-          ? 'Não deu para confirmar agora — você pode continuar'
+          ? 'Não deu para confirmar agora. Você pode continuar'
           : undefined;
   const handleHintTone =
     handleAlreadyChecked && handleCheck.result === 'FOUND' ? 'success' : 'muted';
@@ -168,7 +168,7 @@ export default function PublicApplyPage() {
     if (outcome === 'NOT_FOUND') {
       setError('igHandle', {
         type: 'manual',
-        message: 'Usuário não encontrado no Instagram — confira o @',
+        message: 'Usuário não encontrado no Instagram. Confira o @',
       });
       return;
     }

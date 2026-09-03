@@ -68,7 +68,7 @@ export class UpdateInfluencerDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Opt-in LGPD — expõe o perfil público em /c/:handle',
+    description: 'Opt-in LGPD: expõe o perfil público em /c/:handle',
   })
   @IsOptional()
   @IsBoolean()
