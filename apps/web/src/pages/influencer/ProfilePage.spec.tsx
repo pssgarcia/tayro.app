@@ -27,7 +27,6 @@ const baseProfile: InfluencerProfile = {
   igEngagementRate: 4.2,
   igFetchStatus: 'OK',
   publicProfileEnabled: false,
-  publicPhoneEnabled: false,
   createdAt: '2026-06-01T00:00:00.000Z',
 };
 
@@ -208,47 +207,6 @@ describe('Creator ProfilePage', () => {
 
     expect(await screen.findByText(/telefone inválido/i)).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
-  });
-
-  // ─── Opt-in de telefone no perfil público ───────────────────────────────
-  // Separado do "Perfil público" de propósito: /c/:handle é página pública e
-  // indexável, e o telefone foi dado pra marca usar DEPOIS de aprovar uma
-  // candidatura. Ver specs/public-creator-profile.
-
-  it('não oferece o opt-in de telefone público sem telefone preenchido', () => {
-    mockHooks({ data: { ...baseProfile, phone: null, publicProfileEnabled: true } });
-    renderPage();
-
-    expect(
-      screen.queryByRole('switch', { name: /mostrar meu telefone/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('não oferece o opt-in de telefone público com o perfil privado', () => {
-    mockHooks({
-      data: { ...baseProfile, phone: '(11) 91234-5678', publicProfileEnabled: false },
-    });
-    renderPage();
-
-    expect(
-      screen.queryByRole('switch', { name: /mostrar meu telefone/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('salva o opt-in de telefone público', async () => {
-    mockHooks({
-      data: { ...baseProfile, phone: '(11) 91234-5678', publicProfileEnabled: true },
-    });
-    renderPage();
-
-    fireEvent.click(screen.getByRole('switch', { name: /mostrar meu telefone/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
-
-    await waitFor(() =>
-      expect(mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ publicPhoneEnabled: true }),
-      ),
-    );
   });
 
   // Apagar o campo é como a creator remove o telefone — a API converte "" em

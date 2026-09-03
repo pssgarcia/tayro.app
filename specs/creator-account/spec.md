@@ -41,8 +41,8 @@ Cadastro de conta de creator e edição do perfil associado, incluindo o toggle 
 livremente, com uma exceção deliberada.
 
 Campos: `name`, `avatarUrl?`, `bio?`, `instagramHandle?` (**único**, ver Behavior), `tiktokHandle?`,
-`niches: string[]`, `city?`, `phone?`, `publicProfileEnabled: boolean` (default `false` — `D-06`),
-`publicPhoneEnabled: boolean` (default `false`). Campos de cache de Instagram
+`niches: string[]`, `city?`, `phone?`, `publicProfileEnabled: boolean` (default `false` —
+`D-06`). Campos de cache de Instagram
 (`followersCount`, `igEngagementRate`, `igFetchStatus`, etc.) são **lidos** pelo perfil mas
 pertencem à capacidade `instagram-sync`.
 
@@ -51,10 +51,8 @@ pertencem à capacidade `instagram-sync`.
 data — a nulidade da coluna é histórico, não escolha de produto. `phone` é editável em
 `PATCH /influencers/me`; `instagramHandle` não (ver Behavior).
 
-`publicPhoneEnabled` é um segundo opt-in de LGPD, deliberadamente separado de
-`publicProfileEnabled`: tornar o perfil público (bio, nichos, métricas) não é o mesmo
-consentimento que publicar o telefone pessoal numa página aberta e indexável. Ver
-`public-creator-profile`.
+`publicProfileEnabled` governa também a saída do **telefone** em `/c/:handle` — é o
+consentimento único de publicar identidade e contato. Ver `public-creator-profile`.
 
 ## Behavior
 - Cadastro cria `User(role=INFLUENCER)` e `Influencer` como uma única operação.
@@ -97,7 +95,7 @@ consentimento que publicar o telefone pessoal numa página aberta e indexável. 
 | POST | `/auth/register/influencer` | público, throttle 5/15min por IP | `email`, `password` (8–72), `name` (≤100), `phone` (≤20, formato de telefone), `instagramHandle` (≤30, normalizado antes de validar, alfabeto do Instagram) — os cinco **obrigatórios** —, `niches?` (≤20 itens, ≤50 chars cada). Retorna `{ accessToken, user }` + cookie httpOnly de refresh. |
 | GET | `/ig/handle/:handle` | público, limite de taxa próprio | Verificação de existência do @ usada pelo cadastro. Contrato pertence a `instagram-sync`, não duplicado aqui. |
 | GET | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Perfil completo + `email` achatado de `user.email`. |
-| PATCH | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Campos: `name`, `bio`, `city`, `avatarUrl`, `niches`, `tiktokHandle`, `phone` (vazio apaga → `null`), `publicProfileEnabled`, `publicPhoneEnabled`. **`instagramHandle` não é aceito neste endpoint.** Grava só o que foi enviado. Retorna o mesmo shape de `GET /influencers/me`. |
+| PATCH | `/influencers/me` | `JwtAuthGuard` + role `INFLUENCER` | Campos: `name`, `bio`, `city`, `avatarUrl`, `niches`, `tiktokHandle`, `phone` (vazio apaga → `null`), `publicProfileEnabled`. **`instagramHandle` não é aceito neste endpoint.** Grava só o que foi enviado. Retorna o mesmo shape de `GET /influencers/me`. |
 
 ## UI Behavior
 - **Cadastro** (`/register/influencer`): 3 passos (Identidade+handle → Acesso → Nichos).
@@ -227,6 +225,6 @@ Verificação do @ no cadastro:
   e de handle viraram critérios de aceitação separados e verificáveis.
 - 2026-09-02 · `instagramHandle` e `phone` viraram **obrigatórios no cadastro** (pedido do Pedro);
   `phone` ganhou row de edição no Perfil (única saída pras contas antigas sem telefone) e um
-  segundo opt-in, `publicPhoneEnabled`, pra publicá-lo em `/c/:handle` (ver
+  telefone passou a sair no perfil público junto do `publicProfileEnabled` (ver
   `public-creator-profile`). Dois Known Gaps de 2026-08-27/31 fechados; sobra o de contas antigas
   sem handle, que exigiria fluxo de troca de handle.

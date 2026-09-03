@@ -241,17 +241,17 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   é persistida, senão o front renderizaria um `tel:` vazio); (3) **`/c/:handle`** troca o CTA
   "Crie sua campanha" por **"Falar no WhatsApp"** quando há telefone, com o cadastro de marca
   virando saída secundária em texto (pedido do Pedro).
-  - **Proteção adicionada no caminho, não pedida:** publicar o telefone em `/c/:handle` — página
-    pública e indexável — não é o mesmo consentimento que `publicProfileEnabled`. O telefone é
-    coletado pra marca usar DEPOIS de aprovar uma candidatura. Por isso um **segundo opt-in**,
-    `publicPhoneEnabled` (migration `add_public_phone_opt_in`, default `false`): sem ele
-    `GET /creators/:handle/public` devolve `phone: null`, e o próprio flag nunca é exposto
-    (saber que existe um telefone escondido já é informação). O toggle só aparece no Perfil com
-    perfil público ligado E telefone preenchido — fora disso não há o que consentir.
+  - **Telefone sai junto do `publicProfileEnabled`, por decisão do Pedro.** Cheguei a implementar
+    um segundo opt-in (`publicPhoneEnabled`, default `false`) com o argumento de que `/c/:handle`
+    é página aberta e indexável e o telefone foi coletado pra marca usar DEPOIS de aprovar uma
+    candidatura — ou seja, quem ligou o perfil público antes disso consentiu com um perfil que
+    NÃO tinha telefone. Ele optou por publicar junto; o opt-in e a migration foram removidos
+    antes do merge (nenhuma coluna morta entrou). Registrado em
+    `specs/public-creator-profile` → Known Gaps pra não ser "redescoberto" como esquecimento.
   - Formato do telefone virou constante compartilhada nos dois lados (`shared/validation/phone.ts`
     na API, `PHONE_FORMAT` em `utils/format.ts` no web), mesmo padrão do `INSTAGRAM_HANDLE_FORMAT`
     — eram 3 cópias da mesma regex depois desta mudança.
-  - 17 testes novos na API (416) e 6 no web (602); specs `creator-account`,
+  - 16 testes novos na API (415) e 3 no web (599); specs `creator-account`,
     `public-creator-profile`, `creator-discovery-and-apply` e `creator-roster` atualizadas.
 - **Recuperação de senha (2026-09-02):** fecha o item mais urgente do "Pendente" — quem esquecia
   a senha ficava fora do produto pra sempre (`POST /auth/claim` só define senha uma vez). Espelha

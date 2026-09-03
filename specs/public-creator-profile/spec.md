@@ -59,12 +59,13 @@ status da busca, posts recentes) e:
   armazenado.
 - **Resultados de parceria** — só os que a marca marcou explicitamente como visíveis para a
   creator; nunca todos os resultados registrados.
-- **Telefone** — só quando a creator ligou `publicPhoneEnabled`, um **segundo opt-in**,
-  separado de `publicProfileEnabled` de propósito. Tornar o perfil público (bio, nichos,
-  métricas) não é o mesmo consentimento que publicar o telefone pessoal numa página aberta e
-  indexável: o telefone é coletado na candidatura/cadastro pra marca usar **depois de aprovar**
-  (`creator-roster`), não pra virar contato aberto. Sem o opt-in a resposta traz `phone: null`;
-  o próprio flag **nunca** é exposto (saber que existe um telefone escondido já é informação).
+- **Telefone** — sai junto do resto. `publicProfileEnabled` é o consentimento **único** de
+  publicar identidade e contato: quem liga o perfil público publica também o telefone, se tiver
+  um cadastrado. Um segundo opt-in só pro telefone chegou a ser implementado e foi **removido
+  por decisão do Pedro (2026-09-02)**, depois de levantada a ressalva de que o telefone é
+  coletado pra marca usar *depois de aprovar uma candidatura* (`creator-roster`) e de que
+  `/c/:handle` é página aberta e indexável. Consequência aceita: telefone de creator com perfil
+  público fica legível por qualquer visitante e por crawler.
 
 ## API / Interfaces
 
@@ -87,9 +88,10 @@ sempre. Telefone que a heurística de `whatsappLinkFromPhone` não converte cai 
 nunca um link quebrado, mesma regra de `creator-roster`.
 
 ## Acceptance Criteria
-- [x] Telefone não aparece na resposta pública sem `publicPhoneEnabled`, mesmo existindo.
-- [x] Com o opt-in ligado, o telefone aparece e o CTA vira "Falar no WhatsApp".
-- [x] O flag `publicPhoneEnabled` nunca é devolvido pelo endpoint público.
+- [x] Telefone da creator com perfil público aparece na resposta e o CTA vira "Falar no
+      WhatsApp".
+- [x] Creator sem telefone cadastrado devolve `phone: null` e mantém o CTA de sempre.
+- [x] Perfil privado é `404` antes de qualquer leitura — nada é exposto, telefone inclusive.
 - [x] Handle inexistente retorna `404` com mensagem genérica.
 - [x] Handle existente com `publicProfileEnabled=false` retorna `404` com a **mesma** mensagem
       genérica do caso anterior.
@@ -105,6 +107,11 @@ nunca um link quebrado, mesma regra de `creator-roster`.
 - Handle existente, perfil privado → `404`, mesma mensagem genérica.
 
 ## Known Gaps
+- **Telefone publicado sem consentimento específico.** Quem ligou `publicProfileEnabled` antes
+  de 2026-09-02 consentiu com um perfil público que **não** incluía telefone; a partir dessa
+  data o mesmo flag passou a publicá-lo, sem novo aviso a essas creators. Decisão consciente do
+  Pedro (ver Change History), não esquecimento. Se algum dia houver política de privacidade
+  (`roadmap.md` → LGPD), este é um dos pontos a cobrir.
 - **`PartnershipResult` não tem escritor.** Nenhum código do repositório cria ou atualiza essa
   tabela — `results[]` na resposta é, hoje, sempre `[]` na prática. "Histórico verificado"
   (diferencial nº2 do produto) não é entregue de fato por esta capacidade sozinha; falta o
@@ -138,11 +145,12 @@ nunca um link quebrado, mesma regra de `creator-roster`.
   `avatarUrl` são nulos.
 
 ## Change History
-- 2026-09-02 · Telefone passa a poder aparecer no perfil público, atrás do opt-in próprio
-  `publicPhoneEnabled` (migration `add_public_phone_opt_in`, default `false`), e o CTA do rodapé
-  vira "Falar no WhatsApp" quando ele existe. Pedido do Pedro foi só trocar o botão; o opt-in
-  separado é proteção adicionada no caminho — sem ele a mudança publicaria o telefone pessoal de
-  toda creator com perfil público, num consentimento que ela nunca deu.
+- 2026-09-02 · Telefone passa a aparecer no perfil público e o CTA do rodapé vira "Falar no
+  WhatsApp" quando ele existe. Um opt-in separado (`publicPhoneEnabled`) foi implementado e
+  então **removido a pedido do Pedro**, que optou por publicar o telefone junto do
+  `publicProfileEnabled` depois de a ressalva ser levantada: o telefone é coletado pra marca
+  usar depois de aprovar uma candidatura, e `/c/:handle` é aberta e indexável. Decisão dele,
+  registrada aqui pra não ser "redescoberta" como esquecimento — ver Known Gaps.
 - 2026-08-24 · o endereço público deixou de ser literal e passou a derivar da origem
   (`publicUrl`/`publicUrlLabel` em `utils/format.ts`). Ver "Out of Scope → Endereço público".
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0+.

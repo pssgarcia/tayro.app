@@ -288,10 +288,11 @@ describe('CreatorsService — race conditions', () => {
       expect(counter.callCount('application', 'findMany')).toBe(0); // carrega via include
     });
 
-    // ─── Telefone no perfil público exige opt-in PRÓPRIO ───────────────────
-    // /c/:handle é página pública e indexável. Tornar o perfil público não é o
-    // mesmo consentimento que publicar o telefone pessoal, que foi coletado
-    // pra marca usar DEPOIS de aprovar uma candidatura.
+    // ─── Telefone no perfil público ────────────────────────────────────────
+    // Sai junto do resto: `publicProfileEnabled` é o consentimento único de
+    // publicar identidade + contato. Um opt-in separado só pro telefone foi
+    // avaliado e recusado (Pedro, 2026-09-02). O gate que resta é o do perfil
+    // em si — perfil privado devolve 404 e não expõe nada, inclusive telefone.
 
     const publicProfile = (overrides: Record<string, unknown> = {}) => ({
       ...makeInfluencer(),
@@ -304,37 +305,38 @@ describe('CreatorsService — race conditions', () => {
       city: null,
       avatarUrl: null,
       phone: '(11) 91234-5678',
-      publicPhoneEnabled: false,
       applications: [],
       ...overrides,
     });
 
-    it('não expõe o telefone sem o opt-in de telefone', async () => {
+    it('expõe o telefone no perfil público', async () => {
       prisma.influencer.findUnique.mockResolvedValue(publicProfile());
-
-      const result = await service.getPublicProfile('@creator');
-
-      expect(result.phone).toBeNull();
-    });
-
-    it('expõe o telefone quando o opt-in de telefone está ligado', async () => {
-      prisma.influencer.findUnique.mockResolvedValue(
-        publicProfile({ publicPhoneEnabled: true }),
-      );
 
       const result = await service.getPublicProfile('@creator');
 
       expect(result.phone).toBe('(11) 91234-5678');
     });
 
-    it('nunca devolve o próprio flag de opt-in', async () => {
+    it('devolve telefone null quando a creator não tem telefone', async () => {
       prisma.influencer.findUnique.mockResolvedValue(
-        publicProfile({ publicPhoneEnabled: true }),
+        publicProfile({ phone: null }),
       );
 
       const result = await service.getPublicProfile('@creator');
 
-      expect(result).not.toHaveProperty('publicPhoneEnabled');
+      expect(result.phone).toBeNull();
+    });
+
+    // O único gate: perfil privado é 404 uniforme, então o telefone de quem
+    // não ligou o perfil público nunca sai por esta rota.
+    it('perfil privado não expõe telefone (404 antes de qualquer leitura)', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({ publicProfileEnabled: false }),
+      );
+
+      await expect(service.getPublicProfile('@creator')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

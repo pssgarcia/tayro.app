@@ -155,8 +155,8 @@ describe('PublicCreatorProfilePage', () => {
   });
 
   // ─── CTA do rodapé ──────────────────────────────────────────────────────
-  // O telefone só chega aqui quando a creator ligou o opt-in de telefone
-  // público (a API devolve null sem ele) — ver specs/public-creator-profile.
+  // O telefone sai junto do resto do perfil público (perfil privado é 404 e
+  // não expõe nada) — ver specs/public-creator-profile.
 
   it('com telefone, o CTA vira "Falar no WhatsApp" e o cadastro de marca fica como saída secundária', () => {
     mockProfile({ data: makeProfile({ phone: '(11) 91234-5678' }) });

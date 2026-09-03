@@ -43,7 +43,6 @@ const schema = z.object({
   tiktokHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
   niches: z.array(z.string()),
   publicProfileEnabled: z.boolean(),
-  publicPhoneEnabled: z.boolean(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -173,7 +172,6 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
       tiktokHandle: profile.tiktokHandle ?? '',
       niches: profile.niches,
       publicProfileEnabled: profile.publicProfileEnabled,
-      publicPhoneEnabled: profile.publicPhoneEnabled,
     },
   });
 
@@ -192,7 +190,6 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
       tiktokHandle: cleanHandle(values.tiktokHandle),
       niches: values.niches,
       publicProfileEnabled: values.publicProfileEnabled,
-      publicPhoneEnabled: values.publicPhoneEnabled,
     };
 
     try {
@@ -357,34 +354,6 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             )}
           />
         </div>
-
-        {/* Opt-in SEPARADO do de cima, de propósito: /c/:handle é uma página
-            pública e indexável, e o telefone foi dado pra marca entrar em
-            contato depois de aprovar uma candidatura — não pra virar contato
-            aberto. Só aparece com perfil público ligado e telefone
-            preenchido: fora disso não há nada a consentir. */}
-        {watch('publicProfileEnabled') && watch('phone') && (
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-sm text-foreground">Telefone no perfil público</p>
-              <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
-                Mostra um botão de WhatsApp pra quem abrir seu perfil. Qualquer pessoa com o link vê
-                seu telefone.
-              </p>
-            </div>
-            <Controller
-              name="publicPhoneEnabled"
-              control={control}
-              render={({ field }) => (
-                <Toggle
-                  checked={field.value}
-                  onChange={field.onChange}
-                  label="Mostrar meu telefone no perfil público"
-                />
-              )}
-            />
-          </div>
-        )}
       </div>
 
       <div className="my-[26px] h-px bg-muted" />

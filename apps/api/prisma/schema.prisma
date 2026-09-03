@@ -142,13 +142,10 @@ model Influencer {
   igFetchedAt          DateTime?
   igFetchStatus        IgFetchStatus?
   // Opt-in LGPD — perfil público só é exibido quando true
+  // Também governa a saída do TELEFONE em /c/:handle: ligar o perfil público é
+  // o consentimento único de publicar identidade + contato (decisão do Pedro
+  // em 2026-09-02, depois de avaliar um opt-in separado e recusá-lo).
   publicProfileEnabled Boolean        @default(false)
-  // Segundo opt-in, separado de propósito: /c/:handle é uma página PÚBLICA e
-  // indexável. Tornar o perfil público (bio, nichos, métricas) não é o mesmo
-  // consentimento que publicar o telefone pessoal, que foi coletado pra marca
-  // usar DEPOIS de aprovar uma candidatura. Sem este flag, o telefone nunca
-  // sai no endpoint público.
-  publicPhoneEnabled   Boolean        @default(false)
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 

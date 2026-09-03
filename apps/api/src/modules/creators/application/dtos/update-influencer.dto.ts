@@ -73,13 +73,4 @@ export class UpdateInfluencerDto {
   @IsOptional()
   @IsBoolean()
   publicProfileEnabled?: boolean;
-
-  @ApiPropertyOptional({
-    example: false,
-    description:
-      'Opt-in LGPD separado — publica o telefone no perfil público (/c/:handle)',
-  })
-  @IsOptional()
-  @IsBoolean()
-  publicPhoneEnabled?: boolean;
 }

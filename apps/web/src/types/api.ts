@@ -122,7 +122,6 @@ export interface InfluencerProfile {
   igEngagementRate: number | null;
   igFetchStatus: string | null;
   publicProfileEnabled: boolean;
-  publicPhoneEnabled: boolean;
   createdAt: string;
 }
 
@@ -141,7 +140,7 @@ export interface PublicCreatorProfile {
   igEngagementRate: number | null;
   igRecentPosts: IgPost[] | null;
   igFetchStatus: IgFetchStatus | null;
-  /** Só vem preenchido quando a creator ligou o opt-in de telefone público. */
+  /** Só sai quando o perfil está público (o endpoint devolve 404 se não). */
   phone: string | null;
   completedPartnerships: number;
   results: {
@@ -163,7 +162,6 @@ export interface UpdateInfluencerPayload {
   niches?: string[];
   tiktokHandle?: string;
   publicProfileEnabled?: boolean;
-  publicPhoneEnabled?: boolean;
 }
 
 // ─── Paginação (espelha buildPaginatedResult da API) ─────────────────────────────

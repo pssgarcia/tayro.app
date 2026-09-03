@@ -222,10 +222,10 @@ export default function PublicCreatorProfilePage() {
             <div className="my-[30px] h-px bg-muted" />
 
             {/* O contato direto é a ação mais útil pra quem chegou aqui pelo
-                link que a própria creator mandou — mas só existe quando ela
-                ligou o opt-in de telefone público (a API devolve null sem
-                ele). Sem telefone, o CTA segue sendo o de sempre. O "Crie sua
-                campanha" não some: continua como saída secundária. */}
+                link que a própria creator mandou. O telefone só chega nesta
+                página com o perfil público ligado (privado é 404 uniforme);
+                sem telefone cadastrado, o CTA segue sendo o de sempre. O
+                "Crie sua campanha" não some: vira saída secundária. */}
             {whatsappLink ? (
               <>
                 <p className="text-center text-sm text-kinetic-muted">

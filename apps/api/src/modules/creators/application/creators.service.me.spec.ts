@@ -21,7 +21,6 @@ const makeInfluencer = (overrides: Partial<Record<string, unknown>> = {}) => ({
   igEngagementRate: 4.2,
   igFetchStatus: 'OK',
   publicProfileEnabled: false,
-  publicPhoneEnabled: false,
   createdAt: new Date('2026-01-01'),
   user: { email: 'ana@example.com' },
   ...overrides,
@@ -144,23 +143,6 @@ describe('CreatorsService — perfil (me)', () => {
       where: { userId: 'user-1' },
       data: { phone: null },
     });
-  });
-
-  it('updateMe persiste o opt-in de telefone público', async () => {
-    prisma.influencer.update.mockResolvedValue(makeInfluencer());
-    prisma.influencer.findUnique.mockResolvedValue(
-      makeInfluencer({ publicPhoneEnabled: true }),
-    );
-
-    const result = await service.updateMe('user-1', {
-      publicPhoneEnabled: true,
-    });
-
-    expect(prisma.influencer.update).toHaveBeenCalledWith({
-      where: { userId: 'user-1' },
-      data: { publicPhoneEnabled: true },
-    });
-    expect(result.publicPhoneEnabled).toBe(true);
   });
 
   it('updateMe traduz P2025 (registro inexistente) em Forbidden', async () => {

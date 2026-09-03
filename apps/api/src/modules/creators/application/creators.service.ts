@@ -120,11 +120,10 @@ export class CreatorsService {
       igEngagementRate: influencer.igEngagementRate,
       igRecentPosts: influencer.igRecentPosts,
       igFetchStatus: influencer.igFetchStatus,
-      // Segundo opt-in, separado do publicProfileEnabled: /c/:handle é página
-      // pública e indexável, e o telefone foi coletado pra marca usar DEPOIS
-      // de aprovar uma candidatura — não pra virar contato aberto. Sem o flag
-      // ligado, sai null (nunca o número, nunca o próprio flag).
-      phone: influencer.publicPhoneEnabled ? influencer.phone : null,
+      // Sai junto do resto: `publicProfileEnabled` é o consentimento único de
+      // publicar identidade + contato. Um opt-in separado só pro telefone foi
+      // avaliado e recusado (Pedro, 2026-09-02) — ver spec.
+      phone: influencer.phone,
       completedPartnerships,
       results,
     };
@@ -149,7 +148,6 @@ export class CreatorsService {
         igEngagementRate: true,
         igFetchStatus: true,
         publicProfileEnabled: true,
-        publicPhoneEnabled: true,
         createdAt: true,
         user: { select: { email: true } },
       },
@@ -178,9 +176,6 @@ export class CreatorsService {
     if (dto.tiktokHandle !== undefined) data.tiktokHandle = dto.tiktokHandle;
     if (dto.publicProfileEnabled !== undefined) {
       data.publicProfileEnabled = dto.publicProfileEnabled;
-    }
-    if (dto.publicPhoneEnabled !== undefined) {
-      data.publicPhoneEnabled = dto.publicPhoneEnabled;
     }
 
     try {
