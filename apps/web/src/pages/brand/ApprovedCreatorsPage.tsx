@@ -181,7 +181,10 @@ export default function ApprovedCreatorsPage() {
           Creators
         </h1>
         {creators.length > 0 && (
-          <span className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
+          // Ao lado de um título de 30/36px, o mono de 11px dos rótulos de
+          // seção some. Aqui a contagem não é rótulo, é um número lido junto
+          // com o título — acompanha a escala dele.
+          <span className="font-mono text-base tabular-nums text-kinetic-muted sm:text-lg">
             · {creators.length}
           </span>
         )}
