@@ -112,6 +112,9 @@ registrado no retrofit de 2026-08-21, foi **corrigido em 2026-08-23** — ver Ch
   mesmo padrão do "404 vira 403" usado no `GET`.
 
 ## Change History
+- 2026-09-03 · a placa de prévia do Perfil da marca passou a mostrar as iniciais do nome quando
+  não há logo, em vez de um retângulo cinza vazio. Mesmo defeito que a placa da creator tinha,
+  corrigido no mesmo passo por consistência.
 - 2026-09-02 · row "E-mail" da seção "Conta" (`AccountSection`) virou clicável — ver `email-change`.
 - 2026-09-02 · `ProfilePage.tsx` passou a embutir `AccountSection` (seção "Conta") no lugar do
   antigo bloco só-leitura de e-mail. Trocar senha logada fechado — ver `password-change`.

@@ -78,8 +78,12 @@ export class CreatorsService {
       include: {
         applications: {
           where: { status: ApplicationStatus.APPROVED },
+          orderBy: { reviewedAt: 'desc' },
           include: {
             result: true,
+            campaign: {
+              select: { title: true, brand: { select: { name: true } } },
+            },
             submissions: {
               where: { status: ContentStatus.APPROVED },
               select: { id: true },
@@ -93,19 +97,35 @@ export class CreatorsService {
       throw new NotFoundException('Perfil não encontrado');
     }
 
+    // Regra PÚBLICA de "parceria concluída" (vision.md nº 5: nada de métrica
+    // sem regra dizível): candidatura aprovada que tem conteúdo aprovado OU
+    // resultado informado pela marca. As duas metades são atos da marca —
+    // nenhuma é auto-declarada pela creator. O resultado entra na contagem
+    // mesmo sem consentimento de vitrine: a contagem é agregada e não revela
+    // marca, número nem nota, e amarrá-la ao consentimento deixaria o
+    // histórico refém de a marca lembrar de marcar uma caixa.
     const completedPartnerships = influencer.applications.filter(
-      (app) => app.submissions.length > 0,
+      (app) => app.submissions.length > 0 || app.result !== null,
     ).length;
 
+    // A vitrine exige os DOIS consentimentos (D-21). Os flags em si não saem
+    // na resposta: são controle, não conteúdo do histórico.
     const results = influencer.applications
-      .filter((app) => app.result?.visibleToCreator)
-      .map(({ result }) => ({
-        reach: result!.reach,
-        impressions: result!.impressions,
-        couponsUsed: result!.couponsUsed,
-        note: result!.note,
-        createdAt: result!.createdAt,
-      }));
+      .filter(
+        (app) => app.result?.brandAllowsPublic && !app.result.hiddenByCreator,
+      )
+      .map((app) => ({
+        reach: app.result!.reach,
+        impressions: app.result!.impressions,
+        couponsUsed: app.result!.couponsUsed,
+        note: app.result!.note,
+        createdAt: app.result!.createdAt,
+        // Quem atestou. Sem isto o número não vale nada como histórico
+        // verificável — seria alcance sem autor.
+        brandName: app.campaign.brand.name,
+        campaignTitle: app.campaign.title,
+      }))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return {
       id: influencer.id,
@@ -138,6 +158,10 @@ export class CreatorsService {
         id: true,
         name: true,
         avatarUrl: true,
+        // A foto que o produto inteiro mostra é a do Instagram, servida pelo
+        // nosso proxy (`creatorAvatarSrc` no front). Sem ela aqui, o Perfil da
+        // creator era a única tela que não tinha como mostrar a própria foto.
+        igProfilePicUrl: true,
         bio: true,
         city: true,
         phone: true,

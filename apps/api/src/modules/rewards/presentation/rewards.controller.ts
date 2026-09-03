@@ -56,7 +56,7 @@ export class RewardsController {
   @UseGuards(RolesGuard)
   @Roles('BRAND')
   @ApiOperation({
-    summary: 'Marcar recompensa como emitida — PENDING → ISSUED (Brand)',
+    summary: 'Marcar recompensa como emitida: PENDING → ISSUED (Brand)',
   })
   markAsIssued(@Param('id') id: string, @CurrentUser() user: { id: string }) {
     return this.rewardsService.markAsIssued(id, user.id);
@@ -66,7 +66,7 @@ export class RewardsController {
   @UseGuards(RolesGuard)
   @Roles('BRAND')
   @ApiOperation({
-    summary: 'Marcar recompensa como entregue — ISSUED → DELIVERED (Brand)',
+    summary: 'Marcar recompensa como entregue: ISSUED → DELIVERED (Brand)',
   })
   markAsDelivered(
     @Param('id') id: string,

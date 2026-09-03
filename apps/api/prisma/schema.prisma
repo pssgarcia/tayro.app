@@ -275,15 +275,39 @@ model Reward {
   @@map("rewards")
 }
 
+/// Resultado de uma parceria, informado pela marca ao concluí-la.
+///
+/// É o registro que sustenta os diferenciais nº 2 (histórico verificado) e
+/// nº 3 (transparência bilateral) do produto — ver specs/partnership-results.
+/// Os números são DECLARADOS pela marca: não são medidos por nós e nunca são
+/// apresentados como métrica verificada (vision.md nº 5).
+///
+/// Visibilidade em três camadas, decididas em D-21 (que fecha D-D):
+///  - a marca (dona do dado) sempre vê o que registrou;
+///  - a creator SEMPRE vê — registrar resultado é, por definição, devolvê-lo
+///    a ela. Não há flag pra esconder da creator (o antigo `visibleToCreator`
+///    foi removido: gatear isso invertia o diferencial nº 3);
+///  - a vitrine pública (/c/:handle) exige os DOIS consentimentos abaixo.
 model PartnershipResult {
-  id               String   @id @default(uuid())
-  applicationId    String   @unique
-  reach            Int?
-  impressions      Int?
-  couponsUsed      Int?
-  note             String?
-  visibleToCreator Boolean  @default(false)
-  createdAt        DateTime @default(now())
+  id            String  @id @default(uuid())
+  applicationId String  @unique
+  reach         Int?
+  impressions   Int?
+  couponsUsed   Int?
+  note          String?
+
+  /// Consentimento da MARCA: alcance e cupons são dado comercial dela, e
+  /// /c/:handle é página aberta e indexável. Nasce desligado.
+  brandAllowsPublic Boolean @default(false)
+
+  /// Opt-out da CREATOR sobre o próprio perfil. O consentimento base de
+  /// publicar é o `publicProfileEnabled` dela (D-06); este campo é o controle
+  /// item a item, pra ela não precisar desligar o perfil inteiro por causa de
+  /// um resultado.
+  hiddenByCreator Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 

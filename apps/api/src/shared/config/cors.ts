@@ -21,7 +21,7 @@ export function resolveAllowedOrigins(env: {
 
   if (env.NODE_ENV === 'production') {
     throw new Error(
-      'ALLOWED_ORIGINS é obrigatório em produção — defina a allow-list de CORS ' +
+      'ALLOWED_ORIGINS é obrigatório em produção. Defina a allow-list de CORS ' +
         '(ex: ALLOWED_ORIGINS=https://tayro-app.vercel.app).',
     );
   }

@@ -70,7 +70,7 @@ export class CampaignsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('BRAND')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Editar campanha — somente DRAFT (Brand)' })
+  @ApiOperation({ summary: 'Editar campanha: somente DRAFT (Brand)' })
   update(
     @Param('id') id: string,
     @CurrentUser() user: { id: string },

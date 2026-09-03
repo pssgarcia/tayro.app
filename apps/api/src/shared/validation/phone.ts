@@ -20,6 +20,6 @@ export const PHONE_FORMAT = /^[0-9()+\-\s]{8,20}$/;
 export const PHONE_FORMAT_OR_EMPTY = /^$|^[0-9()+\-\s]{8,20}$/;
 
 export const PHONE_FORMAT_MESSAGE =
-  'Telefone inválido — use apenas números, espaços, ( ) - ou +';
+  'Telefone inválido: use apenas números, espaços, ( ) - ou +';
 
 export const PHONE_MAX_LENGTH = 20;

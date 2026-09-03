@@ -19,6 +19,10 @@ import { UpdateCampaignDto } from '../../modules/campaigns/application/dtos/upda
 import { ListCampaignsDto } from '../../modules/campaigns/application/dtos/list-campaigns.dto';
 import { CreateRewardDto } from '../../modules/rewards/application/dtos/create-reward.dto';
 import { UpdateInfluencerDto } from '../../modules/creators/application/dtos/update-influencer.dto';
+import {
+  CreatePartnershipResultDto,
+  MAX_RESULT_METRIC,
+} from '../../modules/partnerships/application/dtos/create-partnership-result.dto';
 
 const hasError = (errors: { property: string }[], property: string) =>
   errors.some((e) => e.property === property);
@@ -480,6 +484,55 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
         value: 'a'.repeat(101),
       });
       expect(hasError(errors, 'value')).toBe(true);
+    });
+  });
+  describe('CreatePartnershipResultDto', () => {
+    const valid = {
+      applicationId: '33333333-3333-4333-8333-333333333333',
+      reach: 12400,
+      couponsUsed: 37,
+      note: 'Melhor entrega da campanha.',
+    };
+
+    it('aceita payload válido', async () => {
+      expect(await validateDto(CreatePartnershipResultDto, valid)).toHaveLength(
+        0,
+      );
+    });
+
+    it('rejeita note acima de 1000 chars', async () => {
+      const errors = await validateDto(CreatePartnershipResultDto, {
+        ...valid,
+        note: 'a'.repeat(1001),
+      });
+      expect(hasError(errors, 'note')).toBe(true);
+    });
+
+    // O teto numérico não é palpite sobre alcance plausível: a coluna é int4,
+    // e um número acima disso viraria erro do Postgres — 500 pra marca em vez
+    // de 400 apontando o campo.
+    it('rejeita métrica acima do teto do inteiro do banco', async () => {
+      const errors = await validateDto(CreatePartnershipResultDto, {
+        ...valid,
+        reach: MAX_RESULT_METRIC + 1,
+      });
+      expect(hasError(errors, 'reach')).toBe(true);
+    });
+
+    it('rejeita métrica negativa', async () => {
+      const errors = await validateDto(CreatePartnershipResultDto, {
+        ...valid,
+        impressions: -1,
+      });
+      expect(hasError(errors, 'impressions')).toBe(true);
+    });
+
+    it('rejeita métrica fracionada — alcance não é 3,5 contas', async () => {
+      const errors = await validateDto(CreatePartnershipResultDto, {
+        ...valid,
+        reach: 3.5,
+      });
+      expect(hasError(errors, 'reach')).toBe(true);
     });
   });
 });

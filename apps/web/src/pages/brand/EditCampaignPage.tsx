@@ -56,7 +56,7 @@ export default function EditCampaignPage() {
           <div className="max-w-[520px]">
             <p className="text-sm text-kinetic-muted">
               Esta campanha já foi publicada e não pode mais ser editada. Quem se candidatou viu
-              estes termos — mudá-los agora quebraria o combinado.
+              estes termos, e mudá-los agora quebraria o combinado.
             </p>
             <button
               type="button"

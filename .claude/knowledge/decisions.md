@@ -36,12 +36,13 @@ a pagar maior que a de marca, reabrir o posicionamento **de propósito**.
 distribuição conhecido. Não há plano.
 **Como resolver:** decidir junto com D-A, depois das entrevistas.
 
-### D-D · O que exatamente é "histórico verificado"
-**Status:** `ABERTA` — é o diferencial nº 2 e não tem definição operacional
-**Fato incômodo:** `PartnershipResult` existe no banco e **nenhum código escreve nele**
-`[FATO — verificado 2026-08-06]`. Hoje "histórico" = contagem de candidaturas aprovadas.
-**Precisa responder:** quem atesta a entrega? a marca confirma? o que acontece se ela não
-confirmar? o que é público no perfil da creator?
+### D-D · O que exatamente é "histórico verificado" — ✅ RESOLVIDA por `D-21`
+**Status:** `RESOLVIDA` em 2026-09-03 · **não bloqueia mais nada** · ver `D-21` abaixo
+**Fato incômodo que a motivou:** `PartnershipResult` existia no banco e **nenhum código
+escrevia nele** `[FATO — verificado 2026-08-06]`. "Histórico" era contagem de candidaturas
+aprovadas.
+**Precisava responder:** quem atesta a entrega? a marca confirma? o que acontece se ela não
+confirmar? o que é público no perfil da creator? — **as quatro respondidas em `D-21`.**
 **Ligado a `vision.md` nº 5** — nada de métrica que a gente não consiga provar.
 
 ### D-E · Exclusão de conta: apagar ou anonimizar
@@ -109,6 +110,61 @@ notificações na API** `[FATO — verificado 2026-08-06]`. Tabela órfã, coere
 ### D-09 · 2026-08-06 · NÃO criar calendário
 **Motivo:** nenhum cliente demonstrou necessidade — e não há cliente pra demonstrar nada.
 **Status:** `FIRME` · **Revisar após:** 10 entrevistas. Se aparecer em <3, continua fora.
+
+### D-21 · 2026-09-03 · O que é "histórico verificado": a marca informa, a creator sempre vê, a vitrine exige os dois
+**Status:** `FIRME` — decidida pelo Pedro em 2026-09-03, implementada no mesmo dia
+(`feature/partnership-results`). **Fecha `D-D`**, que bloqueava o item 2 do AGORA do
+`roadmap.md` desde 2026-08-06.
+**Decisão, nas três perguntas que a `D-D` fazia:**
+
+1. **Quem atesta?** A marca, e o **ato de registrar É a atestação** — não existe passo extra de
+   "concluir parceria". Os números (alcance, impressões, cupons) são **declarados** e aparecem
+   sempre com o nome de quem os informou; nenhuma superfície os apresenta como métrica medida
+   pelo tayro. O que é verificável é a **contagem**, por uma regra pública e computável:
+   candidatura aprovada com conteúdo aprovado pela marca **ou** com resultado informado por ela
+   — e essa regra é dita em texto no perfil público.
+2. **O que é público?** Só com os **dois** consentimentos: a marca libera (`brandAllowsPublic`,
+   nasce desligado — alcance e cupom são dado comercial dela, e `/c/:handle` é aberta e
+   indexável) **e** a creator não escondeu aquele item (`hiddenByCreator`, opt-out item a item
+   sobre a página que é dela). Faltando qualquer um, sobra a contagem.
+3. **E se a marca não confirmar?** Nada acontece: sem resultado, a parceria não entra no
+   histórico e a creator não tem ação nenhuma pra cobrar. Limitação aceita de propósito, escrita
+   em `specs/partnership-results` → Known Gaps pra não ser redescoberta como esquecimento.
+
+**Decisão adicional, no mesmo movimento:** a creator **sempre** vê o resultado que a marca
+registrou. O campo `visibleToCreator` (default `false`) que existia no schema foi **removido** —
+gatear a visão dela transformava o diferencial nº 3 (transparência bilateral) num opt-in que na
+prática ninguém ligaria, ou seja, no oposto dele. A marca também não escolhe se ela é avisada:
+um e-mail best-effort sai no registro.
+**Motivo:** era a maior distância entre discurso e produto (`positioning.md` → "dívida de
+posicionamento": dos 4 diferenciais, 2 e 3 eram slide). Passa nos 5 critérios de admissão do
+roadmap — engorda o registro de trabalho da creator (nº 1), não contradiz nenhum "nunca" da
+`vision.md` (nº 2, e o nº 5 é respeitado justamente pela separação entre contagem com regra e
+número atribuído a quem declarou), não depende de decisão aberta (nº 3, esta era a decisão),
+cabe numa release (nº 4).
+**Alternativas descartadas:** (a) exigir recompensa `DELIVERED` pra contar como parceria
+entregue — mais forte no papel ("atestado pela marca que pagou"), mas amarra o histórico a a
+marca registrar E confirmar recompensa, e na prática deixaria o histórico vazio; (b) botão
+explícito "Concluir parceria" com status novo na candidatura — atestação mais auditável, mas
+adiciona trabalho manual à marca, o contrário do critério nº 1; (c) um flag só, publicando tudo
+que a marca registrar — mais simples de construir, mas joga número comercial da marca na web
+aberta sem decisão separada e não dá à creator escolha nenhuma sobre a página dela; (d) publicar
+só contagem e depoimento, sem número — considerado o mais conservador e recusado por entregar
+menos do que o dado permite, já que o consentimento duplo resolve a preocupação.
+**Julgamento de implementação que ficou por conta do agente** (registrado por transparência): o
+controle da creator virou **opt-out** por item, e não um segundo opt-in. Motivo: um opt-in
+default-off deixaria a vitrine vazia por padrão, reproduzindo o problema que esta decisão
+resolve — e há precedente direto do Pedro, que em 2026-09-02 recusou um segundo opt-in
+(`publicPhoneEnabled`) preferindo um consentimento único mais amplo. O interruptor geral
+continua sendo o `publicProfileEnabled` (`D-06`), então nada é publicado sem a creator ter
+ligado o perfil.
+**Gatilho de revisão:** primeiras marcas reais operando. Se marca nenhuma informar resultado
+espontaneamente, o problema é de incentivo (ou de momento no fluxo), não de tela — e a resposta
+provável é lembrar/cobrar dentro do produto, não mudar o modelo de visibilidade.
+**Ligado a:** `vision.md` nº 5 (regra pública de cálculo) e nº 3 (consentimento), `D-06`
+(perfil público nasce desligado), `D-08` (relatório avançado segue fora — este dado é o
+pré-requisito dele, não a entrega dele), `positioning.md` (diferenciais 2 e 3),
+`specs/partnership-results`.
 
 ---
 

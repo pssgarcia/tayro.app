@@ -27,7 +27,7 @@ export function resolveSentryConfig(
 
   if (dsn === undefined && env.NODE_ENV === 'production') {
     throw new Error(
-      'SENTRY_DSN é obrigatório em produção — sem ele a API roda sem captura ' +
+      'SENTRY_DSN é obrigatório em produção. Sem ele a API roda sem captura ' +
         'de erro e uma falha só aparece por reclamação. Mesma regra do ' +
         'ALLOWED_ORIGINS (ver cors.ts).',
     );

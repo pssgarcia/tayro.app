@@ -20,6 +20,13 @@ interface PasswordResetEmailParams {
   resetUrl: string;
 }
 
+interface PartnershipResultEmailParams {
+  to: string;
+  creatorName: string;
+  campaignTitle: string;
+  brandName: string;
+}
+
 interface EmailChangedParams {
   to: string;
   newEmail: string;
@@ -38,7 +45,7 @@ export class EmailService {
   ): Promise<void> {
     await this.sendBestEffort({
       to: params.to,
-      subject: `Sua candidatura foi aprovada — ${params.campaignTitle}`,
+      subject: `Sua candidatura foi aprovada: ${params.campaignTitle}`,
       html: `
         <p>Oi, ${params.creatorName}!</p>
         <p><strong>${params.brandName}</strong> aprovou sua candidatura para <strong>${params.campaignTitle}</strong>.</p>
@@ -52,11 +59,11 @@ export class EmailService {
   ): Promise<void> {
     await this.sendBestEffort({
       to: params.to,
-      subject: `Atualização sobre sua candidatura — ${params.campaignTitle}`,
+      subject: `Atualização sobre sua candidatura: ${params.campaignTitle}`,
       html: `
         <p>Oi, ${params.creatorName}!</p>
         <p><strong>${params.brandName}</strong> avaliou sua candidatura para <strong>${params.campaignTitle}</strong> e, desta vez, decidiu seguir com outro perfil.</p>
-        <p>Continue explorando outras campanhas na plataforma — sempre têm novidades.</p>
+        <p>Continue explorando outras campanhas na plataforma. Sempre têm novidades.</p>
       `,
     });
   }
@@ -67,7 +74,7 @@ export class EmailService {
       subject: 'Defina sua senha para acessar a plataforma',
       html: `
         <p>Oi, ${params.creatorName}!</p>
-        <p>Sua conta na plataforma já existe — falta só definir uma senha para acessar.</p>
+        <p>Sua conta na plataforma já existe. Falta só definir uma senha para acessar.</p>
         <p><a href="${params.claimUrl}">Clique aqui para definir sua senha</a></p>
         <p>O link expira em 7 dias.</p>
       `,
@@ -85,6 +92,26 @@ export class EmailService {
         <p>Recebemos um pedido para redefinir a senha da sua conta.</p>
         <p><a href="${params.resetUrl}">Clique aqui para definir uma nova senha</a></p>
         <p>O link expira em 1 hora. Se você não pediu isso, ignore este e-mail.</p>
+      `,
+    });
+  }
+
+  /**
+   * A marca devolveu o resultado da parceria (diferencial nº 3 —
+   * transparência bilateral). Não repete os números aqui de propósito: são
+   * dado da parceria dos dois lados, e e-mail é o canal mais fácil de
+   * encaminhar por engano. O convite é abrir o Registro dela.
+   */
+  async sendPartnershipResult(
+    params: PartnershipResultEmailParams,
+  ): Promise<void> {
+    await this.sendBestEffort({
+      to: params.to,
+      subject: `${params.brandName} registrou o resultado da sua parceria`,
+      html: `
+        <p>Oi, ${params.creatorName}!</p>
+        <p><strong>${params.brandName}</strong> registrou o resultado da parceria de <strong>${params.campaignTitle}</strong>.</p>
+        <p>Abra seu registro na plataforma para ver o que ela informou.</p>
       `,
     });
   }

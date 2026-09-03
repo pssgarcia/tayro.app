@@ -112,6 +112,8 @@ export interface InfluencerProfile {
   name: string;
   email: string;
   avatarUrl: string | null;
+  /** Foto do Instagram. Exibir via `creatorAvatarSrc` (proxy), nunca direto. */
+  igProfilePicUrl: string | null;
   bio: string | null;
   city: string | null;
   phone: string | null;
@@ -142,14 +144,27 @@ export interface PublicCreatorProfile {
   igFetchStatus: IgFetchStatus | null;
   /** Só sai quando o perfil está público (o endpoint devolve 404 se não). */
   phone: string | null;
+  /**
+   * Regra pública: candidatura aprovada com conteúdo aprovado OU com
+   * resultado informado pela marca. Ver specs/partnership-results.
+   */
   completedPartnerships: number;
-  results: {
-    reach: number | null;
-    impressions: number | null;
-    couponsUsed: number | null;
-    note: string | null;
-    createdAt: string;
-  }[];
+  /**
+   * Só os resultados com os DOIS consentimentos (marca liberou + creator não
+   * escondeu). Os flags de consentimento não vêm — são controle, não
+   * conteúdo. `brandName` é quem atestou: número sem autor não é histórico.
+   */
+  results: PublicPartnershipResult[];
+}
+
+export interface PublicPartnershipResult {
+  reach: number | null;
+  impressions: number | null;
+  couponsUsed: number | null;
+  note: string | null;
+  createdAt: string;
+  brandName: string;
+  campaignTitle: string;
 }
 
 export interface UpdateInfluencerPayload {
@@ -225,6 +240,63 @@ export interface CampaignReward {
     instagramHandle: string | null;
     igProfilePicUrl: string | null;
   };
+}
+
+// ─── Resultado de parceria (histórico verificado + transparência bilateral) ──
+// Números DECLARADOS pela marca: não são medidos por nós e toda superfície que
+// os mostra diz isso (vision.md nº 5). Ver specs/partnership-results.
+
+export interface PartnershipResult {
+  id: string;
+  applicationId: string;
+  reach: number | null;
+  impressions: number | null;
+  couponsUsed: number | null;
+  note: string | null;
+  /** Consentimento da marca pra este resultado aparecer em /c/:handle. */
+  brandAllowsPublic: boolean;
+  /** Opt-out da creator sobre o próprio perfil, item a item. */
+  hiddenByCreator: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Uma parceria (candidatura aprovada) da campanha, com resultado ou sem. */
+export interface CampaignPartnership {
+  applicationId: string;
+  reviewedAt: string | null;
+  influencer: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    instagramHandle: string | null;
+    igProfilePicUrl: string | null;
+  };
+  result: PartnershipResult | null;
+}
+
+/** Lado creator — GET /partnership-results/mine (achatado pela API). */
+export interface MyPartnershipResult {
+  id: string;
+  applicationId: string;
+  campaignId: string;
+  campaignTitle: string;
+  brandName: string;
+  reach: number | null;
+  impressions: number | null;
+  couponsUsed: number | null;
+  note: string | null;
+  brandAllowsPublic: boolean;
+  hiddenByCreator: boolean;
+  createdAt: string;
+}
+
+export interface PartnershipResultPayload {
+  reach?: number | null;
+  impressions?: number | null;
+  couponsUsed?: number | null;
+  note?: string | null;
+  brandAllowsPublic?: boolean;
 }
 
 // ─── My Application (lado creator — GET /applications/mine) ──────────────────────

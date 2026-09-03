@@ -7,11 +7,13 @@ import axios from 'axios';
 import { useInfluencerProfile, useUpdateInfluencerProfile } from '../../hooks/useInfluencerProfile';
 import type { InfluencerProfile, UpdateInfluencerPayload } from '../../types/api';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
+import KineticToggle from '../../components/primitives/kinetic/KineticToggle';
 import CountUp from '../../components/primitives/CountUp';
 import KineticEditField from '../../components/primitives/kinetic/KineticEditField';
 import KineticEditNiches from '../../components/primitives/kinetic/KineticEditNiches';
 import AccountSection from '../../components/account/AccountSection';
 import {
+  creatorAvatarSrc,
   formatEngagement,
   formatNumberParts,
   PHONE_FORMAT,
@@ -114,38 +116,6 @@ function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled
   );
 }
 
-// ─── Toggle — usa a placa, não o lime (o lime dessa tela é do "Salvar") ──────
-
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        'relative flex h-6 w-11 shrink-0 items-center rounded-full px-[3px] transition-colors',
-        checked
-          ? 'justify-end bg-lime'
-          : 'justify-start border border-kinetic-gray bg-kinetic-dark',
-      )}
-    >
-      <span
-        className={cn('h-[18px] w-[18px] rounded-full', checked ? 'bg-background' : 'bg-[#55554F]')}
-      />
-    </button>
-  );
-}
-
 // ─── Form ─────────────────────────────────────────────────────────────────────
 // "Editar" = rows label+valor+chevron, cada uma abre um modal placa-formulário
 // de campo único (KineticEditField/KineticEditNiches) — igual ao mock.
@@ -179,6 +149,24 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
   const watchedAvatar = watch('avatarUrl');
   const watchedBio = watch('bio');
   const watchedNiches = watch('niches');
+  const watchedPhone = watch('phone');
+
+  // Ordem de verdade da foto vem do helper compartilhado (Instagram pelo
+  // proxy, `avatarUrl` como fallback). O `avatarUrl` entra do `watch` para o
+  // preview mudar enquanto ela digita a URL, como o resto da placa.
+  const avatarSrc = creatorAvatarSrc({
+    id: profile.id,
+    igProfilePicUrl: profile.igProfilePicUrl,
+    avatarUrl: watchedAvatar,
+  });
+
+  const initials = (watchedName || profile.name || '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
 
   const onSubmit = async (values: FormValues) => {
     const payload: UpdateInfluencerPayload = {
@@ -207,12 +195,28 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      {/* Placa — preview ao vivo do que a marca vê na Fila (tela 2) */}
-      <KineticPlate marks="all" className="max-w-[520px]">
+      {/* Placa: preview ao vivo do que a marca vê na Fila (tela 2).
+          A página promete em texto "é exatamente isso que a marca vê", e até
+          2026-09-03 a promessa era falsa em dois pontos: o quadrado da foto só
+          olhava `avatarUrl` (campo manual, vazio em 21 das 21 creators do
+          banco), então ignorava a foto do Instagram que a marca vê na Fila e
+          ficava um retângulo cinza sem nem as iniciais; e o telefone, que a
+          marca vê como link `tel:` na Fila e em /brand/creators, não aparecia
+          em lugar nenhum da placa. */}
+      <KineticPlate
+        as="section"
+        ariaLabel="Prévia do que a marca vê"
+        marks="all"
+        className="max-w-[520px]"
+      >
         <div className="flex items-center gap-3.5">
-          <div className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[4px] bg-[#cfcfc8]">
-            {watchedAvatar && (
-              <img src={watchedAvatar} alt="" className="h-full w-full object-cover" />
+          <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-[4px] bg-[#cfcfc8]">
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-display text-[19px] font-semibold text-[#6a6a64]">
+                {initials || '?'}
+              </span>
             )}
           </div>
           <div className="min-w-0">
@@ -223,6 +227,16 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
               <p className="mt-[5px] flex items-center gap-[5px] text-[13px] text-[#6a6a64]">
                 @{profile.instagramHandle}
                 <ExternalLink size={11} className="shrink-0" />
+              </p>
+            )}
+            {/* Mesmo par de estados da placa de /brand/creators: quando não há
+                telefone, a marca lê "Telefone não informado", e é isso que ela
+                precisa ver aqui para saber que falta. */}
+            {watchedPhone ? (
+              <p className="mt-1 font-mono text-[13px] text-[#6a6a64]">{watchedPhone}</p>
+            ) : (
+              <p className="mt-1 font-mono text-[13px] text-[#8a8a84]">
+                Telefone não informado
               </p>
             )}
           </div>
@@ -346,7 +360,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             name="publicProfileEnabled"
             control={control}
             render={({ field }) => (
-              <Toggle
+              <KineticToggle
                 checked={field.value}
                 onChange={field.onChange}
                 label="Tornar meu perfil público"

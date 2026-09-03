@@ -1,8 +1,10 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { usePublicCreatorProfile } from '../../hooks/usePublicCreatorProfile';
+import type { PublicPartnershipResult } from '../../types/api';
 import {
   creatorAvatarSrc,
+  formatDate,
   formatEngagement,
   formatNumberParts,
   whatsappLinkFromPhone,
@@ -82,6 +84,64 @@ function IgStats({
         />
       )}
     </>
+  );
+}
+
+// ─── Parceria do histórico ───────────────────────────────────────────────────
+// Cada bloco é um resultado que a marca informou E liberou pra vitrine, e que
+// a creator não escondeu. Os números vêm com o nome de quem os informou, nunca
+// soltos: "alcance 12,4k" sem autor seria exatamente a métrica fabricada que a
+// `vision.md` nº 5 proíbe. O tayro não mede nada disso e a página diz isso.
+
+function PartnershipCard({ result }: { result: PublicPartnershipResult }) {
+  const metrics = (
+    [
+      ['Alcance', result.reach],
+      ['Impressões', result.impressions],
+      ['Cupons usados', result.couponsUsed],
+    ] as const
+  ).filter(([, value]) => value !== null);
+
+  return (
+    <article className="border border-kinetic-gray bg-kinetic-dark p-5">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+        {result.brandName}
+      </p>
+      <p className="mt-2 font-display text-lg font-bold tracking-[-.035em] text-foreground">
+        {result.campaignTitle}
+      </p>
+
+      {metrics.length > 0 && (
+        <div className="mt-5 flex flex-wrap gap-x-8 gap-y-4">
+          {metrics.map(([label, value]) => {
+            const { value: figure, suffix } = formatNumberParts(value as number);
+            return (
+              <StatFigure
+                key={label}
+                size="sm"
+                label={label}
+                value={
+                  <>
+                    {figure}
+                    {suffix && <span className="text-base">{suffix}</span>}
+                  </>
+                }
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {result.note && (
+        <p className="mt-5 border-l-2 border-kinetic-gray pl-4 text-sm leading-relaxed text-kinetic-text">
+          {result.note}
+        </p>
+      )}
+
+      <p className="mt-5 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+        Informado por {result.brandName} em {formatDate(result.createdAt, '—')}
+      </p>
+    </article>
   );
 }
 
@@ -208,6 +268,39 @@ export default function PublicCreatorProfilePage() {
                 delay={240}
               />
             </div>
+
+            {/* A regra de cálculo, dita em público. Não é rodapé legal: é o
+                que separa "3 parcerias concluídas" de um número inventado
+                (`vision.md` nº 5 — nada de métrica sem regra pública). Só
+                aparece quando há o que explicar. */}
+            {profile.completedPartnerships > 0 && (
+              <p className="mt-4 text-xs leading-[1.5] text-kinetic-muted">
+                Conta candidatura aprovada com conteúdo aprovado pela marca ou
+                com resultado informado por ela.
+              </p>
+            )}
+
+            {/* Histórico de parcerias — o diferencial nº 2 do produto. Vem
+                ANTES do feed do Instagram de propósito: o feed qualquer perfil
+                tem, isto só existe aqui. */}
+            {profile.results.length > 0 && (
+              <section aria-labelledby="historico-parcerias" className="mt-9">
+                <h2
+                  id="historico-parcerias"
+                  className="mb-5 font-display text-base font-semibold tracking-[-.03em] text-foreground"
+                >
+                  Histórico de parcerias
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {profile.results.map((result) => (
+                    <PartnershipCard
+                      key={`${result.brandName}-${result.createdAt}`}
+                      result={result}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Conteúdo recente */}
             {profile.igRecentPosts && profile.igRecentPosts.length > 0 && (

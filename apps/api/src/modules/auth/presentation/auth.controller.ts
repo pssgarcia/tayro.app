@@ -180,7 +180,7 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Logout — invalida refresh token e apaga cookie' })
+  @ApiOperation({ summary: 'Logout: invalida refresh token e apaga cookie' })
   async logout(
     @CurrentUser() user: { id: string },
     @Res({ passthrough: true }) res: Response,

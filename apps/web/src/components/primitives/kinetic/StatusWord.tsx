@@ -4,7 +4,9 @@ import {
   campaignStatusWord,
   contentStatusWord,
   rewardStatusWord,
+  partnershipResultWord,
 } from '../../../utils/format';
+import type { PartnershipResultState } from '../../../utils/format';
 import type {
   ApplicationStatus,
   CampaignStatus,
@@ -28,6 +30,8 @@ type Props = { className?: string } & (
   | { kind: 'campaign'; status: CampaignStatus }
   | { kind: 'content'; status: ContentStatus }
   | { kind: 'reward'; status: RewardStatus }
+  // Derivado, não enum do banco: a parceria tem resultado informado ou não.
+  | { kind: 'partnershipResult'; status: PartnershipResultState }
 );
 
 /** Quem espera decisão de alguém aparece em lime. O resto é cinza. */
@@ -43,6 +47,10 @@ function isActionable(props: Props): boolean {
     // ISSUED pede confirmar a entrega. Só DELIVERED é fim de linha.
     case 'reward':
       return props.status !== 'DELIVERED';
+    // Parceria sem resultado espera a marca informar — é o único estado
+    // acionável, e é ele que faz o histórico da creator existir.
+    case 'partnershipResult':
+      return props.status === 'PENDING';
   }
 }
 
@@ -56,6 +64,8 @@ function wordFor(props: Props): string {
       return campaignStatusWord[props.status];
     case 'reward':
       return rewardStatusWord[props.status];
+    case 'partnershipResult':
+      return partnershipResultWord[props.status];
   }
 }
 

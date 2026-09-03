@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMyApplications, useWithdrawApplication } from '../../hooks/useMyApplications';
 import { useMySubmissions } from '../../hooks/useMySubmissions';
+import { useMyPartnershipResults } from '../../hooks/usePartnershipResults';
+import { useInfluencerProfile } from '../../hooks/useInfluencerProfile';
+import PartnershipResultsSection from './PartnershipResultsSection';
 import type { MyApplication, ApplicationStatus } from '../../types/api';
 import CountUp from '../../components/primitives/CountUp';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
@@ -215,6 +218,11 @@ export default function MyApplicationsPage() {
   const [confirming, setConfirming] = useState<MyApplication | null>(null);
   const { data: applications = [], isLoading, isError } = useMyApplications();
   const { data: submissions = [] } = useMySubmissions();
+  const { data: results = [] } = useMyPartnershipResults();
+  // Só pelo `publicProfileEnabled`: sem ele, a seção de resultados prometeria
+  // "aparece no seu perfil público" pra quem tem o perfil desligado — o mesmo
+  // engano que o `PublicProfileLink` do Perfil já existe pra evitar.
+  const { data: profile } = useInfluencerProfile();
   const withdraw = useWithdrawApplication();
 
   const submittedApplicationIds = new Set(submissions.map((s) => s.applicationId));
@@ -314,6 +322,16 @@ export default function MyApplicationsPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* O registro de trabalho dela: o que as marcas informaram das parcerias.
+          Fica abaixo da lista porque a lista é o presente (candidaturas em
+          curso) e isto é o acumulado. Não renderiza nada quando está vazio. */}
+      {!isLoading && !isError && (
+        <PartnershipResultsSection
+          results={results}
+          publicProfileEnabled={profile?.publicProfileEnabled ?? false}
+        />
       )}
 
       {confirming && (
