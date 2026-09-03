@@ -920,6 +920,7 @@ describe('AuthService', () => {
       email: 'ana@example.com',
       password: 'senhaSegura1',
       name: 'Ana Silva',
+      phone: '(11) 91234-5678',
       instagramHandle: 'anafit',
       niches: [],
     };
@@ -964,6 +965,28 @@ describe('AuthService', () => {
               create: expect.objectContaining({
                 igFetchStatus: IgFetchStatus.PENDING,
               }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    // Até 2026-09-02 o cadastro era a única porta de entrada de creator que
+    // não pedia telefone: quem entrava por aqui nascia com phone = null e a
+    // marca não tinha canal de contato nenhum além do @ do Instagram.
+    it('grava o telefone no Influencer', async () => {
+      prisma.user.create.mockResolvedValue(
+        makeUser({ role: UserRole.INFLUENCER, influencer: { id: 'inf-1' } }),
+      );
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      await service.registerInfluencer(dto);
+
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            influencer: expect.objectContaining({
+              create: expect.objectContaining({ phone: '(11) 91234-5678' }),
             }),
           }),
         }),

@@ -18,6 +18,7 @@ import { CreateCampaignDto } from '../../modules/campaigns/application/dtos/crea
 import { UpdateCampaignDto } from '../../modules/campaigns/application/dtos/update-campaign.dto';
 import { ListCampaignsDto } from '../../modules/campaigns/application/dtos/list-campaigns.dto';
 import { CreateRewardDto } from '../../modules/rewards/application/dtos/create-reward.dto';
+import { UpdateInfluencerDto } from '../../modules/creators/application/dtos/update-influencer.dto';
 
 const hasError = (errors: { property: string }[], property: string) =>
   errors.some((e) => e.property === property);
@@ -237,14 +238,85 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
     });
   });
 
+  describe('UpdateInfluencerDto', () => {
+    it('aceita telefone válido', async () => {
+      expect(
+        await validateDto(UpdateInfluencerDto, { phone: '(11) 91234-5678' }),
+      ).toHaveLength(0);
+    });
+
+    // Vazio é como a creator apaga o telefone que já tinha — o service
+    // converte pra null. Sem isto, o único jeito de remover seria pelo banco.
+    it('aceita telefone vazio (é assim que se apaga)', async () => {
+      expect(
+        await validateDto(UpdateInfluencerDto, { phone: '' }),
+      ).toHaveLength(0);
+    });
+
+    it('rejeita telefone com caracteres inválidos', async () => {
+      const errors = await validateDto(UpdateInfluencerDto, {
+        phone: 'liga pra mim',
+      });
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+
+    it('rejeita telefone acima de 20 chars', async () => {
+      const errors = await validateDto(UpdateInfluencerDto, {
+        phone: '1'.repeat(21),
+      });
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+  });
+
   describe('RegisterInfluencerDto', () => {
     const valid = {
       email: 'inf@x.com',
       password: 'senhaSegura123',
       name: 'Ana',
+      phone: '(11) 91234-5678',
       instagramHandle: 'ana',
       niches: ['fitness'],
     };
+
+    // Obrigatório desde 2026-09-02: era a única porta de entrada de creator
+    // que não pedia telefone (a candidatura pública já exigia).
+    it('rejeita cadastro sem telefone', async () => {
+      const semTelefone = { ...valid, phone: undefined };
+      const errors = await validateDto(RegisterInfluencerDto, semTelefone);
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+
+    it('rejeita telefone com caracteres inválidos', async () => {
+      const errors = await validateDto(RegisterInfluencerDto, {
+        ...valid,
+        phone: 'não é telefone',
+      });
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+
+    it('rejeita telefone acima de 20 chars', async () => {
+      const errors = await validateDto(RegisterInfluencerDto, {
+        ...valid,
+        phone: '1'.repeat(21),
+      });
+      expect(hasError(errors, 'phone')).toBe(true);
+    });
+
+    // Obrigatório desde 2026-09-02: sem @ a conta nasce sem media kit e a
+    // marca vê "Dados do Instagram indisponíveis" pra sempre.
+    it('rejeita cadastro sem @ do Instagram', async () => {
+      const semHandle = { ...valid, instagramHandle: undefined };
+      const errors = await validateDto(RegisterInfluencerDto, semHandle);
+      expect(hasError(errors, 'instagramHandle')).toBe(true);
+    });
+
+    it('rejeita @ fora do alfabeto do Instagram', async () => {
+      const errors = await validateDto(RegisterInfluencerDto, {
+        ...valid,
+        instagramHandle: 'ana silva!',
+      });
+      expect(hasError(errors, 'instagramHandle')).toBe(true);
+    });
 
     it('aceita payload válido', async () => {
       expect(await validateDto(RegisterInfluencerDto, valid)).toHaveLength(0);

@@ -127,9 +127,8 @@ model Influencer {
   name                 String
   avatarUrl            String?
   bio                  String?
-  // Contato direto pra marca falar com a creator fora do produto — capturado
-  // hoje só na candidatura pública (ver spec creator-discovery-and-apply);
-  // outros fluxos de criação de conta ainda não coletam.
+  // Contato direto pra marca falar com a creator fora do produto. Coletado na
+  // candidatura pública e no cadastro de creator; editável no Perfil.
   phone                String?
   instagramHandle      String?        @unique
   tiktokHandle         String?
@@ -143,6 +142,9 @@ model Influencer {
   igFetchedAt          DateTime?
   igFetchStatus        IgFetchStatus?
   // Opt-in LGPD — perfil público só é exibido quando true
+  // Também governa a saída do TELEFONE em /c/:handle: ligar o perfil público é
+  // o consentimento único de publicar identidade + contato (decisão do Pedro
+  // em 2026-09-02, depois de avaliar um opt-in separado e recusá-lo).
   publicProfileEnabled Boolean        @default(false)
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt

@@ -9,6 +9,11 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { INSTAGRAM_HANDLE_FORMAT } from '../../../../shared/validation/instagram-handle';
+import {
+  PHONE_FORMAT,
+  PHONE_FORMAT_MESSAGE,
+  PHONE_MAX_LENGTH,
+} from '../../../../shared/validation/phone';
 
 export class PublicApplyDto {
   @ApiProperty({ example: 'anafitness' })
@@ -37,10 +42,8 @@ export class PublicApplyDto {
   @ApiProperty({ example: '(11) 91234-5678' })
   @IsString()
   @IsNotEmpty({ message: 'Telefone obrigatório' })
-  @MaxLength(20)
-  @Matches(/^[0-9()+\-\s]{8,20}$/, {
-    message: 'Telefone inválido — use apenas números, espaços, ( ) - ou +',
-  })
+  @MaxLength(PHONE_MAX_LENGTH)
+  @Matches(PHONE_FORMAT, { message: PHONE_FORMAT_MESSAGE })
   phone: string;
 
   @ApiPropertyOptional({ example: 'Já uso os produtos e adoraria colaborar!' })

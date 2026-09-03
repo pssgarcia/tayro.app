@@ -14,13 +14,39 @@ import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
 import { cn } from '../../lib/utils';
-import { INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
+import { INSTAGRAM_HANDLE_FORMAT, PHONE_FORMAT, PHONE_FORMAT_MESSAGE } from '../../utils/format';
 
 const schema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
   email: z.string().email('E-mail inválido').max(254, 'E-mail muito longo'),
   password: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
-  instagramHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
+  // Obrigatório, como na candidatura pública: sem telefone a marca fica só com
+  // o @ do Instagram, que não é canal de resposta garantido. Este cadastro era
+  // a última porta de entrada de creator que não pedia.
+  phone: z
+    .string()
+    .trim()
+    .min(1, 'Telefone obrigatório')
+    .max(20, 'Telefone muito longo')
+    .regex(PHONE_FORMAT, PHONE_FORMAT_MESSAGE),
+  // Obrigatório desde 2026-09-02. O @ é a chave de tudo que a creator ganha
+  // aqui — media kit vivo, seguidores, engajamento, posts, perfil público em
+  // /c/:handle. Sem ele a conta nascia sem nada disso, e a marca via "Dados
+  // do Instagram indisponíveis" pra sempre.
+  // Normaliza antes de validar (mesmo pipe do /apply/:id): colar "@AnaFit" é
+  // o caso comum, e barrar isso como "handle inválido" seria hostil — o campo
+  // já mostra o "@" como prefixo. É a mesma normalização que a API aplica.
+  instagramHandle: z
+    .string()
+    .min(1, '@ do Instagram obrigatório')
+    .transform((v) => v.replace(/^@+/, '').toLowerCase().trim())
+    .pipe(
+      z
+        .string()
+        .min(1, '@ do Instagram obrigatório')
+        .max(30, 'Máximo 30 caracteres')
+        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido — só letras, números, . e _'),
+    ),
   niches: z.array(z.string()),
 });
 
@@ -47,12 +73,13 @@ function cleanHandle(raw?: string): string | undefined {
 
 const STEPS = ['Identidade', 'Acesso', 'Nichos'] as const;
 const STEP_FIELDS: (keyof FormValues)[][] = [
-  ['name', 'instagramHandle'],
+  ['name', 'phone', 'instagramHandle'],
   ['email', 'password'],
   [],
 ];
 const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
   name: 0,
+  phone: 0,
   instagramHandle: 0,
   email: 1,
   password: 1,
@@ -91,9 +118,10 @@ export default function RegisterInfluencerPage() {
     return <Navigate to="/influencer" replace />;
   }
 
-  // Verifica ao sair do campo — nunca enquanto digita. Campo vazio (handle é
-  // opcional aqui) não verifica nada. Mesmo desfecho é reaproveitado se
-  // "Continuar" for clicado sem passar pelo blur (o dedupe é do hook).
+  // Verifica ao sair do campo — nunca enquanto digita. Campo ainda vazio (a
+  // pessoa saiu antes de digitar) não verifica nada: quem cobra o campo é o
+  // schema, no "Continuar". Mesmo desfecho é reaproveitado se "Continuar" for
+  // clicado sem passar pelo blur (o dedupe é do hook).
   async function handleInstagramHandleBlur(e: React.FocusEvent<HTMLInputElement>) {
     instagramHandleField.onBlur(e);
     const handle = cleanHandle(getValues('instagramHandle'));
@@ -115,6 +143,8 @@ export default function RegisterInfluencerPage() {
     // Identidade — é onde o campo está na tela, e o handle é imutável depois
     // do cadastro (um @ errado aqui é permanente, diferente da candidatura).
     if (step === 0) {
+      // O handle já passou pelo `trigger` acima (obrigatório + formato), então
+      // aqui ele existe — só falta saber se a conta existe no Instagram.
       const handle = cleanHandle(getValues('instagramHandle'));
       if (handle) {
         const outcome = await handleCheck.check(handle);
@@ -156,9 +186,8 @@ export default function RegisterInfluencerPage() {
       name: values.name,
       email: values.email,
       password: values.password,
-      ...(cleanHandle(values.instagramHandle)
-        ? { instagramHandle: cleanHandle(values.instagramHandle) }
-        : {}),
+      phone: values.phone,
+      instagramHandle: cleanHandle(values.instagramHandle),
       ...(values.niches.length ? { niches: values.niches } : {}),
     };
 
@@ -192,7 +221,13 @@ export default function RegisterInfluencerPage() {
         return;
       }
 
-      const FIELD_KEYS: Array<keyof FormValues> = ['name', 'email', 'password', 'instagramHandle'];
+      const FIELD_KEYS: Array<keyof FormValues> = [
+        'name',
+        'phone',
+        'email',
+        'password',
+        'instagramHandle',
+      ];
       if (body?.field && (FIELD_KEYS as string[]).includes(body.field)) {
         const field = body.field as keyof FormValues;
         setError(field, { message: serverMessage ?? 'Valor inválido.' });
@@ -233,6 +268,15 @@ export default function RegisterInfluencerPage() {
                   placeholder="Ana Silva"
                   error={errors.name?.message}
                   {...register('name')}
+                />
+                <KineticField
+                  label="Telefone"
+                  variant="plate"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="(11) 91234-5678"
+                  error={errors.phone?.message}
+                  {...register('phone')}
                 />
                 <KineticField
                   label="@ do Instagram"

@@ -96,9 +96,10 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
   visível).
 - A placa mostra o telefone como link `tel:` abaixo do @handle (mesma linha de contato da placa
   da Fila). Sem telefone, no lugar do link aparece "Telefone não informado" — a ausência do botão
-  de WhatsApp precisa ter um motivo visível, senão parece defeito da tela. Hoje a maioria das
-  creators cai nesse caso: `Influencer.phone` só é coletado no apply público, e só desde
-  2026-08-31 (ver `creator-discovery-and-apply` → Known Gaps).
+  de WhatsApp precisa ter um motivo visível, senão parece defeito da tela. Desde 2026-09-02 toda
+  creator nova tem telefone (o cadastro direto passou a pedir, e o Perfil permite editar — ver
+  `creator-account`); quem se cadastrou antes disso segue sem, até entrar no Perfil por conta
+  própria.
 - Seguidores aparecem no formato compacto ("5,4M", "8,2k"), o mesmo de `formatNumberParts` já
   usado na Fila e no perfil público — o número cru de uma conta com milhões de seguidores estoura
   a meia largura da placa e sai cortado.
@@ -179,6 +180,9 @@ seguidores, engajamento, posts recentes, foto, status do fetch de IG) já expost
 - `whatsappLinkFromPhone` em `utils/format.ts`, ao lado de `creatorAvatarSrc`/`creatorPostSrc`.
 
 ## Change History
+- 2026-09-02 · O telefone deixou de ser exclusivo do apply público: o cadastro de creator passou
+  a exigi-lo e o Perfil a permitir editá-lo (`creator-account`). Nada muda nesta capacidade além
+  de "Telefone não informado" deixar de ser o caso comum com o tempo.
 - 2026-09-02 · "Creators" aparecia duas vezes na mesma dobra no celular (título + rótulo mono da
   lista). A contagem subiu pro título e o rótulo visível da lista saiu; o `aria-label` continua.
 - 2026-09-02 · Correções da 1ª conferência em produção (reportadas pelo Pedro). (1) **Copy no

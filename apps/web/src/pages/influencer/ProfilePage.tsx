@@ -11,7 +11,14 @@ import CountUp from '../../components/primitives/CountUp';
 import KineticEditField from '../../components/primitives/kinetic/KineticEditField';
 import KineticEditNiches from '../../components/primitives/kinetic/KineticEditNiches';
 import AccountSection from '../../components/account/AccountSection';
-import { formatEngagement, formatNumberParts, publicUrl, publicUrlLabel } from '../../utils/format';
+import {
+  formatEngagement,
+  formatNumberParts,
+  PHONE_FORMAT,
+  PHONE_FORMAT_MESSAGE,
+  publicUrl,
+  publicUrlLabel,
+} from '../../utils/format';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -26,6 +33,13 @@ const schema = z.object({
     .or(z.literal('')),
   bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
   city: z.string().max(100, 'Máximo 100 caracteres').optional(),
+  // Vazio é permitido: apagar o campo é como a creator REMOVE o telefone (a
+  // API grava null). Por isso o formato não pode ser exigido em string vazia.
+  phone: z
+    .string()
+    .max(20, 'Telefone muito longo')
+    .refine((v) => !v || PHONE_FORMAT.test(v), PHONE_FORMAT_MESSAGE)
+    .optional(),
   tiktokHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
   niches: z.array(z.string()),
   publicProfileEnabled: z.boolean(),
@@ -154,6 +168,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
       avatarUrl: profile.avatarUrl ?? '',
       bio: profile.bio ?? '',
       city: profile.city ?? '',
+      phone: profile.phone ?? '',
       tiktokHandle: profile.tiktokHandle ?? '',
       niches: profile.niches,
       publicProfileEnabled: profile.publicProfileEnabled,
@@ -171,6 +186,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
       avatarUrl: values.avatarUrl ?? '',
       bio: values.bio ?? '',
       city: values.city ?? '',
+      phone: values.phone ?? '',
       tiktokHandle: cleanHandle(values.tiktokHandle),
       niches: values.niches,
       publicProfileEnabled: values.publicProfileEnabled,
@@ -278,6 +294,17 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
           label="Cidade"
           value={watch('city') ?? ''}
           onSave={(v) => setValue('city', v, { shouldDirty: true })}
+        />
+        {/* O telefone é o canal que a marca usa pra chamar no WhatsApp depois
+            de aprovar (ver specs/creator-roster). Quem se cadastrou antes de
+            2026-09-02 tem o campo vazio e esta é a única superfície onde dá
+            pra preencher. */}
+        <KineticEditField
+          label="Telefone"
+          value={watch('phone') ?? ''}
+          placeholder="(11) 91234-5678"
+          error={errors.phone?.message}
+          onSave={(v) => setValue('phone', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
           label="Foto (URL)"
