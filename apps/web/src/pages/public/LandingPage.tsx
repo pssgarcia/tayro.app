@@ -135,7 +135,7 @@ export default function LandingPage() {
             <div className="lg:col-span-7">
               <p className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-lime/80">
                 <span aria-hidden="true" className="h-2 w-2 bg-lime" />
-                CRM para marcas
+                Plataforma para marcas
               </p>
 
               <h1
@@ -151,8 +151,8 @@ export default function LandingPage() {
                     menção do herói — repetir em todo TAYRO da página gastaria o
                     orçamento de lime e viraria ruído. O texto no DOM continua
                     sendo "TAYRO", então busca por texto não muda. */}
-                O <span className="font-semibold">TAY<span className="text-lime">RO</span></span> é o
-                CRM pra marca que já recebe candidatura de creator e decide na mão. Cada candidatura
+                O <span className="font-semibold">TAY<span className="text-lime">RO</span></span> é a
+                plataforma pra marca que já recebe candidatura de creator e decide na mão. Cada candidatura
                 chega com o Instagram real da creator do lado do botão de aprovar.
               </p>
 
@@ -263,8 +263,9 @@ export default function LandingPage() {
                 a parceria dentro do produto
               </SectionLabel>
               <p className="max-w-[52ch] text-pretty text-base leading-relaxed text-kinetic-text">
-                Da candidatura à entrega, nas mesmas abas que a marca usa. Aprove uma candidatura e
-                acompanhe a parceria virar recompensa registrada e conteúdo em revisão.
+                Da candidatura ao resultado, nas mesmas abas que a marca usa. Aprove uma
+                candidatura e acompanhe a parceria virar recompensa registrada, conteúdo em
+                revisão e o resultado que fica no histórico da creator.
               </p>
             </div>
 
@@ -279,7 +280,7 @@ export default function LandingPage() {
               <SectionLabel id="sec-lados">os dois lados da parceria</SectionLabel>
               <p className="max-w-[52ch] text-pretty text-base leading-relaxed text-kinetic-text">
                 A marca cria a oportunidade e a creator encontra. Cada uma vê a sua parte da mesma
-                campanha, do primeiro anúncio até o conteúdo entregue.
+                campanha, do primeiro anúncio ao resultado que vira histórico dela.
               </p>
             </div>
 

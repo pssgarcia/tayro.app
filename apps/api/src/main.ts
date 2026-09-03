@@ -47,7 +47,7 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('TAYRO API')
-      .setDescription('API do TAYRO: CRM de creators fitness')
+      .setDescription('API do TAYRO: plataforma de creators fitness')
       .setVersion('1.0')
       .addBearerAuth()
       .build();

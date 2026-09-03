@@ -18,7 +18,7 @@ related_decisions: [D-01]
 ## Objective
 Retrofit — sem processo `/feature` original registrado; comportamento descrito a partir do
 código em produção. `Application` é o vínculo entre uma creator (`Influencer`) e uma `Campaign`
-— o núcleo do CRM, já que avaliar candidata é a dor central do produto (`D-01`).
+— o núcleo do produto, já que avaliar candidata é a dor central (`D-01`).
 
 ## Scope
 Ciclo de vida de uma candidatura: criar, aprovar, rejeitar, retirar, e o disparo de atualização

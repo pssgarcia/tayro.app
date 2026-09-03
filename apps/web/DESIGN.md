@@ -1,6 +1,6 @@
 ---
 name: TAYRO
-description: CRM de creators fitness, creator-first — dark quase-preto com uma placa clara por tela
+description: Plataforma de creators fitness, creator-first — dark quase-preto com uma placa clara por tela
 colors:
   background: "#0A0A0A"
   foreground: "#EDEDE8"

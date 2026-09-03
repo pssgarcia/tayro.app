@@ -3,18 +3,20 @@ import KineticTabs from '../../../components/primitives/kinetic/KineticTabs';
 import type { ContentStatus, RewardStatus } from '../../../types/api';
 import DemoFila, { type Decisao } from './DemoFila';
 import DemoFilaStory from './DemoFilaStory';
-import { DemoConteudos, DemoRecompensas } from './DemoParcerias';
+import { DemoConteudos, DemoRecompensas, DemoResultados } from './DemoParcerias';
 import { DEMO_CREATORS, type DemoCreator, type DemoParceria } from './demo';
 
 // ─── A demonstração do produto ───────────────────────────────────────────────
 // A seção mais forte da página, e a única interativa. Não é uma vitrine de
-// features soltas: são as três abas que a marca realmente usa no detalhe de
+// features soltas: são as quatro abas que a marca realmente usa no detalhe de
 // campanha (`/brand/campaigns/:id`), na ordem em que a parceria acontece.
 //
 // A continuidade é o argumento: aprovar na Fila faz nascer uma parceria, que
-// aparece como recompensa a registrar e como conteúdo a revisar. Quem clica vê
-// o ciclo inteiro — candidatura → decisão → recompensa → entrega — sem que a
-// gente precise afirmar nada.
+// aparece como recompensa a registrar, conteúdo a revisar e, no fim,
+// resultado a informar. Quem clica vê o ciclo inteiro — candidatura → decisão
+// → recompensa → entrega → resultado — sem que a gente precise afirmar nada.
+// A aba Resultado é o que fecha os diferenciais nº2/nº3 do `positioning.md`
+// (histórico e transparência bilateral).
 //
 // Toda a UI é construída em código com os primitivos do produto. Só as FOTOS
 // são geradas (ver `demo.ts`).
@@ -23,6 +25,7 @@ const ABAS = [
   { id: 'fila', label: 'Fila' },
   { id: 'recompensas', label: 'Recompensas' },
   { id: 'conteudos', label: 'Conteúdos' },
+  { id: 'resultado', label: 'Resultado' },
 ] as const;
 
 type Aba = (typeof ABAS)[number]['id'];
@@ -32,7 +35,11 @@ type Aba = (typeof ABAS)[number]['id'];
 const PARCERIAS_INICIAIS: Record<string, DemoParceria> = Object.fromEntries(
   DEMO_CREATORS.filter((c) => c.status === 'APPROVED').map((c) => [
     c.id,
-    { recompensa: 'ISSUED' as RewardStatus, conteudo: 'PENDING' as ContentStatus },
+    {
+      recompensa: 'ISSUED' as RewardStatus,
+      conteudo: 'PENDING' as ContentStatus,
+      resultado: 'PENDING' as const,
+    },
   ]),
 );
 
@@ -58,11 +65,12 @@ export default function DemoProduto() {
 
     setDecisoes((atual) => ({ ...atual, [creator.id]: decisao }));
 
-    // Aprovar abre a parceria: é o que faz a recompensa e a entrega existirem.
+    // Aprovar abre a parceria: é o que faz a recompensa, a entrega e o
+    // resultado existirem.
     if (decisao === 'aprovada') {
       setParcerias((atual) => ({
         ...atual,
-        [creator.id]: { recompensa: 'PENDING', conteudo: 'PENDING' },
+        [creator.id]: { recompensa: 'PENDING', conteudo: 'PENDING', resultado: 'PENDING' },
       }));
     }
 
@@ -75,6 +83,13 @@ export default function DemoProduto() {
 
   function revisarConteudo(creatorId: string, status: ContentStatus) {
     setParcerias((atual) => ({ ...atual, [creatorId]: { ...atual[creatorId], conteudo: status } }));
+  }
+
+  function informarResultado(creatorId: string) {
+    setParcerias((atual) => ({
+      ...atual,
+      [creatorId]: { ...atual[creatorId], resultado: 'REGISTERED' },
+    }));
   }
 
   function recomecar() {
@@ -116,6 +131,9 @@ export default function DemoProduto() {
         <DemoRecompensas parcerias={parcerias} onAvancar={avancarRecompensa} />
       )}
       {aba === 'conteudos' && <DemoConteudos parcerias={parcerias} onRevisar={revisarConteudo} />}
+      {aba === 'resultado' && (
+        <DemoResultados parcerias={parcerias} onInformar={informarResultado} />
+      )}
 
       <div className="mt-6 flex justify-end">
         {!intocada && (

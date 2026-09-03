@@ -23,7 +23,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
   manifest: {
     name: 'Tayro',
     short_name: 'Tayro',
-    description: 'CRM de creators fitness — candidaturas, conteúdo e recompensas.',
+    description: 'Plataforma de creators fitness: candidaturas, conteúdo e recompensas.',
     lang: 'pt-BR',
     start_url: '/',
     display: 'standalone',

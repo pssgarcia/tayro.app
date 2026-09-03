@@ -1,6 +1,6 @@
 ---
 description: Dispara o agente researcher pra buscar evidência externa real (concorrentes, preço, reclamações) e atualizar competitors.md.
-argument-hint: <o que pesquisar — ex: "concorrentes BR de CRM de creator" ou "preço do Modash">
+argument-hint: <o que pesquisar — ex: "concorrentes BR de gestão de creator" ou "preço do Modash">
 allowed-tools: Agent, Read
 ---
 
@@ -28,7 +28,7 @@ Passe pro agente um prompt contendo:
 > a resposta é "não encontrei", e isso é resultado válido. Toda afirmação sai com URL + data
 > de acesso. Sem fonte, não sai.
 >
-> Busque contra-evidência de propósito: além de "por que CRM de creator funciona", busque
+> Busque contra-evidência de propósito: além de "por que gestão de creator funciona", busque
 > "por que ferramenta de influencer marketing falha" e "por que marcas voltaram pra planilha".
 >
 > Entregue no formato de `researcher.md`: Pergunta → Resposta curta → Evidência (com fontes) →
