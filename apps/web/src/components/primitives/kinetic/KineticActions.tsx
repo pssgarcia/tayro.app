@@ -35,17 +35,30 @@ interface Props {
   actions: KineticAction[];
   /** Barra sobre fundo escuro, fora da placa clara. */
   dark?: boolean;
+  /** Rótulo longo: encolhe o tipo abaixo de `sm` pra caber numa linha só.
+   *  Em 360px cada bloco de uma barra de duas ações tem ~156px, e uma frase
+   *  como "Esqueci minha senha" custa 160px em mono 12px com tracking largo —
+   *  quebrava no meio ("ESQUECI MINHA / SENHA") ao lado do bloco lime. Opt-in
+   *  de propósito: a maioria das barras tem rótulo curto e não deve encolher. */
+  compact?: boolean;
   className?: string;
 }
 
 const base =
-  'flex min-h-[60px] items-center justify-center gap-2 font-mono text-xs font-medium uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'flex min-h-[60px] items-center justify-center gap-2 font-mono font-medium uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+
+const typeScale = 'text-xs tracking-widest';
+// `whitespace-nowrap` junto: com `min-width: auto` de item flex, o bloco para
+// de encolher no tamanho do texto e toma o espaço que sobra do irmão em vez de
+// quebrar a frase.
+const typeScaleCompact =
+  'whitespace-nowrap text-[10px] tracking-[.05em] sm:text-xs sm:tracking-widest';
 
 const primaryLook = 'bg-lime text-black hover:bg-white';
 const ghostLook = 'bg-transparent text-[#4a4a44] hover:bg-black/5';
 const ghostLookDark = 'bg-transparent text-foreground hover:bg-white/5';
 
-export default function KineticActions({ actions, dark, className }: Props) {
+export default function KineticActions({ actions, dark, compact, className }: Props) {
   const divider = dark ? 'border-kinetic-border' : 'border-[#c9c9c3]';
 
   return (
@@ -53,6 +66,7 @@ export default function KineticActions({ actions, dark, className }: Props) {
       {actions.map((action, i) => {
         const look = cn(
           base,
+          compact ? typeScaleCompact : typeScale,
           action.primary ? primaryLook : dark ? ghostLookDark : ghostLook,
           i > 0 && ['border-l', divider],
           action.width ? 'shrink-0' : 'flex-1',

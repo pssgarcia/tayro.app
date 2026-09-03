@@ -30,4 +30,17 @@ describe('LoginPage', () => {
     const link = screen.getByRole('link', { name: /esqueci minha senha/i });
     expect(link).toHaveAttribute('href', '/forgot-password');
   });
+
+  // Regressão de mobile: com o tipo padrão da barra o rótulo custa ~160px e
+  // meia barra em 360px tem ~156px, então a frase quebrava em duas linhas ao
+  // lado do bloco lime. A fiação do `compact` é o que dá pra travar aqui —
+  // jsdom não mede largura de texto.
+  it('usa a barra compacta pro rótulo caber numa linha no celular', () => {
+    renderPage();
+
+    expect(screen.getByRole('link', { name: /esqueci minha senha/i })).toHaveClass(
+      'text-[10px]',
+      'sm:text-xs',
+    );
+  });
 });

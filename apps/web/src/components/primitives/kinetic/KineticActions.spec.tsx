@@ -71,6 +71,31 @@ describe('KineticActions', () => {
     expect(screen.getByRole('button', { name: 'Copiar link' })).not.toHaveClass('bg-lime');
   });
 
+  // Rótulo longo em meia barra de 360px quebrava no meio ("ESQUECI MINHA /
+  // SENHA"). jsdom não mede layout, então o que dá pra travar é a escala de
+  // tipo que faz a frase caber — e que ela some a partir de sm.
+  it('encolhe o tipo abaixo de sm quando `compact`', () => {
+    render(
+      <MemoryRouter>
+        <KineticActions
+          compact
+          actions={[{ label: 'Esqueci minha senha', to: '/forgot-password' }]}
+        />
+      </MemoryRouter>,
+    );
+
+    const link = screen.getByRole('link', { name: 'Esqueci minha senha' });
+    expect(link).toHaveClass('text-[10px]', 'whitespace-nowrap', 'sm:text-xs');
+  });
+
+  it('sem `compact` mantém o tipo padrão da barra', () => {
+    render(<KineticActions actions={[{ label: 'Entrar', primary: true }]} />);
+
+    const button = screen.getByRole('button', { name: 'Entrar' });
+    expect(button).toHaveClass('text-xs', 'tracking-widest');
+    expect(button).not.toHaveClass('text-[10px]');
+  });
+
   it('respeita type=submit (a barra é usada dentro de <form>)', () => {
     render(<KineticActions actions={[{ label: 'Entrar', type: 'submit', primary: true }]} />);
     expect(screen.getByRole('button', { name: 'Entrar' })).toHaveAttribute('type', 'submit');
