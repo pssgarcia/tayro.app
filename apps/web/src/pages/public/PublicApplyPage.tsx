@@ -7,7 +7,12 @@ import { z } from 'zod';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { api } from '../../services/api';
 import type { Campaign } from '../../types/api';
-import { formatOffer, INSTAGRAM_HANDLE_FORMAT } from '../../utils/format';
+import {
+  formatOffer,
+  INSTAGRAM_HANDLE_FORMAT,
+  PHONE_FORMAT,
+  PHONE_FORMAT_MESSAGE,
+} from '../../utils/format';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
 import KineticField from '../../components/primitives/kinetic/KineticField';
@@ -49,7 +54,7 @@ const schema = z.object({
     .trim()
     .min(1, 'Telefone obrigatório')
     .max(20, 'Telefone muito longo')
-    .regex(/^[0-9()+\-\s]{8,20}$/, 'Telefone inválido — use apenas números, espaços, ( ) - ou +'),
+    .regex(PHONE_FORMAT, PHONE_FORMAT_MESSAGE),
   message: z.string().max(1000).optional(),
 });
 

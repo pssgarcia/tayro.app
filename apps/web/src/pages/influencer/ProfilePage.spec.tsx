@@ -19,6 +19,7 @@ const baseProfile: InfluencerProfile = {
   avatarUrl: null,
   bio: 'Treino funcional.',
   city: 'Belo Horizonte',
+  phone: null,
   niches: ['fitness'],
   instagramHandle: 'anafit',
   tiktokHandle: null,
@@ -26,6 +27,7 @@ const baseProfile: InfluencerProfile = {
   igEngagementRate: 4.2,
   igFetchStatus: 'OK',
   publicProfileEnabled: false,
+  publicPhoneEnabled: false,
   createdAt: '2026-06-01T00:00:00.000Z',
 };
 
@@ -63,6 +65,14 @@ function renderPage() {
       <ProfilePage />
     </QueryClientProvider>,
   );
+}
+
+/** Abre uma row de "Editar", troca o valor no modal e salva — fecha o modal. */
+function editRowTo(label: string, newValue: string) {
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}`, 'i') }));
+  const dialog = screen.getByRole('dialog', { name: label });
+  fireEvent.change(within(dialog).getByLabelText(label), { target: { value: newValue } });
+  fireEvent.click(within(dialog).getByRole('button', { name: /^salvar$/i }));
 }
 
 /** Abre a row "Nome", edita no modal e salva — fecha o modal. */
@@ -164,6 +174,93 @@ describe('Creator ProfilePage', () => {
           niches: ['fitness'],
         }),
       ),
+    );
+  });
+
+  // ─── Telefone ───────────────────────────────────────────────────────────
+  // O telefone é o canal que a marca usa pra chamar no WhatsApp depois de
+  // aprovar (specs/creator-roster). Quem se cadastrou antes de 2026-09-02 tem
+  // o campo vazio, e esta é a única superfície onde dá pra preencher.
+
+  it('mostra o telefone salvo na row "Telefone"', () => {
+    mockHooks({ data: { ...baseProfile, phone: '(11) 91234-5678' } });
+    renderPage();
+
+    expect(screen.getByText('(11) 91234-5678')).toBeInTheDocument();
+  });
+
+  it('salva o telefone editado na row', async () => {
+    renderPage();
+    editRowTo('Telefone', '(21) 98888-7777');
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ phone: '(21) 98888-7777' }),
+      ),
+    );
+  });
+
+  it('não salva telefone em formato inválido', async () => {
+    renderPage();
+    editRowTo('Telefone', 'me liga aí');
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+    expect(await screen.findByText(/telefone inválido/i)).toBeInTheDocument();
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  // ─── Opt-in de telefone no perfil público ───────────────────────────────
+  // Separado do "Perfil público" de propósito: /c/:handle é página pública e
+  // indexável, e o telefone foi dado pra marca usar DEPOIS de aprovar uma
+  // candidatura. Ver specs/public-creator-profile.
+
+  it('não oferece o opt-in de telefone público sem telefone preenchido', () => {
+    mockHooks({ data: { ...baseProfile, phone: null, publicProfileEnabled: true } });
+    renderPage();
+
+    expect(
+      screen.queryByRole('switch', { name: /mostrar meu telefone/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('não oferece o opt-in de telefone público com o perfil privado', () => {
+    mockHooks({
+      data: { ...baseProfile, phone: '(11) 91234-5678', publicProfileEnabled: false },
+    });
+    renderPage();
+
+    expect(
+      screen.queryByRole('switch', { name: /mostrar meu telefone/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('salva o opt-in de telefone público', async () => {
+    mockHooks({
+      data: { ...baseProfile, phone: '(11) 91234-5678', publicProfileEnabled: true },
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('switch', { name: /mostrar meu telefone/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ publicPhoneEnabled: true }),
+      ),
+    );
+  });
+
+  // Apagar o campo é como a creator remove o telefone — a API converte "" em
+  // null. Sem aceitar vazio, um telefone errado seria impossível de tirar.
+  it('permite apagar o telefone', async () => {
+    mockHooks({ data: { ...baseProfile, phone: '(11) 91234-5678' } });
+    renderPage();
+    editRowTo('Telefone', '');
+    fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ phone: '' })),
     );
   });
 });

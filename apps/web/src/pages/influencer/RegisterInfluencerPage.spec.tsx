@@ -46,11 +46,10 @@ function continueStep() {
 }
 
 /** Preenche os 3 passos e deixa o form na tela final ("Criar conta"). */
-async function fillAllSteps({ instagramHandle }: { instagramHandle?: string } = {}) {
+async function fillAllSteps({ instagramHandle = 'anafit' }: { instagramHandle?: string } = {}) {
   fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
-  if (instagramHandle) {
-    fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: instagramHandle } });
-  }
+  fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
+  fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: instagramHandle } });
   continueStep();
 
   fireEvent.change(await screen.findByLabelText('E-mail'), {
@@ -91,6 +90,8 @@ describe('RegisterInfluencerPage', () => {
   it('Voltar retorna pro passo anterior preservando os valores digitados', async () => {
     renderPage();
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
+    fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: 'anafit' } });
     continueStep();
 
     await screen.findByLabelText('E-mail');
@@ -102,6 +103,8 @@ describe('RegisterInfluencerPage', () => {
   it('valida senha curta antes de avançar do passo 2', async () => {
     renderPage();
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
+    fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: 'anafit' } });
     continueStep();
 
     fireEvent.change(await screen.findByLabelText('E-mail'), {
@@ -112,6 +115,35 @@ describe('RegisterInfluencerPage', () => {
 
     expect(await screen.findByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  // Telefone virou obrigatório aqui em 2026-09-02: era a última porta de
+  // entrada de creator que não pedia, e sem ele a marca fica só com o @ do
+  // Instagram — que não é canal de resposta garantido (specs/creator-roster).
+  it('pede telefone no passo de Identidade', () => {
+    renderPage();
+    expect(screen.getByLabelText('Telefone')).toBeInTheDocument();
+  });
+
+  it('não avança do passo de Identidade sem telefone', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    continueStep();
+
+    expect(await screen.findByText(/telefone obrigatório/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
+  });
+
+  it('não avança com telefone em formato inválido', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), {
+      target: { value: 'me liga aí' },
+    });
+    continueStep();
+
+    expect(await screen.findByText(/telefone inválido/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
   });
 
   it('desabilita o botão primário quando useStepGuard indica guarda ativa (bug do clique reaproveitado)', () => {
@@ -139,6 +171,7 @@ describe('RegisterInfluencerPage', () => {
         name: 'Ana Silva',
         email: 'ana@exemplo.com',
         password: 'senhaSegura1',
+        phone: '(11) 91234-5678',
         instagramHandle: 'anafit', // @ removido + lowercase
         niches: ['crossfit'],
       }),
@@ -212,6 +245,7 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
     fireEvent.change(screen.getByLabelText(/instagram/i), {
       target: { value: 'perfilinexistente' },
     });
@@ -233,6 +267,7 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
 
     const campo = screen.getByLabelText(/instagram/i);
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
     fireEvent.change(campo, { target: { value: 'anafit' } });
     fireEvent.blur(campo);
 
@@ -260,13 +295,19 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalled());
   });
 
-  it('campo de @ vazio não dispara verificação e não impede o cadastro', async () => {
+  // Até 2026-09-02 o @ era opcional aqui e o cadastro seguia sem ele — a conta
+  // nascia sem media kit e a marca via "Dados do Instagram indisponíveis" pra
+  // sempre. Agora o campo vazio barra o passo, e nem chega a consultar a API
+  // de verificação (não há o que verificar).
+  it('campo de @ vazio impede avançar e não dispara verificação', async () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
     continueStep();
 
-    await screen.findByLabelText('E-mail');
+    expect(await screen.findByText(/@ do instagram obrigatório/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
     expect(api.get).not.toHaveBeenCalled();
   });
 
@@ -274,6 +315,7 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
     fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: 'anafit' } });
     continueStep();
 
@@ -286,6 +328,7 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
 
     const campo = screen.getByLabelText(/instagram/i);
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
     fireEvent.change(campo, { target: { value: 'anafit' } });
     fireEvent.blur(campo);
 
@@ -306,6 +349,7 @@ describe('RegisterInfluencerPage — verificação do @ do Instagram', () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
     fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: 'naoexiste' } });
     continueStep();
 

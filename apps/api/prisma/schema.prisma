@@ -127,9 +127,8 @@ model Influencer {
   name                 String
   avatarUrl            String?
   bio                  String?
-  // Contato direto pra marca falar com a creator fora do produto — capturado
-  // hoje só na candidatura pública (ver spec creator-discovery-and-apply);
-  // outros fluxos de criação de conta ainda não coletam.
+  // Contato direto pra marca falar com a creator fora do produto. Coletado na
+  // candidatura pública e no cadastro de creator; editável no Perfil.
   phone                String?
   instagramHandle      String?        @unique
   tiktokHandle         String?
@@ -144,6 +143,12 @@ model Influencer {
   igFetchStatus        IgFetchStatus?
   // Opt-in LGPD — perfil público só é exibido quando true
   publicProfileEnabled Boolean        @default(false)
+  // Segundo opt-in, separado de propósito: /c/:handle é uma página PÚBLICA e
+  // indexável. Tornar o perfil público (bio, nichos, métricas) não é o mesmo
+  // consentimento que publicar o telefone pessoal, que foi coletado pra marca
+  // usar DEPOIS de aprovar uma candidatura. Sem este flag, o telefone nunca
+  // sai no endpoint público.
+  publicPhoneEnabled   Boolean        @default(false)
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 

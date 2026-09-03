@@ -59,6 +59,12 @@ status da busca, posts recentes) e:
   armazenado.
 - **Resultados de parceria** — só os que a marca marcou explicitamente como visíveis para a
   creator; nunca todos os resultados registrados.
+- **Telefone** — só quando a creator ligou `publicPhoneEnabled`, um **segundo opt-in**,
+  separado de `publicProfileEnabled` de propósito. Tornar o perfil público (bio, nichos,
+  métricas) não é o mesmo consentimento que publicar o telefone pessoal numa página aberta e
+  indexável: o telefone é coletado na candidatura/cadastro pra marca usar **depois de aprovar**
+  (`creator-roster`), não pra virar contato aberto. Sem o opt-in a resposta traz `phone: null`;
+  o próprio flag **nunca** é exposto (saber que existe um telefone escondido já é informação).
 
 ## API / Interfaces
 
@@ -72,10 +78,18 @@ destaque única por tela; avatar carregado via proxy same-origin (ver `instagram
 motivo). Métricas de Instagram têm 3 estados visuais conforme `igFetchStatus`
 (carregando/indisponível/números reais) sem quebrar o resto da página em nenhum deles. Feed
 recente só aparece se houver post. Sem ação de atualizar dados do Instagram nesta tela — quem
-teria permissão é a marca, autenticada, não o visitante. CTA final direciona para cadastro de
-marca.
+teria permissão é a marca, autenticada, não o visitante.
+
+CTA final tem duas formas, decididas pelo telefone: com telefone publicado, é **"Falar no
+WhatsApp"** (bloco lime + ícone, mesmo elemento da placa de `/brand/creators`) com "Crie sua
+campanha no tayro" como saída secundária em texto; sem telefone, é o "Crie sua campanha" de
+sempre. Telefone que a heurística de `whatsappLinkFromPhone` não converte cai na segunda forma —
+nunca um link quebrado, mesma regra de `creator-roster`.
 
 ## Acceptance Criteria
+- [x] Telefone não aparece na resposta pública sem `publicPhoneEnabled`, mesmo existindo.
+- [x] Com o opt-in ligado, o telefone aparece e o CTA vira "Falar no WhatsApp".
+- [x] O flag `publicPhoneEnabled` nunca é devolvido pelo endpoint público.
 - [x] Handle inexistente retorna `404` com mensagem genérica.
 - [x] Handle existente com `publicProfileEnabled=false` retorna `404` com a **mesma** mensagem
       genérica do caso anterior.
@@ -124,6 +138,11 @@ marca.
   `avatarUrl` são nulos.
 
 ## Change History
+- 2026-09-02 · Telefone passa a poder aparecer no perfil público, atrás do opt-in próprio
+  `publicPhoneEnabled` (migration `add_public_phone_opt_in`, default `false`), e o CTA do rodapé
+  vira "Falar no WhatsApp" quando ele existe. Pedido do Pedro foi só trocar o botão; o opt-in
+  separado é proteção adicionada no caminho — sem ele a mudança publicaria o telefone pessoal de
+  toda creator com perfil público, num consentimento que ela nunca deu.
 - 2026-08-24 · o endereço público deixou de ser literal e passou a derivar da origem
   (`publicUrl`/`publicUrlLabel` em `utils/format.ts`). Ver "Out of Scope → Endereço público".
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0+.

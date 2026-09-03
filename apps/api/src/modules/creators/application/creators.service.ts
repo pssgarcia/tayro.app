@@ -120,6 +120,11 @@ export class CreatorsService {
       igEngagementRate: influencer.igEngagementRate,
       igRecentPosts: influencer.igRecentPosts,
       igFetchStatus: influencer.igFetchStatus,
+      // Segundo opt-in, separado do publicProfileEnabled: /c/:handle é página
+      // pública e indexável, e o telefone foi coletado pra marca usar DEPOIS
+      // de aprovar uma candidatura — não pra virar contato aberto. Sem o flag
+      // ligado, sai null (nunca o número, nunca o próprio flag).
+      phone: influencer.publicPhoneEnabled ? influencer.phone : null,
       completedPartnerships,
       results,
     };
@@ -136,6 +141,7 @@ export class CreatorsService {
         avatarUrl: true,
         bio: true,
         city: true,
+        phone: true,
         niches: true,
         instagramHandle: true, // read-only aqui (não editável neste fluxo)
         tiktokHandle: true,
@@ -143,6 +149,7 @@ export class CreatorsService {
         igEngagementRate: true,
         igFetchStatus: true,
         publicProfileEnabled: true,
+        publicPhoneEnabled: true,
         createdAt: true,
         user: { select: { email: true } },
       },
@@ -162,11 +169,18 @@ export class CreatorsService {
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.bio !== undefined) data.bio = dto.bio;
     if (dto.city !== undefined) data.city = dto.city;
+    // Vazio limpa (null), não guarda string vazia: o front decide se mostra o
+    // telefone por `phone == null`, e "" apareceria como um link tel: vazio
+    // pra marca. Ver specs/creator-roster.
+    if (dto.phone !== undefined) data.phone = dto.phone || null;
     if (dto.avatarUrl !== undefined) data.avatarUrl = dto.avatarUrl;
     if (dto.niches !== undefined) data.niches = dto.niches;
     if (dto.tiktokHandle !== undefined) data.tiktokHandle = dto.tiktokHandle;
     if (dto.publicProfileEnabled !== undefined) {
       data.publicProfileEnabled = dto.publicProfileEnabled;
+    }
+    if (dto.publicPhoneEnabled !== undefined) {
+      data.publicPhoneEnabled = dto.publicPhoneEnabled;
     }
 
     try {

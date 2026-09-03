@@ -229,6 +229,30 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - **"Programa" virou "Campanha" em toda a copy (2026-08-30):** pedido do Pedro — a interface era um mix ("Programas" na nav do creator e no `/programs`, mas rota `/brand/campaigns` e `Campaign` no domínio desde sempre). Agora toda a copy VISÍVEL fala "campanha": nav, títulos, botões ("Publicar campanha", "Nova campanha", "Editar campanha"), empty states, mensagens de erro (API inclusa: "Campanha não encontrada", "Você já se candidatou a esta campanha"), placeholders, e-mail de recusa, e os comentários do código. **Escopo deliberadamente restrito a texto** (decisão do Pedro): rotas (`/programs`, `/influencer/programs/:id`), nomes de arquivo/hook (`ProgramCard`, `ProgramsList`, `ProgramDetailPage`, `useProgram`, `useBrowsePrograms`), o endpoint `POST /programs/:id/apply/public`, o `@Controller('programs')` e o const `DEMO_PROGRAMA` da landing **não mudaram** — zero link quebrado, zero mudança de contrato de API. Specs com string exata citada atualizadas (`campaign-lifecycle`, `creator-discovery-and-apply`, `brand-dashboard` + Change History nas três). 498 testes web + 346 API verdes; lint/typecheck limpos.
 - **Nome e telefone obrigatórios no apply público + telefone visível na Fila (2026-08-31):** pedido do Pedro — a marca só tinha o @ do Instagram como contato com a creator, que não é canal garantido de resposta. `/apply/:id`: "Seu nome (opcional)" perdeu o "(opcional)" e virou obrigatório (nome já era gravado no `Influencer` desde sempre, só a validação do form estava frouxa); campo novo **Telefone**, obrigatório. Schema: `Influencer.phone String?` (migration `add_influencer_phone`, nullable porque cadastro direto e apply autenticado ainda não coletam telefone — ver `creator-discovery-and-apply` → Known Gaps). Exposto em `influencerSelect` e mostrado como link `tel:` ao lado do @handle na Fila (desktop `CampaignFilaTab` + mobile `CampaignPipelineMobileStory`) — sem essa ponta o dado ficaria só no banco, sem cumprir o motivo de existir. Conta existente sem telefone (achada por handle ou e-mail no reapply) é completada com o valor enviado, mesmo padrão já usado pro handle. Specs atualizadas: `creator-discovery-and-apply`, `applications-pipeline`, `campaign-fila-review`, `creator-account` (documenta que `phone` NÃO passa pelo cadastro/perfil). 350 testes API + 505 web; lint/typecheck limpos.
 
+- **Telefone e @ obrigatórios no cadastro de creator + WhatsApp no perfil público (2026-09-02):**
+  fecha o buraco que a aba Creators expôs — `Influencer.phone` só era coletado no apply público
+  (desde 31/08), então **3 de 21 creators no banco de dev tinham telefone** e o botão de WhatsApp
+  da marca quase nunca aparecia. Agora: (1) **cadastro de creator** (`/register/influencer`)
+  pede telefone **e** `@` do Instagram, os dois obrigatórios — o `@` era opcional e a conta
+  nascia sem media kit nenhum, aparecendo pra marca como "Dados do Instagram indisponíveis" pra
+  sempre (o `@` continua passando pela verificação de existência do `D-19`, e é normalizado
+  antes de validar, então colar "@AnaFit" segue funcionando); (2) **Perfil da creator** ganhou row
+  "Telefone" — única saída pras contas antigas, e apagar o campo grava `null` (string vazia nunca
+  é persistida, senão o front renderizaria um `tel:` vazio); (3) **`/c/:handle`** troca o CTA
+  "Crie sua campanha" por **"Falar no WhatsApp"** quando há telefone, com o cadastro de marca
+  virando saída secundária em texto (pedido do Pedro).
+  - **Proteção adicionada no caminho, não pedida:** publicar o telefone em `/c/:handle` — página
+    pública e indexável — não é o mesmo consentimento que `publicProfileEnabled`. O telefone é
+    coletado pra marca usar DEPOIS de aprovar uma candidatura. Por isso um **segundo opt-in**,
+    `publicPhoneEnabled` (migration `add_public_phone_opt_in`, default `false`): sem ele
+    `GET /creators/:handle/public` devolve `phone: null`, e o próprio flag nunca é exposto
+    (saber que existe um telefone escondido já é informação). O toggle só aparece no Perfil com
+    perfil público ligado E telefone preenchido — fora disso não há o que consentir.
+  - Formato do telefone virou constante compartilhada nos dois lados (`shared/validation/phone.ts`
+    na API, `PHONE_FORMAT` em `utils/format.ts` no web), mesmo padrão do `INSTAGRAM_HANDLE_FORMAT`
+    — eram 3 cópias da mesma regex depois desta mudança.
+  - 17 testes novos na API (416) e 6 no web (602); specs `creator-account`,
+    `public-creator-profile`, `creator-discovery-and-apply` e `creator-roster` atualizadas.
 - **Recuperação de senha (2026-09-02):** fecha o item mais urgente do "Pendente" — quem esquecia
   a senha ficava fora do produto pra sempre (`POST /auth/claim` só define senha uma vez). Espelha
   o fluxo de claim: `POST /auth/forgot-password` (público, `email`, sempre `200` genérico —

@@ -5,8 +5,14 @@ import {
   IsArray,
   ArrayMaxSize,
   MaxLength,
+  Matches,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  PHONE_FORMAT_OR_EMPTY,
+  PHONE_FORMAT_MESSAGE,
+  PHONE_MAX_LENGTH,
+} from '../../../../shared/validation/phone';
 
 // Perfil do creator autenticado. instagramHandle NÃO é editável aqui —
 // é a chave do perfil público e dirige o cache do IG; fica num fluxo dedicado.
@@ -30,6 +36,15 @@ export class UpdateInfluencerDto {
   @IsString()
   @MaxLength(100)
   city?: string;
+
+  // String vazia é como a creator APAGA o telefone (o service converte pra
+  // null) — por isso o formato aceita vazio, diferente do cadastro.
+  @ApiPropertyOptional({ example: '(11) 91234-5678' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(PHONE_MAX_LENGTH)
+  @Matches(PHONE_FORMAT_OR_EMPTY, { message: PHONE_FORMAT_MESSAGE })
+  phone?: string;
 
   @ApiPropertyOptional({ example: 'https://cdn.exemplo.com/avatar.png' })
   @IsOptional()
@@ -58,4 +73,13 @@ export class UpdateInfluencerDto {
   @IsOptional()
   @IsBoolean()
   publicProfileEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'Opt-in LGPD separado — publica o telefone no perfil público (/c/:handle)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  publicPhoneEnabled?: boolean;
 }

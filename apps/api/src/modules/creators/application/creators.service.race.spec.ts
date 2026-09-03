@@ -287,5 +287,54 @@ describe('CreatorsService — race conditions', () => {
       counter.assertAtMost('influencer', 'findUnique', 1, 'getPublicProfile');
       expect(counter.callCount('application', 'findMany')).toBe(0); // carrega via include
     });
+
+    // ─── Telefone no perfil público exige opt-in PRÓPRIO ───────────────────
+    // /c/:handle é página pública e indexável. Tornar o perfil público não é o
+    // mesmo consentimento que publicar o telefone pessoal, que foi coletado
+    // pra marca usar DEPOIS de aprovar uma candidatura.
+
+    const publicProfile = (overrides: Record<string, unknown> = {}) => ({
+      ...makeInfluencer(),
+      publicProfileEnabled: true,
+      followersCount: 10000,
+      igEngagementRate: 4.5,
+      igRecentPosts: [],
+      bio: '',
+      niches: [],
+      city: null,
+      avatarUrl: null,
+      phone: '(11) 91234-5678',
+      publicPhoneEnabled: false,
+      applications: [],
+      ...overrides,
+    });
+
+    it('não expõe o telefone sem o opt-in de telefone', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(publicProfile());
+
+      const result = await service.getPublicProfile('@creator');
+
+      expect(result.phone).toBeNull();
+    });
+
+    it('expõe o telefone quando o opt-in de telefone está ligado', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({ publicPhoneEnabled: true }),
+      );
+
+      const result = await service.getPublicProfile('@creator');
+
+      expect(result.phone).toBe('(11) 91234-5678');
+    });
+
+    it('nunca devolve o próprio flag de opt-in', async () => {
+      prisma.influencer.findUnique.mockResolvedValue(
+        publicProfile({ publicPhoneEnabled: true }),
+      );
+
+      const result = await service.getPublicProfile('@creator');
+
+      expect(result).not.toHaveProperty('publicPhoneEnabled');
+    });
   });
 });

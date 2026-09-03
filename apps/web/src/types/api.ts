@@ -114,6 +114,7 @@ export interface InfluencerProfile {
   avatarUrl: string | null;
   bio: string | null;
   city: string | null;
+  phone: string | null;
   niches: string[];
   instagramHandle: string | null; // read-only neste fluxo
   tiktokHandle: string | null;
@@ -121,6 +122,7 @@ export interface InfluencerProfile {
   igEngagementRate: number | null;
   igFetchStatus: string | null;
   publicProfileEnabled: boolean;
+  publicPhoneEnabled: boolean;
   createdAt: string;
 }
 
@@ -139,6 +141,8 @@ export interface PublicCreatorProfile {
   igEngagementRate: number | null;
   igRecentPosts: IgPost[] | null;
   igFetchStatus: IgFetchStatus | null;
+  /** Só vem preenchido quando a creator ligou o opt-in de telefone público. */
+  phone: string | null;
   completedPartnerships: number;
   results: {
     reach: number | null;
@@ -154,9 +158,12 @@ export interface UpdateInfluencerPayload {
   avatarUrl?: string;
   bio?: string;
   city?: string;
+  /** String vazia apaga o telefone (a API grava null). */
+  phone?: string;
   niches?: string[];
   tiktokHandle?: string;
   publicProfileEnabled?: boolean;
+  publicPhoneEnabled?: boolean;
 }
 
 // ─── Paginação (espelha buildPaginatedResult da API) ─────────────────────────────
@@ -306,7 +313,7 @@ export interface Campaign {
   niches: string[];
   maxSpots: number;
   offerType: OfferType | null;
-  offerAmount: number | null;      // centavos
+  offerAmount: number | null; // centavos
   offerDeadlineDays: number | null;
   offerDescription: string | null;
   offerCommissionPercent: number | null;

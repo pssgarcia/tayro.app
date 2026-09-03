@@ -235,12 +235,12 @@ cobertura. Ver Test Coverage.)
 - **Branch "preenche o handle (ou o telefone) de uma conta existente que não tem" sem teste
   dedicado** — implementado (`creators.service.ts`, dentro de `findOrCreateInfluencer`), mas
   nenhum dos specs existentes exercita esse caminho especificamente.
-- **`Influencer.phone` só é coletado por este fluxo.** Cadastro direto (`creator-account`) e
-  candidatura autenticada (via `ApplyModal`, `applications-pipeline`) não pedem telefone —
-  uma creator que nunca passou pelo apply público não tem telefone registrado, e não há tela
-  de perfil onde ela possa preenchê-lo depois (o campo não está em `PATCH /influencers/me`).
-  Decisão consciente de escopo (2026-08-31): o pedido era só este formulário; ampliar para os
-  outros dois caminhos e para a edição de perfil é mudança separada.
+- **A candidatura autenticada (`ApplyModal`, `applications-pipeline`) segue sem pedir telefone.**
+  Desde 2026-09-02 o cadastro direto (`creator-account`) pede telefone e o Perfil permite
+  editá-lo, então toda creator NOVA tem telefone por qualquer porta de entrada. Sobra o caso da
+  conta antiga: quem se cadastrou antes dessa data e se candidata pelo fluxo autenticado não
+  preenche telefone em lugar nenhum do caminho — só entrando no Perfil por conta própria, e
+  ninguém a avisa disso.
 - Nenhuma tela de detalhe pública própria existe: `/apply/:id` cumpre esse papel também pro
   visitante anônimo. Não é gap — é a decisão de escopo registrada em `roadmap.md`.
 
