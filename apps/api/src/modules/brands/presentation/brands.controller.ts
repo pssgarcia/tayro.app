@@ -29,4 +29,14 @@ export class BrandsController {
   updateMe(@CurrentUser() user: { id: string }, @Body() dto: UpdateBrandDto) {
     return this.brandsService.updateMe(user.id, dto);
   }
+
+  @Get('me/export')
+  @UseGuards(RolesGuard)
+  @Roles('BRAND')
+  @ApiOperation({
+    summary: 'Exportar os dados da marca autenticada (LGPD art. 18 II/V)',
+  })
+  exportMyData(@CurrentUser() user: { id: string }) {
+    return this.brandsService.exportMyData(user.id);
+  }
 }

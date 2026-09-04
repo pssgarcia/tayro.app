@@ -181,7 +181,7 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
 
       <div className="my-[26px] h-px bg-muted" />
 
-      <AccountSection email={profile.email} />
+      <AccountSection email={profile.email} role="BRAND" />
 
       <button
         type="submit"

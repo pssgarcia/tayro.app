@@ -372,7 +372,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
       <div className="my-[26px] h-px bg-muted" />
 
-      <AccountSection email={profile.email} />
+      <AccountSection email={profile.email} role="INFLUENCER" />
 
       <button
         type="submit"

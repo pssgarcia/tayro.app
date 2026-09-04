@@ -220,6 +220,81 @@ export class CreatorsService {
     return this.getMe(userId);
   }
 
+  // ─── Exportar dados (LGPD art. 18 II/V) ─────────────────────────────────────────
+
+  /**
+   * Tudo que a creator forneceu ou que guardamos sobre ela, num JSON só.
+   * NUNCA inclui: `password` (hash), `refreshTokenHash`, `claimTokenHash`/
+   * `resetTokenHash` e seus `*ExpiresAt` (segredo técnico, não dado pessoal
+   * que a LGPD pede pra devolver) nem os bytes de `IgImage` (cache técnico de
+   * terceiro — a `sourceUrl` e os metadados de `igRecentPosts` já cobrem "o
+   * que guardamos vindo do Instagram"). O `select` explícito abaixo é a
+   * garantia: nada disso é alcançável por um `include` genérico.
+   */
+  async exportMyData(userId: string) {
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        phone: true,
+        instagramHandle: true,
+        tiktokHandle: true,
+        followersCount: true,
+        niches: true,
+        city: true,
+        igEngagementRate: true,
+        igRecentPosts: true,
+        igProfilePicUrl: true,
+        igFetchedAt: true,
+        igFetchStatus: true,
+        publicProfileEnabled: true,
+        createdAt: true,
+        user: { select: { email: true } },
+      },
+    });
+    if (!influencer) {
+      throw new ForbiddenException('User does not have an influencer profile');
+    }
+
+    const [applications, rewards] = await Promise.all([
+      this.prisma.application.findMany({
+        where: { influencerId: influencer.id },
+        orderBy: { appliedAt: 'desc' },
+        include: {
+          campaign: {
+            select: {
+              title: true,
+              brand: { select: { name: true } },
+              offerType: true,
+              offerAmount: true,
+              offerDeadlineDays: true,
+              offerDescription: true,
+              offerCommissionPercent: true,
+            },
+          },
+          submissions: true,
+          result: true,
+        },
+      }),
+      this.prisma.reward.findMany({
+        where: { influencerId: influencer.id },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const { user, ...profile } = influencer;
+
+    return {
+      exportedAt: new Date().toISOString(),
+      profile: { ...profile, email: user.email },
+      applications,
+      rewards,
+    };
+  }
+
   // ─── Helpers privados ─────────────────────────────────────────────────────────
 
   private async findOrCreateInfluencer(dto: PublicApplyDto) {
