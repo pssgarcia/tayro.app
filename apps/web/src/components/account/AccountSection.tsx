@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Download } from 'lucide-react';
+import { api } from '../../services/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import ChangeEmailModal from './ChangeEmailModal';
 
@@ -9,10 +10,58 @@ import ChangeEmailModal from './ChangeEmailModal';
 // componente porque o destino do clique não é um KineticEditField (campo
 // único, onSave síncrono), é um modal com submit assíncrono, senha atual
 // exigida e erro de servidor.
+//
+// "Exportar meus dados" (LGPD art. 18 II/V) é ação direta, sem modal: baixa
+// o JSON na hora via Blob — não precisa de confirmação nem de servidor
+// guardar estado nenhum.
 
-export default function AccountSection({ email }: { email: string }) {
+type ExportState = 'idle' | 'loading' | 'done' | 'error';
+
+function exportPathFor(role: 'BRAND' | 'INFLUENCER'): string {
+  return role === 'INFLUENCER' ? '/influencers/me/export' : '/brands/me/export';
+}
+
+export default function AccountSection({
+  email,
+  role,
+}: {
+  email: string;
+  role: 'BRAND' | 'INFLUENCER';
+}) {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changeEmailOpen, setChangeEmailOpen] = useState(false);
+  const [exportState, setExportState] = useState<ExportState>('idle');
+
+  async function handleExport() {
+    setExportState('loading');
+    try {
+      const { data } = await api.get(exportPathFor(role));
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tayro-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setExportState('done');
+      setTimeout(() => setExportState('idle'), 2000);
+    } catch {
+      setExportState('error');
+    }
+  }
+
+  const exportLabel =
+    exportState === 'loading'
+      ? 'Exportando…'
+      : exportState === 'done'
+        ? 'Baixado'
+        : exportState === 'error'
+          ? 'Erro ao exportar. Tente de novo.'
+          : 'Exportar meus dados';
 
   return (
     <>
@@ -46,6 +95,22 @@ export default function AccountSection({ email }: { email: string }) {
             <p className="mt-2 truncate text-[15px] text-foreground">••••••••</p>
           </span>
           <ChevronRight size={14} className="shrink-0 text-kinetic-border" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportState === 'loading'}
+          aria-label="Exportar meus dados"
+          className="flex w-full items-center gap-4 border-b border-kinetic-gray py-4 text-left transition-colors hover:bg-kinetic-dark disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span className="min-w-0 flex-1">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
+              Meus dados
+            </p>
+            <p className="mt-2 truncate text-[15px] text-foreground">{exportLabel}</p>
+          </span>
+          <Download size={14} className="shrink-0 text-kinetic-border" />
         </button>
       </div>
 
