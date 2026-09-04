@@ -31,7 +31,7 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
     setError(null);
     setIsSubmitting(true);
     try {
-      await api.delete('/influencers/me', { data: { password } });
+      await api.post('/auth/delete-account', { password });
       // A conta não existe mais — landing, não /login (não faz sentido
       // convidar pra entrar de novo numa conta que acabou de ser apagada).
       clearAuth();

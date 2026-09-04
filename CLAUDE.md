@@ -422,8 +422,8 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   `<a download>` sintético. Spec nova: `specs/account-data-export/spec.md`. 496 testes API + 668
   web; lint/typecheck limpos.
 - **Apagar minha conta, creator (2026-09-04, `D-22`):** fecha o direito de eliminação (art. 18
-  VI) — Release 2 do plano de LGPD, na sequência de "Exportar meus dados". `DELETE
-  /influencers/me` (`RolesGuard` INFLUENCER + `AUTH_THROTTLE`, mesmo motivo de
+  VI) — Release 2 do plano de LGPD, na sequência de "Exportar meus dados". `POST
+  /auth/delete-account` (`RolesGuard` INFLUENCER + `AUTH_THROTTLE`, mesmo motivo de
   `changePassword`/`changeEmail`: `bcrypt.compare` a cada tentativa) exige a senha atual e, numa
   única `$transaction`: candidatura `PENDING` vira `WITHDRAWN` (mesma semântica do withdraw
   manual, não mexe em `maxSpots`), `IgImage` da creator é apagado, `Influencer` tem os campos de
@@ -437,8 +437,13 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   `text-destructive`) abre `DeleteAccountModal` — consequência em texto ANTES do campo de senha
   (padrão `WithdrawModal`), sem checkbox extra. Sucesso limpa a sessão e navega pra `/` (landing,
   não `/login`). **Escopo só creator** — marca fica de fora por decisão explícita da `D-22` (não
-  tem o mesmo argumento de vulnerabilidade). Spec nova: `specs/account-deletion/spec.md`. 509
-  testes API + 679 web; lint/typecheck limpos.
+  tem o mesmo argumento de vulnerabilidade). **Fix achado no teste manual do Pedro, mesma
+  sessão:** a 1ª versão expunha `DELETE /influencers/me`, e digitar a senha errada deslogava em
+  vez de mostrar "Senha incorreta" — ver "Auth no frontend — footguns" abaixo, nova entrada.
+  Movido pra `/auth/*` (`AuthController` injeta `CreatorsService`, exportado por `CreatorsModule`
+  e importado por `AuthModule`; a lógica de negócio continua em `CreatorsService.deleteMyAccount`,
+  só a rota mudou de casa). Spec nova: `specs/account-deletion/spec.md`. 510 testes API + 682
+  web; lint/typecheck limpos.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
@@ -491,6 +496,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Silent refresh no boot do AppShell; guards avaliam SÓ depois do refresh resolver (senão race → /login).
 - Interceptor de 401 NÃO usa window.location (loop de reload). Usa navigate do router, máx 1 redirect.
 - /auth/refresh e /auth/login ISENTOS do retry de refresh do interceptor (senão loop infinito — foi o bug do login travado).
+- **Qualquer endpoint que valide senha atual (401 = erro de negócio, não token expirado) TEM que viver em `/auth/*` (MORDEU 2026-09-04).** O interceptor de 401 (`services/api.ts`) trata todo 401 fora de `/auth/*` como sessão expirada e chama `clearAuth()` — regra que só é segura enquanto nenhum endpoint fora de `/auth/*` devolver 401 por motivo de negócio. `DELETE /influencers/me` (exclusão de conta) violou isso na 1ª versão: senha errada deslogava a creator em vez de mostrar "Senha incorreta", porque o interceptor limpava a sessão antes do componente conseguir renderizar o erro. Corrigido movendo pra `POST /auth/delete-account` (mesma casa de `changePassword`/`changeEmail`, que já respeitavam essa regra sem documentá-la explicitamente aqui). Teste de regressão real: `apps/web/src/services/api.spec.ts` exercita o interceptor de verdade (adapter axios sintético), não um mock de `api.post`/`api.delete` — um teste que mocka o client HTTP nunca passa pelo interceptor, e por isso não teria pego este bug.
 - Poll-while-PENDING (teto ~45s) pra dados de IG assíncronos.
 
 ## Telas prontas (frontend) — não reconstruir

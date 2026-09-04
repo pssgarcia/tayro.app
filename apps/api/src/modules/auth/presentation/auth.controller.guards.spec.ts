@@ -6,6 +6,7 @@
  */
 import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../shared/guards/roles.guard';
 
 const GUARDS_KEY = '__guards__';
 
@@ -15,10 +16,25 @@ const getGuards = (method: keyof AuthController): unknown[] =>
     | undefined) ?? [];
 
 describe('AuthController — guard em rota autenticada', () => {
+  it.each([
+    'changePassword',
+    'changeEmail',
+    'logout',
+    'deleteAccount',
+  ] as const)('exige JwtAuthGuard em %s', (method) => {
+    expect(getGuards(method)).toContain(JwtAuthGuard);
+  });
+
+  // deleteAccount é só INFLUENCER por ora (D-22) — os outros três valem pra
+  // qualquer papel autenticado, então não carregam RolesGuard.
+  it('exige RolesGuard em deleteAccount', () => {
+    expect(getGuards('deleteAccount')).toContain(RolesGuard);
+  });
+
   it.each(['changePassword', 'changeEmail', 'logout'] as const)(
-    'exige JwtAuthGuard em %s',
+    'NÃO exige RolesGuard em %s (vale pra BRAND e INFLUENCER)',
     (method) => {
-      expect(getGuards(method)).toContain(JwtAuthGuard);
+      expect(getGuards(method)).not.toContain(RolesGuard);
     },
   );
 });

@@ -5,12 +5,13 @@ origin: FEATURE
 source_of_truth: product_decision
 last_updated: 2026-09-04
 implements:
-  - apps/api/src/modules/creators/presentation/influencers.controller.ts (DELETE /influencers/me)
+  - apps/api/src/modules/auth/presentation/auth.controller.ts (POST /auth/delete-account)
   - apps/api/src/modules/creators/application/creators.service.ts (deleteMyAccount)
   - apps/api/src/modules/creators/application/dtos/delete-account.dto.ts
   - apps/api/src/modules/email/email.service.ts (sendAccountDeleted)
   - apps/web/src/components/account/AccountSection.tsx
   - apps/web/src/components/account/DeleteAccountModal.tsx
+  - apps/web/src/services/api.ts (interceptor de 401)
 related_decisions: [D-22]
 ---
 
@@ -77,10 +78,21 @@ terceiro sobre a creator, mantê-lo depois da exclusão contradiria o pedido.
 
 | Método | Rota | Guard | Notas |
 |---|---|---|---|
-| DELETE | `/influencers/me` | `JwtAuthGuard`, `RolesGuard` (`INFLUENCER`), throttle de credenciais (`AUTH_THROTTLE`, 5/15min) | Body `{ password }`. `204 No Content` + cookie de refresh apagado, ou `401`/`403`/`429`. |
+| POST | `/auth/delete-account` | `JwtAuthGuard`, `RolesGuard` (`INFLUENCER`), throttle de credenciais (`AUTH_THROTTLE`, 5/15min) | Body `{ password }`. `204 No Content` + cookie de refresh apagado, ou `401`/`403`/`429`. |
 
 Throttle estrito pelo mesmo motivo de `changePassword`/`changeEmail`: o endpoint roda
 `bcrypt.compare` a cada tentativa.
+
+**Por que vive em `/auth/*` e não em `/influencers/*`:** o interceptor de resposta do frontend
+(`api.ts`) trata qualquer `401` fora de `/auth/*` como "token expirado numa rota protegida" e
+chama `clearAuth()` — é a regra que evita ficar preso numa sessão morta em qualquer outra tela.
+Mas o `401` deste endpoint significa "senha atual incorreta" (erro de negócio, prova de
+identidade), não token expirado. Servido em `/influencers/me` (1ª tentativa desta capacidade,
+2026-09-04), a creator que errava a senha era **deslogada** em vez de ver "Senha incorreta" — o
+interceptor limpava a sessão antes do componente conseguir mostrar o erro. `changePassword`/
+`changeEmail` já resolviam isso do mesmo jeito (vivendo em `/auth/*`); `CreatorsService` continua
+dono da lógica de negócio (`deleteMyAccount`), só o `AuthController` expõe a rota, injetando
+`CreatorsService` (exportado por `CreatorsModule`, importado por `AuthModule`).
 
 ## UI Behavior
 Row "Apagar minha conta" na seção "Conta" (`AccountSection`), visível **só** para `role ===
@@ -129,29 +141,43 @@ apagada). Erro mantém a modal aberta pra retry.
   campos de identidade esvaziados (incluindo `Prisma.DbNull` em `igRecentPosts`), `- [x]`
   tombstone único + `isActive=false` + todos os tokens zerados, `- [x]` e-mail de confirmação
   usa os valores ORIGINAIS, capturados antes da transação.
-- `apps/api/src/modules/creators/presentation/influencers.controller.guards.spec.ts` — `deleteMe`
-  incluído no regressivo de `RolesGuard`.
-- `apps/api/src/modules/creators/presentation/influencers.controller.throttle.spec.ts` (novo) —
-  `- [x]` `deleteMe` carrega `AUTH_THROTTLE`, `- [x]` as demais rotas do controller não carregam.
+- `apps/api/src/modules/auth/presentation/auth.controller.guards.spec.ts` — `- [x]`
+  `deleteAccount` exige `JwtAuthGuard` e `RolesGuard`; os outros três métodos do controller
+  (`changePassword`/`changeEmail`/`logout`) explicitamente NÃO carregam `RolesGuard`.
+- `apps/api/src/modules/auth/presentation/auth.controller.throttle.spec.ts` — `- [x]`
+  `deleteAccount` incluído no `it.each` de `AUTH_THROTTLE`.
+- `apps/web/src/services/api.spec.ts` (novo) — `- [x]` `401` fora de `/auth/*` limpa a sessão,
+  `- [x]` `401` em `/auth/*` NÃO limpa (é o caso que o bug expôs), `- [x]` outros códigos de erro
+  fora de `/auth/*` não limpam.
 - `apps/web/src/components/account/DeleteAccountModal.spec.tsx` (novo) — `- [x]` consequência
-  aparece antes do campo, `- [x]` senha vazia bloqueia sem chamar a API, `- [x]` sucesso limpa
-  sessão e navega, `- [x]` 401/429/sem-conexão, `- [x]` Cancelar fecha sem chamar a API.
+  aparece antes do campo, `- [x]` senha vazia bloqueia sem chamar a API, `- [x]` sucesso chama
+  `POST /auth/delete-account`, limpa sessão e navega, `- [x]` 401/429/sem-conexão, `- [x]`
+  Cancelar fecha sem chamar a API.
 - `apps/web/src/components/account/AccountSection.spec.tsx` — `- [x]` row só aparece para
   `INFLUENCER`.
 - `apps/web/src/pages/{brand,influencer}/ProfilePage.spec.tsx` — `- [x]` a row existe na tela da
   creator e está ausente na da marca.
 
 ## Current Implementation
-- `deleteMyAccount` vive em `CreatorsService` (não em `AuthService`, ao contrário de
-  `changePassword`/`changeEmail`) — evita injeção cruzada entre `AuthModule` e `CreatorsModule`;
-  `CreatorsService` já importa `PrismaService`/`EmailService`/`bcryptjs`. Decisão de
-  implementação, não de comportamento (o `DeleteAccountDto` e a prova de senha são idênticos ao
-  padrão do módulo `auth`).
+- **Lógica de negócio e rota moram em módulos diferentes, de propósito.** `deleteMyAccount` vive
+  em `CreatorsService` (é quem já sabe mexer em `Influencer`/`Application`/`IgImage`); a rota
+  `POST /auth/delete-account` vive em `AuthController`, que injeta `CreatorsService`
+  (`CreatorsModule` exporta, `AuthModule` importa — sem ciclo, nada importa `AuthModule`). Não é
+  simetria por capricho: é a única forma de o `401` de senha incorreta cair sob `/auth/*` sem
+  duplicar a lógica de exclusão dentro de `AuthService`.
 - `igRecentPosts` (campo `Json?`) usa `Prisma.DbNull` para gravar SQL `NULL`, não
   `Prisma.JsonNull` (que gravaria o valor JSON `null` dentro da coluna).
 - `AccountSection` ganhou `DeleteAccountModal` como terceiro modal condicional, seguindo o mesmo
   padrão de `ChangeEmailModal`/`ChangePasswordModal`.
 
 ## Change History
+- 2026-09-04 · **fix, achado em teste manual do Pedro:** a 1ª versão expunha `DELETE
+  /influencers/me`. Digitar a senha errada deslogava em vez de mostrar "Senha incorreta" — o
+  interceptor de 401 do frontend (`api.ts`) trata `401` fora de `/auth/*` como sessão expirada.
+  Movido para `POST /auth/delete-account` (mesma casa de `changePassword`/`changeEmail`, que já
+  evitavam esse footgun). Regressão nova: `apps/web/src/services/api.spec.ts` (novo arquivo)
+  testa o interceptor de verdade contra um adapter axios sintético — a suíte anterior só mockava
+  `api.post`/`api.delete` diretamente, o que nunca exercitava o interceptor e não teria pego o
+  bug.
 - 2026-09-04 · implementação inicial — endpoint, transação de exclusão, e-mail de confirmação,
   row + modal de confirmação no frontend.
