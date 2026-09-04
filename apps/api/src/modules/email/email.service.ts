@@ -32,6 +32,11 @@ interface EmailChangedParams {
   newEmail: string;
 }
 
+interface AccountDeletedEmailParams {
+  to: string;
+  creatorName: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -126,6 +131,23 @@ export class EmailService {
       html: `
         <p>O e-mail da sua conta foi alterado para <strong>${params.newEmail}</strong>.</p>
         <p>Se você não fez essa alteração, entre em contato com a gente imediatamente.</p>
+      `,
+    });
+  }
+
+  // Manda pro e-mail ORIGINAL, capturado pelo chamador antes do tombstone
+  // gravado na exclusão — o endereço novo (deleted-<uuid>@tayro.invalid)
+  // não é alcançável por ninguém.
+  async sendAccountDeleted(params: AccountDeletedEmailParams): Promise<void> {
+    await this.sendBestEffort({
+      to: params.to,
+      subject: 'Sua conta foi apagada',
+      html: `
+        <p>Oi, ${params.creatorName}!</p>
+        <p>Sua conta na plataforma foi apagada, como você pediu. Nome, foto, telefone, @ do
+        Instagram e demais dados de identificação foram removidos.</p>
+        <p>Registros de parceria e pagamento continuam existindo para as marcas com quem você
+        trabalhou, sem nenhuma informação que identifique você.</p>
       `,
     });
   }

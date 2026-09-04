@@ -33,6 +33,7 @@ describe('AuthController — throttle de credenciais', () => {
     'resetPassword',
     'changePassword',
     'changeEmail',
+    'deleteAccount',
   ] as const)('aplica o throttle estrito em %s', (method) => {
     const { limit, ttl } = getThrottle(method);
     expect(limit).toBe(AUTH_THROTTLE.limit);

@@ -72,4 +72,20 @@ describe('AccountSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /^senha/i }));
     expect(screen.getByRole('dialog', { name: /trocar senha/i })).toBeInTheDocument();
   });
+
+  // D-22: exclusão de conta é escopo de creator por ora — marca não tem o
+  // mesmo argumento de vulnerabilidade que motivou a decisão.
+  it('mostra "Apagar minha conta" só para INFLUENCER', () => {
+    render(<AccountSection email="ana@exemplo.com" role="INFLUENCER" />);
+    expect(
+      screen.getByRole('button', { name: /apagar minha conta/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('NÃO mostra "Apagar minha conta" para BRAND', () => {
+    render(<AccountSection email="marca@exemplo.com" role="BRAND" />);
+    expect(
+      screen.queryByRole('button', { name: /apagar minha conta/i }),
+    ).not.toBeInTheDocument();
+  });
 });

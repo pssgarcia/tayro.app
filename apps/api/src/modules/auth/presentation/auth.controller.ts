@@ -13,10 +13,13 @@ import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../shared/guards/roles.guard';
+import { Roles } from '../../../shared/decorators/roles.decorator';
 import { AUTH_THROTTLE } from '../../../shared/throttle/auth-throttle';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../application/auth.service';
+import { CreatorsService } from '../../creators/application/creators.service';
 import { RegisterBrandDto } from '../application/dtos/register-brand.dto';
 import { RegisterInfluencerDto } from '../application/dtos/register-influencer.dto';
 import { LoginDto } from '../application/dtos/login.dto';
@@ -25,6 +28,7 @@ import { ForgotPasswordDto } from '../application/dtos/forgot-password.dto';
 import { ResetPasswordDto } from '../application/dtos/reset-password.dto';
 import { ChangePasswordDto } from '../application/dtos/change-password.dto';
 import { ChangeEmailDto } from '../application/dtos/change-email.dto';
+import { DeleteAccountDto } from '../../creators/application/dtos/delete-account.dto';
 import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
 
 const REFRESH_COOKIE = 'refresh_token';
@@ -35,6 +39,7 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly creatorsService: CreatorsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -144,6 +149,29 @@ export class AuthController {
     const result = await this.authService.changeEmail(user.id, dto);
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
+  }
+
+  // Vive em /auth/* (não /influencers/*) de propósito: o interceptor de 401
+  // do frontend trata qualquer 401 fora de /auth/* como sessão expirada e
+  // desloga — aqui o 401 é "senha atual incorreta", não token expirado
+  // (mesmo motivo de changePassword/changeEmail). Ver specs/account-deletion.
+  @Post('delete-account')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INFLUENCER')
+  @Throttle({ default: AUTH_THROTTLE })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Apagar a conta do creator (irreversível, exige a senha atual, LGPD art. 18 VI)',
+  })
+  async deleteAccount(
+    @CurrentUser() user: { id: string },
+    @Body() dto: DeleteAccountDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.creatorsService.deleteMyAccount(user.id, dto);
+    res.clearCookie(REFRESH_COOKIE, { path: '/' });
   }
 
   @Post('login')

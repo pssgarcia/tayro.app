@@ -421,6 +421,29 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   prop `role: 'BRAND' | 'INFLUENCER'`) — ação direta sem modal, baixa o JSON via `Blob` +
   `<a download>` sintético. Spec nova: `specs/account-data-export/spec.md`. 496 testes API + 668
   web; lint/typecheck limpos.
+- **Apagar minha conta, creator (2026-09-04, `D-22`):** fecha o direito de eliminação (art. 18
+  VI) — Release 2 do plano de LGPD, na sequência de "Exportar meus dados". `POST
+  /auth/delete-account` (`RolesGuard` INFLUENCER + `AUTH_THROTTLE`, mesmo motivo de
+  `changePassword`/`changeEmail`: `bcrypt.compare` a cada tentativa) exige a senha atual e, numa
+  única `$transaction`: candidatura `PENDING` vira `WITHDRAWN` (mesma semântica do withdraw
+  manual, não mexe em `maxSpots`), `IgImage` da creator é apagado, `Influencer` tem os campos de
+  identidade esvaziados (`name`→"Conta excluída", resto→`null`/`[]`/`false`, **`id` estável**),
+  `User` recebe tombstone de e-mail único + `isActive:false` + todos os pares de token zerados.
+  **`Application`/`ContentSubmission`/`Reward`/`PartnershipResult` NÃO são cascateados** — ficam
+  órfãos de identidade, preservados, porque são o registro de trabalho/pagamento da MARCA (ela
+  também tem obrigação legal de guardar isso). E-mail de confirmação (best-effort,
+  `sendAccountDeleted`) sai pro endereço ORIGINAL, capturado antes da transação rodar. Frontend:
+  row "Apagar minha conta" na seção Conta (só `role === 'INFLUENCER'`, destaque
+  `text-destructive`) abre `DeleteAccountModal` — consequência em texto ANTES do campo de senha
+  (padrão `WithdrawModal`), sem checkbox extra. Sucesso limpa a sessão e navega pra `/` (landing,
+  não `/login`). **Escopo só creator** — marca fica de fora por decisão explícita da `D-22` (não
+  tem o mesmo argumento de vulnerabilidade). **Fix achado no teste manual do Pedro, mesma
+  sessão:** a 1ª versão expunha `DELETE /influencers/me`, e digitar a senha errada deslogava em
+  vez de mostrar "Senha incorreta" — ver "Auth no frontend — footguns" abaixo, nova entrada.
+  Movido pra `/auth/*` (`AuthController` injeta `CreatorsService`, exportado por `CreatorsModule`
+  e importado por `AuthModule`; a lógica de negócio continua em `CreatorsService.deleteMyAccount`,
+  só a rota mudou de casa). Spec nova: `specs/account-deletion/spec.md`. 510 testes API + 682
+  web; lint/typecheck limpos.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
@@ -434,7 +457,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
 - **Ícones PWA são placeholder** (monograma "T" lime/dark gerado, não é o mark oficial do TAYRO — produto só tem wordmark texto hoje). Trocar `apps/web/src/assets/pwa-icon.svg` e rodar `npx pwa-assets-generator` de novo quando houver logomark definitivo. `public/favicon.svg`/`icons.svg` antigos (roxos, off-brand) ficaram órfãos — não referenciados em lugar nenhum, podem ser removidos.
 - **Furos de ponta a ponta — auditoria de toda rota da API contra o que o front consome (feita 2026-08-13, REVALIDADA contra o develop em 2026-08-14, pós-v0.37.0):**
-  - **LGPD:** sem deletar conta, e **sem política de privacidade / termos / captura de consentimento** em lugar nenhum. Levantamento completo (o quê e por quê, com a ordem sugerida) em `.claude/knowledge/roadmap.md` → "LGPD". **Trocar senha logada, trocar e-mail logado (2026-09-02) e exportar meus dados (2026-09-03) fechados** — ver "Feito". **Exclusão de conta de creator tem decisão ratificada (`D-22`, fecha a antiga `D-E`) mas ainda não está implementada** — próximo item do mesmo levantamento. Falta só política de privacidade/termos/consentimento, que depende de texto do Pedro.
+  - **LGPD:** **sem política de privacidade / termos / captura de consentimento** em lugar nenhum — único item do Bloco 1/2 que falta, e depende de texto que o Pedro escreva ou valide (agente não inventa texto jurídico e publica). Levantamento completo em `.claude/knowledge/roadmap.md` → "LGPD". **Trocar senha logada, trocar e-mail logado (2026-09-02), exportar meus dados e apagar conta de creator (2026-09-04, `D-22`) fechados** — ver "Feito". Exclusão de conta de **marca** segue fora de escopo (`D-22` cobriu só creator).
   - **Marca não descobre creators.** Plataforma "creator-first" sem busca/listagem: o controller `creators` só expõe `:handle/public`. A marca só vê quem se candidatou — `/c/:handle` só é alcançável por link direto que a creator mande (o link em si já é clicável no perfil dela desde 2026-08-14, ver "Feito"). É a maior lacuna de produto que sobra; passar pelo `/feature` antes de virar código.
   - **`GET /submissions/application/:applicationId` não tem consumidor nenhum** no front (ownership dupla brand-ou-creator implementada e testada, sem uso).
 - **Dívida de modelo de dados sem superfície — decisão: NÃO mexer por ora, dropar tabela é irreversível e não urge:**
@@ -473,6 +496,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Silent refresh no boot do AppShell; guards avaliam SÓ depois do refresh resolver (senão race → /login).
 - Interceptor de 401 NÃO usa window.location (loop de reload). Usa navigate do router, máx 1 redirect.
 - /auth/refresh e /auth/login ISENTOS do retry de refresh do interceptor (senão loop infinito — foi o bug do login travado).
+- **Qualquer endpoint que valide senha atual (401 = erro de negócio, não token expirado) TEM que viver em `/auth/*` (MORDEU 2026-09-04).** O interceptor de 401 (`services/api.ts`) trata todo 401 fora de `/auth/*` como sessão expirada e chama `clearAuth()` — regra que só é segura enquanto nenhum endpoint fora de `/auth/*` devolver 401 por motivo de negócio. `DELETE /influencers/me` (exclusão de conta) violou isso na 1ª versão: senha errada deslogava a creator em vez de mostrar "Senha incorreta", porque o interceptor limpava a sessão antes do componente conseguir renderizar o erro. Corrigido movendo pra `POST /auth/delete-account` (mesma casa de `changePassword`/`changeEmail`, que já respeitavam essa regra sem documentá-la explicitamente aqui). Teste de regressão real: `apps/web/src/services/api.spec.ts` exercita o interceptor de verdade (adapter axios sintético), não um mock de `api.post`/`api.delete` — um teste que mocka o client HTTP nunca passa pelo interceptor, e por isso não teria pego este bug.
 - Poll-while-PENDING (teto ~45s) pra dados de IG assíncronos.
 
 ## Telas prontas (frontend) — não reconstruir
@@ -490,7 +514,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - /apply/:id (página pública: oferta, form, estados 201/409/429) — responsivo (px-4 sm:px-6, min-h-[44px] no CTA, break-words na descrição)
 - **/programs (v0.34.0):** vitrine pública, sem guard — mesma listagem de `/influencer/browse` (`ProgramsList`, **grade de cards** desde 2026-08-28), card leva pro `/apply/:id` se anônimo ou pro detalhe autenticado se já houver sessão de creator. Linkado do `LoginPage`.
 - **Creator (v0.8.0):** InfluencerLayout + InfluencerGuard · /register/influencer (rhf+zod, NicheSelector, erro inline por `field` vindo do 409) · /influencer (minhas candidaturas via `useMyApplications`)
-- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; seção "Conta" fora do form — "E-mail" e "Senha" abrem `ChangeEmailModal`/`ChangePasswordModal` desde 2026-09-02, "Exportar meus dados" desde 2026-09-03, ver "Feito")
+- **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; seção "Conta" fora do form — "E-mail" e "Senha" abrem `ChangeEmailModal`/`ChangePasswordModal` desde 2026-09-02, "Exportar meus dados" desde 2026-09-03, "Apagar minha conta" (`DeleteAccountModal`, só creator) desde 2026-09-04, ver "Feito")
 - **Creator (v0.10.0, revisto na v0.31.0 e em 2026-08-28):** /influencer/browse (**lista uniforme, sem placa em destaque** — não existe critério de curadoria; ver "Decisões de domínio"; ProgramCard só navega, não candidata) · /influencer/programs/:id (detalhe: oferta na placa, prazo/vagas, nichos, descrição; CTA "Quero participar" abre o ApplyModal; se já houver candidatura, StatusPill + link)
 - **Creator (v0.13.0):** /influencer/dashboard (nova home/index) — 3 pills de resumo, últimas 4 candidaturas, recompensas PENDING+ISSUED. Nav 4 itens.
 - **Creator (2026-09-03):** /influencer/applications ganhou a seção "Resultados das parcerias" — o que cada marca informou (com atribuição), e o controle dela de mostrar/ocultar cada item no perfil público. Ver "Feito"

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ChevronRight, Download } from 'lucide-react';
+import { ChevronRight, Download, Trash2 } from 'lucide-react';
 import { api } from '../../services/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import ChangeEmailModal from './ChangeEmailModal';
+import DeleteAccountModal from './DeleteAccountModal';
 
 // ─── Seção "Conta" das duas telas de Perfil (marca e creator) ────────────────
 // E-mail e Senha são rows interativas — mesmo visual de row do
@@ -30,6 +31,7 @@ export default function AccountSection({
 }) {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changeEmailOpen, setChangeEmailOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [exportState, setExportState] = useState<ExportState>('idle');
 
   async function handleExport() {
@@ -112,6 +114,27 @@ export default function AccountSection({
           </span>
           <Download size={14} className="shrink-0 text-kinetic-border" />
         </button>
+
+        {/* Só creator: exclusão de marca fica fora deste escopo (D-22) —
+            marca não tem o mesmo argumento de vulnerabilidade que motivou
+            a decisão, e abrir isso é escopo novo. */}
+        {role === 'INFLUENCER' && (
+          <button
+            type="button"
+            onClick={() => setDeleteAccountOpen(true)}
+            className="flex w-full items-center gap-4 border-b border-kinetic-gray py-4 text-left transition-colors hover:bg-kinetic-dark"
+          >
+            <span className="min-w-0 flex-1">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-destructive">
+                Apagar minha conta
+              </p>
+              <p className="mt-2 text-[13px] text-kinetic-muted">
+                Irreversível. Seus dados de identificação são removidos.
+              </p>
+            </span>
+            <Trash2 size={14} className="shrink-0 text-destructive" />
+          </button>
+        )}
       </div>
 
       {changeEmailOpen && (
@@ -119,6 +142,9 @@ export default function AccountSection({
       )}
       {changePasswordOpen && (
         <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />
+      )}
+      {deleteAccountOpen && (
+        <DeleteAccountModal onClose={() => setDeleteAccountOpen(false)} />
       )}
     </>
   );
