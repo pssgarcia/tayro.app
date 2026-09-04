@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApplicationStatus,
@@ -22,6 +23,7 @@ import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { EmailService } from '../../email/email.service';
 import { PublicApplyDto } from './dtos/public-apply.dto';
 import { UpdateInfluencerDto } from './dtos/update-influencer.dto';
+import { DeleteAccountDto } from './dtos/delete-account.dto';
 
 const CLAIM_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
@@ -293,6 +295,100 @@ export class CreatorsService {
       applications,
       rewards,
     };
+  }
+
+  // ─── Apagar conta (LGPD art. 18 VI, D-22) ───────────────────────────────────────
+
+  /**
+   * Apaga de fato a IDENTIDADE da creator (exige a senha atual — mesma prova
+   * de identidade de changePassword/changeEmail). `Application`,
+   * `ContentSubmission`, `Reward` e `PartnershipResult` NÃO são cascateados:
+   * ficam órfãos de identidade (o `Influencer` associado é esvaziado, mas o
+   * `id` permanece estável) porque são o registro de trabalho/pagamento da
+   * MARCA, não só da creator — ela também tem obrigação legal de guardar
+   * isso. Ver decisions.md D-22.
+   *
+   * Irreversível — sem link de recuperação, diferente de
+   * WithdrawModal/DeleteCampaignModal. Candidatura PENDING de campanha ainda
+   * ativa vira WITHDRAWN (mesma semântica de retirar manualmente): maxSpots
+   * só conta APPROVED, então isso não libera nem consome vaga, só evita uma
+   * candidatura fantasma na Fila de uma conta que não existe mais.
+   */
+  async deleteMyAccount(userId: string, dto: DeleteAccountDto): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+    if (!(await bcrypt.compare(dto.password, user.password))) {
+      throw new UnauthorizedException('Senha incorreta');
+    }
+
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+    });
+    if (!influencer) {
+      throw new ForbiddenException('User does not have an influencer profile');
+    }
+
+    // Capturados ANTES da transação apagar os dois — é o par que vai no
+    // e-mail de confirmação, mandado pro endereço ORIGINAL (o tombstone
+    // gravado a seguir não seria alcançável).
+    const originalEmail = user.email;
+    const originalName = influencer.name;
+
+    await this.prisma.$transaction([
+      this.prisma.application.updateMany({
+        where: {
+          influencerId: influencer.id,
+          status: ApplicationStatus.PENDING,
+        },
+        data: { status: ApplicationStatus.WITHDRAWN },
+      }),
+      // Fotos cacheadas são dado pessoal (D-18) — mantê-las depois da
+      // exclusão contradiria o pedido, mesmo com o Influencer esvaziado.
+      this.prisma.igImage.deleteMany({
+        where: { influencerId: influencer.id },
+      }),
+      this.prisma.influencer.update({
+        where: { id: influencer.id },
+        data: {
+          name: 'Conta excluída', // campo obrigatório, não pode ser null
+          avatarUrl: null,
+          bio: null,
+          phone: null,
+          tiktokHandle: null,
+          instagramHandle: null, // libera o @ pra uso futuro
+          igProfilePicUrl: null,
+          igRecentPosts: Prisma.DbNull,
+          igFetchedAt: null,
+          igFetchStatus: null,
+          followersCount: null,
+          igEngagementRate: null,
+          niches: [],
+          city: null,
+          publicProfileEnabled: false,
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          // Tombstone único: libera o endereço real pra um recadastro futuro
+          // sem violar a constraint @unique.
+          email: `deleted-${randomUUID()}@tayro.invalid`,
+          isActive: false, // mesmo campo que login() checa — cinturão e suspensório
+          refreshTokenHash: null,
+          claimTokenHash: null,
+          claimTokenExpiresAt: null,
+          resetTokenHash: null,
+          resetTokenExpiresAt: null,
+        },
+      }),
+    ]);
+
+    await this.emailService.sendAccountDeleted({
+      to: originalEmail,
+      creatorName: originalName,
+    });
   }
 
   // ─── Helpers privados ─────────────────────────────────────────────────────────

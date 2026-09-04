@@ -24,7 +24,7 @@ describe('InfluencersController — guard em rota autenticada', () => {
     expect(getClassGuards()).toContain(JwtAuthGuard);
   });
 
-  it.each(['getMe', 'updateMe', 'exportMyData'] as const)(
+  it.each(['getMe', 'updateMe', 'exportMyData', 'deleteMe'] as const)(
     'exige RolesGuard (INFLUENCER) em %s',
     (method) => {
       expect(getMethodGuards(method)).toContain(RolesGuard);

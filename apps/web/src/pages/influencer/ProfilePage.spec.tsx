@@ -259,6 +259,13 @@ describe('Creator ProfilePage — seção Conta', () => {
     ).toBeInTheDocument();
   });
 
+  it('mostra a row "Apagar minha conta" (D-22)', () => {
+    renderPage();
+    expect(
+      screen.getByRole('button', { name: /apagar minha conta/i }),
+    ).toBeInTheDocument();
+  });
+
   // Regressão: a seção Conta não participa do form de perfil — abrir/fechar
   // o modal de senha não pode habilitar o "Salvar" do perfil sem nada a salvar.
   it('abrir e fechar o modal de senha não habilita o "Salvar" do perfil', () => {
