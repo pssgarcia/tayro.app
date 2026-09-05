@@ -1,6 +1,7 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { resolveContactConfig } from '../../config/contact';
+import { PRIVACY_PATH, TERMS_PATH } from '../../config/legal';
 import { cn } from '../../lib/utils';
 import KineticActions, {
   type KineticAction,
@@ -361,6 +362,15 @@ export default function LandingPage() {
               </Link>
               <Link to="/programs" className={cn('transition-colors hover:text-lime', linkFocus)}>
                 Campanhas abertas
+              </Link>
+              <Link to={TERMS_PATH} className={cn('transition-colors hover:text-lime', linkFocus)}>
+                Termos de uso
+              </Link>
+              <Link
+                to={PRIVACY_PATH}
+                className={cn('transition-colors hover:text-lime', linkFocus)}
+              >
+                Privacidade
               </Link>
             </nav>
           </div>

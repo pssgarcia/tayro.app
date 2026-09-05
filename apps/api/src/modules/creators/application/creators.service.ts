@@ -24,6 +24,12 @@ import { EmailService } from '../../email/email.service';
 import { PublicApplyDto } from './dtos/public-apply.dto';
 import { UpdateInfluencerDto } from './dtos/update-influencer.dto';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
+import {
+  PRIVACY_VERSION,
+  TERMS_VERSION,
+  legalAcceptanceFields,
+} from '../../../shared/legal/legal-documents';
+import { maskEmail } from '../../../shared/utils/mask-email';
 
 const CLAIM_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
@@ -52,6 +58,12 @@ export class CreatorsService {
     }
 
     const influencer = await this.findOrCreateInfluencer(dto);
+
+    // A conta pode já existir (candidatura anterior, cadastro, apply
+    // autenticado) e nunca ter registrado aceite, ou ter aceitado uma versão
+    // anterior dos documentos. Este é o único ponto do fluxo público que sabe
+    // que a pessoa acabou de marcar as caixas.
+    await this.recordLegalAcceptance(influencer.userId);
 
     try {
       const application = await this.prisma.application.create({
@@ -254,7 +266,18 @@ export class CreatorsService {
         igFetchStatus: true,
         publicProfileEnabled: true,
         createdAt: true,
-        user: { select: { email: true } },
+        user: {
+          select: {
+            email: true,
+            // Faz parte do que guardamos sobre a pessoa e é o registro que
+            // sustenta a relação contratual: sonegá-lo da exportação seria
+            // devolver menos do que temos (LGPD art. 18 II).
+            acceptedTermsVersion: true,
+            acceptedPrivacyVersion: true,
+            acceptedAt: true,
+            declaredAdultAt: true,
+          },
+        },
       },
     });
     if (!influencer) {
@@ -288,10 +311,12 @@ export class CreatorsService {
     ]);
 
     const { user, ...profile } = influencer;
+    const { email, ...legal } = user;
 
     return {
       exportedAt: new Date().toISOString(),
-      profile: { ...profile, email: user.email },
+      profile: { ...profile, email },
+      legalAcceptance: legal,
       applications,
       rewards,
     };
@@ -336,6 +361,15 @@ export class CreatorsService {
     const originalEmail = user.email;
     const originalName = influencer.name;
 
+    // O hash da senha ANTIGA não pode continuar guardado. `isActive: false` já
+    // impede o login, mas o hash é material de credencial da pessoa: bcrypt é
+    // lento, não inquebrável, e a senha dela provavelmente é reusada em outros
+    // serviços. Substituímos por um hash de valor aleatório e descartado (não
+    // por string vazia nem por null: a coluna é obrigatória, e um valor que
+    // não é hash bcrypt válido faria `bcrypt.compare` se comportar de forma
+    // imprevisível se algum caminho futuro chegasse aqui).
+    const unusablePassword = await bcrypt.hash(randomUUID(), 12);
+
     await this.prisma.$transaction([
       this.prisma.application.updateMany({
         where: {
@@ -376,11 +410,18 @@ export class CreatorsService {
           // sem violar a constraint @unique.
           email: `deleted-${randomUUID()}@tayro.invalid`,
           isActive: false, // mesmo campo que login() checa — cinturão e suspensório
+          password: unusablePassword,
           refreshTokenHash: null,
           claimTokenHash: null,
           claimTokenExpiresAt: null,
           resetTokenHash: null,
           resetTokenExpiresAt: null,
+          // acceptedTermsVersion/acceptedPrivacyVersion/acceptedAt/
+          // declaredAdultAt PERMANECEM de propósito: são o registro de que a
+          // relação existiu sob determinada versão dos documentos, não dado
+          // que identifique a pessoa (uma versão e um horário). Apagá-los
+          // destruiria a prova do acordo justamente nos casos em que ela
+          // importa. Descrito na Política de Privacidade.
         },
       }),
     ]);
@@ -389,6 +430,54 @@ export class CreatorsService {
       to: originalEmail,
       creatorName: originalName,
     });
+  }
+
+  // ─── Aceite dos documentos legais ─────────────────────────────────────────────
+
+  /**
+   * Registra o aceite numa conta que JÁ EXISTIA quando a pessoa marcou as
+   * caixas (o caminho de criação grava junto com o `user.create`).
+   *
+   * Não sobrescreve aceite da MESMA versão: o que vale como prova é o primeiro
+   * aceite de um texto, não o mais recente. Reescrever a data a cada
+   * candidatura apagaria justamente a informação de quando a pessoa concordou
+   * com aquele documento.
+   *
+   * Versão diferente (documento republicado) re-registra: aí a pessoa está
+   * aceitando um texto novo, e é esse o aceite que passa a valer.
+   *
+   * `declaredAdultAt` só é preenchido se estiver vazio. Declarar maioridade
+   * duas vezes não é mais verdadeiro que declarar uma; a primeira data é a
+   * que interessa.
+   */
+  private async recordLegalAcceptance(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        acceptedTermsVersion: true,
+        acceptedPrivacyVersion: true,
+        declaredAdultAt: true,
+      },
+    });
+    if (!user) return;
+
+    const data: Prisma.UserUpdateInput = {};
+
+    const acceptedCurrent =
+      user.acceptedTermsVersion === TERMS_VERSION &&
+      user.acceptedPrivacyVersion === PRIVACY_VERSION;
+    if (!acceptedCurrent) {
+      const fields = legalAcceptanceFields();
+      data.acceptedTermsVersion = fields.acceptedTermsVersion;
+      data.acceptedPrivacyVersion = fields.acceptedPrivacyVersion;
+      data.acceptedAt = fields.acceptedAt;
+    }
+
+    if (!user.declaredAdultAt) data.declaredAdultAt = new Date();
+
+    if (Object.keys(data).length === 0) return;
+
+    await this.prisma.user.update({ where: { id: userId }, data });
   }
 
   // ─── Helpers privados ─────────────────────────────────────────────────────────
@@ -444,6 +533,10 @@ export class CreatorsService {
           role: UserRole.INFLUENCER,
           claimTokenHash: claimToken.tokenHash,
           claimTokenExpiresAt: claimToken.expiresAt,
+          // Conta e aceite no mesmo create. A caixa marcada em /apply/:id diz
+          // que a candidatura cria uma conta no TAYRO, então este é o aceite
+          // dessa conta, não um aceite genérico de formulário.
+          ...legalAcceptanceFields(),
           influencer: {
             create: {
               name: dto.name,
@@ -541,7 +634,7 @@ export class CreatorsService {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       this.logger.warn(
-        `Candidatura seguiu, mas o link de claim não foi emitido para ${email}: ${reason}`,
+        `Candidatura seguiu, mas o link de claim não foi emitido para ${maskEmail(email)}: ${reason}`,
       );
     }
   }
@@ -570,7 +663,7 @@ export class CreatorsService {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       this.logger.warn(
-        `Candidatura seguiu, mas o link de claim não foi enviado para ${email}: ${reason}`,
+        `Candidatura seguiu, mas o link de claim não foi enviado para ${maskEmail(email)}: ${reason}`,
       );
     }
   }

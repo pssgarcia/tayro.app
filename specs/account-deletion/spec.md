@@ -124,9 +124,31 @@ apagada). Erro mantém a modal aberta pra retry.
 - `429` excesso de tentativas (throttle de credenciais).
 - Erro de rede no frontend → mensagem inline, modal permanece aberta.
 
+## Behavior (complemento 2026-09-04)
+
+### O hash da senha antiga é destruído
+`isActive: false` já impede o login, mas o hash é material de credencial da pessoa: bcrypt é
+lento, não inquebrável, e a senha dela provavelmente é reusada em outros serviços. A exclusão
+grava no lugar um hash de valor aleatório e descartado.
+
+Não é `null` nem string vazia: a coluna é obrigatória, e um valor que não é hash bcrypt válido
+faria `bcrypt.compare` se comportar de forma imprevisível se algum caminho futuro chegasse ali.
+
+### O registro de aceite dos documentos é PRESERVADO
+`acceptedTermsVersion`, `acceptedPrivacyVersion`, `acceptedAt` e `declaredAdultAt` não são
+tocados. São uma versão e dois horários, que não identificam a pessoa, e são a prova de que a
+relação existiu sob determinado texto. Ver `specs/legal-acceptance` → Regra 6.
+
 ## Known Gaps
 - Escopo só `INFLUENCER` — conta de marca não tem exclusão (decisão explícita da `D-22`, não
   esquecimento).
+- **Texto livre com possível dado pessoal PERMANECE, e é decisão aberta do Pedro** (levantado na
+  auditoria de 2026-09-04, não alterado sem decisão): `Application.message` (a mensagem que a
+  própria creator escreveu sobre si na candidatura), `ContentSubmission.caption` e `mediaUrl` (a
+  URL pode conter o nome dela), `Reward.notes` e `PartnershipResult.note` (escritos pela marca).
+  Os quatro últimos são registro comercial da marca; o primeiro, `Application.message`, é o mais
+  difícil de justificar — o que a marca precisa guardar é a DECISÃO, não o texto de venda da
+  creator. Enquanto não for decidido, a Política precisa descrever a retenção como ela é.
 - Sem período de carência/arrependimento — a exclusão é imediata e definitiva assim que a senha
   é confirmada.
 - Comportamento de UI não coberto por teste automatizado: como `/brand/creators` e a Fila de uma
@@ -181,3 +203,8 @@ apagada). Erro mantém a modal aberta pra retry.
   bug.
 - 2026-09-04 · implementação inicial — endpoint, transação de exclusão, e-mail de confirmação,
   row + modal de confirmação no frontend.
+- 2026-09-04 · **hash da senha antiga passou a ser destruído** (achado na auditoria do mesmo dia):
+  a versão anterior mantinha `User.password` intacto, confiando só em `isActive: false` para
+  impedir o login. Agora a exclusão grava um hash de valor aleatório descartado. Teste novo
+  valida por mutação. O registro de aceite dos documentos (`legal-acceptance`) é explicitamente
+  preservado, com teste que falha se alguém passar a apagá-lo.

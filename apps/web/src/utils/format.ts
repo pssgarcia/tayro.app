@@ -215,9 +215,9 @@ export function formatRelativeDays(iso: string): string {
  * só. Estava copiada em 5 telas e faltando em outras 2 (Entregas e
  * Recompensas), que por isso mostravam iniciais pra praticamente todo mundo.
  *
- * `ClaimAccountPage` fica de fora de propósito: o preview do claim não expõe a
- * URL da CDN, só um booleano `hasIgAvatar` — um DTO mais fechado que os
- * outros. Encaixá-lo aqui exigiria vazar a URL, o que seria piorar.
+ * `ClaimAccountPage` fica de fora de propósito: o preview do claim entrega a
+ * foto já embutida (`igAvatarDataUri`), porque aquela tela não tem sessão nem
+ * perfil público e as rotas de imagem passaram a exigir autorização.
  */
 export function creatorAvatarSrc(influencer: {
   id: string;

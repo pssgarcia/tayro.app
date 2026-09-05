@@ -43,6 +43,8 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
       name: 'Ana Fitness',
       phone: '(11) 91234-5678',
       message: 'Adoraria colaborar!',
+      acceptedTermsAndPrivacy: true,
+      declaredAdult: true,
     };
 
     it('aceita payload válido', async () => {
@@ -195,6 +197,8 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
       brandName: 'Marca',
       niches: ['fitness'],
       website: 'https://x.com',
+      acceptedTermsAndPrivacy: true,
+      declaredAdult: true,
     };
 
     it('aceita payload válido', async () => {
@@ -280,6 +284,8 @@ describe('DTO @MaxLength — defesa contra payload spam/DoS', () => {
       phone: '(11) 91234-5678',
       instagramHandle: 'ana',
       niches: ['fitness'],
+      acceptedTermsAndPrivacy: true,
+      declaredAdult: true,
     };
 
     // Obrigatório desde 2026-09-02: era a única porta de entrada de creator

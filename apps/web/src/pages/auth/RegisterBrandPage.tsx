@@ -12,6 +12,7 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
+import LegalAcceptanceFields from '../../components/legal/LegalAcceptanceFields';
 import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -22,6 +23,17 @@ const schema = z.object({
   password: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
   niches: z.array(z.string()),
   website: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
+  // `literal(true)` e não `boolean()`: é o que torna impossível concluir o
+  // cadastro sem marcar. A API repete a exigência (`@Equals(true)`), então
+  // nem chamada direta cria conta sem aceite.
+  acceptedTermsAndPrivacy: z.literal(true, {
+    errorMap: () => ({
+      message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade',
+    }),
+  }),
+  declaredAdult: z.literal(true, {
+    errorMap: () => ({ message: 'É necessário declarar que você tem 18 anos ou mais' }),
+  }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -37,6 +49,8 @@ interface RegisterResponse {
 // PlateActionBar, pager de bolinhas só como indicador (não clicável).
 
 const STEPS = ['Identidade', 'Acesso', 'Nichos'] as const;
+// As caixas de aceite ficam no último passo, junto do "Criar conta": é
+// preciso aceitar imediatamente antes de criar, não dois passos antes.
 const STEP_FIELDS: (keyof FormValues)[][] = [['brandName', 'website'], ['email', 'password'], []];
 const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
   brandName: 0,
@@ -86,6 +100,10 @@ export default function RegisterBrandPage() {
       password: values.password,
       ...(values.niches.length ? { niches: values.niches } : {}),
       ...(values.website ? { website: values.website } : {}),
+      // O front manda só que as caixas foram marcadas. Quais VERSÕES dos
+      // documentos valem é decisão do servidor.
+      acceptedTermsAndPrivacy: values.acceptedTermsAndPrivacy,
+      declaredAdult: values.declaredAdult,
     };
 
     try {
@@ -188,16 +206,29 @@ export default function RegisterBrandPage() {
             )}
 
             {step === 2 && (
-              <div>
-                <p className="mb-3 text-[11px] text-[#6a6a64]">Nichos da marca</p>
-                <Controller
-                  name="niches"
-                  control={control}
-                  render={({ field }) => (
-                    <NicheSelector value={field.value} onChange={field.onChange} variant="plate" />
-                  )}
+              <>
+                <div>
+                  <p className="mb-3 text-[11px] text-[#6a6a64]">Nichos da marca</p>
+                  <Controller
+                    name="niches"
+                    control={control}
+                    render={({ field }) => (
+                      <NicheSelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        variant="plate"
+                      />
+                    )}
+                  />
+                </div>
+                <LegalAcceptanceFields
+                  variant="plate"
+                  termsField={register('acceptedTermsAndPrivacy')}
+                  adultField={register('declaredAdult')}
+                  termsError={errors.acceptedTermsAndPrivacy?.message}
+                  adultError={errors.declaredAdult?.message}
                 />
-              </div>
+              </>
             )}
 
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}

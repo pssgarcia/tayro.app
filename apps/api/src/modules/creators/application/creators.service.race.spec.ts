@@ -57,6 +57,8 @@ const applyDto = {
   name: 'Creator',
   phone: '11999990000',
   message: 'quero participar',
+  acceptedTermsAndPrivacy: true,
+  declaredAdult: true,
 };
 
 describe('CreatorsService — race conditions', () => {
@@ -68,7 +70,12 @@ describe('CreatorsService — race conditions', () => {
     prisma = {
       campaign: { findUnique: jest.fn() },
       influencer: { findUnique: jest.fn(), update: jest.fn() },
-      user: { findUnique: jest.fn(), create: jest.fn() },
+      user: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        // Gravação do aceite dos documentos legais em conta que já existia.
+        update: jest.fn().mockResolvedValue(undefined),
+      },
       application: { create: jest.fn() },
     };
 

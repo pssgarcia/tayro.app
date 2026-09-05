@@ -142,9 +142,9 @@ export default function ClaimAccountPage() {
     );
   }
 
-  const avatarSrc = preview?.hasIgAvatar
-    ? `/api/v1/ig/avatar/${preview.influencerId}`
-    : preview?.avatarUrl;
+  // A foto vem embutida na prévia (ver ClaimPreview.igAvatarDataUri): sem
+  // sessão e com perfil público desligado, /ig/avatar/:id responderia 404.
+  const avatarSrc = preview?.igAvatarDataUri ?? preview?.avatarUrl;
 
   return (
     <div>

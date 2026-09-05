@@ -72,7 +72,17 @@ export class BrandsService {
         website: true,
         bio: true,
         createdAt: true,
-        user: { select: { email: true } },
+        user: {
+          select: {
+            email: true,
+            // Mesmo motivo do lado da creator: é registro que guardamos sobre
+            // a conta e sustenta a relação contratual (LGPD art. 18 II).
+            acceptedTermsVersion: true,
+            acceptedPrivacyVersion: true,
+            acceptedAt: true,
+            declaredAdultAt: true,
+          },
+        },
       },
     });
     if (!brand) {
@@ -111,10 +121,12 @@ export class BrandsService {
     ]);
 
     const { user, ...profile } = brand;
+    const { email, ...legal } = user;
 
     return {
       exportedAt: new Date().toISOString(),
-      profile: { ...profile, email: user.email },
+      profile: { ...profile, email },
+      legalAcceptance: legal,
       campaigns,
       rewardsIssued,
       partnershipResults,

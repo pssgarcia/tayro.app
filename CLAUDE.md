@@ -444,6 +444,150 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   e importado por `AuthModule`; a lógica de negócio continua em `CreatorsService.deleteMyAccount`,
   só a rota mudou de casa). Spec nova: `specs/account-deletion/spec.md`. 510 testes API + 682
   web; lint/typecheck limpos.
+- **Política de Privacidade (2026-09-04):** fecha o item de código do Bloco 2 de LGPD. `/privacy-policy`
+  (`PrivacyPolicyPage`, standalone, sem guard, no padrão de `/apply/:id` e `/c/:handle`), 13
+  seções, **texto final escrito/validado pelo Pedro** (não é o rascunho gerado inicialmente por
+  engenharia): responsável pelo tratamento, dados coletados por papel (creator/marca) e dados
+  técnicos de erro, finalidade, compartilhamento (os 6 subprocessadores reais: Neon, Railway,
+  Vercel, Resend, Sentry, o provedor de consulta ao Instagram via RapidAPI, mais o
+  compartilhamento entre marca e creator dentro do próprio produto), perfil público, cookies,
+  retenção, os 7 direitos da LGPD e como exercer cada um (aponta pros botões que já existem:
+  "Exportar meus dados", exclusão de conta, toggle de perfil público), segurança, transferência
+  internacional, menores de idade, alterações e contato. Link "Privacidade" no rodapé da
+  `LandingPage`. **Bloqueador explícito, visível na própria seção 1 (não escondido em comentário):**
+  o TAYRO ainda não tem razão social/CNPJ constituídos, a página mostra o placeholder
+  `[NOME / RAZÃO SOCIAL DO RESPONSÁVEL]`/`[CPF/CNPJ]` até que isso seja preenchido de verdade,
+  **não remover antes disso**. Contato: `pedrossgarcia88@gmail.com` (aparece 2x, seção "Seus
+  direitos" e seção "Contato"). O travessão do texto original (regra do `copy-sem-travessao.test.ts`,
+  ver "Design system") foi trocado por dois-pontos/vírgula nas poucas partes que tinham, sem
+  alterar o conteúdo jurídico. 686 testes web; lint/typecheck limpos.
+
+- **Aceite dos documentos + declaração de maioridade (2026-09-04):** fecha o furo nº 2 da
+  auditoria de código do mesmo dia (nenhum aceite era capturado em lugar nenhum, e nenhum dos 3
+  fluxos de entrada mencionava ou linkava os documentos). 4 colunas novas em `User`
+  (`acceptedTermsVersion`, `acceptedPrivacyVersion`, `acceptedAt`, `declaredAdultAt`, migration
+  `add_legal_acceptance_to_user`, **aditiva/nullable**) e duas caixas obrigatórias nos três
+  fluxos que criam conta: cadastro de creator, cadastro de marca e **candidatura pública** (que
+  cria conta e até aqui não dizia isso a ninguém). **Quem estampa a versão é o SERVIDOR** — o
+  cliente manda só dois booleanos, e mandar `acceptedTermsVersion` no corpo dá `400`
+  (`forbidNonWhitelisted`); senão uma requisição forjada gravaria "aceitei a v0.1". `@Equals(true)`
+  nos 3 DTOs é o que faz "impossível criar conta sem marcar" valer também fora do navegador.
+  Aceite já registrado na MESMA versão não é reescrito (o primeiro aceite de um texto é o que vale
+  como prova); versão anterior re-registra. `specs/legal-acceptance/spec.md`.
+  - **Defeito real achado na conferência visual, com peso jurídico:** a 1ª versão do
+    `KineticCheckbox` tinha o `<label>` envolvendo a frase inteira, e a frase de aceite carrega os
+    links dos documentos. Clicar em "Termos de Uso" para **ler** o documento também **marcava a
+    caixa de aceite** (clique em link dentro de label ativa o controle do label). Agora só a caixa
+    desenhada alterna, e a frase é ligada por `aria-labelledby`. Teste de regressão validado por
+    mutação. Nenhum dos 711 testes teria pego isso.
+  - **O texto dos dois documentos foi escrito no mesmo dia, logo depois** (ver a entrada própria
+    abaixo). Enquanto ele não existia, `/terms-of-use` era uma página que **declarava** estar em
+    preparação: link morto num fluxo de aceite é pior que link ausente (o catch-all mandaria pro
+    `/`), mas uma caixa "concordo com os Termos de Uso" apontando pra documento inexistente
+    também não é aceite de nada.
+  - **Verificado em HTTP real** contra a API local (não só na suíte): aceite ausente → `400`,
+    `false` → `400`, versão vinda do cliente → `400`, aceite válido → `201` com `"1.0"` gravado.
+
+- **Termos de Uso e Política de Privacidade escritos (2026-09-04):** os textos dos dois documentos
+  que as caixas de aceite apontam. Termos v1.0 (22 cláusulas) e Política v1.0 (19 seções), escritos
+  **a partir do código**, não de um modelo genérico: a auditoria do mesmo dia é que decidiu o que
+  cada seção podia afirmar. Invólucro compartilhado em `components/legal/LegalDocument.tsx` (os dois
+  são aceitos juntos e precisam se parecer; um com cara diferente do outro passa a impressão de que
+  um é rascunho). A versão aparece no cabeçalho de cada documento e mora em `config/legal.ts`,
+  revertendo o "sem constante de versão no front" que eu mesmo tinha escrito ali: exibir não é
+  transmitir, o cliente continua sem mandar versão nenhuma, e **sem o número na página o
+  `acceptedTermsVersion: "1.0"` do banco não aponta pra texto identificável nenhum**.
+  - **O que os documentos são obrigados a DIZER, e está travado por teste** (44 casos, mesmo padrão
+    dos testes de honestidade da landing): não processa pagamento e "Emitida" não é comprovante ·
+    não verifica identidade, CNPJ nem titularidade de `@` · sem integração oficial com
+    Instagram/Meta · sem moderação e sem hospedagem de arquivo (só a URL) · sem uptime/SLA/suporte
+    com prazo · não é parte da relação e não media conflito · aprovar candidatura não é contrato ·
+    **a candidatura sem login cria conta** · exclusão não é total e o texto livre permanece ·
+    e-mail não vai pra contraparte · idade é declarada, não verificada. E o que eles não podem
+    dizer: nenhum prazo numérico de retenção (não existe purga automática), nenhum terceiro fora
+    de uso (Cloudflare, analytics, gateway).
+  - **Três achados de exatidão que a auditoria não tinha isolado**, e que mudam o texto: (1) nenhuma
+    imagem é mais carregada da CDN do Instagram **pelo navegador** desde a D-18, então descrever a
+    CDN como destinatária de dado do visitante seria informar compartilhamento que não acontece (a
+    requisição é do nosso servidor); (2) `tiktokHandle` é coletado mas **não está em
+    `influencerSelect` nem em `getPublicProfile`**, ou seja, não circula pra ninguém além da própria
+    creator, e citá-lo sem essa ressalva daria a impressão errada; (3) o e-mail de decisão de
+    candidatura é **best-effort**, então os Termos dizem que a plataforma "busca comunicar", não que
+    comunica.
+  - **Google Fonts entrou na lista de terceiros** (seção 8.1), com IP, user-agent e referer ditos
+    por extenso. **Durou algumas horas:** as fontes passaram a ser hospedadas por nós no mesmo dia
+    e a seção foi removida (ver a entrada própria abaixo).
+  - **O que ainda BLOQUEIA o release** e é decisão do Pedro, não de código: razão social, CPF/CNPJ,
+    endereço e comarca do foro. Ficam como placeholder **visível na página**, com teste travando a
+    presença deles, pra que a pendência não seja fechada apagando o aviso em vez de preenchendo o
+    dado.
+
+- **Fontes hospedadas por nós, Google Fonts eliminado (2026-09-04):** o `index.html` carregava as
+  3 famílias de `fonts.googleapis.com` com 2 `preconnect`, o que fazia o navegador de TODO visitante
+  abrir conexão com o Google em TODA página, inclusive nas públicas e antes de qualquer login. Era o
+  **único terceiro que recebia IP, user-agent e referer direto do dispositivo da pessoa**. Agora os
+  `.woff2` vivem em `src/assets/fonts/`, com `@font-face` local em `fonts.css` importado pelo
+  `main.tsx`. A seção 8.1 e o fornecedor saíram da Política; a cláusula 17 dos Termos parou de listar
+  "fornecimento de fontes tipográficas" entre os serviços de terceiros.
+  - **As três famílias são fontes VARIÁVEIS.** O Google servia UM arquivo por família+subset e criava
+    um `@font-face` por peso apontando pro mesmo arquivo (confirmado por md5: os 20 downloads eram 6
+    binários). Baixar "um arquivo por peso" teria gravado 891 KB do mesmo conteúdo repetido; o
+    resultado real é **284 KB em 6 arquivos**, com os mesmos 20 `@font-face`.
+  - **Subsets: só `latin` e `latin-ext`.** Cyrillic, greek e vietnamese ficaram de fora (o Google os
+    servia sob demanda). Texto nesses alfabetos em conteúdo de usuário cai na fonte de sistema.
+  - **Itálico do Inter removido:** zero ocorrências de `italic` no projeto, e nenhum texto de usuário
+    é renderizado como HTML, então nada pede a face.
+  - **Dois pesos que o produto pede e nunca existiram, preservados de propósito:** `font-bold` (700)
+    sobre Inter e `font-semibold` (600) sobre JetBrains Mono não têm face correspondente — o Google
+    nunca as serviu — e o navegador cai no vizinho (600 e 700, respectivamente), em 10 e 4
+    ocorrências. **Acrescentá-las mudaria a aparência de 14 lugares**, então não foram acrescentadas:
+    é decisão de design, não de infraestrutura. `tipografia-local.test.ts` trava o conjunto exato.
+  - **Verificado rodando, não só no build:** preview do build no Chrome, `read_network_requests` com
+    21 requisições, **todas same-origin**; `document.fonts` com 20 faces declaradas, 6 carregadas na
+    página (o `unicode-range` e o lazy-load por peso continuam funcionando) e todos os pesos
+    resolvendo para arquivo local.
+  - Fontes **não** entram no precache do service worker (o glob padrão do Workbox não inclui
+    `woff2`), que é exatamente o comportamento anterior, quando vinham de um domínio externo.
+
+- **Perfil público passou a valer para as IMAGENS (2026-09-04):** `GET /ig/avatar/:influencerId` e
+  `GET /ig/post/:influencerId/:position` eram públicos e **não checavam `publicProfileEnabled`** —
+  desligar o perfil público não tirava foto nem thumbnails do ar, e qualquer pessoa com o
+  `influencerId` (uma marca que viu a creator uma vez, ou quem ela repassasse a URL) mantinha
+  acesso permanente e não autenticado. As rotas seguem **sem `@UseGuards`** porque `<img>` não
+  manda header de autorização; quem decide é o `IgImageAccessService`: perfil público ligado, OU a
+  própria creator, OU marca com candidatura dela. Qualquer outro caso → **404** (não 403: mesma
+  resposta de imagem ausente, sem revelar se o id existe).
+  - **O espectador é identificado pelo cookie `refresh_token`**, que É enviado em requisição de
+    `<img>` por ser mesma origem (`/api/*` é rewrite same-origin na Vercel; em dev, proxy do
+    Vite). Era o maior risco da mudança — se o cookie não chegasse, a Fila de toda marca ficaria
+    sem foto. **Verificado com HTTP real + imagem temporária no banco de dev:** sem cookie +
+    perfil privado → `404`; cookie da própria creator → `200`; perfil público sem cookie → `200`;
+    cookie de marca sem candidatura → `404`.
+  - **`Cache-Control` era sempre `public`** — um cache compartilhado (a borda da Vercel, um proxy
+    corporativo) poderia entregar a foto a quem não passou pela autorização. Agora `public` só
+    quando o perfil é mesmo público; senão `private` + `Vary: Cookie, Authorization`.
+  - **A autorização roda ANTES de qualquer leitura ou fetch:** sem isso, um id não autorizado
+    ainda faria o backfill baixar a foto da CDN do Instagram pra então recusá-la. Travado por
+    teste (validado por mutação; a 1ª versão do teste da rota de `post` passava com o gate
+    removido porque o dublê não devolvia `igRecentPosts`).
+  - **Carve-out da tela de claim:** `/claim?token=` é a única superfície que mostra a foto sem
+    sessão nenhuma e com perfil público desligado (o default). `GET /auth/claim/:token` passou a
+    devolver a foto **embutida** (`igAvatarDataUri`, no lugar do booleano `hasIgAvatar`), teto de
+    256 KB, degradando pra `null` em qualquer falha. A autorização ali é o próprio token.
+
+- **Minimização de dado pessoal em log (2026-09-04):** `EmailService.sendBestEffort` logava o
+  endereço de destino INTEIRO no caminho de falha, e log de aplicação fica retido no Railway.
+  Agora sai mascarado (`maskEmail` em `shared/utils/mask-email.ts`: `an***@gmail.com`) e o
+  ASSUNTO entra na mensagem, que é o que identifica qual envio falhou. Domínio preservado de
+  propósito: é ele que diz se o problema é do provedor de destino. Mesmo tratamento nos 2 `warn`
+  de `CreatorsService` e no `StubEmailProvider` (cujo default do `.env.example` é `stub`, então
+  deploy sem `EMAIL_PROVIDER` cairia ali logando endereço real).
+
+- **Exclusão de conta: hash da senha antiga passou a ser destruído (2026-09-04):** `isActive:
+  false` já impedia o login, mas o hash é material de credencial da pessoa (bcrypt é lento, não
+  inquebrável, e a senha provavelmente é reusada em outros serviços). Agora grava um hash de valor
+  aleatório descartado. O registro de aceite (versão + horário, que não identifica ninguém) é
+  explicitamente PRESERVADO, com teste que falha se alguém passar a apagá-lo.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
@@ -455,9 +599,28 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 ## Pendente
 - **Gaps do MVP (levantamento 2026-08-03) — TODOS FECHADOS:** apply autenticado (v0.24.0) · e-mail de decisão (v0.25.0) · claim/set-password (v0.26.0) · preview de identidade no Claim (v0.29.0). Ver "Feito" pra detalhe de cada um.
   - Limitação conhecida, aceita por ora: sem reenvio manual de link de claim perdido (só reemite se reaplicar a um programa).
+- **`prisma migrate dev` está inutilizável localmente (achado 2026-09-04):** o branch de DEV do Neon tem a migration `20260903012015_add_public_phone_opt_in` aplicada, e ela **não existe mais no repo** (era o `publicPhoneEnabled` removido antes do merge em 2026-09-02). O Prisma detecta o drift e pede `migrate reset`, que **APAGARIA o banco de dev** — não rodar. Migration nova: escrever o `migration.sql` à mão e aplicar com `prisma migrate deploy` (que só aplica pendentes e não faz detecção de drift). Foi o que a `add_legal_acceptance_to_user` fez. Corrigir de verdade exige reconciliar o histórico do `_prisma_migrations` do branch de dev.
 - **Ícones PWA são placeholder** (monograma "T" lime/dark gerado, não é o mark oficial do TAYRO — produto só tem wordmark texto hoje). Trocar `apps/web/src/assets/pwa-icon.svg` e rodar `npx pwa-assets-generator` de novo quando houver logomark definitivo. `public/favicon.svg`/`icons.svg` antigos (roxos, off-brand) ficaram órfãos — não referenciados em lugar nenhum, podem ser removidos.
 - **Furos de ponta a ponta — auditoria de toda rota da API contra o que o front consome (feita 2026-08-13, REVALIDADA contra o develop em 2026-08-14, pós-v0.37.0):**
-  - **LGPD:** **sem política de privacidade / termos / captura de consentimento** em lugar nenhum — único item do Bloco 1/2 que falta, e depende de texto que o Pedro escreva ou valide (agente não inventa texto jurídico e publica). Levantamento completo em `.claude/knowledge/roadmap.md` → "LGPD". **Trocar senha logada, trocar e-mail logado (2026-09-02), exportar meus dados e apagar conta de creator (2026-09-04, `D-22`) fechados** — ver "Feito". Exclusão de conta de **marca** segue fora de escopo (`D-22` cobriu só creator).
+  - **LGPD:** **Trocar senha logada, trocar e-mail logado (2026-09-02), exportar meus dados,
+    apagar conta de creator (2026-09-04, `D-22`), a Política de Privacidade e a CAPTURA DE
+    ACEITE + declaração de maioridade nos 3 fluxos de entrada (2026-09-04) fechados** — ver
+    "Feito". Exclusão de conta de **marca** segue fora de escopo (`D-22` cobriu só creator).
+    **O TEXTO dos dois documentos foi escrito em 2026-09-04** (Termos v1.0 com 22 cláusulas,
+    Política v1.0 com 19 seções) — ver "Feito". **Falta ainda, e depende do Pedro, não de código,
+    nesta ordem de bloqueio:**
+    (1) **razão social, CPF/CNPJ, endereço e comarca do foro** — aparecem como placeholder
+    VISÍVEL na seção 1 da Política e nas cláusulas 21 e 22 dos Termos, com teste travando a
+    presença deles; sem isso o documento aceito não identifica o controlador nem a parte
+    contratante, e o aceite registrado vale pouco. Isto bloqueia o release;
+    (2) decidir sobre `Application.message` na exclusão de conta (texto que a
+    própria creator escreveu sobre si, hoje retido — ver `specs/account-deletion` → Known Gaps);
+    (3) re-aceite in-app pra quem já tinha conta antes de 2026-09-04 (essas contas ficam com
+    `NULL` nas 4 colunas, que é o fato correto, mas exige decidir o que fazer com quem recusar);
+    **Google Fonts saiu da lista** (2026-09-04): as fontes passaram a ser hospedadas por nós, o
+    navegador não fala mais com o Google e a seção foi removida da Política. Levantamento completo em
+    `.claude/knowledge/roadmap.md` → "LGPD" (esse arquivo ainda não reflete os itens fechados,
+    conferir contra este `CLAUDE.md` antes de usar o levantamento de lá como atual).
   - **Marca não descobre creators.** Plataforma "creator-first" sem busca/listagem: o controller `creators` só expõe `:handle/public`. A marca só vê quem se candidatou — `/c/:handle` só é alcançável por link direto que a creator mande (o link em si já é clicável no perfil dela desde 2026-08-14, ver "Feito"). É a maior lacuna de produto que sobra; passar pelo `/feature` antes de virar código.
   - **`GET /submissions/application/:applicationId` não tem consumidor nenhum** no front (ownership dupla brand-ou-creator implementada e testada, sem uso).
 - **Dívida de modelo de dados sem superfície — decisão: NÃO mexer por ora, dropar tabela é irreversível e não urge:**
@@ -513,6 +676,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - /brand/profile (ProfilePage: rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches, padrão 2a; salvar só habilita se dirty; seção "Conta" fora do form — "E-mail" e "Senha" abrem `ChangeEmailModal`/`ChangePasswordModal` desde 2026-09-02, "Exportar meus dados" desde 2026-09-03, ver "Feito")
 - /apply/:id (página pública: oferta, form, estados 201/409/429) — responsivo (px-4 sm:px-6, min-h-[44px] no CTA, break-words na descrição)
 - **/programs (v0.34.0):** vitrine pública, sem guard — mesma listagem de `/influencer/browse` (`ProgramsList`, **grade de cards** desde 2026-08-28), card leva pro `/apply/:id` se anônimo ou pro detalhe autenticado se já houver sessão de creator. Linkado do `LoginPage`.
+- **/privacy-policy e /terms-of-use (2026-09-04):** os dois documentos legais, standalone, sem guard, compartilhando o invólucro `components/legal/LegalDocument.tsx` (cabeçalho, tarja de versão, seções, blocos de destaque e de campo a preencher). Política v1.0 com 19 seções; Termos v1.0 com 22 cláusulas. Linkados no rodapé da `LandingPage`, no rodapé do `AuthLayout`, nas caixas de aceite dos 3 fluxos de entrada e um no outro. A versão aparece no cabeçalho de cada um e PRECISA bater com `TERMS_VERSION`/`PRIVACY_VERSION` do servidor. Ver "Feito".
 - **Creator (v0.8.0):** InfluencerLayout + InfluencerGuard · /register/influencer (rhf+zod, NicheSelector, erro inline por `field` vindo do 409) · /influencer (minhas candidaturas via `useMyApplications`)
 - **Creator (v0.9.0, renomeada "Ficha"→"Perfil" no redesign 2a):** /influencer/profile (rows label+valor+chevron abrem modal placa-formulário por campo — PlateEditField/PlateEditNiches; toggle LGPD inline; dirty gate; seção "Conta" fora do form — "E-mail" e "Senha" abrem `ChangeEmailModal`/`ChangePasswordModal` desde 2026-09-02, "Exportar meus dados" desde 2026-09-03, "Apagar minha conta" (`DeleteAccountModal`, só creator) desde 2026-09-04, ver "Feito")
 - **Creator (v0.10.0, revisto na v0.31.0 e em 2026-08-28):** /influencer/browse (**lista uniforme, sem placa em destaque** — não existe critério de curadoria; ver "Decisões de domínio"; ProgramCard só navega, não candidata) · /influencer/programs/:id (detalhe: oferta na placa, prazo/vagas, nichos, descrição; CTA "Quero participar" abre o ApplyModal; se já houver candidatura, StatusPill + link)
@@ -531,6 +695,15 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Ler controllers/DTOs REAIS antes de assumir shape. Nunca inventar contrato.
 - Um chunk por vez: PASSO 0 (contratos/gap) → OK → implementar.
 - Rotas: literais antes de :id; públicas fora de guards.
+- **Rota, arquivo, hook, variável e endpoint em INGLÊS. Copy visível em PORTUGUÊS. (MORDEU 2026-09-04,
+  e não foi a 1ª vez.)** Todas as rotas do produto são inglês: `/login`, `/register/brand`,
+  `/apply/:id`, `/programs`, `/c/:handle`, `/forgot-password`, `/reset-password`, `/claim`,
+  `/privacy-policy`, `/terms-of-use`. É a mesma decisão que manteve `/programs`, `ProgramCard`,
+  `useProgram` e `POST /programs/:id/apply/public` em inglês quando TODA a copy passou de
+  "Programa" para "Campanha" (2026-08-30). Uma rota em português entrou como `/termos-de-uso` e o
+  Pedro pegou na revisão. **O caminho de um documento mora numa constante única**
+  (`apps/web/src/config/legal.ts`) e a `<Route>` lê dela: definir o endereço no router E no
+  componente que linka é exatamente como uma das duas sai em outro idioma.
 - Labels/textos derivados do estado de domínio (ex: "pagamento" vs "envio" por offerType), não hardcoded.
 - **Testar comportamento, não render:** mockar hooks só valida UI. Cobrir o happy path real + os gates de negócio. Antes de construir UI sobre endpoint "que já existe", LER a validação dele (mordeu em Recompensas: create exigia conteúdo aprovado, falhou silencioso em prod).
 - **Manter este CLAUDE.md atualizado:** ao concluir feature/release, atualizar Feito / Pendente / Telas prontas.

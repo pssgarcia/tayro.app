@@ -18,6 +18,7 @@ import CountUp from '../../components/primitives/CountUp';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
+import LegalAcceptanceFields from '../../components/legal/LegalAcceptanceFields';
 
 function normalizeHandle(v: string): string {
   return v.replace(/^@+/, '').toLowerCase().trim();
@@ -56,6 +57,17 @@ const schema = z.object({
     .max(20, 'Telefone muito longo')
     .regex(PHONE_FORMAT, PHONE_FORMAT_MESSAGE),
   message: z.string().max(1000).optional(),
+  // Este formulário CRIA (ou reusa) uma conta de creator no TAYRO, então
+  // carrega o mesmo aceite dos cadastros. `literal(true)` é o que impede o
+  // envio sem marcar; a API repete a exigência (`@Equals(true)`).
+  acceptedTermsAndPrivacy: z.literal(true, {
+    errorMap: () => ({
+      message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade',
+    }),
+  }),
+  declaredAdult: z.literal(true, {
+    errorMap: () => ({ message: 'É necessário declarar que você tem 18 anos ou mais' }),
+  }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -180,6 +192,10 @@ export default function PublicApplyPage() {
         name: values.name,
         phone: values.phone,
         message: values.message || undefined,
+        // O front manda só que as caixas foram marcadas. Quais VERSÕES dos
+        // documentos valem é decisão do servidor.
+        acceptedTermsAndPrivacy: values.acceptedTermsAndPrivacy,
+        declaredAdult: values.declaredAdult,
       });
       setSubmitState({ kind: 'success', brandName: campaign?.brand?.name ?? 'A marca' });
     } catch (err: unknown) {
@@ -428,10 +444,30 @@ export default function PublicApplyPage() {
                       </p>
                     )}
 
+                    {/* O aviso de criação de conta vem ANTES do botão, não
+                        num rodapé depois dele: a conta nasce no envio, e quem
+                        preenche este formulário quase nunca sabe disso (era o
+                        furo apontado na auditoria). */}
+                    <LegalAcceptanceFields
+                      className="mt-8"
+                      termsField={register('acceptedTermsAndPrivacy')}
+                      adultField={register('declaredAdult')}
+                      termsError={errors.acceptedTermsAndPrivacy?.message}
+                      adultError={errors.declaredAdult?.message}
+                      intro={
+                        <>
+                          Ao enviar sua candidatura, uma conta de creator no TAYRO é criada com os
+                          dados acima (ou a sua conta existente é usada), e você recebe um e-mail
+                          para definir a senha. Os dados públicos do seu perfil do Instagram passam
+                          a ser consultados e exibidos para a marca desta campanha.
+                        </>
+                      }
+                    />
+
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="mt-9 min-h-[56px] w-full bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-8 min-h-[56px] w-full bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmitting
                         ? handleCheck.checking
@@ -439,11 +475,6 @@ export default function PublicApplyPage() {
                           : 'Enviando…'
                         : 'Quero participar'}
                     </button>
-
-                    <p className="mt-4 text-center text-[11px] leading-[1.5] text-kinetic-muted">
-                      Ao enviar, você concorda que seus dados de perfil do Instagram sejam
-                      consultados pela marca.
-                    </p>
                   </form>
                 )}
               </>

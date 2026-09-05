@@ -8,6 +8,10 @@ import {
   ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  AcceptedTermsAndPrivacyField,
+  DeclaredAdultField,
+} from '../../../../shared/legal/legal-acceptance.dto-fields';
 
 export class RegisterBrandDto {
   @ApiProperty({ example: 'marca@exemplo.com' })
@@ -39,4 +43,10 @@ export class RegisterBrandDto {
   @IsString()
   @MaxLength(2048)
   website?: string;
+
+  @AcceptedTermsAndPrivacyField()
+  acceptedTermsAndPrivacy: boolean;
+
+  @DeclaredAdultField()
+  declaredAdult: boolean;
 }

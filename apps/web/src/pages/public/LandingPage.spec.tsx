@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import { PRIVACY_PATH, TERMS_PATH } from '../../config/legal';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
@@ -22,8 +23,7 @@ function renderAt(entry = '/') {
 // Story no celular); quem some é o CSS, que o jsdom não aplica. Escopar pela
 // placa evita casar com o botão homônimo do Story — mesmo idioma do
 // `CampaignFilaTab.spec` (texto único + `closest('section')`), sem testid.
-const placa = () =>
-  screen.getByText('mensagem da candidatura').closest('section') as HTMLElement;
+const placa = () => screen.getByText('mensagem da candidatura').closest('section') as HTMLElement;
 const aprovarNaPlaca = () => within(placa()).getByRole('button', { name: /^aprovar$/i });
 
 beforeEach(() => {
@@ -363,6 +363,21 @@ describe('LandingPage', () => {
     expect(screen.getByRole('menuitem', { name: /criar conta/i })).toHaveAttribute(
       'href',
       '/register',
+    );
+  });
+
+  // ── Rodapé ────────────────────────────────────────────────────────────────
+  it('o rodapé linka os dois documentos legais', () => {
+    renderAt();
+
+    const rodape = screen.getByRole('navigation', { name: /rodapé/i });
+    expect(within(rodape).getByRole('link', { name: /termos de uso/i })).toHaveAttribute(
+      'href',
+      TERMS_PATH,
+    );
+    expect(within(rodape).getByRole('link', { name: /privacidade/i })).toHaveAttribute(
+      'href',
+      PRIVACY_PATH,
     );
   });
 });

@@ -94,8 +94,33 @@ model User {
   // mesma conta sem interferir um no outro.
   resetTokenHash      String?   @unique
   resetTokenExpiresAt DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+
+  // ─── Aceite dos documentos legais ───────────────────────────────────────────
+  //
+  // Guardamos a VERSÃO aceita, não um booleano: "aceitou" sem dizer o quê não
+  // serve como registro no dia em que o documento mudar. As versões vivem em
+  // `shared/legal/legal-documents.ts` e são estampadas pelo SERVIDOR — o
+  // cliente envia apenas que marcou a caixa, nunca qual versão vale.
+  //
+  // Nulo = conta criada antes de 2026-09-04, quando o aceite passou a existir.
+  // Isso é um fato, não um bug: essas contas nunca viram uma caixa pra marcar,
+  // e preencher retroativamente seria inventar prova.
+  //
+  // O que este aceite significa: ciência e aceitação dos documentos. NÃO é
+  // consentimento (art. 7º I da LGPD) para todo tratamento de dados — as bases
+  // legais de cada tratamento estão na própria Política, e o opt-in de perfil
+  // público (`Influencer.publicProfileEnabled`) continua sendo o consentimento
+  // separado que ele sempre foi.
+  acceptedTermsVersion   String?
+  acceptedPrivacyVersion String?
+  acceptedAt             DateTime?
+
+  // Declaração de maioridade (não é data de nascimento: não coletamos, não
+  // guardamos). Preenchido = a pessoa declarou 18+ neste instante.
+  declaredAdultAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   brand         Brand?
   influencer    Influencer?

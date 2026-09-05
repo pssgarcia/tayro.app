@@ -13,6 +13,7 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
+import LegalAcceptanceFields from '../../components/legal/LegalAcceptanceFields';
 import { cn } from '../../lib/utils';
 import { INSTAGRAM_HANDLE_FORMAT, PHONE_FORMAT, PHONE_FORMAT_MESSAGE } from '../../utils/format';
 
@@ -48,6 +49,17 @@ const schema = z.object({
         .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido: só letras, números, . e _'),
     ),
   niches: z.array(z.string()),
+  // `literal(true)` e não `boolean()`: é o que torna impossível concluir o
+  // cadastro sem marcar. A API repete a exigência (`@Equals(true)`), então
+  // nem chamada direta cria conta sem aceite.
+  acceptedTermsAndPrivacy: z.literal(true, {
+    errorMap: () => ({
+      message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade',
+    }),
+  }),
+  declaredAdult: z.literal(true, {
+    errorMap: () => ({ message: 'É necessário declarar que você tem 18 anos ou mais' }),
+  }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -75,6 +87,8 @@ const STEPS = ['Identidade', 'Acesso', 'Nichos'] as const;
 const STEP_FIELDS: (keyof FormValues)[][] = [
   ['name', 'phone', 'instagramHandle'],
   ['email', 'password'],
+  // As caixas de aceite ficam no último passo, junto do "Criar conta": é
+  // preciso aceitar imediatamente antes de criar, não três passos antes.
   [],
 ];
 const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
@@ -189,6 +203,10 @@ export default function RegisterInfluencerPage() {
       phone: values.phone,
       instagramHandle: cleanHandle(values.instagramHandle),
       ...(values.niches.length ? { niches: values.niches } : {}),
+      // O front manda só que as caixas foram marcadas. Quais VERSÕES dos
+      // documentos valem é decisão do servidor.
+      acceptedTermsAndPrivacy: values.acceptedTermsAndPrivacy,
+      declaredAdult: values.declaredAdult,
     };
 
     try {
@@ -330,16 +348,29 @@ export default function RegisterInfluencerPage() {
             )}
 
             {step === 2 && (
-              <div>
-                <p className="mb-3 text-[11px] text-[#6a6a64]">Seus nichos</p>
-                <Controller
-                  name="niches"
-                  control={control}
-                  render={({ field }) => (
-                    <NicheSelector value={field.value} onChange={field.onChange} variant="plate" />
-                  )}
+              <>
+                <div>
+                  <p className="mb-3 text-[11px] text-[#6a6a64]">Seus nichos</p>
+                  <Controller
+                    name="niches"
+                    control={control}
+                    render={({ field }) => (
+                      <NicheSelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        variant="plate"
+                      />
+                    )}
+                  />
+                </div>
+                <LegalAcceptanceFields
+                  variant="plate"
+                  termsField={register('acceptedTermsAndPrivacy')}
+                  adultField={register('declaredAdult')}
+                  termsError={errors.acceptedTermsAndPrivacy?.message}
+                  adultError={errors.declaredAdult?.message}
                 />
-              </div>
+              </>
             )}
 
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}

@@ -364,7 +364,14 @@ export interface ClaimPreview {
   email: string;
   avatarUrl: string | null;
   influencerId: string;
-  hasIgAvatar: boolean;
+  /**
+   * Foto de perfil do Instagram já embutida (data URI), ou null.
+   *
+   * Vem embutida porque esta tela não tem sessão (a creator ainda não tem
+   * senha) e o perfil público dela está desligado, e /ig/avatar/:id passou a
+   * exigir autorização. A autorização daqui é o próprio token de claim.
+   */
+  igAvatarDataUri: string | null;
   campaignTitle: string | null;
 }
 

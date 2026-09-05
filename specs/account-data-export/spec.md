@@ -113,3 +113,12 @@ sintético (`tayro-meus-dados-<data>.json`). Estado inline na própria row: "Exp
 - 2026-09-03 · implementação inicial — endpoints, exportação de perfil/candidaturas/recompensas
   (creator) e perfil/campanhas/recompensas/resultados (marca), row "Exportar meus dados" na
   seção Conta.
+
+## Change History (complemento)
+- 2026-09-04 · a exportação passou a incluir `legalAcceptance` nos dois papéis
+  (`acceptedTermsVersion`, `acceptedPrivacyVersion`, `acceptedAt`, `declaredAdultAt`). É registro
+  que guardamos sobre a pessoa e sustenta a relação contratual (art. 18 II); sonegá-lo devolveria
+  menos do que temos. Os testes que travam o `select` (asserção sobre os ARGUMENTOS da consulta,
+  não sobre o retorno) foram atualizados para a lista exata nova e ganharam asserção negativa
+  explícita para `password`, `refreshTokenHash`, `claimTokenHash`/`resetTokenHash` e os
+  `*ExpiresAt`.
