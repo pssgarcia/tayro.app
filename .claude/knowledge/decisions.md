@@ -341,6 +341,124 @@ Também é veículo declarado de aprendizado (filas, observabilidade).
 **Status:** `PROPOSTA` — desenhado, não construído. Hoje é `setImmediate` fire-and-forget.
 **Ligado ao bug conhecido:** IG não vem completo na 1ª candidatura.
 
+### D-23 · 2026-09-04 · Instagram conectado e verificado (OAuth) — direção futura, registrada e NÃO implementada
+**Status:** `PROPOSTA` — só backlog. Nenhuma pesquisa técnica foi feita, nenhum `/architect` rodou,
+nenhuma linha de código foi escrita. Não iniciar implementação sem passar por `/feature` +
+`/architect` de novo quando for puxada pra AGORA.
+**Nome de backlog:** `[Future] Instagram OAuth / Connected Social Account`
+
+**O problema que motiva:** hoje o TAYRO só sabe **consultar** se um `@` existe (`D-19`) — nunca
+prova que a creator **controla** aquela conta. E os dados de media kit (seguidores, engajamento,
+feed) vêm de um provedor não oficial via RapidAPI, com o footgun de URL de CDN assinada que
+expira (ver "Imagem do IG some depois de um tempo" em `roadmap.md`). Uma conexão OAuth oficial
+resolveria os dois: prova de titularidade + fonte de dado mais confiável.
+
+**Fluxo-alvo (visão, não implementação):**
+```
+Creator encontra uma campanha
+  → candidata-se informando o @ (fluxo atual, inalterado)
+  → candidatura é criada normalmente
+  → creator acessa a conta
+  → escolhe "Conectar Instagram" (ação nova, opcional, pós-candidatura)
+  → Instagram/Meta autentica (OAuth)
+  → TAYRO identifica a conta autenticada e vincula ao creator
+  → perfil mostra "Instagram conectado ✓"
+  → dados/métricas passam a vir preferencialmente da integração oficial
+```
+
+**Decisões de produto já firmes dentro desta proposta** (não mudam mesmo quando a implementação
+for desenhada — se algo aqui precisar mudar, é decisão nova, não ajuste de detalhe):
+- A creator **não precisa conectar o Instagram para se candidatar.** O `@` informado continua
+  suficiente para criar a candidatura — isto **não é** uma reabertura da proposta rejeitada em
+  2026-08-26 ("validar handle em tempo real antes de aceitar candidatura"); aqui a conexão é
+  **posterior e opcional**, não um gate do formulário. Preserva a `Regra 10` de
+  `creator-discovery-and-apply` e a razão pela qual `D-17` afirmou que a candidatura espontânea
+  é o produto.
+- A conexão acontece depois, dentro da conta já criada (claimada ou não).
+- Status de conexão fica **visível pra creator** (perfil dela) e **visível pra marca** (Fila,
+  media kit) — diferenciando claramente "só `@` informado" de "conectado/verificado".
+- Dado vindo de conta conectada tem **mais confiança** que dado vindo só da consulta pública do
+  `@` — a UI eventualmente precisa comunicar essa diferença, não só armazenar.
+- A integração oficial **substitui progressivamente** a dependência da RapidAPI **quando for
+  tecnicamente viável** — não há decisão de desligar a RapidAPI de uma vez; ela vira o
+  mecanismo pra quem não conectou (ver "Migração", abaixo).
+- Conceito de status, provável (pode ganhar estados intermediários no desenho real):
+  `Não conectado` → `Conectando` → `Conectado` → `Conexão expirada / requer reconexão`.
+
+**Direção arquitetural (explicitamente NÃO é requisito fechado — é ponto de partida pro
+`/architect` quando isto for puxado pra implementação):**
+- Evitar usar `instagramHandle` (campo hoje em `Influencer`) como identidade principal da conta
+  conectada — ele é digitado à mão e já teve pegadinha de `@` duplicado (ver `CLAUDE.md` → Feito,
+  "Fix `@@handle` no sync"). A conexão OAuth precisa de uma identidade que venha do próprio
+  provedor.
+- Modelo pensado (rascunho, não migration): tabela nova em vez de encher `Influencer` de campo
+  específico de rede social, pra deixar espaço pra outras redes no futuro sem repetir o padrão:
+  ```
+  SocialAccount
+  - id
+  - influencerId
+  - provider          (INSTAGRAM hoje; espaço pra outras redes depois)
+  - providerAccountId (id estável do provedor, não o @ digitado)
+  - username
+  - connectedAt
+  - lastSyncedAt
+  - status
+  ```
+- `instagramHandle` **não é removido nem descontinuado agora** — segue como está até este item
+  virar implementação de verdade.
+
+**Dependências e pontos que precisam ser pesquisados ANTES de qualquer implementação** (nada
+disto está assumido ou decidido; é lista de pesquisa, não de requisito):
+- Quais APIs oficiais do Instagram/Meta estão disponíveis hoje pro caso de uso (Instagram Graph
+  API pra contas profissionais/criador, Instagram Basic Display foi descontinuada — confirmar
+  estado atual antes de desenhar, a informação envelhece rápido no ecossistema Meta).
+- Requisitos da Meta pra app review, e se o TAYRO se qualifica sem CNPJ constituído (mesma
+  pendência que já bloqueia a Política de Privacidade — ver `CLAUDE.md` → Pendente).
+  Já se sabe também que a **API oficial não resolve sozinha o problema de URL de mídia
+  temporária** (`D-18` verificou isso pro caso de imagem: a API oficial também entrega URL
+  assinada que expira) — então "conectar via OAuth" não elimina por si só a necessidade de
+  guardar bytes (`IgImage`, `D-18`).
+- Permissões/escopos necessários, e quais métricas ficam realmente disponíveis (insights de
+  alcance/engajamento reais alimentariam o item 2 do AGORA em `roadmap.md`, mas isso é hipótese
+  até verificar o que a API expõe de fato).
+- Fluxo OAuth exato (redirect, PKCE, token de curta/longa duração) e onde ele se encaixa sem
+  quebrar o fluxo de candidatura existente (rodar dentro da conta já criada, nunca no formulário
+  público de apply).
+- Regras de expiração/revogação de token, e como o produto detecta e comunica "conexão expirada"
+  sem descobrir isso só quando uma sincronização falha silenciosamente (mesma classe de bug do
+  `instagram-sync` atual, ver Known Gaps de `specs/instagram-sync`).
+- Limitações pra conta pessoal vs. profissional/criador do Instagram — a maioria das creators do
+  TAYRO pode não ter conta profissional, o que mudaria o alcance real da feature.
+- Impacto de app review / homologação no cronograma (pode ser meses, não dias).
+
+**Requisitos de segurança já registrados pra quando isto for desenhado** (não são novidade de
+princípio, TAYRO já segue a maioria hoje — registrados aqui pra não serem esquecidos nesta
+feature especificamente):
+- Token de acesso nunca em texto puro; considerar criptografia em repouso pra credencial sensível
+  (vai além do padrão atual de hash unidirecional usado em `claimTokenHash`/`resetTokenHash`,
+  porque aqui o token precisa ser **usável** depois, não só verificado).
+- Token nunca exposto ao frontend.
+- Minimizar dado obtido e persistido (só o necessário pra media kit + sincronização).
+- Implementar desconexão/revogação como ação de primeira classe, não só "parar de sincronizar".
+- `instagramHandle` continua NÃO sendo prova de identidade — é rótulo, não autenticação.
+
+**Critérios de sucesso, quando isto virar entrega real:** creator consegue conectar dentro da
+conta · TAYRO identifica a conta autorizada de forma inequívoca · vínculo persiste ·
+produto diferencia visualmente "@ informado" de "conectado" · dado oficial sincroniza quando
+conectado · UI mostra status de conexão com clareza · creator consegue desconectar/revogar ·
+token expirado/revogado é tratado sem quebrar o resto do perfil · candidatura continua
+funcionando sem exigir conexão prévia (o critério que protege `D-17`).
+
+**O que isto NÃO decide ainda:** cronograma, se substitui a RapidAPI por completo algum dia,
+que métricas exatas ficam disponíveis, se app review é viável antes do CNPJ existir. Tudo isso é
+trabalho de pesquisa e de `/architect`, não desta entrada.
+**Gatilho de revisão:** puxar pra `/feature` quando (a) houver marca real pedindo prova de
+titularidade, ou (b) o footgun de URL de CDN expirada (bug conhecido em `roadmap.md`) continuar
+incomodando depois de resolvido só com cache de bytes (`D-18`).
+**Ligado a:** `D-18` (imagem cacheada no banco, não resolve por OAuth), `D-19` (verificação de
+existência do handle, que esta feature não substitui nem reabre), `D-17` (candidatura espontânea
+é o produto, protegida explicitamente aqui), `specs/instagram-sync`.
+
 ---
 
 ## Convenções que não se rediscute
