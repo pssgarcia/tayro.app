@@ -4,7 +4,7 @@ Plataforma de marketing de influência fitness, creator-first: creators constroe
 
 [![CI](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml/badge.svg)](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml)
 
-- Web: https://tayro.app.br (domínio próprio, também em https://tayro-app.vercel.app)
+- Web: https://tayro.app.br
 - API: https://api-production-a813.up.railway.app/api/v1
 
 ## O que já funciona
