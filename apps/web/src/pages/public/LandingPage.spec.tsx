@@ -617,21 +617,22 @@ describe('LandingPage · seletor de idioma', () => {
     expect(document.documentElement.lang).toBe('pt-BR');
   });
 
-  it('os documentos legais dizem que estão em português quando a página está em inglês', async () => {
+  it('os documentos legais em inglês são linkados sem ressalva de idioma', async () => {
     const user = userEvent.setup();
     renderAt();
 
     await user.click(screen.getByRole('button', { name: /english/i }));
 
     const rodape = screen.getByRole('navigation', { name: /footer/i });
-    // Os dois documentos existem SÓ em português e são a versão que vale.
-    // Prometer inglês num link que abre texto jurídico em português seria
-    // pior que não traduzir o rótulo.
-    expect(within(rodape).getByRole('link', { name: /terms of use \(in portuguese\)/i })).toHaveAttribute(
+    // Desde 2026-09-09 os dois documentos existem em inglês (tradução da
+    // versão em português, que é a que prevalece), então o rótulo não carrega
+    // mais o "(in Portuguese)" que existia enquanto o link abria texto que a
+    // pessoa não conseguia ler.
+    expect(within(rodape).getByRole('link', { name: /^terms of use$/i })).toHaveAttribute(
       'href',
       TERMS_PATH,
     );
-    expect(within(rodape).getByRole('link', { name: /privacy \(in portuguese\)/i })).toHaveAttribute(
+    expect(within(rodape).getByRole('link', { name: /^privacy$/i })).toHaveAttribute(
       'href',
       PRIVACY_PATH,
     );

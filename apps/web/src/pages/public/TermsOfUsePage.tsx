@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useLocale } from '../../i18n';
+import TermsOfUseEn from './legal/TermsOfUseEn';
 import {
   LegalDocumentShell,
   Section,
@@ -31,11 +33,26 @@ import {
 // oficial com o Instagram ou a Meta. Ver specs/legal-acceptance e o relatório
 // de auditoria de 2026-09-04.
 //
-// AINDA FALTA PARA PUBLICAR EM PRODUÇÃO: o endereço (seção 1 da Política e
-// cláusula 22) e a comarca do foro (cláusula 21). Nome/CPF preenchidos em
-// 2026-09-09 (pessoa física, TAYRO ainda sem CNPJ). Os dois que faltam
-// continuam marcados na página como campo a preencher, de propósito.
+// AINDA FALTA PARA PUBLICAR EM PRODUÇÃO: a comarca do foro (cláusula 21),
+// continua marcada na página como campo a preencher, de propósito. Nome/CPF
+// preenchidos em 2026-09-09 (pessoa física, TAYRO ainda sem CNPJ). O endereço
+// (seção 1 da Política e cláusula 22 destes Termos) foi decidido por Pedro
+// para NÃO aparecer (exposição desproporcional antes de existir CNPJ) — não é
+// campo a preencher depois, é omissão deliberada. Não readicionar sem pedido
+// dele.
+/**
+ * Despacho por idioma. O documento em inglês é um ARQUIVO irmão, não este texto
+ * parametrizado: documento jurídico traduzido é outro texto, não um template
+ * com variável, e tratá-lo como template convidaria a "melhorar" a redação de
+ * um lado só. O preço é manter os dois em sincronia, e é por isso que a regra
+ * está escrita no cabeçalho do arquivo em inglês: mudou aqui, muda lá no mesmo
+ * commit.
+ */
 export default function TermsOfUsePage() {
+  return useLocale() === 'en' ? <TermsOfUseEn /> : <TermsOfUsePt />;
+}
+
+function TermsOfUsePt() {
   return (
     <LegalDocumentShell
       updatedLabel={`Versão ${TERMS_VERSION} · atualizado em ${LEGAL_UPDATED_AT}`}
@@ -971,7 +988,6 @@ export default function TermsOfUsePage() {
         <Placeholder>
           <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
           <p>CPF: 119.407.186-43</p>
-          <p>[ENDEREÇO, a preencher antes da publicação em produção]</p>
           <p>E-mail: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>
       </Section>

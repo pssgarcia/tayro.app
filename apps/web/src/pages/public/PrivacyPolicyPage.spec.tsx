@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { changeLocale } from '../../i18n';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PrivacyPolicyPage from './PrivacyPolicyPage';
@@ -303,11 +305,163 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByRole('link', { name: /tayro/i })).toHaveAttribute('href', '/');
   });
 
-  it('identifica o controlador (pessoa física, nome e CPF) e mostra o campo que ainda falta preencher', () => {
+  it('identifica o controlador por nome e CPF, sem expor endereço (omissão deliberada)', () => {
     renderPage();
 
     expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
     expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
-    expect(screen.getByText(/ENDEREÇO/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\[ENDEREÇO/i)).not.toBeInTheDocument();
+  });
+});
+
+// ─── Versão em inglês ─────────────────────────────────────────────────────────
+// Tradução publicada em 2026-09-09 sob a MESMA versão do documento. As
+// asserções abaixo repetem as de honestidade da versão em português: são elas
+// que impedem uma negativa incômoda de sumir só de um lado numa revisão de
+// redação, que é o risco real de manter dois textos.
+describe('PrivacyPolicyPage · em inglês', () => {
+  beforeEach(() => changeLocale('en'));
+  afterEach(() => changeLocale('pt'));
+
+  it('é a mesma versão do documento, e diz que a versão em português prevalece', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(screen.getByText(new RegExp(`Version ${PRIVACY_VERSION}`))).toBeInTheDocument();
+    expect(texto).toMatch(/courtesy translation of the Portuguese original/i);
+    expect(texto).toMatch(/the Portuguese version prevails/i);
+  });
+
+  it('tem as mesmas 19 seções numeradas', () => {
+    renderPage();
+
+    const secoes = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent ?? '');
+    expect(secoes).toHaveLength(19);
+    expect(secoes[0]).toMatch(/^1\. Who we are and who the controller is$/);
+    expect(secoes[18]).toMatch(/^19\. Contact$/);
+  });
+
+  it('o seletor de idioma troca o documento inteiro', async () => {
+    const user = userEvent.setup();
+    changeLocale('pt');
+    renderPage();
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Política de Privacidade' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /english/i }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })).toBeInTheDocument();
+  });
+
+  it('descreve as métricas de Instagram como estimativa própria, não dado oficial', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/not official Instagram data/i);
+    expect(texto).toMatch(/engagement rate estimate/i);
+    expect(texto).toMatch(/not an official metric/i);
+    expect(texto).toMatch(/copies of the images themselves/i);
+  });
+
+  it('diz que as imagens são buscadas pelo nosso servidor, não pelo navegador', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/by our servers/i);
+    expect(texto).toMatch(/does not connect to the Instagram content delivery network/i);
+  });
+
+  it('não promete de forma absoluta que não há dado sensível', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/does not deliberately request sensitive personal data/i);
+    expect(texto).toMatch(/free text fields/i);
+    expect(texto).not.toMatch(/does not collect.{0,40}sensitive personal data/i);
+  });
+
+  it('lista os mesmos terceiros, e nenhum que não esteja em uso', () => {
+    renderPage();
+    const texto = documentText();
+
+    ['Neon', 'Railway', 'Vercel', 'Resend', 'Sentry', 'RapidAPI', 'GitHub'].forEach((fornecedor) =>
+      expect(texto).toContain(fornecedor),
+    );
+    expect(texto).not.toMatch(/Cloudflare/i);
+    expect(texto).not.toMatch(/Google Analytics/i);
+    expect(texto).not.toMatch(/Google Fonts/i);
+    expect(texto).not.toMatch(/Stripe|Mercado Pago|PagSeguro|Asaas/i);
+    expect(texto).toMatch(/served from the TAYRO domain itself/i);
+  });
+
+  it('diz que o e-mail das partes não é entregue à contraparte', () => {
+    renderPage();
+
+    expect(documentText()).toMatch(/not made available to the counterparty/i);
+  });
+
+  it('descreve o perfil público como desativado por padrão, com o telefone junto', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/starts switched off/i);
+    expect(texto).toMatch(/phone number is published together/i);
+    expect(texto).toMatch(/no separate option to publish the profile without the phone number/i);
+    expect(texto).toMatch(/email address is never shown/i);
+  });
+
+  it('não promete exclusão total, e avisa que texto livre permanece', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/is not the complete removal of every record/i);
+    expect(texto).toMatch(/free text fields/i);
+    expect(texto).toMatch(/stays stored in those records after the account is deleted/i);
+    expect(texto).toMatch(/does not yet have/i);
+  });
+
+  it('não promete prazo de retenção nem expiração automática', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/no mechanism for expiring or automatically deleting any data/i);
+    expect(texto).toMatch(/does not set fixed retention periods/i);
+    expect(texto).not.toMatch(/within \d+ (days|months|years)/i);
+  });
+
+  it('diz que a idade é declarada, não verificada, e não promete segurança absoluta', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/does not ask for a date of birth/i);
+    expect(texto).toMatch(/no documentary, biometric or automated age verification/i);
+    expect(texto).toMatch(/cannot guarantee absolute security/i);
+    expect(texto).not.toMatch(/completely secure\./i);
+  });
+
+  it('diz que não há gravação de sessão nem analytics', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/does not use session replay/i);
+    expect(texto).toMatch(/does not use advertising cookies/i);
+  });
+
+  it('mantém a identificação do controlador e não expõe endereço', () => {
+    renderPage();
+
+    expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
+    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    expect(screen.queryByText(/\[ENDERE/i)).not.toBeInTheDocument();
+  });
+
+  it('linka os Termos de Uso pelo mesmo endereço', () => {
+    renderPage();
+
+    const links = screen.getAllByRole('link', { name: /terms of use/i });
+    expect(links.length).toBeGreaterThan(0);
+    links.forEach((link) => expect(link).toHaveAttribute('href', TERMS_PATH));
   });
 });

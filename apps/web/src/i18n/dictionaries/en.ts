@@ -15,8 +15,10 @@ import { enApp } from './en.app';
 //  3. Gênero neutro. O português resolveu falando do objeto (candidatura,
 //     campanha); em inglês o pronome é "they/their", nunca "her".
 //
-// Os documentos legais existem SÓ em português: os rótulos do rodapé dizem
-// isso em vez de fingir que há versão em inglês.
+// Os documentos legais têm versão em inglês desde 2026-09-09
+// (`pages/public/legal/`), como TRADUÇÃO da versão em português, que continua
+// sendo a que prevalece e a que o aceite registra. Por isso o texto jurídico
+// não vive neste dicionário: ele é documento, não copy de interface.
 
 export const en = {
   app: enApp,
@@ -240,10 +242,8 @@ export const en = {
     entrar: 'Log in',
     criarContaMarca: 'Create a brand account',
     campanhasAbertas: 'Open campaigns',
-    // Os dois documentos existem só em português e são a versão que vale.
-    // Dizer isso no rótulo é mais honesto que um link que promete inglês.
-    termos: 'Terms of use (in Portuguese)',
-    privacidade: 'Privacy (in Portuguese)',
+    termos: 'Terms of use',
+    privacidade: 'Privacy',
     direitos: (ano: number) => `© ${ano} TAYRO. All rights reserved.`,
   },
 

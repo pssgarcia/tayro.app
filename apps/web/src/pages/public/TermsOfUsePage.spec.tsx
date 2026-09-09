@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { changeLocale } from '../../i18n';
 import { render, screen } from '@testing-library/react';
@@ -205,22 +205,21 @@ describe('TermsOfUsePage', () => {
     expect(screen.getByRole('link', { name: /tayro/i })).toHaveAttribute('href', '/');
   });
 
-  // O endereço e a comarca do foro NÃO podem ir para produção como placeholder.
-  // Ficam visíveis na página de propósito, e o teste garante que não sejam
-  // "resolvidos" apagando o aviso em vez de preenchendo o dado.
-  it('identifica o responsável (pessoa física, nome e CPF) e mostra os campos que ainda faltam preencher', () => {
+  // A comarca do foro NÃO pode ir para produção como placeholder. Fica visível
+  // na página de propósito, e o teste garante que não seja "resolvida"
+  // apagando o aviso em vez de preenchendo o dado. Endereço é omissão
+  // deliberada (não expor), não campo pendente — por isso o teste garante a
+  // ausência dele, e não um placeholder.
+  it('identifica o responsável por nome e CPF, mostra a comarca pendente e não expõe endereço', () => {
     renderPage();
 
-    expect(screen.getAllByText(/Pedro Soares de Souza Garcia/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/119\.407\.186-43/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
+    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
     expect(screen.getByText(/COMARCA \/ FORO/i)).toBeInTheDocument();
-    expect(screen.getByText(/ENDEREÇO/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\[ENDEREÇO/i)).not.toBeInTheDocument();
   });
 
   // Pedido do Pedro (2026-09-09): o seletor também nos dois documentos legais.
-  // A decisão que veio junto: ele só entra porque MUDA algo — a moldura é
-  // bilíngue e, em inglês, a página avisa que o texto jurídico existe só em
-  // português. Seletor que não muda nada seria pior que nenhum.
   describe('seletor de idioma', () => {
     afterEach(() => changeLocale('pt'));
 
@@ -229,19 +228,180 @@ describe('TermsOfUsePage', () => {
       expect(screen.getByRole('group', { name: /trocar idioma/i })).toBeInTheDocument();
     });
 
-    it('em inglês, avisa que o documento existe só em português', async () => {
+    it('troca o documento inteiro, não só a moldura', async () => {
       const user = userEvent.setup();
       renderPage();
 
-      // Em português o aviso seria ruído: o documento já está no idioma lido.
-      expect(screen.queryByText(/exists in portuguese only/i)).toBeNull();
+      expect(screen.getByRole('heading', { level: 1, name: 'Termos de Uso' })).toBeInTheDocument();
 
       await user.click(screen.getByRole('button', { name: /english/i }));
 
-      expect(screen.getByText(/exists in portuguese only/i)).toBeInTheDocument();
-      // A moldura acompanha; o texto jurídico continua em português.
+      expect(screen.getByRole('heading', { level: 1, name: 'Terms of Use' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
-      expect(documentText()).toMatch(/Termos de Uso/);
     });
+  });
+});
+
+// ─── Versão em inglês ─────────────────────────────────────────────────────────
+// Tradução publicada em 2026-09-09 sob a MESMA versão do documento. As
+// asserções abaixo são as mesmas de honestidade da versão em português: sem
+// elas, o inglês vira a superfície onde as negativas incômodas podem sumir numa
+// revisão de redação, que é exatamente o risco de manter dois textos.
+describe('TermsOfUsePage · em inglês', () => {
+  beforeEach(() => changeLocale('en'));
+  afterEach(() => changeLocale('pt'));
+
+  it('é a mesma versão do documento, e diz que a versão em português prevalece', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(screen.getByText(new RegExp(`Version ${TERMS_VERSION}`))).toBeInTheDocument();
+    // Sem esta frase, quem só leu o inglês teria aceitado documento diferente
+    // do que o servidor registrou: o aceite grava versão, e não idioma.
+    expect(texto).toMatch(/courtesy translation of the Portuguese original/i);
+    expect(texto).toMatch(/the Portuguese version prevails/i);
+  });
+
+  it('tem as mesmas 22 cláusulas numeradas', () => {
+    renderPage();
+
+    const clausulas = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent ?? '');
+    expect(clausulas).toHaveLength(22);
+    expect(clausulas[0]).toMatch(/^1\. Acceptance of these Terms$/);
+    expect(clausulas[21]).toMatch(/^22\. Contact$/);
+  });
+
+  it('diz que não processa pagamento e que o estado da recompensa não é comprovante', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/does not process payments/i);
+    expect(texto).toMatch(/payment gateway/i);
+    expect(texto).toMatch(/escrow/i);
+    expect(texto).toMatch(/is not proof/i);
+    expect(texto).toMatch(/does not issue invoices/i);
+  });
+
+  it('diz que não verifica identidade nem titularidade de perfil', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/does not verify the identity/i);
+    expect(texto).toMatch(/does not confirm whether the person who provides a social media profile/i);
+    expect(texto).toMatch(/does not validate company registration numbers/i);
+  });
+
+  it('diz que não há integração oficial com Instagram ou Meta', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/has no official integration/i);
+    expect(texto).toMatch(/unofficial external provider/i);
+    expect(texto).toMatch(/is not a partner, affiliate or authorised/i);
+  });
+
+  it('diz que não modera conteúdo e que não hospeda arquivo', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/does not carry out prior moderation/i);
+    expect(texto).toMatch(/does not host content files/i);
+    expect(texto).toMatch(/no upload of video, photo or document/i);
+    expect(texto).toMatch(/no general obligation of prior monitoring/i);
+    expect(texto).toMatch(/no structured reporting channel/i);
+  });
+
+  it('diz que não garante disponibilidade, SLA nem suporte com prazo', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/makes no commitment of continuous availability/i);
+    expect(texto).toMatch(/uptime/i);
+    expect(texto).toMatch(/SLA/);
+  });
+
+  it('diz que não é parte da relação e lista o que não garante', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/is not a party to that relationship/i);
+    expect(texto).toMatch(/does not guarantee payment/i);
+    expect(texto).toMatch(/does not supervise the performance/i);
+    expect(texto).toMatch(/does not mediate, arbitrate or resolve disputes/i);
+    expect(texto).toMatch(/within the limits allowed by applicable law/i);
+  });
+
+  it('diz que a aprovação não é contrato nem aceite formal de oferta', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/no electronic signature/i);
+    expect(texto).toMatch(/does not constitute a contract between brand and creator/i);
+  });
+
+  it('explica que a candidatura sem login cria uma conta', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/submit an application without being logged in/i);
+    expect(texto).toMatch(/a creator account is created with the data provided/i);
+    expect(texto).toMatch(/without a password chosen by the user/i);
+  });
+
+  it('não trata a simples navegação em página pública como aceite', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/Simply visiting those pages is not treated as acceptance/i);
+    expect(texto).toMatch(/may be browsed without an account/i);
+    expect(texto).toMatch(/require express acceptance of these Terms/i);
+  });
+
+  it('diz que a idade é declarada, não verificada', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/no documentary or automated age verification/i);
+    expect(texto).toMatch(/18 years old or older/i);
+  });
+
+  it('não concede licença comercial ampla sobre o conteúdo do usuário', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/limited to what is necessary/i);
+    expect(texto).toMatch(/does not belong to TAYRO/i);
+    expect(texto).toMatch(/does not authorise TAYRO to commercialise user content/i);
+  });
+
+  it('não promete garantia de resultado nem de pagamento', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).not.toMatch(/payment guaranteed/i);
+    expect(texto).not.toMatch(/we guarantee payment/i);
+    expect(texto).not.toMatch(/verified by TAYRO/i);
+    expect(texto).not.toMatch(/verified identity/i);
+    expect(texto).not.toMatch(/partner(ed)? with Meta/i);
+  });
+
+  it('mantém a comarca pendente e a identificação do responsável', () => {
+    renderPage();
+
+    expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
+    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    // A MESMA pendência do documento original (cláusula 21), não uma pendência
+    // da tradução: preencher a comarca preenche os dois.
+    expect(screen.getByText(/COURT DISTRICT \/ VENUE/i)).toBeInTheDocument();
+    expect(screen.getByText(/to be filled in before publishing/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\[ENDERE/i)).not.toBeInTheDocument();
+  });
+
+  it('linka a Política de Privacidade pelo mesmo endereço', () => {
+    renderPage();
+
+    const links = screen.getAllByRole('link', { name: /privacy policy/i });
+    expect(links.length).toBeGreaterThan(0);
+    links.forEach((link) => expect(link).toHaveAttribute('href', PRIVACY_PATH));
   });
 });

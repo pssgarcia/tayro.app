@@ -87,19 +87,11 @@ export const ptApp = {
     documentosLegais: 'Documentos legais',
     /**
      * Rótulo dos documentos legais nos LINKS do produto. Separado do
-     * `TERMS_LABEL`/`PRIVACY_LABEL` de `config/legal.ts`, que continua em
-     * português fixo porque é citado DENTRO do texto jurídico (25 vezes).
-     * Em inglês estes dizem "(in Portuguese)": o documento existe só em
-     * português e é a versão que vale.
+     * `TERMS_LABEL`/`PRIVACY_LABEL` de `config/legal.ts`, que é citado DENTRO
+     * do texto jurídico em português (25 vezes) e por isso não acompanha o
+     * idioma da interface. Desde 2026-09-09 os dois documentos existem em
+     * inglês, então o rótulo não carrega mais a ressalva "(in Portuguese)".
      */
-    /**
-     * Aviso mostrado APENAS em inglês na moldura dos documentos legais: eles
-     * existem só em português e é essa a versão que vale. O valor em português
-     * nunca é renderizado (a condição não dispara), mas existe porque o
-     * dicionário tem forma única nos dois idiomas.
-     */
-    documentoSoEmPortugues:
-      'Este documento existe apenas em português, e é essa a versão que vale.',
     termos: 'Termos de Uso',
     privacidade: 'Política de Privacidade',
   },

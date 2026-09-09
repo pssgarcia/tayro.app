@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useLocale } from '../../i18n';
+import PrivacyPolicyEn from './legal/PrivacyPolicyEn';
 import {
   LegalDocumentShell,
   Section,
@@ -42,11 +44,22 @@ import {
 //
 // Identidade do controlador (2026-09-09): o TAYRO ainda não tem razão social
 // nem CNPJ constituídos, então o controlador registrado é a pessoa física
-// (Pedro, CPF preenchido na seção 1). Falta só o endereço, que ele decidiu não
-// informar por ora. NÃO remover o bloco de campo a preencher até que o
-// endereço exista de verdade (ou até constituir CNPJ, o que troca o nome/CPF
-// também).
+// (Pedro, CPF preenchido na seção 1). Endereço decidido por ele para NÃO
+// aparecer (exposição desproporcional antes de existir CNPJ) — não é campo a
+// preencher depois, é omissão deliberada. Não readicionar sem pedido dele.
+/**
+ * Despacho por idioma. O documento em inglês é um ARQUIVO irmão, não este texto
+ * parametrizado: documento jurídico traduzido é outro texto, não um template
+ * com variável, e tratá-lo como template convidaria a "melhorar" a redação de
+ * um lado só. O preço é manter os dois em sincronia, e é por isso que a regra
+ * está escrita no cabeçalho do arquivo em inglês: mudou aqui, muda lá no mesmo
+ * commit.
+ */
 export default function PrivacyPolicyPage() {
+  return useLocale() === 'en' ? <PrivacyPolicyEn /> : <PrivacyPolicyPt />;
+}
+
+function PrivacyPolicyPt() {
   return (
     <LegalDocumentShell
       updatedLabel={`Versão ${PRIVACY_VERSION} · atualizada em ${LEGAL_UPDATED_AT}`}
@@ -88,7 +101,6 @@ export default function PrivacyPolicyPage() {
         <Placeholder>
           <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
           <p>CPF: 119.407.186-43</p>
-          <p>[ENDEREÇO, a preencher antes da publicação em produção]</p>
           <p>E-mail: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>
         <p>

@@ -15,13 +15,39 @@ Isto é escopo declarado, não esquecimento:
 
 | O quê | Por quê |
 |---|---|
-| **Texto dos documentos legais** (`/terms-of-use`, `/privacy-policy`) e a moldura deles | É peça jurídica. O aceite grava `acceptedTermsVersion` e **não guarda idioma**, então uma segunda versão criaria ambiguidade sobre o que foi aceito. Os LINKS do produto dizem "(in Portuguese)" em inglês. |
+| **Texto dos documentos legais** (`/terms-of-use`, `/privacy-policy`) | Existem em inglês desde 2026-09-09, mas **fora do dicionário**: são arquivos irmãos em `pages/public/legal/`, porque documento jurídico traduzido é outro TEXTO, não copy parametrizada. Ver a seção abaixo. |
 | **Mensagens de erro da API** | Nascem no servidor, em português. Várias telas mostram `response.data.message` direto (`PublicApplyPage`, `SubmissionsPage`, `ApplyModal`, `CampaignResultsTab`, `CampaignRewardsTab`). Traduzir exige i18n no NestJS, com `Accept-Language`. |
 | **Corpo dos e-mails** | Idem: `EmailService`, no servidor. |
 | **O VALOR dos nichos** | É chave de filtro de campanha (`?niches=`), não rótulo. Traduzir o valor faria a creator parar de casar com a campanha. Só a exibição muda. |
 
 Uma pessoa navegando em inglês vai, portanto, encontrar português em mensagem
-de erro vinda da API e nos dois documentos legais.
+de erro vinda da API.
+
+## Os documentos legais (regra própria)
+
+Os dois documentos têm versão em inglês desde 2026-09-09, e ela é **tradução de
+cortesia**: a versão em português é a que **prevalece**, e é isso que a página
+diz antes do título, em inglês.
+
+Isso não é formalidade. O aceite grava `acceptedTermsVersion` e **não guarda
+idioma**; sem cláusula de prevalência, uma divergência de tradução viraria
+ambiguidade num contrato de adesão, que se resolve contra quem redigiu. Por
+isso a **versão é a mesma nos dois idiomas** (`1.0`): a tradução não é
+documento novo.
+
+Consequências práticas:
+
+- o texto NÃO vive no dicionário. `pages/public/legal/TermsOfUseEn.tsx` e
+  `PrivacyPolicyEn.tsx` são arquivos irmãos, e a página despacha por idioma;
+- **mudou o texto em português, muda o inglês no mesmo commit**, senão os dois
+  passam a dizer coisas diferentes sob o mesmo número de versão;
+- as asserções de honestidade rodam nos **dois** idiomas (não processa
+  pagamento, não verifica identidade, sem integração com a Meta, sem moderação,
+  sem SLA, a candidatura sem login cria conta, a exclusão não é total). Sem
+  isso, o inglês seria a superfície onde uma negativa incômoda some numa
+  revisão de redação;
+- os campos a preencher (a comarca do foro) aparecem nos dois. Preencher um
+  exige preencher o outro.
 
 ## Como funciona
 

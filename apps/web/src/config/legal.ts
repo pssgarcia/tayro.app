@@ -39,3 +39,18 @@ export const LEGAL_UPDATED_AT = '4 de setembro de 2026';
  * de direitos do titular.
  */
 export const LEGAL_CONTACT_EMAIL = 'pedrossgarcia88@gmail.com';
+
+/**
+ * Rótulos e data em inglês, para a tradução dos dois documentos publicada em
+ * 2026-09-09.
+ *
+ * A versão (`TERMS_VERSION`/`PRIVACY_VERSION`) é a MESMA nos dois idiomas: a
+ * tradução não é um documento novo, é o mesmo documento vertido para outro
+ * idioma. É o que mantém `acceptedTermsVersion: "1.0"` apontando para um texto
+ * identificável, sem precisar guardar idioma no registro de aceite. Por isso a
+ * data exibida também é a da publicação da versão em português, e não a da
+ * tradução.
+ */
+export const TERMS_LABEL_EN = 'Terms of Use';
+export const PRIVACY_LABEL_EN = 'Privacy Policy';
+export const LEGAL_UPDATED_AT_EN = 'September 4, 2026';

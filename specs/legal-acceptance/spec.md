@@ -91,7 +91,23 @@ aceite.
 Nos dois cadastros e no caminho de criação da candidatura pública, os campos entram no mesmo
 `user.create`. Não existe janela em que exista conta sem registro de aceite.
 
-### Regra 4: o primeiro aceite de uma versão não é sobrescrito
+### Regra 4: idioma não entra no registro, porque só um texto vincula
+Os dois documentos existem em português e em inglês desde 2026-09-09. A versão em inglês é
+**tradução de cortesia** da mesma versão (`1.0`) e diz, no topo da página, que a versão em
+português é a que prevalece em caso de divergência.
+
+Por isso o registro de aceite **não guarda idioma** e não precisa guardar: qualquer que seja o
+idioma lido, o texto aceito é o mesmo documento, na mesma versão. Publicar duas versões com o
+mesmo peso exigiria gravar o idioma (senão `acceptedTermsVersion: "1.0"` deixaria de apontar para
+um texto identificável) e criaria ambiguidade num contrato de adesão, que se resolve contra quem
+redigiu. Decisão do Pedro em 2026-09-09, ao pedir a tradução.
+
+Consequência operacional: **mudança no texto em português vai para o inglês no mesmo commit**. As
+asserções de honestidade (não processa pagamento, não verifica identidade, sem integração oficial
+com a Meta, sem moderação, sem SLA, a candidatura sem login cria conta, a exclusão não é total,
+idade declarada) rodam nos dois idiomas.
+
+### Regra 5: o primeiro aceite de uma versão não é sobrescrito
 `recordLegalAcceptance` (candidatura pública em conta que já existia):
 - versão guardada **igual** à em vigor → não escreve nada. O que vale como prova é o primeiro
   aceite de um texto; reescrever a data a cada candidatura apagaria justamente quando a pessoa
@@ -100,16 +116,16 @@ Nos dois cadastros e no caminho de criação da candidatura pública, os campos 
 - `declaredAdultAt` só é preenchido se estiver vazio. Declarar maioridade duas vezes não é mais
   verdadeiro que declarar uma.
 
-### Regra 5: aceite não é efeito acessório
+### Regra 6: aceite não é efeito acessório
 Falha ao gravar o aceite **derruba** a requisição, e a candidatura não é criada. Diferente do
 e-mail de claim (best-effort desde 2026-08-24): um link de senha é conveniência, o registro de
 aceite é a razão de o mecanismo existir.
 
-### Regra 6: a exclusão de conta PRESERVA o aceite
+### Regra 7: a exclusão de conta PRESERVA o aceite
 `deleteMyAccount` não toca nos quatro campos. São uma versão e dois horários, que não identificam
 a pessoa, e são a prova de que a relação existiu sob determinado texto. Ver `account-deletion`.
 
-### Regra 7: o aceite entra na exportação de dados
+### Regra 8: o aceite entra na exportação de dados
 `GET /influencers/me/export` e `GET /brands/me/export` devolvem os quatro campos em
 `legalAcceptance`. É registro que guardamos sobre a pessoa (art. 18 II).
 
@@ -211,7 +227,7 @@ Era o furo apontado na auditoria: a conta nascia em silêncio.
   validação dos três DTOs (ausente / `false` / string / versão vinda do cliente).
 - `apps/api/src/modules/creators/application/creators.service.legal-acceptance.spec.ts` (7):
   conta nova, conta existente, não sobrescrever a mesma versão, re-registrar versão anterior,
-  preservar `declaredAdultAt`, falha não é best-effort. Regra 4 validada por mutação.
+  preservar `declaredAdultAt`, falha não é best-effort. Regra 5 validada por mutação.
 - `apps/api/src/modules/auth/application/auth.service.spec.ts`: aceite gravado no `create` dos
   dois cadastros.
 - `apps/api/src/modules/creators/application/creators.service.delete-account.spec.ts`: aceite
@@ -248,3 +264,7 @@ Ver `implements` no frontmatter.
   exibir a versão no cabeçalho, que é o que dá sentido a `acceptedTermsVersion`/
   `acceptedPrivacyVersion`. Known Gap do "texto não existe" fechado; o bloqueio de release passa
   a ser apenas razão social, CPF/CNPJ, endereço e comarca do foro.
+- **2026-09-09**: os dois documentos ganham versão em inglês (`pages/public/legal/`), como
+  tradução de cortesia sob a MESMA versão `1.0`, com cláusula de prevalência do português. O
+  registro de aceite não muda: nenhuma coluna nova, nenhum campo novo no DTO. Os rótulos dos links
+  no produto deixam de dizer "(in Portuguese)". Ver Regra 4.

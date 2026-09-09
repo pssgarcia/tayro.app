@@ -69,10 +69,8 @@ export const enApp = {
       perfil: 'Profile',
     },
     documentosLegais: 'Legal documents',
-    documentoSoEmPortugues:
-      'This document exists in Portuguese only, and that is the version that applies.',
-    termos: 'Terms of Use (in Portuguese)',
-    privacidade: 'Privacy Policy (in Portuguese)',
+    termos: 'Terms of Use',
+    privacidade: 'Privacy Policy',
   },
 
   acoes: {
