@@ -541,3 +541,62 @@ mais o pedido:** desde 2026-08-31 a Fila (desktop e mobile) já mostra @handle e
 tem um caminho de um toque, sem in-app messaging. **Não ressuscitar** sem: (a) item 0 do
 roadmap rodando com marca real, e (b) marca real operando 2+ campanhas simultâneas e sentindo
 falta específica de agregação cross-campanha (o que a Fila por-campanha já não resolve).
+
+### 2026-09-08 · `PROPOSTA` — Internacionalizar o TAYRO (inglês, "principalmente na landing")
+**Veredito:** `NÃO — responda "inglês pra quem" e destrave `D-C` primeiro. É decisão de escopo
+geográfico da visão, não feature.`
+**Motivo em uma frase:** o pedido não pôde ser descrito como dor sem descrever a solução, e as
+três leituras possíveis ("inglês pra investidor", "pra marca estrangeira", "pra creator
+estrangeira") levam a três produtos diferentes — duas delas nem são código, e a terceira
+contradiz a visão, que diz por extenso *"o registro de trabalho do creator **brasileiro**"*, com
+ordem de expansão declarada `fitness BR → outros nichos BR → histórico portátil como padrão`.
+Internacionalizar não aparece em lugar nenhum de `vision.md`, `roadmap.md` ou `decisions.md`
+`[FATO — verificado 2026-09-08: zero ocorrências de "internacional", "inglês" ou "idioma"]`.
+**Por que bloqueia em `D-C` (ABERTA):** decidir com quem a landing fala **é** a pergunta de
+go-to-market. Escolher o idioma da porta de entrada antes de escolher o canal é responder a
+`D-C` por acidente, exatamente o que a regra de admissão nº 3 existe pra impedir.
+**Fatos de código que encarecem e que não são óbvios no pedido:**
+- A landing tem ~190 strings visíveis em 13 arquivos, e **não existe lib de i18n** no projeto.
+  Traduzir não é o custo; o custo é a infra e o imposto permanente de toda string nova nascer
+  em dois idiomas, num produto com 0 clientes.
+- Os **testes de honestidade** da landing travam copy exata em português (`not.toMatch(/verificad/i)`,
+  `/alinhamento|match|score/`, e a exigência de "histórico" + a ressalva de número declarado).
+  Uma segunda língua sem esses testes reescritos cria uma superfície onde a `vision.md` nº 5
+  deixa de ser aplicada — a promessa exagerada volta em inglês sem ninguém ver.
+- **O funil em inglês desemboca num produto em português**: `/programs`, `/apply/:id`, e-mails,
+  BRL/centavos, `pt-BR` no `Intl`, telefone com heurística de DDI 55 e WhatsApp como canal.
+  Landing em inglês que leva a app em português promete o que o produto não entrega.
+- **Consequência legal concreta:** os 3 fluxos de entrada gravam `acceptedTermsVersion` +
+  `acceptedPrivacyVersion`, e o registro **não guarda idioma**. Termos v1.0 (22 cláusulas) e
+  Política v1.0 (19 seções) só existem em português. Alguém que leia a landing em inglês e
+  crie conta aceita documento que não leu — e o registro fica ambíguo sobre o que foi aceito.
+  Traduzir documento jurídico não é trabalho de agente nem de engenharia. Some-se que o release
+  desses documentos **já está bloqueado** por razão social/CNPJ/foro em placeholder.
+**O que substitui (menor experimento):** um one-pager estático em inglês, fora do produto,
+**sem criação de conta** — CTA de contato apenas. Testa "existe conversa do outro lado?" sem lib
+de i18n, sem tocar na landing real, sem tocar em aceite, e é deletável. Antes disso, o teste de
+custo zero: mandar o texto em inglês pra 5 pessoas do público-alvo suposto e ver se alguma responde.
+**Não ressuscitar** sem uma destas: (a) `D-C` decidida com um canal internacional nomeado;
+(b) ≥3 conversas reais em que a barreira de idioma foi citada espontaneamente por quem decide;
+(c) decisão explícita de Pedro e Thais mudando o escopo geográfico da `vision.md` — que é debate
+de visão, e sobe pros dois, não pro roadmap.
+
+**Decisão do Pedro, mesma data (2026-09-08): seguir mesmo assim.** Apresentado o veredito acima,
+ele respondeu "Ta bom cara. Mas eu quero fazer" — reafirmação explícita depois de ler os
+motivos. **A entrada acima fica como está** (o registro do porquê vale mesmo com a decisão
+contrária; é o que permite avaliar daqui a três meses se o custo se pagou). O que muda é o
+status: de `NÃO` para **`FEITO POR DECISÃO DO PEDRO`**, com o escopo recortado pra pagar o
+mínimo do que foi levantado como risco:
+- **Só a landing** foi traduzida, mais a infraestrutura. O resto do produto segue em português.
+- **Os testes de honestidade rodam nos DOIS idiomas** (`describe.each(LOCALES)`), com lista de
+  palavras proibidas por idioma. Era o risco nº 2 do veredito: sem isso o inglês seria uma
+  superfície onde a `vision.md` nº 5 não é aplicada.
+- **Os documentos legais NÃO foram traduzidos** e os rótulos do rodapé dizem "(in Portuguese)".
+  Era o risco nº 4 (aceite em idioma não lido). Nenhum texto jurídico foi escrito por agente.
+- **Nenhuma lib de i18n** entrou: dicionário tipado próprio, `en.ts` checado contra `pt.ts` em
+  tempo de compilação. Reduz o "imposto permanente" apontado no veredito, não o elimina.
+**O que continua valendo do veredito, e não foi resolvido por código:** não se sabe pra quem é o
+inglês, `D-C` segue `ABERTA`, e não há instrumentação pra dizer se a landing em inglês serviu
+pra alguma coisa. **Gatilho de revisão:** se em 3 meses nenhuma conversa tiver nascido da versão
+em inglês, é evidência de que o veredito estava certo e o custo de manutenção deve ser cortado
+(apagar `en.ts` é barato justamente porque nada fora da landing depende dele).

@@ -589,6 +589,54 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
   aleatório descartado. O registro de aceite (versão + horário, que não identifica ninguém) é
   explicitamente PRESERVADO, com teste que falha se alguém passar a apagá-lo.
 
+- **Landing em inglês / i18n (2026-09-08):** a landing (`/`) passa a existir em **português e
+  inglês**, com seletor no header. **O `/feature` deu veredito `NÃO`** (ver `decisions.md`,
+  entrada de 2026-09-08: não se sabe pra quem é o inglês, depende de `D-C` que está `ABERTA`, e
+  não toca nenhum dos 4 diferenciais); **o Pedro reafirmou e mandou seguir**, então o escopo foi
+  recortado pra pagar o mínimo dos riscos levantados.
+  - **Escopo: SÓ a landing** + `pages/public/landing/`. O resto do produto (painéis, auth,
+    documentos legais, e-mails, mensagens da API) segue **só em português**. Está escrito em
+    `apps/web/src/i18n/README.md` pra não ser lido como esquecimento.
+  - **Sem lib de i18n.** `src/i18n/`: `pt.ts` é a fonte de verdade, `Dictionary = typeof pt`, e
+    `en.ts` é `satisfies Dictionary` — **chave nova em português vira erro de compilação no
+    inglês**. `useT()` devolve o DICIONÁRIO (`t.hero.titulo`), não `t('a.b.c')`: erro de chave é
+    erro de tipo, e renomear é refactor guiado pelo compilador. String com valor variável é
+    FUNÇÃO (`dias: (n) => ...`), não template com placeholder.
+  - **Store module-level + `useSyncExternalStore`, sem Provider.** Helper puro (`utils/format.ts`)
+    precisa do idioma sem virar hook, e nenhum teste existente precisou passar a embrulhar o que
+    renderiza.
+  - **`MODE=test` força `pt`** (mesmo padrão do `useStepGuard`): o jsdom se declara `en-US`, e sem
+    essa guarda a suíte inteira passaria a rodar em inglês por acidente, quebrando 700+ asserções
+    em português por um motivo que nada tem a ver com o que elas checam.
+  - **Precedência:** `?lang=` na URL → escolha salva → idioma do navegador (qualquer coisa que não
+    seja português cai em inglês) → `pt`.
+  - **Os testes de honestidade rodam nos DOIS idiomas** (`describe.each(LOCALES)`), com lista de
+    palavras proibidas por idioma. Era o risco mais concreto do veredito: sem isso, o inglês seria
+    uma superfície onde o `vision.md` nº 5 deixa de ser aplicado. **"a good fit" é a tradução
+    natural de "faz sentido" e eu escorreguei nela na 1ª redação** — o teste pegou.
+  - **Documentos legais NÃO foram traduzidos**, de propósito: o aceite grava
+    `acceptedTermsVersion` e **não guarda idioma**, então quem lesse a landing em inglês e criasse
+    conta aceitaria documento que não leu. Os rótulos do rodapé dizem **"(in Portuguese)"**, e um
+    teste trava isso. Nenhum texto jurídico foi escrito por agente.
+  - **`utils/format.ts` ficou locale-aware** (`formatNumberParts`, `formatEngagement`,
+    `formatPercent`, `formatCurrency`, `formatDate`): `12,4k`/`5,8%` em português, `12.4k`/`5.8%`
+    em inglês. **A moeda continua BRL nos dois** (o produto só lida com real; o que muda é a forma
+    de escrever o número). Com `pt` a saída é byte a byte a de sempre, então nada no produto mudou.
+  - **`StatusWord` ganhou `label?`** (aditivo, nenhum call site do produto passa): o vocabulário de
+    status vive em `utils/format.ts` só em português, e a demonstração da landing precisava dizer
+    "Pending" sem arrastar as 20+ telas que consomem esses mapas.
+  - **Dois guardas que o TypeScript não dá** (`dictionaries.spec.ts`, os dois validados por
+    mutação): frase idêntica entre `pt` e `en` acima de 8 caracteres (corte calibrado pelo maior
+    par legítimo que existe, `"creators"`), e acentuação portuguesa dentro do `en.ts`.
+  - **Achados no caminho:** o `<title>` da aba ficava em português com a página em inglês (o
+    `index.html` é estático) — corrigido em tempo de execução, com a ressalva de que **crawler não
+    executa JS**, então preview de link em inglês exigiria SSR e ficou fora; e consts de módulo que
+    chamavam `formatCurrency`/guardavam rótulo (`StepVisual`, `DemoProduto`, `DoisLados`)
+    congelavam no idioma do boot — foram pra dentro do render.
+  - 797 testes web (111 novos), lint e typecheck limpos. **Não houve conferência visual em
+    navegador real** (Playwright não está no projeto) — é o passo que falta, e a lição de
+    2026-08-28 diz que ele acha o que suíte nenhuma acha.
+
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)
@@ -639,7 +687,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Texto #F0F0F0 / secundário #888888 · Sucesso #1EDB8C / Erro #FF4D4D
 - Fontes: Space Grotesk (display/headings) · Inter (body). Stats com tabular-nums.
 - CARDS, nunca tabelas. Avatares proeminentes. StatusPills coloridas. Copy encorajadora.
-- **NADA de travessão (—) em texto do produto (regra do Pedro, 2026-09-03).** Vale pra toda copy que o usuário lê: tela, mensagem de erro da API, assunto e corpo de e-mail. No lugar dele: ponto, dois-pontos, vírgula ou parênteses. **Travado por teste nos dois apps** (`apps/web/src/copy-sem-travessao.spec.ts` e `apps/api/src/shared/validation/copy-sem-travessao.spec.ts`, os dois validados por mutação) porque regra que vive só neste arquivo volta a ser quebrada na sessão seguinte: quando ela foi criada, 30 strings do produto tinham travessão. **Fora do escopo da regra, de propósito:** comentário de código (nota pra quem programa, não copy) e o `—` sozinho como marcador de valor vazio (placa da oferta em `CampaignForm`, taxa do dashboard da creator, `ProgramCard` sem oferta) — mexer nesses três é decisão de design do estado vazio, não de pontuação; o teste tem exceção explícita pra eles.
+- **NADA de travessão (—) em texto do produto (regra do Pedro, 2026-09-03).** Vale pra toda copy que o usuário lê: tela, mensagem de erro da API, assunto e corpo de e-mail. No lugar dele: ponto, dois-pontos, vírgula ou parênteses. **Travado por teste nos dois apps** (`apps/web/copy-sem-travessao.test.ts` — na raiz do app e com sufixo `.test`, não em `src/` como esta linha já afirmou errado — e `apps/api/src/shared/validation/copy-sem-travessao.spec.ts`, os dois validados por mutação) porque regra que vive só neste arquivo volta a ser quebrada na sessão seguinte: quando ela foi criada, 30 strings do produto tinham travessão. **Fora do escopo da regra, de propósito:** comentário de código (nota pra quem programa, não copy) e o `—` sozinho como marcador de valor vazio (placa da oferta em `CampaignForm`, taxa do dashboard da creator, `ProgramCard` sem oferta) — mexer nesses três é decisão de design do estado vazio, não de pontuação; o teste tem exceção explícita pra eles.
 - **Redesign 2a (v0.29.0):** substitui os tokens acima em todas as telas migradas. BG `#0A0A0A`, lime `#C6FF33` mantido, "placa" `#E8E8E3` (card claro com crop marks) como elemento de assinatura — no máx. 1 por tela. JetBrains Mono (mono, máx. 3 usos/tela) somado a Space Grotesk/Inter. Ver `apps/web/design_handoff_tayro_2a/` (gitignored) pra spec completa. 6 regras do sistema: máx. 3 labels mono/tela, máx. 2 divisores/tela, sem efeitos empilhados, 1 "orçamento" de lime/tela, 1 placa/tela, piso de contraste no texto secundário.
 - **"Kinetic Editorial" (2026-08-16) — direção padrão daqui pra frente**, substitui gradualmente o redesign 2a (que fica intacto nas telas ainda não migradas, não apagar os tokens `plate`/`signal` até migrar tudo). BG `#121212` (`kinetic-black`), superfícies `#1a1a1a`/`#2a2a2a` (`kinetic-dark`/`kinetic-gray`), texto secundário `#d1d1d1`/`#888888` (`kinetic-text`/`kinetic-muted`), borda de controle `#3a3a3a` (`kinetic-border`) — tokens em `tailwind.config.ts` → `colors.kinetic`. Lime `#C6FF33` continua sendo o MESMO token `lime` (era "kinetic-accent" no mock, sem duplicar). Placa clara vira `kinetic-light` (`#e5e5e0`, mais quente que o `plate` da 2a) com crop marks EM LIME (não neutros como na 2a) e fotos em p&b só sobre ela — fora da placa (hero em tela cheia no mobile, por ex.) foto fica a cores. Tipografia mais ousada que a 2a (títulos até `text-7xl`, stats até `text-6xl`). Botões primário/secundário como blocos retos lado a lado (não o split-bar `PlateActionBar` da 2a). **Copy é TODA em português — regra revertida em 2026-08-23.** Até essa data este arquivo dizia que misturar inglês em labels estruturais ("Pipeline", "Followers", "Bio Note", "Recent Feed") era decisão deliberada vinda dos mockups. **Não é mais:** o Pedro viu a Fila em produção e pediu tudo em português. Quem for mexer na Fila, não "restaure" o inglês achando que é a identidade — não é. O que sobrou de inglês é só nome de token e de variável no código, que não aparece pra ninguém. Primeira aplicação: aba Fila de `/brand/campaigns/:id` (ver "Feito"). **A partir de 2026-08-28 a gramática mora em primitivos (`components/primitives/kinetic/`) e está escrita por extenso em `apps/web/DESIGN.md` → "Kinetic Editorial — a direção atual"** (tokens, os 6 primitivos, as 6 regras e o estado da migração). Não recriar placa, botão ou status na mão: se falta variante, ela nasce no primitivo. **Duas medidas que mordem:** o padding da placa é 32px porque as crop marks ocupam de 16px a 32px a partir da borda — menos que isso e a marca atravessa o texto, mais e ela se desgruda do conteúdo; e a nav (sidebar e tab bar) é mono caixa alta desde 2026-08-28, com tracking menor no tab bar porque 5 itens não cabem em 360px com o tracking dos rótulos de seção.
 
@@ -663,7 +711,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Poll-while-PENDING (teto ~45s) pra dados de IG assíncronos.
 
 ## Telas prontas (frontend) — não reconstruir
-- **/ (LandingPage, 2026-08-29, demonstração com 4ª aba Resultado desde 2026-09-03):** porta de entrada pública, standalone, Kinetic. Anônimo vê a landing; logado redireciona pro painel do papel. 7 seções (hero · o problema · como funciona · os dois lados · demonstração interativa · CTA · footer), componentes locais em `pages/public/landing/`, fotos geradas em `assets/landing/`. Header = ícone de conta → Entrar/Criar conta. CTA principal = WhatsApp com ícone (`config/contact.ts`, degrada pra `/register/brand` sem `VITE_CONTACT_WHATSAPP`); secundário → `/programs`. Demonstração interativa (`DemoProduto`) tem 4 abas hoje (Fila · Recompensas · Conteúdos · Resultado) e o ciclo de "os dois lados" fecha devolvendo o resultado pra creator, não só o conteúdo pra marca. Ver "Feito".
+- **/ (LandingPage, 2026-08-29, demonstração com 4ª aba Resultado desde 2026-09-03, BILÍNGUE pt/en desde 2026-09-08):** porta de entrada pública, standalone, Kinetic. Anônimo vê a landing; logado redireciona pro painel do papel. 7 seções (hero · o problema · como funciona · os dois lados · demonstração interativa · CTA · footer), componentes locais em `pages/public/landing/`, fotos geradas em `assets/landing/`. Header = ícone de conta → Entrar/Criar conta. CTA principal = WhatsApp com ícone (`config/contact.ts`, degrada pra `/register/brand` sem `VITE_CONTACT_WHATSAPP`); secundário → `/programs`. Demonstração interativa (`DemoProduto`) tem 4 abas hoje (Fila · Recompensas · Conteúdos · Resultado) e o ciclo de "os dois lados" fecha devolvendo o resultado pra creator, não só o conteúdo pra marca. Seletor de idioma no header; toda a copy vem de `src/i18n/dictionaries/`, nenhuma string literal no JSX. Ver "Feito".
 - /login + /register/brand (AuthLayout; /register → /register/brand) · BrandLayout (sidebar Dashboard/Creators/Campanhas/Perfil) + BrandGuard
 - **/brand/creators (2026-09-02):** `ApprovedCreatorsPage` — lista + placa de toda creator aprovada em qualquer campanha da marca (agregação cross-campanha via `GET /applications/approved`). Placa = media kit completo (avatar, @handle, seguidores, engajamento, posts recentes, campanhas em que foi aprovada) + botão "Falar no WhatsApp" (`wa.me`, via `whatsappLinkFromPhone`). Ver "Feito".
 - **/forgot-password + /reset-password (2026-09-02):** AuthLayout, fora de guards. `/forgot-password` (campo único de e-mail; sucesso troca o form por mensagem genérica que nunca revela se o e-mail existe) e `/reset-password?token=` (sem preview, direto pro form de senha; sucesso autentica e redireciona pro painel do papel via `redirectPath`). "Esqueci minha senha?" no `LoginPage` leva pro primeiro. Ver "Feito".
