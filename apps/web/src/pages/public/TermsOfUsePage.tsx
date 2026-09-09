@@ -31,8 +31,10 @@ import {
 // oficial com o Instagram ou a Meta. Ver specs/legal-acceptance e o relatório
 // de auditoria de 2026-09-04.
 //
-// AINDA FALTA PARA PUBLICAR EM PRODUÇÃO: razão social, CPF/CNPJ e a comarca do
-// foro. Estão marcados na página como campos a preencher, de propósito.
+// AINDA FALTA PARA PUBLICAR EM PRODUÇÃO: o endereço (seção 1 da Política e
+// cláusula 22) e a comarca do foro (cláusula 21). Nome/CPF preenchidos em
+// 2026-09-09 (pessoa física, TAYRO ainda sem CNPJ). Os dois que faltam
+// continuam marcados na página como campo a preencher, de propósito.
 export default function TermsOfUsePage() {
   return (
     <LegalDocumentShell
@@ -967,10 +969,8 @@ export default function TermsOfUsePage() {
           .
         </p>
         <Placeholder>
-          <p className="font-medium text-foreground">
-            [NOME / RAZÃO SOCIAL DO RESPONSÁVEL, a preencher antes da publicação em produção]
-          </p>
-          <p>[CPF/CNPJ, se aplicável, a preencher antes da publicação em produção]</p>
+          <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
+          <p>CPF: 119.407.186-43</p>
           <p>[ENDEREÇO, a preencher antes da publicação em produção]</p>
           <p>E-mail: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>

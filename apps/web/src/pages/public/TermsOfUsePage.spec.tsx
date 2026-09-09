@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { changeLocale } from '../../i18n';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import TermsOfUsePage from './TermsOfUsePage';
@@ -203,13 +205,43 @@ describe('TermsOfUsePage', () => {
     expect(screen.getByRole('link', { name: /tayro/i })).toHaveAttribute('href', '/');
   });
 
-  // Estes campos NÃO podem ir para produção como placeholder. Ficam visíveis na
-  // página de propósito, e o teste garante que não sejam "resolvidos" apagando
-  // o aviso em vez de preenchendo o dado.
-  it('mostra os campos que ainda faltam preencher antes de publicar', () => {
+  // O endereço e a comarca do foro NÃO podem ir para produção como placeholder.
+  // Ficam visíveis na página de propósito, e o teste garante que não sejam
+  // "resolvidos" apagando o aviso em vez de preenchendo o dado.
+  it('identifica o responsável (pessoa física, nome e CPF) e mostra os campos que ainda faltam preencher', () => {
     renderPage();
 
-    expect(screen.getByText(/RAZÃO SOCIAL DO RESPONSÁVEL/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Pedro Soares de Souza Garcia/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/119\.407\.186-43/).length).toBeGreaterThan(0);
     expect(screen.getByText(/COMARCA \/ FORO/i)).toBeInTheDocument();
+    expect(screen.getByText(/ENDEREÇO/i)).toBeInTheDocument();
+  });
+
+  // Pedido do Pedro (2026-09-09): o seletor também nos dois documentos legais.
+  // A decisão que veio junto: ele só entra porque MUDA algo — a moldura é
+  // bilíngue e, em inglês, a página avisa que o texto jurídico existe só em
+  // português. Seletor que não muda nada seria pior que nenhum.
+  describe('seletor de idioma', () => {
+    afterEach(() => changeLocale('pt'));
+
+    it('está disponível na moldura do documento', () => {
+      renderPage();
+      expect(screen.getByRole('group', { name: /trocar idioma/i })).toBeInTheDocument();
+    });
+
+    it('em inglês, avisa que o documento existe só em português', async () => {
+      const user = userEvent.setup();
+      renderPage();
+
+      // Em português o aviso seria ruído: o documento já está no idioma lido.
+      expect(screen.queryByText(/exists in portuguese only/i)).toBeNull();
+
+      await user.click(screen.getByRole('button', { name: /english/i }));
+
+      expect(screen.getByText(/exists in portuguese only/i)).toBeInTheDocument();
+      // A moldura acompanha; o texto jurídico continua em português.
+      expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+      expect(documentText()).toMatch(/Termos de Uso/);
+    });
   });
 });

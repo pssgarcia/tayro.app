@@ -303,10 +303,11 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByRole('link', { name: /tayro/i })).toHaveAttribute('href', '/');
   });
 
-  it('mostra os campos que ainda faltam preencher antes de publicar', () => {
+  it('identifica o controlador (pessoa física, nome e CPF) e mostra o campo que ainda falta preencher', () => {
     renderPage();
 
-    expect(screen.getByText(/RAZÃO SOCIAL DO CONTROLADOR/i)).toBeInTheDocument();
-    expect(screen.getByText(/CPF\/CNPJ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
+    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    expect(screen.getByText(/ENDEREÇO/i)).toBeInTheDocument();
   });
 });

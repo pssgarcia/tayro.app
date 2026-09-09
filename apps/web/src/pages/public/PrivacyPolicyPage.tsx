@@ -40,9 +40,12 @@ import {
 //  - Imagens do Instagram são buscadas pelo NOSSO servidor e reexibidas pelo
 //    nosso domínio; o navegador da pessoa não fala com a CDN do Instagram.
 //
-// Identidade do controlador: o TAYRO ainda não tem razão social nem CNPJ
-// constituídos. NÃO remover o bloco de campos a preencher da seção 1 até que
-// isso exista de verdade.
+// Identidade do controlador (2026-09-09): o TAYRO ainda não tem razão social
+// nem CNPJ constituídos, então o controlador registrado é a pessoa física
+// (Pedro, CPF preenchido na seção 1). Falta só o endereço, que ele decidiu não
+// informar por ora. NÃO remover o bloco de campo a preencher até que o
+// endereço exista de verdade (ou até constituir CNPJ, o que troca o nome/CPF
+// também).
 export default function PrivacyPolicyPage() {
   return (
     <LegalDocumentShell
@@ -83,10 +86,8 @@ export default function PrivacyPolicyPage() {
           divulgação. O controlador dos dados pessoais tratados diretamente pela plataforma é:
         </p>
         <Placeholder>
-          <p className="font-medium text-foreground">
-            [NOME / RAZÃO SOCIAL DO CONTROLADOR, a preencher antes da publicação em produção]
-          </p>
-          <p>[CPF/CNPJ, a preencher antes da publicação em produção]</p>
+          <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
+          <p>CPF: 119.407.186-43</p>
           <p>[ENDEREÇO, a preencher antes da publicação em produção]</p>
           <p>E-mail: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>

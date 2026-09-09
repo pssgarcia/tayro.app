@@ -23,7 +23,8 @@ const ACENTO = /[ãõçáéíóúâêôàÃÕÇÁÉÍÓÚÂÊÔÀ]/;
 /**
  * Fora do escopo, com motivo:
  *  · `i18n/` é o próprio dicionário;
- *  · os dois documentos legais e a moldura deles ficam só em português (o
+ *  · os dois documentos legais ficam só em português (a MOLDURA deles é
+ *    bilíngue desde 2026-09-09; o texto jurídico, não) (o
  *    aceite grava versão sem guardar idioma — ver `i18n/README.md`);
  *  · `config/legal.ts` são os rótulos citados DENTRO do texto jurídico.
  */
@@ -31,7 +32,6 @@ const FORA = [
   'src/i18n',
   'src/pages/public/TermsOfUsePage.tsx',
   'src/pages/public/PrivacyPolicyPage.tsx',
-  'src/components/legal/LegalDocument.tsx',
   'src/config/legal.ts',
 ];
 

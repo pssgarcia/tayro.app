@@ -92,6 +92,14 @@ export const ptApp = {
      * Em inglês estes dizem "(in Portuguese)": o documento existe só em
      * português e é a versão que vale.
      */
+    /**
+     * Aviso mostrado APENAS em inglês na moldura dos documentos legais: eles
+     * existem só em português e é essa a versão que vale. O valor em português
+     * nunca é renderizado (a condição não dispara), mas existe porque o
+     * dicionário tem forma única nos dois idiomas.
+     */
+    documentoSoEmPortugues:
+      'Este documento existe apenas em português, e é essa a versão que vale.',
     termos: 'Termos de Uso',
     privacidade: 'Política de Privacidade',
   },

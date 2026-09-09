@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail } from 'lucide-react';
 import { LEGAL_CONTACT_EMAIL } from '../../config/legal';
+import { useLocale, useT } from '../../i18n';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 // Invólucro dos documentos legais (Termos de Uso e Política de Privacidade).
 //
@@ -24,6 +26,8 @@ export function LegalDocumentShell({
   footer: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const t = useT();
+  const locale = useLocale();
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,16 +38,28 @@ export function LegalDocumentShell({
         >
           tay<span className="text-lime">ro</span>
         </Link>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft size={14} />
-          Voltar
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher size="sm" />
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
+          >
+            <ArrowLeft size={14} />
+            {t.app.acoes.voltar}
+          </button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pb-20 pt-6 sm:px-6">
+        {/* Só em inglês: o corpo do documento é português em qualquer idioma,
+            então quem chega com a interface em inglês precisa saber disso ANTES
+            de ler, e saber que é essa a versão que vale. Em português o aviso
+            seria ruído. */}
+        {locale === 'en' && (
+          <p className="mb-6 border-l-2 border-lime pl-4 text-sm leading-[1.6] text-kinetic-text">
+            {t.app.nav.documentoSoEmPortugues}
+          </p>
+        )}
         <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
           {updatedLabel}
         </p>
@@ -54,7 +70,10 @@ export function LegalDocumentShell({
 
         {children}
 
-        <nav aria-label="Documentos legais" className="mt-12 border-t border-kinetic-gray pt-6">
+        <nav
+          aria-label={t.app.nav.documentosLegais}
+          className="mt-12 border-t border-kinetic-gray pt-6"
+        >
           {footer}
         </nav>
       </main>

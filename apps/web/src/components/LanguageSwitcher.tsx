@@ -14,8 +14,21 @@ import { changeLocale, useLocale, LOCALES, DICTIONARIES } from '../i18n';
 // traduzido pro idioma ativo: quem não lê a língua da página precisa
 // reconhecer a sua.
 
-export default function LanguageSwitcher({ className }: { className?: string }) {
+export default function LanguageSwitcher({
+  className,
+  size = 'md',
+}: {
+  className?: string;
+  /** `sm` pro rodapé da sidebar, onde ele acompanha o e-mail e o Sair. */
+  size?: 'sm' | 'md';
+}) {
   const atual = useLocale();
+  // O tamanho vive nos BOTÕES, não na raiz: `className` cai no <div> e não
+  // alcançaria daqui, então isto é prop e não classe de fora.
+  const escala =
+    size === 'sm'
+      ? 'min-h-[26px] px-2 text-[10px]'
+      : 'min-h-[40px] px-2.5 text-[11px] sm:px-3';
 
   return (
     <div
@@ -35,7 +48,8 @@ export default function LanguageSwitcher({ className }: { className?: string }) 
             // que é o que cabe no header.
             aria-label={DICTIONARIES[locale].idioma.nome}
             className={cn(
-              'min-h-[40px] px-2.5 font-mono text-[11px] font-medium uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3',
+              'font-mono font-medium uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              escala,
               ativo
                 ? 'bg-lime text-black'
                 : 'text-kinetic-muted hover:text-foreground',

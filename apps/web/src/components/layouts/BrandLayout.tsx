@@ -76,11 +76,11 @@ export default function BrandLayout() {
 
         {/* Usuário + logout */}
         <div className="border-t border-kinetic-gray p-3">
+          {/* Acima do e-mail: é controle da interface, não identidade da
+              conta. Sem ele o produto seria bilíngue sem jeito de trocar por
+              dentro, já que o seletor só existe na landing. */}
+          <LanguageSwitcher size="sm" className="mb-3 ml-3 w-fit" />
           <div className="mb-2.5 truncate px-3 text-[11px] text-kinetic-muted">{user?.email}</div>
-          {/* Sem isto o produto é bilíngue mas não trocável por dentro: o
-              seletor só existia na landing, e quem entra direto no /login ou
-              já está logado ficava preso no idioma detectado. */}
-          <LanguageSwitcher className="mb-2.5 ml-3 w-fit" />
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[.16em] text-kinetic-muted transition-colors hover:bg-kinetic-dark hover:text-foreground"

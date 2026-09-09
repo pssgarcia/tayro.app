@@ -14,7 +14,6 @@ import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import ThumbGrid from '../../components/primitives/ThumbGrid';
 import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
 import { useT } from '../../i18n';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -188,7 +187,6 @@ export default function PublicCreatorProfilePage() {
           <ArrowLeft size={14} />
           {t.app.acoes.voltar}
         </button>
-        <LanguageSwitcher />
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-10 sm:px-6">
