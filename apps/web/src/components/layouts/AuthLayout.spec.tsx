@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AuthLayout from './AuthLayout';
 import { PRIVACY_PATH, TERMS_PATH } from '../../config/legal';
@@ -38,5 +38,16 @@ describe('AuthLayout', () => {
       PRIVACY_PATH,
     );
     expect(rodape).toBeInTheDocument();
+  });
+
+  // Achado na conferência visual (2026-09-09): o produto ficou bilíngue mas o
+  // seletor só existia na landing. Quem chega direto em /login (ou já está
+  // logado) ficava preso no idioma detectado, sem saída pela interface.
+  it('oferece o seletor de idioma pra quem nunca passou pela landing', () => {
+    renderLayout();
+
+    const grupo = screen.getByRole('group', { name: /trocar idioma/i });
+    expect(within(grupo).getByRole('button', { name: /português/i })).toBeInTheDocument();
+    expect(within(grupo).getByRole('button', { name: /english/i })).toBeInTheDocument();
   });
 });

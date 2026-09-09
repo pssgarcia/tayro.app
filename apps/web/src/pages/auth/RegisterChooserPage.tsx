@@ -66,7 +66,7 @@ export default function RegisterChooserPage() {
       </div>
 
       <p className="mt-[22px] text-[13px] text-kinetic-muted">
-        Já tem conta?{' '}
+        {t.app.escolherPapel.jaTemConta}{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
           {t.app.acoes.entrar}
         </Link>

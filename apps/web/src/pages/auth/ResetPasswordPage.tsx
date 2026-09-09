@@ -167,7 +167,7 @@ export default function ResetPasswordPage() {
       </form>
 
       <p className="mt-[22px] text-xs leading-[1.5] text-kinetic-muted">
-        Link inválido ou expirado?{' '}
+        {t.app.redefinirSenha.linkInvalidoPergunta}{' '}
         <Link to="/forgot-password" className="font-medium text-lime hover:underline">
           {t.app.redefinirSenha.pedirNovoLink}
         </Link>

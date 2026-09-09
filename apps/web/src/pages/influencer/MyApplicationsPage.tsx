@@ -179,9 +179,9 @@ function WithdrawModal({
               {t.app.creator.registro.retirarTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              Sua candidatura para{' '}
-              <strong className="font-semibold text-black">{app.campaign.title}</strong> sai da fila
-              de {app.campaign.brand.name}. Você não poderá se candidatar de novo a esta campanha.
+              {t.app.creator.registro.retirarAntes}{' '}
+              <strong className="font-semibold text-black">{app.campaign.title}</strong>{' '}
+              {t.app.creator.registro.retirarDepois(app.campaign.brand.name)}
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
@@ -256,7 +256,7 @@ export default function MyApplicationsPage() {
 
       {!isLoading && !isError && applications.length === 0 && (
         <p className="text-sm text-kinetic-muted">
-          Você ainda não se candidatou a nenhuma campanha.{' '}
+          {t.app.creator.registro.semCandidatura}{' '}
           <Link to="/influencer/browse" className="text-lime hover:underline">
             {t.app.creator.registro.explorar}
           </Link>

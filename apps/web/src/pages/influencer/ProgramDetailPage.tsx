@@ -136,7 +136,7 @@ export default function ProgramDetailPage() {
           {campaign.deadline && (
             <p className="mt-7 flex items-center gap-2 text-xs text-kinetic-muted">
               <CalendarDays size={13} />
-              Inscrições até {formatDate(campaign.deadline)}
+              {t.app.creator.detalheCampanha.inscricoesAte(formatDate(campaign.deadline))}
             </p>
           )}
 
@@ -178,7 +178,7 @@ export default function ProgramDetailPage() {
             <div className="flex items-center gap-3">
               <StatusWord kind="application" status={myApplication.status} />
               <p className="text-sm text-kinetic-muted">
-                Você já se candidatou a esta campanha.{' '}
+                {t.app.creator.detalheCampanha.jaSeCandidatou}{' '}
                 <Link to="/influencer/applications" className="text-lime hover:underline">
                   {t.app.creator.detalheCampanha.verCandidatura}
                 </Link>

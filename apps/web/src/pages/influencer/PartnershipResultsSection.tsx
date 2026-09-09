@@ -86,8 +86,7 @@ function ResultBlock({
           // Transparência dos dois lados: ela fica sabendo que existe um
           // resultado que a marca escolheu não deixar público.
           <p className="text-xs leading-[1.5] text-kinetic-muted">
-            {result.brandName} não liberou este resultado para o seu perfil
-            público. Ele fica só entre vocês.
+            {t.app.creator.resultados.naoLiberou(result.brandName)}
           </p>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">

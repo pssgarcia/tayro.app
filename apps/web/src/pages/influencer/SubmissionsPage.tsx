@@ -134,7 +134,7 @@ function SubmitModal({
                 {t.app.creator.entregas.enviarConteudo}
               </p>
               <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-                Você não tem candidaturas aprovadas no momento.{' '}
+                {t.app.creator.entregas.semAprovadas}{' '}
                 <Link
                   to="/influencer/applications"
                   className="whitespace-nowrap text-black underline"
@@ -344,7 +344,6 @@ export default function SubmissionsPage() {
       {!isLoading && !isError && submissions.length === 0 && (
         <p className="text-sm text-kinetic-muted">
           {t.app.creator.entregas.vazio}
-          seu conteúdo aqui.
         </p>
       )}
 

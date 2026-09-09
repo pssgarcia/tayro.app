@@ -256,9 +256,10 @@ function RemoveResultModal({
               <span className="font-medium text-black">
                 {partnership.influencer.name}
               </span>{' '}
-              {t.app.marca.resultado.apagarCorpo(wasPublic ? t.app.marca.resultado.apagarSufixo : '')} Ela já foi avisada de que você
-              registrou. Corrigir os números editando é menos confuso pra ela
-              do que apagar.
+              {t.app.marca.resultado.apagarCorpo(
+                wasPublic ? t.app.marca.resultado.apagarSufixo : '',
+              )}{' '}
+              {t.app.marca.resultado.apagarRessalva}
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
@@ -389,7 +390,7 @@ function PartnershipPlate({
             {/* A régua de honestidade, na placa e não só no cabeçalho: quem lê
                 esta placa tem que saber que o número foi digitado, não medido. */}
             <p className="mt-8 font-mono text-[10px] uppercase tracking-widest text-[#7a7a74]">
-              Informado por você em {formatDate(result.createdAt, '—')}
+              {t.app.marca.resultado.informadoPor(formatDate(result.createdAt, '—'))}
             </p>
 
             <div className="mt-6">

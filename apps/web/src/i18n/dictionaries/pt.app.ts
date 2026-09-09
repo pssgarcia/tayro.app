@@ -254,6 +254,7 @@ export const ptApp = {
     credenciaisInvalidas: 'Email ou senha incorretos',
     erroConexao: 'Erro de conexão. Tente novamente.',
     esqueciSenha: 'Esqueci minha senha',
+    naoTemConta: 'Não tem conta?',
     entrando: 'Entrando…',
     cadastreSe: 'Cadastre-se',
     verCampanhas: 'Ver campanhas abertas',
@@ -267,6 +268,7 @@ export const ptApp = {
     souMarca: 'Sou marca',
     marcaDescricao: 'Crie campanhas e receba candidaturas.',
     criarContaMarca: 'Criar conta de marca',
+    jaTemConta: 'Já tem conta?',
   },
   cadastroMarca: {
     titulo: 'Criar conta',
@@ -307,6 +309,7 @@ export const ptApp = {
     linkSemToken: 'Link inválido: falta o token de acesso. Confira o link do e-mail.',
     linkExpirado: 'Este link expirou ou já foi utilizado. Peça um novo abaixo.',
     pedirNovoLink: 'Pedir um novo link',
+    linkInvalidoPergunta: 'Link inválido ou expirado?',
     naoFoiPossivel: 'Não foi possível redefinir sua senha. Tente novamente.',
   },
   ativarConta: {
@@ -358,6 +361,10 @@ export const ptApp = {
       retirarConfirmar: 'Retirar candidatura',
       retirando: 'Retirando…',
       retirarErro: 'Não foi possível retirar. Tente novamente.',
+      retirarAntes: 'Sua candidatura para',
+      retirarDepois: (marca: string) =>
+        `sai da fila de ${marca}. Você não poderá se candidatar de novo a esta campanha.`,
+      semCandidatura: 'Você ainda não se candidatou a nenhuma campanha.',
     },
     entregas: {
       titulo: 'Entregas',
@@ -367,6 +374,7 @@ export const ptApp = {
         'Nenhum conteúdo enviado ainda. Quando você tiver uma candidatura aprovada, envie o link do seu conteúdo aqui.',
       enviarConteudo: 'Enviar conteúdo',
       verCandidaturas: 'Ver candidaturas',
+      semAprovadas: 'Você não tem candidaturas aprovadas no momento.',
       candidaturaAprovada: 'Candidatura aprovada *',
       selecione: 'Selecione…',
       selecioneAprovada: 'Selecione uma candidatura aprovada',
@@ -414,6 +422,10 @@ export const ptApp = {
       nichos: 'Nichos',
       perfilPublico: 'Perfil público',
       tornarPublico: 'Tornar meu perfil público',
+      adicioneHandle: (endereco: string) =>
+        `Adicione seu @ do Instagram para ganhar um endereço em ${endereco}.`,
+      ativeParaMarcas: (endereco: string) =>
+        `Ative para as marcas encontrarem você em ${endereco}.`,
       salvo: 'Salvo',
       bioMax: 'Máximo 500 caracteres',
       urlInvalida: 'URL inválida (inclua https://)',
@@ -440,6 +452,8 @@ export const ptApp = {
       verCandidatura: 'Ver candidatura',
       encerradas: 'Inscrições encerradas para esta campanha.',
       participar: 'Quero participar',
+      inscricoesAte: (data: string) => `Inscrições até ${data}`,
+      jaSeCandidatou: 'Você já se candidatou a esta campanha.',
       produtoEnviado: 'produto enviado para você',
       porCandidaturaAprovada: 'por candidatura aprovada',
       diasAteEnvio: 'dias até o envio',
@@ -470,6 +484,8 @@ export const ptApp = {
       // /c/:handle devolve 404, então "aparece no seu perfil" seria mentira.
       perfilDesligado: 'Seu perfil público está desligado, então ninguém vê este resultado ainda.',
       ligarNoPerfil: 'Ligar no Perfil',
+      naoLiberou: (marca: string) =>
+        `${marca} não liberou este resultado para o seu perfil público. Ele fica só entre vocês.`,
       naoFoiPossivelSalvar: 'Não foi possível salvar. Tente novamente.',
       salvando: 'Salvando…',
     },
@@ -489,6 +505,7 @@ export const ptApp = {
       encerradas: 'Inscrições encerradas para esta campanha.',
       participar: 'Quero participar',
       levaUmMinuto: 'Leva menos de 1 minuto.',
+      inscricoesAte: (data: string) => `Inscrições até ${data}`,
       handle: 'Seu @ do Instagram',
       handleObrigatorio: 'Informe seu @ do Instagram',
       handleLongo: 'Handle muito longo',
@@ -547,6 +564,8 @@ export const ptApp = {
       analisarAgora: 'Analisar agora',
       resumo: 'Resumo',
       conteudosARevisar: 'conteúdos a revisar',
+      candidaturasEsperando: (n: number) =>
+        `candidatura${n !== 1 ? 's' : ''} esperando sua análise.`,
     },
     campanhas: {
       titulo: 'Campanhas',
@@ -595,7 +614,7 @@ export const ptApp = {
       inscricoesAte: 'Inscrições até',
       aOferta: 'A oferta',
       ofertaLegenda: 'É a primeira coisa que quem se candidata lê.',
-      tipos: { CASH: 'Dinheiro (PIX)', PRODUCT: 'Produto', COMMISSION: 'Comissão' },
+      tipos: { CASH: 'Dinheiro', PRODUCT: 'Produto', COMMISSION: 'Comissão' },
       valor: 'Valor (R$)',
       descricaoProduto: 'Descrição do produto',
       descricaoProdutoPlaceholder: 'Ex: Kit Whey 900g + coqueteleira da marca',
@@ -791,6 +810,9 @@ export const ptApp = {
       erroSalvar: 'Não foi possível salvar o resultado.',
       apagarTitulo: 'Apagar este resultado?',
       apagarSufixo: ' e do perfil público dela',
+      apagarRessalva:
+        'Ela já foi avisada de que você registrou. Corrigir os números editando é menos confuso pra ela do que apagar.',
+      informadoPor: (data: string) => `Informado por você em ${data}`,
       apagarCorpo: (sufixo: string) =>
         `sai do registro dela${sufixo}, e a parceria volta a contar como não informada.`,
       apagarErro: 'Não foi possível apagar. Tente novamente.',

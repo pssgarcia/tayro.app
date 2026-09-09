@@ -103,8 +103,7 @@ export default function DashboardPage() {
                           </span>
                         </CountUp>
                         <p className="mt-6 max-w-[340px] text-sm leading-[1.5] text-[#4a4a44]">
-                          candidatura{data.applications.pending !== 1 ? 's' : ''} esperando sua
-                          análise.
+                          {t.app.marca.dashboard.candidaturasEsperando(data.applications.pending)}
                         </p>
                       </div>
                       <KineticActions

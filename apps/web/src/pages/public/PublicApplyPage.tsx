@@ -20,6 +20,7 @@ import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea
 import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
 import LegalAcceptanceFields from '../../components/legal/LegalAcceptanceFields';
 import { useT, type Dictionary } from '../../i18n';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 function normalizeHandle(v: string): string {
   return v.replace(/^@+/, '').toLowerCase().trim();
@@ -244,13 +245,16 @@ export default function PublicApplyPage() {
         >
           tay<span className="text-lime">ro</span>
         </Link>
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft size={14} />
-          {t.app.acoes.voltar}
-        </button>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
+          >
+            <ArrowLeft size={14} />
+            {t.app.acoes.voltar}
+          </button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pb-10">
@@ -354,7 +358,7 @@ export default function PublicApplyPage() {
                 {campaign.deadline && (
                   <p className="mt-[22px] flex items-center gap-2 text-xs text-kinetic-muted">
                     <CalendarDays size={13} />
-                    Inscrições até {formatDateLong(campaign.deadline)}
+                    {t.app.publico.candidatura.inscricoesAte(formatDateLong(campaign.deadline))}
                   </p>
                 )}
 

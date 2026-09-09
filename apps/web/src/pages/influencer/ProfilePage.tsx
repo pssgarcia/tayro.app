@@ -75,7 +75,7 @@ function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled
   if (!handle) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
-        Adicione seu @ do Instagram para ganhar um endereço em {publicUrlLabel('/c/')}.
+        {t.app.creator.perfil.adicioneHandle(publicUrlLabel('/c/'))}
       </p>
     );
   }
@@ -86,7 +86,7 @@ function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled
   if (!enabled) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
-        Ative para as marcas encontrarem você em {publicUrlLabel(path)}.
+        {t.app.creator.perfil.ativeParaMarcas(publicUrlLabel(path))}
       </p>
     );
   }

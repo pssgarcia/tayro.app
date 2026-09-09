@@ -211,6 +211,7 @@ export const enApp = {
     credenciaisInvalidas: 'Wrong email or password',
     erroConexao: 'Connection error. Please try again.',
     esqueciSenha: 'I forgot my password',
+    naoTemConta: "Don't have an account?",
     entrando: 'Signing in…',
     cadastreSe: 'Sign up',
     verCampanhas: 'See open campaigns',
@@ -224,6 +225,7 @@ export const enApp = {
     souMarca: 'I am a brand',
     marcaDescricao: 'Create campaigns and receive applications.',
     criarContaMarca: 'Create a brand account',
+    jaTemConta: 'Already have an account?',
   },
   cadastroMarca: {
     titulo: 'Create your',
@@ -263,6 +265,7 @@ export const enApp = {
     linkSemToken: 'Invalid link: the access token is missing. Check the link in the email.',
     linkExpirado: 'This link has expired or was already used. Request a new one below.',
     pedirNovoLink: 'Request a new link',
+    linkInvalidoPergunta: 'Invalid or expired link?',
     naoFoiPossivel: 'Could not reset your password. Please try again.',
   },
   ativarConta: {
@@ -313,6 +316,10 @@ export const enApp = {
       retirarConfirmar: 'Withdraw application',
       retirando: 'Withdrawing…',
       retirarErro: 'Could not withdraw. Please try again.',
+      retirarAntes: 'Your application to',
+      retirarDepois: (marca: string) =>
+        `leaves the queue at ${marca}. You will not be able to apply to this campaign again.`,
+      semCandidatura: 'You have not applied to any campaign yet.',
     },
     entregas: {
       titulo: 'Deliveries',
@@ -322,6 +329,7 @@ export const enApp = {
         'No content submitted yet. Once you have an approved application, send the link to your content here.',
       enviarConteudo: 'Submit content',
       verCandidaturas: 'See applications',
+      semAprovadas: 'You have no approved application right now.',
       candidaturaAprovada: 'Approved application *',
       selecione: 'Select…',
       selecioneAprovada: 'Select an approved application',
@@ -369,6 +377,10 @@ export const enApp = {
       nichos: 'Niches',
       perfilPublico: 'Public profile',
       tornarPublico: 'Make my profile public',
+      adicioneHandle: (endereco: string) =>
+        `Add your Instagram @ to get an address at ${endereco}.`,
+      ativeParaMarcas: (endereco: string) =>
+        `Turn it on so brands can find you at ${endereco}.`,
       salvo: 'Saved',
       bioMax: 'Maximum 500 characters',
       urlInvalida: 'Invalid URL (include https://)',
@@ -395,6 +407,8 @@ export const enApp = {
       verCandidatura: 'See application',
       encerradas: 'Applications are closed for this campaign.',
       participar: 'I want in',
+      inscricoesAte: (data: string) => `Applications until ${data}`,
+      jaSeCandidatou: 'You have already applied to this campaign.',
       produtoEnviado: 'product sent to you',
       porCandidaturaAprovada: 'per approved application',
       diasAteEnvio: 'days until shipping',
@@ -423,6 +437,8 @@ export const enApp = {
       mostrar: 'Show on my profile',
       perfilDesligado: 'Your public profile is off, so nobody sees this result yet.',
       ligarNoPerfil: 'Turn on in Profile',
+      naoLiberou: (marca: string) =>
+        `${marca} has not made this result public on your profile. It stays between the two of you.`,
       naoFoiPossivelSalvar: 'Could not save. Please try again.',
       salvando: 'Saving…',
     },
@@ -441,6 +457,7 @@ export const enApp = {
       encerradas: 'Applications are closed for this campaign.',
       participar: 'I want in',
       levaUmMinuto: 'It takes less than 1 minute.',
+      inscricoesAte: (data: string) => `Applications until ${data}`,
       handle: 'Your Instagram @',
       handleObrigatorio: 'Enter your Instagram @',
       handleLongo: 'Handle is too long',
@@ -494,6 +511,8 @@ export const enApp = {
       analisarAgora: 'Review now',
       resumo: 'Summary',
       conteudosARevisar: 'content to review',
+      candidaturasEsperando: (n: number) =>
+        `application${n !== 1 ? 's' : ''} waiting for your review.`,
     },
     campanhas: {
       titulo: 'Campaigns',
@@ -541,7 +560,7 @@ export const enApp = {
       inscricoesAte: 'Applications until',
       aOferta: 'The offer',
       ofertaLegenda: 'It is the first thing an applicant reads.',
-      tipos: { CASH: 'Cash (PIX)', PRODUCT: 'Product', COMMISSION: 'Commission' },
+      tipos: { CASH: 'Cash', PRODUCT: 'Product', COMMISSION: 'Commission' },
       valor: 'Amount (R$)',
       descricaoProduto: 'Product description',
       descricaoProdutoPlaceholder: 'e.g. 900g whey kit + brand shaker',
@@ -735,6 +754,9 @@ export const enApp = {
       erroSalvar: 'Could not save the result.',
       apagarTitulo: 'Delete this result?',
       apagarSufixo: ' and from their public profile',
+      apagarRessalva:
+        'They have already been notified that you reported it. Fixing the numbers by editing is less confusing for them than deleting.',
+      informadoPor: (data: string) => `Reported by you on ${data}`,
       apagarCorpo: (sufixo: string) =>
         `leaves their record${sufixo}, and the partnership goes back to counting as not reported.`,
       apagarErro: 'Could not delete. Please try again.',

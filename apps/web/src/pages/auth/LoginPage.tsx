@@ -58,13 +58,24 @@ export default function LoginPage() {
       setAuth(data.accessToken, data.user);
       navigate(redirectPath(data.user.role), { replace: true });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        if (status === 401 || status === 400) {
-          setError('root', { message: t.app.login.credenciaisInvalidas });
-        } else {
-          setError('root', { message: t.app.login.erroConexao });
-        }
+      if (!axios.isAxiosError(err)) {
+        setError('root', { message: t.app.erros.inesperado });
+        return;
+      }
+
+      const status = err.response?.status;
+      if (status === 401 || status === 400) {
+        setError('root', { message: t.app.login.credenciaisInvalidas });
+      } else if (status === 429) {
+        // O throttle de /auth/* é 5 req por 15 min por IP. Dizer "erro de
+        // conexão" aqui manda a pessoa tentar de novo, que é justamente o que
+        // não resolve — e a conexão está perfeita.
+        setError('root', { message: t.app.erros.muitasTentativas });
+      } else if (!err.response) {
+        // Sem response = a request não chegou ao servidor (rede caiu, API fora,
+        // proxy 502). Só AQUI faz sentido falar em "conexão" — mesma regra que
+        // os cadastros já seguiam.
+        setError('root', { message: t.app.login.erroConexao });
       } else {
         setError('root', { message: t.app.erros.inesperado });
       }
@@ -138,7 +149,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-[26px] text-[13px] text-kinetic-muted">
-        Não tem conta?{' '}
+        {t.app.login.naoTemConta}{' '}
         <Link to="/register" className="font-medium text-lime hover:underline">
           {t.app.login.cadastreSe}
         </Link>

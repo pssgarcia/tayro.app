@@ -67,6 +67,29 @@ function semComentarios(fonte: string): string {
     .join('\n');
 }
 
+/**
+ * Tira as expressões `{...}` de DENTRO de um nó de texto já capturado.
+ *
+ * Opera só no trecho entre `>` e `<`, nunca no arquivo inteiro: contar chaves
+ * desde o começo do arquivo não funciona porque todo JSX vive dentro do corpo
+ * da função do componente, que já é um `{...}` — a contagem nasce em 1 e
+ * apagaria a tela toda.
+ *
+ * É o que faz `Não tem conta?{' '}` ser visto. Sem isto, o texto vizinho de
+ * uma expressão escapava do scanner, e foi exatamente assim que essa frase
+ * ficou em português na tela de login em inglês: nenhum teste viu, só a
+ * conferência no navegador.
+ */
+function semExpressoes(trecho: string): string {
+  let anterior = null;
+  let atual = trecho;
+  while (anterior !== atual) {
+    anterior = atual;
+    atual = atual.replace(/\{[^{}]*\}/g, ' ');
+  }
+  return atual;
+}
+
 /** Props cujo valor é lido pelo usuário. `className` e afins ficam de fora. */
 const PROP_DE_COPY =
   /\b(label|placeholder|title|description|ariaLabel|aria-label|submitLabel|pendingLabel|intro|hint)="([^"\n]*)"/g;
@@ -75,9 +98,10 @@ function ocorrencias(caminho: string): string[] {
   const fonte = semComentarios(readFileSync(caminho, 'utf8'));
   const achados: string[] = [];
 
-  // 1. Nó de texto JSX: `>texto<`
-  for (const m of fonte.matchAll(/>([^<>{}]*)</g)) {
-    const txt = m[1].trim();
+  // 1. Nó de texto JSX: `>texto<`. Chave é permitida no meio e removida
+  //    depois — é o que faz `Não tem conta?{' '}` ser visto.
+  for (const m of fonte.matchAll(/>([^<>]*)</g)) {
+    const txt = semExpressoes(m[1]).trim();
     if (txt.length >= 3 && ACENTO.test(txt)) achados.push(txt);
   }
   // 2. Prop de copy com string literal

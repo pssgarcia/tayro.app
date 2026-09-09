@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { cn } from '../../lib/utils';
 import { useT } from '../../i18n';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 // Rótulos e ícones do redesign 2a (README §Telas 1, 5, 6, 7, 8).
 // Só rota e ícone: o rótulo vem do dicionário no render.
@@ -66,6 +67,10 @@ export default function InfluencerLayout() {
         {/* Usuário + logout */}
         <div className="border-t border-kinetic-gray p-3">
           <div className="mb-2.5 truncate px-3 text-[11px] text-kinetic-muted">{user?.email}</div>
+          {/* Sem isto o produto é bilíngue mas não trocável por dentro: o
+              seletor só existia na landing, e quem entra direto no /login ou
+              já está logado ficava preso no idioma detectado. */}
+          <LanguageSwitcher className="mb-2.5 ml-3 w-fit" />
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[.16em] text-kinetic-muted transition-colors hover:bg-kinetic-dark hover:text-foreground"
