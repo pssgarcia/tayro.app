@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useT } from '../../i18n';
 import { useMyApplications, useWithdrawApplication } from '../../hooks/useMyApplications';
 import { useMySubmissions } from '../../hooks/useMySubmissions';
 import { useMyPartnershipResults } from '../../hooks/usePartnershipResults';
@@ -12,19 +13,15 @@ import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
-import { formatOfferWhole, formatRelativeDays } from '../../utils/format';
+import { applicationStatusWord, formatOfferWhole, formatRelativeDays } from '../../utils/format';
 
 type Filter = 'ALL' | ApplicationStatus;
 
 // Rótulos das abas seguem o vocabulário do `applicationStatusWord`: até a
 // migração pro Kinetic esta tela dizia "Análise"/"Fechadas" enquanto o status
 // da linha ao lado dizia outra coisa.
-const TABS: { id: Filter; label: string }[] = [
-  { id: 'ALL', label: 'Todas' },
-  { id: 'PENDING', label: 'Pendentes' },
-  { id: 'APPROVED', label: 'Aprovadas' },
-  { id: 'REJECTED', label: 'Recusadas' },
-];
+// Só os ids: o rótulo vem do dicionário no render.
+const TAB_IDS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const;
 
 const monoLabel = 'font-mono text-[11px] uppercase tracking-widest text-kinetic-muted';
 
@@ -75,6 +72,7 @@ function FeaturedPlate({
   onWithdraw: () => void;
   isWithdrawing: boolean;
 }) {
+  const t = useT();
   const { app, mode } = featured;
   const { campaign } = app;
   const offer = formatOfferWhole(campaign);
@@ -92,13 +90,9 @@ function FeaturedPlate({
             </p>
           </div>
           <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
-            {app.status === 'PENDING'
-              ? 'Pendente'
-              : app.status === 'APPROVED'
-                ? 'Aprovada'
-                : app.status === 'REJECTED'
-                  ? 'Recusada'
-                  : 'Retirada'}
+            {/* Mesma fonte única do resto do produto (`utils/format.ts`),
+                em vez de um ternário com o vocabulário repetido aqui. */}
+            {applicationStatusWord(app.status)}
           </span>
         </div>
 
@@ -114,9 +108,9 @@ function FeaturedPlate({
         )}
         <p className="mt-4 text-[13px] text-[#6a6a64]">
           {mode === 'submit'
-            ? 'a receber depois que o conteúdo for aprovado'
+            ? t.app.creator.registro.aReceberDepois
             : mode === 'withdraw'
-              ? 'aguardando resposta da marca'
+              ? t.app.creator.registro.aguardandoResposta
               : 'candidatura decidida'}
         </p>
       </div>
@@ -128,7 +122,7 @@ function FeaturedPlate({
         <KineticActions
           actions={[
             {
-              label: 'Enviar conteúdo',
+              label: t.app.creator.registro.enviarConteudo,
               to: `/influencer/submissions?apply=${app.id}`,
               primary: true,
             },
@@ -139,7 +133,7 @@ function FeaturedPlate({
         <KineticActions
           actions={[
             {
-              label: isWithdrawing ? 'Retirando…' : 'Retirar candidatura',
+              label: isWithdrawing ? t.app.creator.registro.retirando : t.app.creator.registro.retirarConfirmar,
               onClick: onWithdraw,
               disabled: isWithdrawing,
             },
@@ -170,18 +164,19 @@ function WithdrawModal({
   isPending: boolean;
   isError: boolean;
 }) {
+  const t = useT();
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Retirar candidatura?"
+      aria-label={t.app.creator.registro.retirarTitulo}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
     >
       <div className="w-full sm:max-w-md">
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-7 pt-11">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Retirar candidatura?
+              {t.app.creator.registro.retirarTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               Sua candidatura para{' '}
@@ -190,15 +185,15 @@ function WithdrawModal({
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
-                Não foi possível retirar. Tente novamente.
+                {t.app.creator.registro.retirarErro}
               </p>
             )}
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, disabled: isPending, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, disabled: isPending, width: 130 },
               {
-                label: isPending ? 'Retirando…' : 'Retirar',
+                label: isPending ? t.app.creator.registro.retirando : t.app.creator.registro.retirar,
                 onClick: onConfirm,
                 disabled: isPending,
                 primary: true,
@@ -214,6 +209,7 @@ function WithdrawModal({
 // ─── Página ──────────────────────────────────────────────────────────────────
 
 export default function MyApplicationsPage() {
+  const t = useT();
   const [filter, setFilter] = useState<Filter>('ALL');
   const [confirming, setConfirming] = useState<MyApplication | null>(null);
   const { data: applications = [], isLoading, isError } = useMyApplications();
@@ -241,7 +237,7 @@ export default function MyApplicationsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <div className="flex items-end justify-between gap-4">
         <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-          Registro
+          {t.app.creator.registro.titulo}
         </h1>
         <p className="shrink-0 font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground">
           {applications.length}
@@ -254,7 +250,7 @@ export default function MyApplicationsPage() {
 
       {isError && (
         <p className="text-sm text-destructive">
-          Erro ao carregar suas candidaturas. Tente novamente.
+          {t.app.creator.registro.erro}
         </p>
       )}
 
@@ -262,7 +258,7 @@ export default function MyApplicationsPage() {
         <p className="text-sm text-kinetic-muted">
           Você ainda não se candidatou a nenhuma campanha.{' '}
           <Link to="/influencer/browse" className="text-lime hover:underline">
-            Explore as campanhas
+            {t.app.creator.registro.explorar}
           </Link>
           .
         </p>
@@ -273,7 +269,7 @@ export default function MyApplicationsPage() {
           {/* No modo readonly a placa é só leitura (candidatura já decidida) —
               prometer "precisa de você" ali é falso. */}
           <p className={`${monoLabel} mb-4`}>
-            {featured?.mode === 'readonly' ? 'Última candidatura' : 'Precisa de você'}
+            {featured?.mode === 'readonly' ? t.app.creator.registro.ultimaCandidatura : t.app.creator.registro.precisaDeVoce}
           </p>
           {featured && (
             <FeaturedPlate
@@ -284,14 +280,14 @@ export default function MyApplicationsPage() {
           )}
 
           <KineticTabs
-            tabs={TABS}
+            tabs={TAB_IDS.map((id) => ({ id: id as Filter, label: t.app.creator.registro.abas[id] }))}
             active={filter}
             onChange={setFilter}
             className="mb-6 mt-11 px-0"
           />
 
           {visible.length === 0 ? (
-            <p className="text-sm text-kinetic-muted">Nenhuma candidatura com esse status.</p>
+            <p className="text-sm text-kinetic-muted">{t.app.creator.registro.vazioComFiltro}</p>
           ) : (
             <div className="flex flex-col gap-0.5">
               {visible.map((app, i) => (
@@ -311,7 +307,7 @@ export default function MyApplicationsPage() {
                           onClick={() => setConfirming(app)}
                           className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
                         >
-                          Retirar
+                          {t.app.creator.registro.retirar}
                         </button>
                       )}
                       <StatusWord kind="application" status={app.status} />

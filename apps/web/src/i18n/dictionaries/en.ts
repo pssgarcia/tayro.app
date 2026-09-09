@@ -1,4 +1,5 @@
 import type { Dictionary } from './pt';
+import { enApp } from './en.app';
 
 // ─── Dicionário: inglês ──────────────────────────────────────────────────────
 // `satisfies Dictionary` é o que segura este arquivo: chave que falta e chave
@@ -18,6 +19,8 @@ import type { Dictionary } from './pt';
 // isso em vez de fingir que há versão em inglês.
 
 export const en = {
+  app: enApp,
+
   idioma: {
     nome: 'English',
     curto: 'EN',

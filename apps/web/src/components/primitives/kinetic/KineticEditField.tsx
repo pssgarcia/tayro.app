@@ -5,6 +5,7 @@ import KineticActions from './KineticActions';
 import KineticField from './KineticField';
 import KineticTextarea from './KineticTextarea';
 import { cn } from '../../../lib/utils';
+import { useT } from '../../../i18n';
 
 // Row (rótulo + valor + chevron) que abre um modal placa-formulário de campo
 // único pra editar — padrão do Perfil: "os 4 Card viram uma lista", cada linha
@@ -37,6 +38,7 @@ export default function KineticEditField({
   error,
   emptyLabel = 'adicionar',
 }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const fieldId = `kinetic-edit-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
@@ -111,8 +113,8 @@ export default function KineticEditField({
               </div>
               <KineticActions
                 actions={[
-                  { label: 'Cancelar', onClick: () => setOpen(false), width: 130 },
-                  { label: 'Salvar', onClick: handleSave, primary: true },
+                  { label: t.app.acoes.cancelar, onClick: () => setOpen(false), width: 130 },
+                  { label: t.app.acoes.salvar, onClick: handleSave, primary: true },
                 ]}
               />
             </KineticPlate>

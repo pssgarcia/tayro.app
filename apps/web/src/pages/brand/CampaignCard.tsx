@@ -70,7 +70,7 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
             </p>
           </div>
           <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
-            {campaignStatusWord[campaign.status]}
+            {campaignStatusWord(campaign.status)}
           </span>
         </div>
 

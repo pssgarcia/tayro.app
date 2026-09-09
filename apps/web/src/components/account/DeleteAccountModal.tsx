@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT } from '../../i18n';
 import { useAuthStore } from '../../stores/auth.store';
 import KineticPlate from '../primitives/kinetic/KineticPlate';
 import KineticField from '../primitives/kinetic/KineticField';
@@ -16,6 +17,7 @@ import KineticActions from '../primitives/kinetic/KineticActions';
 // vive dentro do <form> de Perfil.
 
 export default function DeleteAccountModal({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
@@ -25,7 +27,7 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
 
   async function handleConfirm() {
     if (!password) {
-      setError('Informe a senha atual.');
+      setError(t.app.apagarConta.informeSenha);
       return;
     }
     setError(null);
@@ -39,22 +41,22 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
     } catch (err) {
       setIsSubmitting(false);
       if (!axios.isAxiosError(err)) {
-        setError('Erro inesperado. Tente novamente.');
+        setError(t.app.erros.inesperado);
         return;
       }
       if (!err.response) {
-        setError('Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+        setError(t.app.erros.semConexao);
         return;
       }
       if (err.response.status === 401) {
-        setError('Senha incorreta.');
+        setError(t.app.apagarConta.senhaIncorreta);
         return;
       }
       if (err.response.status === 429) {
-        setError('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+        setError(t.app.erros.muitasTentativas);
         return;
       }
-      setError('Não foi possível apagar a conta. Tente novamente.');
+      setError(t.app.apagarConta.naoFoiPossivel);
     }
   }
 
@@ -62,7 +64,7 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Apagar minha conta"
+      aria-label={t.app.apagarConta.titulo}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
       onClick={onClose}
     >
@@ -71,16 +73,15 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
           <div className="flex flex-col gap-6 px-6 pb-7 pt-11">
             <div>
               <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-                Apagar minha conta
+                {t.app.apagarConta.titulo}
               </p>
               <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-                Seu perfil, foto, nichos e telefone são apagados. Candidaturas e recompensas
-                continuam existindo para as marcas, sem seu nome. Isso não pode ser desfeito.
+                {t.app.apagarConta.consequencia}
               </p>
             </div>
             <KineticField
               id="delete-account-password"
-              label="Senha atual"
+              label={t.app.trocarSenha.senhaAtual}
               variant="plate"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
@@ -94,7 +95,7 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
                   className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-label={showPassword ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -103,9 +104,9 @@ export default function DeleteAccountModal({ onClose }: { onClose: () => void })
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, disabled: isSubmitting, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, disabled: isSubmitting, width: 130 },
               {
-                label: isSubmitting ? 'Apagando…' : 'Apagar minha conta',
+                label: isSubmitting ? t.app.apagarConta.apagando : t.app.apagarConta.titulo,
                 onClick: handleConfirm,
                 disabled: isSubmitting,
                 primary: true,

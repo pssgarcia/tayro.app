@@ -1,21 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT, type Dictionary } from '../../i18n';
 import { useAuthStore } from '../../stores/auth.store';
 import { redirectPath } from '../../utils/redirectPath';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
-const schema = z.object({
-  email: z.string().email('E-mail inválido'),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    email: z.string().email(t.app.validacao.emailInvalido),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 function Wordmark() {
   return (
@@ -32,6 +36,8 @@ function Wordmark() {
 // existe: a resposta de sucesso é sempre a mesma mensagem genérica.
 
 export default function ForgotPasswordPage() {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { accessToken, user } = useAuthStore();
   const [rootError, setRootError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -53,18 +59,18 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       if (!axios.isAxiosError(err)) {
-        setRootError('Erro inesperado. Tente novamente.');
+        setRootError(t.app.erros.inesperado);
         return;
       }
       if (!err.response) {
-        setRootError('Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+        setRootError(t.app.erros.semConexao);
         return;
       }
       if (err.response.status === 429) {
-        setRootError('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+        setRootError(t.app.erros.muitasTentativas);
         return;
       }
-      setRootError('Não foi possível enviar o link. Tente novamente.');
+      setRootError(t.app.esqueciSenha.naoFoiPossivel);
     }
   };
 
@@ -73,19 +79,19 @@ export default function ForgotPasswordPage() {
       <Wordmark />
 
       <h1 className="mb-[10px] font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] text-foreground">
-        Esqueceu
-        <br />a senha?
+        {t.app.esqueciSenha.titulo}
+        <br />
+        {t.app.esqueciSenha.tituloDestaque}
       </h1>
       <p className="mb-7 text-sm leading-[1.5] text-kinetic-muted">
-        Informe seu e-mail e mandamos um link para você definir uma senha nova.
+        {t.app.esqueciSenha.subtitulo}
       </p>
 
       {sent ? (
         <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-3 px-6 pb-[26px] pt-[30px]">
             <p className="text-sm leading-[1.5] text-black">
-              Se esse e-mail existir na nossa base, enviamos um link de recuperação. Confira sua
-              caixa de entrada.
+              {t.app.esqueciSenha.enviado}
             </p>
           </div>
         </KineticPlate>
@@ -94,11 +100,11 @@ export default function ForgotPasswordPage() {
           <KineticPlate marks="top" flush>
             <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
               <KineticField
-                label="E-mail"
+                label={t.app.cadastroCreator.email}
                 type="email"
                 variant="plate"
                 autoComplete="email"
-                placeholder="seu@email.com"
+                placeholder={t.app.login.emailPlaceholder}
                 error={errors.email?.message}
                 {...register('email')}
               />
@@ -108,7 +114,7 @@ export default function ForgotPasswordPage() {
             <KineticActions
               actions={[
                 {
-                  label: isSubmitting ? 'Enviando…' : 'Enviar link',
+                  label: isSubmitting ? t.app.esqueciSenha.enviando : t.app.esqueciSenha.enviarLink,
                   type: 'submit',
                   disabled: isSubmitting,
                   primary: true,
@@ -122,7 +128,7 @@ export default function ForgotPasswordPage() {
       <p className="mt-[22px] text-xs leading-[1.5] text-kinetic-muted">
         Lembrou a senha?{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
-          Entrar
+          {t.app.acoes.entrar}
         </Link>
       </p>
     </div>

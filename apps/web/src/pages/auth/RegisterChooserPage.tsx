@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useT } from '../../i18n';
 import { Briefcase, Sparkles } from 'lucide-react';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 
@@ -13,6 +14,7 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 // mockup usa uma escala menor pros dois cards de escolha.
 
 export default function RegisterChooserPage() {
+  const t = useT();
   return (
     <div>
       <span className="mb-[26px] block font-display text-[26px] font-bold tracking-[-.05em] text-foreground">
@@ -20,9 +22,9 @@ export default function RegisterChooserPage() {
       </span>
 
       <h1 className="mb-7 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] text-foreground">
-        Como você quer
+        {t.app.escolherPapel.titulo}
         <br />
-        começar?
+        {t.app.escolherPapel.tituloDestaque}
       </h1>
 
       <div className="flex flex-col gap-3.5">
@@ -30,17 +32,17 @@ export default function RegisterChooserPage() {
           <div className="px-[22px] pb-[22px] pt-[26px]">
             <Sparkles size={20} className="mb-3.5 block text-black" />
             <p className="font-display text-[19px] font-bold tracking-[-.04em] text-black">
-              Sou creator
+              {t.app.escolherPapel.souCreator}
             </p>
             <p className="mt-[9px] text-[13.5px] leading-[1.5] text-[#3a3a34]">
-              Encontre campanhas abertas e feche parcerias com marcas.
+              {t.app.escolherPapel.creatorDescricao}
             </p>
           </div>
           <Link
             to="/register/influencer"
             className="flex min-h-[56px] items-center justify-center gap-2 bg-black font-mono text-[11px] font-medium uppercase tracking-widest text-[#e5e5e0] transition-colors duration-[140ms] hover:bg-lime hover:text-black"
           >
-            Criar conta de creator
+            {t.app.escolherPapel.criarContaCreator}
           </Link>
         </KineticPlate>
 
@@ -48,17 +50,17 @@ export default function RegisterChooserPage() {
           <div className="px-[22px] pb-5 pt-[26px]">
             <Briefcase size={20} className="mb-3.5 block text-lime" />
             <p className="font-display text-[19px] font-bold tracking-[-.04em] text-foreground">
-              Sou marca
+              {t.app.escolherPapel.souMarca}
             </p>
             <p className="mt-[9px] text-[13.5px] leading-[1.5] text-kinetic-muted">
-              Crie campanhas e receba candidaturas.
+              {t.app.escolherPapel.marcaDescricao}
             </p>
           </div>
           <Link
             to="/register/brand"
             className="flex min-h-[56px] items-center justify-center gap-2 border-t border-kinetic-gray font-mono text-[11px] font-medium uppercase tracking-widest text-foreground transition-colors duration-[140ms] hover:bg-lime hover:text-black"
           >
-            Criar conta de marca
+            {t.app.escolherPapel.criarContaMarca}
           </Link>
         </div>
       </div>
@@ -66,7 +68,7 @@ export default function RegisterChooserPage() {
       <p className="mt-[22px] text-[13px] text-kinetic-muted">
         Já tem conta?{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
-          Entrar
+          {t.app.acoes.entrar}
         </Link>
       </p>
     </div>

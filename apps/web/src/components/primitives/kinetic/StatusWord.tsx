@@ -68,15 +68,15 @@ function isActionable(props: Props): boolean {
 function wordFor(props: Props): string {
   switch (props.kind) {
     case 'application':
-      return applicationStatusWord[props.status];
+      return applicationStatusWord(props.status);
     case 'content':
-      return contentStatusWord[props.status];
+      return contentStatusWord(props.status);
     case 'campaign':
-      return campaignStatusWord[props.status];
+      return campaignStatusWord(props.status);
     case 'reward':
-      return rewardStatusWord[props.status];
+      return rewardStatusWord(props.status);
     case 'partnershipResult':
-      return partnershipResultWord[props.status];
+      return partnershipResultWord(props.status);
   }
 }
 

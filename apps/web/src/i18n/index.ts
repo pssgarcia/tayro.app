@@ -29,6 +29,15 @@ export type { Locale } from './locale';
 export type { Dictionary } from './dictionaries/pt';
 export { LOCALES, DEFAULT_LOCALE, getLocale } from './locale';
 
+/**
+ * O dicionário do idioma ativo, FORA do React. Para helper puro que não pode
+ * virar hook (`utils/format.ts`) e para código chamado de fora de componente.
+ * Dentro de componente use `useT()`, que re-renderiza quando o idioma muda.
+ */
+export function dict(): Dictionary {
+  return DICTIONARIES[getLocale()];
+}
+
 /** Idioma ativo. Re-renderiza quem usa quando ele muda. */
 export function useLocale(): Locale {
   return useSyncExternalStore(subscribeLocale, getLocale, getLocale);

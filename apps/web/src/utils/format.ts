@@ -1,4 +1,5 @@
 import { getLocale } from '../i18n/locale';
+import { dict } from '../i18n';
 import type { ApplicationStatus, CampaignStatus, ContentStatus, RewardStatus } from '../types/api';
 
 /**
@@ -6,24 +7,18 @@ import type { ApplicationStatus, CampaignStatus, ContentStatus, RewardStatus } f
  * "candidatura"). Fonte única — usado pela lista Pipeline do desktop e pela
  * lista "Todas" da revisão mobile.
  */
-export const applicationStatusWord: Record<ApplicationStatus, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovada',
-  REJECTED: 'Recusada',
-  WITHDRAWN: 'Retirada',
-};
+export function applicationStatusWord(status: ApplicationStatus): string {
+  return dict().app.status.application[status];
+}
 
 /**
  * Rótulo em português de cada status de campanha, no feminino (concorda com
  * "campanha"). Vivia preso dentro de `StatusPill.tsx`; virou fonte única
  * quando o Kinetic passou a mostrar status como palavra, sem pill.
  */
-export const campaignStatusWord: Record<CampaignStatus, string> = {
-  DRAFT: 'Rascunho',
-  ACTIVE: 'Ativa',
-  CLOSED: 'Encerrada',
-  COMPLETED: 'Concluída',
-};
+export function campaignStatusWord(status: CampaignStatus): string {
+  return dict().app.status.campaign[status];
+}
 
 /**
  * Rótulo em português de cada status de conteúdo, no MASCULINO (concorda com
@@ -32,22 +27,17 @@ export const campaignStatusWord: Record<CampaignStatus, string> = {
  * REVISION_REQUESTED e não tem WITHDRAWN. Vivia preso em
  * `ContentStatusPill.tsx`.
  */
-export const contentStatusWord: Record<ContentStatus, string> = {
-  PENDING: 'Em análise',
-  APPROVED: 'Aprovado',
-  REJECTED: 'Recusado',
-  REVISION_REQUESTED: 'Revisar',
-};
+export function contentStatusWord(status: ContentStatus): string {
+  return dict().app.status.content[status];
+}
 
 /**
  * Rótulo em português de cada status de recompensa, no feminino (concorda com
  * "recompensa"). Vivia preso no `STATUS_CONFIG` do `CampaignRewardsTab`.
  */
-export const rewardStatusWord: Record<RewardStatus, string> = {
-  PENDING: 'Pendente',
-  ISSUED: 'Emitida',
-  DELIVERED: 'Entregue',
-};
+export function rewardStatusWord(status: RewardStatus): string {
+  return dict().app.status.reward[status];
+}
 
 /**
  * Estado do resultado de uma parceria, da ótica da MARCA: ou ela já informou
@@ -57,10 +47,9 @@ export const rewardStatusWord: Record<RewardStatus, string> = {
  */
 export type PartnershipResultState = 'PENDING' | 'REGISTERED';
 
-export const partnershipResultWord: Record<PartnershipResultState, string> = {
-  PENDING: 'A informar',
-  REGISTERED: 'Informado',
-};
+export function partnershipResultWord(status: PartnershipResultState): string {
+  return dict().app.status.partnershipResult[status];
+}
 
 /**
  * O MESMO status de recompensa, dito da ótica da creator. Não é drift de
@@ -69,11 +58,9 @@ export const partnershipResultWord: Record<PartnershipResultState, string> = {
  * que muda é quão perto está de chegar. Manter as duas listas separadas é
  * deliberado — não unificar.
  */
-export const creatorRewardStatusWord: Record<RewardStatus, string> = {
-  PENDING: 'A receber',
-  ISSUED: 'A caminho',
-  DELIVERED: 'Entregue',
-};
+export function creatorRewardStatusWord(status: RewardStatus): string {
+  return dict().app.status.creatorReward[status];
+}
 
 /**
  * Alfabeto aceito pro handle do Instagram: letras, números, ponto e
@@ -94,7 +81,9 @@ export const INSTAGRAM_HANDLE_FORMAT = /^[a-zA-Z0-9_.]{1,30}$/;
  * creator e edição de perfil. Espelha `shared/validation/phone.ts` na API.
  */
 export const PHONE_FORMAT = /^[0-9()+\-\s]{8,20}$/;
-export const PHONE_FORMAT_MESSAGE = 'Telefone inválido: use apenas números, espaços, ( ) - ou +';
+export function phoneFormatMessage(): string {
+  return dict().app.format.telefoneInvalido;
+}
 
 /** 8200 → "8.2k" | 1500000 → "1.5M" | 800 → "800" */
 export function formatNumber(n: number): string {

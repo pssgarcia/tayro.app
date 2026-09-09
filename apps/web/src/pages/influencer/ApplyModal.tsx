@@ -5,6 +5,7 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import { useCreateApplication } from '../../hooks/useMyApplications';
+import { useT } from '../../i18n';
 
 // ─── Modal de confirmação — mesmo padrão de placa-formulário do Login ────────
 // Só abre a partir do detalhe da campanha: a creator decide DEPOIS de ver os
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
+  const t = useT();
   const [message, setMessage] = useState('');
   const [applied, setApplied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,11 +41,11 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
           : null;
 
       if (status === 409) {
-        setError(msg ?? 'Você já se candidatou a esta campanha.');
+        setError(msg ?? t.app.creator.candidatar.jaSeCandidatou);
       } else if (status === 400 && msg) {
         setError(msg);
       } else {
-        setError('Não foi possível enviar sua candidatura. Tente novamente.');
+        setError(t.app.creator.candidatar.naoFoiPossivel);
       }
     }
   }
@@ -58,28 +60,28 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
           {applied ? (
             <div className="px-6 pb-[26px] pt-[30px] text-center">
               <p className="font-display text-[34px] font-bold leading-[1.05] tracking-[-.05em] text-black">
-                Candidatura enviada
+                {t.app.creator.candidatar.enviada}
               </p>
               <p className="mt-5 text-[13px] leading-[1.5] text-[#6a6a64]">
-                <span className="font-medium text-[#3a3a34]">{campaign.brand?.name}</span> vai
-                analisar seu perfil.
+                <span className="font-medium text-[#3a3a34]">{campaign.brand?.name}</span>{' '}
+                {t.app.creator.candidatar.vaiAnalisar}
               </p>
             </div>
           ) : (
             <div className="px-6 pb-[26px] pt-[30px]">
               <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-                Quero participar
+                {t.app.creator.candidatar.titulo}
               </p>
               <p className="mt-[6px] truncate text-[13px] text-[#6a6a64]">{campaign.title}</p>
 
               <div className="mt-6">
                 <KineticTextarea
-                  label="Mensagem para a marca (opcional)"
+                  label={t.app.creator.candidatar.mensagem}
                   variant="plate"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={1000}
-                  placeholder="Por que você é ideal para essa campanha?"
+                  placeholder={t.app.creator.candidatar.mensagemPlaceholder}
                 />
               </div>
 
@@ -89,15 +91,17 @@ export default function ApplyModal({ campaign, onClose, onApplied }: Props) {
 
           <KineticActions
             actions={[
-              { label: applied ? 'Fechar' : 'Cancelar', onClick: onClose, width: 130 },
+              { label: applied ? t.app.comum.fechar : t.app.acoes.cancelar, onClick: onClose, width: 130 },
               applied
                 ? {
-                    label: 'Ver minhas candidaturas',
+                    label: t.app.creator.candidatar.verMinhas,
                     onClick: onApplied ?? onClose,
                     primary: true,
                   }
                 : {
-                    label: create.isPending ? 'Enviando…' : 'Confirmar',
+                    label: create.isPending
+                      ? t.app.creator.candidatar.enviando
+                      : t.app.creator.candidatar.confirmar,
                     onClick: handleConfirm,
                     disabled: create.isPending,
                     primary: true,

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useT } from '../../i18n';
 import type { MyPartnershipResult } from '../../types/api';
 import { useSetResultVisibility } from '../../hooks/usePartnershipResults';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
@@ -18,9 +19,9 @@ import { formatDate, formatNumberParts } from '../../utils/format';
 // estouraria o orçamento de lime da tela (regra 4 do design system).
 
 const METRICS = [
-  { key: 'reach', label: 'Alcance' },
-  { key: 'impressions', label: 'Impressões' },
-  { key: 'couponsUsed', label: 'Cupons usados' },
+  { key: 'reach', rotulo: 'alcance' },
+  { key: 'impressions', rotulo: 'impressoes' },
+  { key: 'couponsUsed', rotulo: 'cuponsUsados' },
 ] as const;
 
 function Metric({ label, value }: { label: string; value: number }) {
@@ -46,6 +47,7 @@ function ResultBlock({
   result: MyPartnershipResult;
   publicProfileEnabled: boolean;
 }) {
+  const t = useT();
   const setVisibility = useSetResultVisibility();
   const metrics = METRICS.filter(({ key }) => result[key] !== null);
   const isPublished = result.brandAllowsPublic && !result.hiddenByCreator;
@@ -61,8 +63,8 @@ function ResultBlock({
 
       {metrics.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-x-8 gap-y-5">
-          {metrics.map(({ key, label }) => (
-            <Metric key={key} label={label} value={result[key] as number} />
+          {metrics.map(({ key, rotulo }) => (
+            <Metric key={key} label={t.app.creator.resultados[rotulo]} value={result[key] as number} />
           ))}
         </div>
       )}
@@ -100,18 +102,17 @@ function ResultBlock({
                 perfil está desligado é ruído. */}
             <p className="text-xs leading-[1.5] text-kinetic-muted">
               {result.hiddenByCreator ? (
-                'Escondido do seu perfil público.'
+                t.app.creator.resultados.escondido
               ) : publicProfileEnabled ? (
-                'Aparece no seu perfil público.'
+                t.app.creator.resultados.apareceNoPerfil
               ) : (
                 <>
-                  Seu perfil público está desligado, então ninguém vê este
-                  resultado ainda.{' '}
+                  {t.app.creator.resultados.perfilDesligado}{' '}
                   <Link
                     to="/influencer/profile"
                     className="text-lime hover:underline"
                   >
-                    Ligar no Perfil
+                    {t.app.creator.resultados.ligarNoPerfil}
                   </Link>
                 </>
               )}
@@ -128,17 +129,17 @@ function ResultBlock({
               className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-50"
             >
               {setVisibility.isPending
-                ? 'Salvando…'
+                ? t.app.creator.resultados.salvando
                 : isPublished
-                  ? 'Ocultar do meu perfil'
-                  : 'Mostrar no meu perfil'}
+                  ? t.app.creator.resultados.ocultar
+                  : t.app.creator.resultados.mostrar}
             </button>
           </div>
         )}
 
         {setVisibility.isError && (
           <p className="mt-3 text-xs text-destructive">
-            Não foi possível salvar. Tente novamente.
+            {t.app.creator.resultados.naoFoiPossivelSalvar}
           </p>
         )}
       </div>
@@ -153,6 +154,7 @@ export default function PartnershipResultsSection({
   results: MyPartnershipResult[];
   publicProfileEnabled: boolean;
 }) {
+  const t = useT();
   if (results.length === 0) return null;
 
   return (
@@ -162,7 +164,7 @@ export default function PartnershipResultsSection({
           id="resultados-parcerias"
           className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted"
         >
-          Resultados das parcerias
+          {t.app.creator.resultados.titulo}
         </h2>
         <p className="shrink-0 font-display text-xl font-bold leading-none tracking-[-.04em] tabular-nums text-foreground">
           {results.length}

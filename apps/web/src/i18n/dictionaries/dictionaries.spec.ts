@@ -56,8 +56,28 @@ describe('dicionários pt/en', () => {
   // pelo maior par legítimo que existe hoje: "creators" (8). Acima disso,
   // igualdade é suspeita.
   it('nenhuma frase longa ficou por traduzir', () => {
+    // Exceções EXPLÍCITAS, uma a uma com o motivo. A alternativa seria baixar o
+    // corte até nenhuma passar, e aí o teste pararia de pegar o que importa.
+    const IGUAIS_DE_PROPOSITO = new Set([
+      // Nome próprio de exemplo: nome não se traduz.
+      'app.cadastroCreator.nomePlaceholder',
+      // Formato de telefone BRASILEIRO. O produto só atende telefone do Brasil
+      // (o `whatsappLinkFromPhone` assume DDI 55), então mostrar um formato
+      // americano no placeholder ensinaria a digitar errado.
+      'app.cadastroCreator.telefonePlaceholder',
+      // A palavra é a mesma nos dois idiomas.
+      'app.nichos.lifestyle',
+      // URL de exemplo.
+      'app.creator.entregas.linkPlaceholder',
+    ]);
+
     const iguais = TODOS.filter(
-      ([, a, b]) => typeof a === 'string' && typeof b === 'string' && a.length > 8 && a === b,
+      ([caminho, a, b]) =>
+        !IGUAIS_DE_PROPOSITO.has(caminho) &&
+        typeof a === 'string' &&
+        typeof b === 'string' &&
+        a.length > 8 &&
+        a === b,
     );
     expect(iguais.map(([caminho, a]) => `${caminho}: ${String(a)}`)).toEqual([]);
   });

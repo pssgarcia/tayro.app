@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useT } from '../../i18n';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { useMyRewards } from '../../hooks/useMyRewards';
 import CountUp from '../../components/primitives/CountUp';
@@ -39,6 +40,7 @@ function Skeleton() {
 // pontas: a marca e a creator passam a ler a mesma palavra pro mesmo estado.
 
 export default function DashboardPage() {
+  const t = useT();
   const { data: applications, isLoading: appsLoading } = useMyApplications();
   const { data: rewards, isLoading: rewardsLoading } = useMyRewards();
 
@@ -61,7 +63,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-        Sua leitura
+        {t.app.creator.dashboard.titulo}
       </h1>
 
       <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
@@ -80,7 +82,7 @@ export default function DashboardPage() {
                   —
                 </p>
                 <p className="mt-6 text-sm leading-[1.5] text-[#4a4a44]">
-                  Nenhuma candidatura ainda.
+                  {t.app.creator.dashboard.nenhumaCandidatura}
                 </p>
               </>
             ) : (
@@ -104,14 +106,14 @@ export default function DashboardPage() {
 
           <div className="mt-9 flex max-w-[560px] gap-4">
             <StatFigure
-              label="em análise"
+              label={t.app.creator.dashboard.emAnalise}
               value={pendingApps}
               delay={120}
               className="flex-1 border border-kinetic-gray p-4 sm:p-5"
             />
             <Link to="/influencer/rewards" className="flex-1">
               <StatFigure
-                label="a receber"
+                label={t.app.creator.dashboard.aReceber}
                 value={pendingRewards}
                 highlight={pendingRewards > 0}
                 delay={240}
@@ -124,14 +126,14 @@ export default function DashboardPage() {
           </div>
 
           <p className="mb-5 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            Registro
+            {t.app.creator.dashboard.registro}
           </p>
 
           {recentApps.length === 0 ? (
             <p className="text-sm text-kinetic-muted">
-              Nenhuma candidatura ainda.{' '}
+              {t.app.creator.dashboard.nenhumaCandidatura}{' '}
               <Link to="/influencer/browse" className="text-lime hover:underline">
-                Explore as campanhas
+                {t.app.creator.dashboard.explorar}
               </Link>
               .
             </p>

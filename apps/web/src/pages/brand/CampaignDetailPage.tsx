@@ -74,7 +74,7 @@ function CampaignHeader({
           </h1>
           {terminal && (
             <span className="inline-flex shrink-0 items-center self-center border border-kinetic-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-              {campaignStatusWord[status]}
+              {campaignStatusWord(status)}
             </span>
           )}
         </div>

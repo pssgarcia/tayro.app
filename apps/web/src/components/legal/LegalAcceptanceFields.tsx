@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import KineticCheckbox from '../primitives/kinetic/KineticCheckbox';
-import { PRIVACY_LABEL, PRIVACY_PATH, TERMS_LABEL, TERMS_PATH } from '../../config/legal';
+import { PRIVACY_PATH, TERMS_PATH } from '../../config/legal';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
 
 // ─── Aceite dos documentos + declaração de maioridade ────────────────────────
 //
@@ -41,6 +42,7 @@ export default function LegalAcceptanceFields({
   intro,
   className,
 }: Props) {
+  const t = useT();
   const isPlate = variant === 'plate';
   const linkClass = cn(
     'underline underline-offset-2 transition-colors',
@@ -61,19 +63,19 @@ export default function LegalAcceptanceFields({
       )}
 
       <KineticCheckbox variant={variant} error={termsError} {...termsField}>
-        Li e concordo com os{' '}
+        {t.app.aceite.liEConcordo}{' '}
         <Link to={TERMS_PATH} target="_blank" rel="noopener noreferrer" className={linkClass}>
-          {TERMS_LABEL}
+          {t.app.nav.termos}
         </Link>{' '}
-        e com a{' '}
+        {t.app.aceite.eComA}{' '}
         <Link to={PRIVACY_PATH} target="_blank" rel="noopener noreferrer" className={linkClass}>
-          {PRIVACY_LABEL}
+          {t.app.nav.privacidade}
         </Link>
         .
       </KineticCheckbox>
 
       <KineticCheckbox variant={variant} error={adultError} {...adultField}>
-        Declaro que tenho 18 anos ou mais.
+        {t.app.aceite.maioridade}
       </KineticCheckbox>
     </div>
   );

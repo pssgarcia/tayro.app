@@ -10,7 +10,12 @@
 // String parametrizada é FUNÇÃO, não template com placeholder: o argumento
 // fica tipado e a ordem das palavras pode mudar entre idiomas sem gambiarra.
 
+import { ptApp } from './pt.app';
+
 export const pt = {
+  /** Produto (painéis, auth, telas públicas). Em arquivo separado por tamanho. */
+  app: ptApp,
+
   idioma: {
     /** Rótulo do seletor, no idioma que ele seleciona. */
     nome: 'Português',

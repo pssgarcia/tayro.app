@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT, type Dictionary } from '../../i18n';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useStepGuard } from '../../hooks/useStepGuard';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
@@ -17,26 +18,35 @@ import { cn } from '../../lib/utils';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  brandName: z.string().min(1, 'Nome da marca obrigatório').max(100, 'Máximo 100 caracteres'),
-  email: z.string().email('E-mail inválido').max(254, 'E-mail muito longo'),
-  password: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
-  niches: z.array(z.string()),
-  website: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
-  // `literal(true)` e não `boolean()`: é o que torna impossível concluir o
-  // cadastro sem marcar. A API repete a exigência (`@Equals(true)`), então
-  // nem chamada direta cria conta sem aceite.
-  acceptedTermsAndPrivacy: z.literal(true, {
-    errorMap: () => ({
-      message: 'É necessário aceitar os Termos de Uso e a Política de Privacidade',
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    brandName: z
+      .string()
+      .min(1, t.app.cadastroMarca.nomeObrigatorio)
+      .max(100, t.app.validacao.max100),
+    email: z.string().email(t.app.validacao.emailInvalido).max(254, t.app.validacao.emailLongo),
+    password: z.string().min(8, t.app.validacao.senhaMin).max(72, t.app.validacao.max72),
+    niches: z.array(z.string()),
+    website: z
+      .string()
+      .url(t.app.cadastroMarca.urlInvalida)
+      .max(2048)
+      .optional()
+      .or(z.literal('')),
+    // `literal(true)` e não `boolean()`: é o que torna impossível concluir o
+    // cadastro sem marcar. A API repete a exigência (`@Equals(true)`), então
+    // nem chamada direta cria conta sem aceite.
+    acceptedTermsAndPrivacy: z.literal(true, {
+      errorMap: () => ({ message: t.app.validacao.aceiteObrigatorio }),
     }),
-  }),
-  declaredAdult: z.literal(true, {
-    errorMap: () => ({ message: 'É necessário declarar que você tem 18 anos ou mais' }),
-  }),
-});
+    declaredAdult: z.literal(true, {
+      errorMap: () => ({ message: t.app.validacao.maioridadeObrigatoria }),
+    }),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 interface RegisterResponse {
   accessToken: string;
@@ -48,7 +58,8 @@ interface RegisterResponse {
 // com 5 campos ficava densa demais no mobile. Voltar/Continuar via
 // PlateActionBar, pager de bolinhas só como indicador (não clicável).
 
-const STEPS = ['Identidade', 'Acesso', 'Nichos'] as const;
+/** Só a quantidade e a ordem: o rótulo vem do dicionário. */
+const STEPS = ['identidade', 'acesso', 'nichos'] as const;
 // As caixas de aceite ficam no último passo, junto do "Criar conta": é
 // preciso aceitar imediatamente antes de criar, não dois passos antes.
 const STEP_FIELDS: (keyof FormValues)[][] = [['brandName', 'website'], ['email', 'password'], []];
@@ -65,6 +76,8 @@ const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
 // creator (era a única tela do app que pedia nicho como texto livre).
 
 export default function RegisterBrandPage() {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { accessToken, user, setAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -114,19 +127,19 @@ export default function RegisterBrandPage() {
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
         if (status === 409) {
-          setError('email', { message: 'Já existe uma conta com esse e-mail' });
+          setError('email', { message: t.app.cadastroMarca.emailEmUso });
           setStep(FIELD_STEP.email ?? STEPS.length - 1);
         } else if (status === 429) {
           setError('root', {
-            message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+            message: t.app.erros.muitasTentativas,
           });
         } else if (status === 400) {
-          setError('root', { message: 'Verifique os dados e tente novamente.' });
+          setError('root', { message: t.app.cadastroMarca.verifiqueDados });
         } else {
-          setError('root', { message: 'Erro de conexão. Tente novamente.' });
+          setError('root', { message: t.app.cadastroMarca.erroConexao });
         }
       } else {
-        setError('root', { message: 'Erro inesperado. Tente novamente.' });
+        setError('root', { message: t.app.erros.inesperado });
       }
     }
   };
@@ -138,12 +151,12 @@ export default function RegisterBrandPage() {
       </span>
 
       <h1 className="font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] leading-[1.02] text-foreground">
-        Criar conta
+        {t.app.cadastroMarca.titulo}
         <br />
-        da marca
+        {t.app.cadastroMarca.tituloDestaque}
       </h1>
       <p className="mb-7 mt-2 text-[13px] text-kinetic-muted">
-        Depois disso você já publica a primeira campanha.
+        {t.app.cadastroMarca.subtitulo}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -152,19 +165,19 @@ export default function RegisterBrandPage() {
             {step === 0 && (
               <>
                 <KineticField
-                  label="Nome da marca"
+                  label={t.app.cadastroMarca.nome}
                   variant="plate"
                   autoComplete="organization"
-                  placeholder="Minha Marca Fitness"
+                  placeholder={t.app.cadastroMarca.nomePlaceholder}
                   error={errors.brandName?.message}
                   {...register('brandName')}
                 />
                 <KineticField
-                  label="Website (opcional)"
+                  label={t.app.cadastroMarca.website}
                   variant="plate"
                   type="url"
                   autoComplete="url"
-                  placeholder="https://suamarca.com"
+                  placeholder={t.app.cadastroMarca.websitePlaceholder}
                   error={errors.website?.message}
                   {...register('website')}
                 />
@@ -174,20 +187,20 @@ export default function RegisterBrandPage() {
             {step === 1 && (
               <>
                 <KineticField
-                  label="E-mail"
+                  label={t.app.cadastroCreator.email}
                   variant="plate"
                   type="email"
                   autoComplete="email"
-                  placeholder="voce@suamarca.com"
+                  placeholder={t.app.cadastroMarca.emailPlaceholder}
                   error={errors.email?.message}
                   {...register('email')}
                 />
                 <KineticField
-                  label="Senha"
+                  label={t.app.cadastroCreator.senha}
                   variant="plate"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  hint="Mínimo 8 caracteres"
+                  hint={t.app.cadastroCreator.senhaHint}
                   error={errors.password?.message}
                   suffix={
                     <button
@@ -195,7 +208,7 @@ export default function RegisterBrandPage() {
                       tabIndex={-1}
                       onClick={() => setShowPassword((v) => !v)}
                       className="shrink-0 text-[#8A8A84] transition-colors hover:text-black"
-                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-label={showPassword ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -208,7 +221,7 @@ export default function RegisterBrandPage() {
             {step === 2 && (
               <>
                 <div>
-                  <p className="mb-3 text-[11px] text-[#6a6a64]">Nichos da marca</p>
+                  <p className="mb-3 text-[11px] text-[#6a6a64]">{t.app.cadastroMarca.nichosDaMarca}</p>
                   <Controller
                     name="niches"
                     control={control}
@@ -236,17 +249,19 @@ export default function RegisterBrandPage() {
 
           <KineticActions
             actions={[
-              ...(step > 0 ? [{ label: 'Voltar', onClick: back, width: 130 }] : []),
+              ...(step > 0 ? [{ label: t.app.acoes.voltar, onClick: back, width: 130 }] : []),
               step < STEPS.length - 1
                 ? {
-                    label: 'Continuar',
+                    label: t.app.acoes.continuar,
                     type: 'button' as const,
                     onClick: next,
                     disabled: isStepGuarded,
                     primary: true,
                   }
                 : {
-                    label: isSubmitting ? 'Criando conta…' : 'Criar conta',
+                    label: isSubmitting
+                      ? t.app.cadastroCreator.criandoConta
+                      : t.app.cadastroMarca.titulo,
                     type: 'submit' as const,
                     disabled: isSubmitting || isStepGuarded,
                     primary: true,
@@ -272,7 +287,7 @@ export default function RegisterBrandPage() {
       <p className="mt-[26px] text-[13px] text-kinetic-muted">
         Quer se candidatar em vez disso?{' '}
         <Link to="/register/influencer" className="font-medium text-lime hover:underline">
-          Sou creator
+          {t.app.cadastroMarca.souCreator}
         </Link>
       </p>
     </div>

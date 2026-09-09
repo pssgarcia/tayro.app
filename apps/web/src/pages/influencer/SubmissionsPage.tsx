@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import axios from 'axios';
+import type { MySubmission } from '../../types/api';
 import { useMyApplications } from '../../hooks/useMyApplications';
 import { useMySubmissions, useCreateSubmission } from '../../hooks/useMySubmissions';
-import type { MediaType, MySubmission } from '../../types/api';
 import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
@@ -14,24 +14,24 @@ import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { formatRelativeDays } from '../../utils/format';
 import { cn } from '../../lib/utils';
-
-const MEDIA_LABELS: Record<MediaType, string> = {
-  IMAGE: 'Foto',
-  VIDEO: 'Vídeo',
-  REEL: 'Reel',
-  STORY: 'Story',
-};
+import { useT, type Dictionary } from '../../i18n';
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  applicationId: z.string().uuid('Selecione uma candidatura aprovada'),
-  mediaUrl: z.string().url('URL inválida: inclua https://').max(2048, 'URL muito longa'),
-  mediaType: z.enum(['IMAGE', 'VIDEO', 'REEL', 'STORY'] as const),
-  caption: z.string().max(2200, 'Máximo 2200 caracteres').optional(),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    applicationId: z.string().uuid(t.app.creator.entregas.selecioneAprovada),
+    mediaUrl: z
+      .string()
+      .url(t.app.creator.entregas.urlInvalida)
+      .max(2048, t.app.creator.entregas.urlLonga),
+    mediaType: z.enum(['IMAGE', 'VIDEO', 'REEL', 'STORY'] as const),
+    caption: z.string().max(2200, t.app.creator.entregas.legendaMax).optional(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 // ─── Select no padrão da placa-formulário (só usado aqui, 2x) ────────────────
 
@@ -79,6 +79,8 @@ function SubmitModal({
   defaultApplicationId?: string;
   onClose: () => void;
 }) {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { data: applications = [] } = useMyApplications();
   const create = useCreateSubmission();
   const approvedApps = applications.filter((a) => a.status === 'APPROVED');
@@ -112,9 +114,9 @@ function SubmitModal({
       if (status === 400 && msg) {
         setError('root', { message: msg });
       } else if (status === 403) {
-        setError('root', { message: 'Essa candidatura não é sua ou não está aprovada.' });
+        setError('root', { message: t.app.creator.entregas.naoEhSua });
       } else {
-        setError('root', { message: 'Não foi possível enviar. Tente novamente.' });
+        setError('root', { message: t.app.creator.entregas.naoFoiPossivel });
       }
     }
   }
@@ -129,7 +131,7 @@ function SubmitModal({
           {approvedApps.length === 0 ? (
             <div className="px-6 pb-[26px] pt-[30px]">
               <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-                Enviar conteúdo
+                {t.app.creator.entregas.enviarConteudo}
               </p>
               <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
                 Você não tem candidaturas aprovadas no momento.{' '}
@@ -137,7 +139,7 @@ function SubmitModal({
                   to="/influencer/applications"
                   className="whitespace-nowrap text-black underline"
                 >
-                  Ver candidaturas
+                  {t.app.creator.entregas.verCandidaturas}
                 </Link>
                 .
               </p>
@@ -146,15 +148,15 @@ function SubmitModal({
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
                 <p className="-mb-2 font-display text-xl font-bold tracking-[-.04em] text-black">
-                  Enviar conteúdo
+                  {t.app.creator.entregas.enviarConteudo}
                 </p>
 
                 <PlateSelectField
-                  label="Candidatura aprovada *"
+                  label={t.app.creator.entregas.candidaturaAprovada}
                   error={errors.applicationId?.message}
                   {...register('applicationId')}
                 >
-                  <option value="">Selecione…</option>
+                  <option value="">{t.app.creator.entregas.selecione}</option>
                   {approvedApps.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.campaign.title} · {a.campaign.brand.name}
@@ -163,24 +165,24 @@ function SubmitModal({
                 </PlateSelectField>
 
                 <KineticTextarea
-                  label="Link do conteúdo *"
+                  label={t.app.creator.entregas.linkConteudo}
                   variant="plate"
                   placeholder="https://instagram.com/reel/..."
                   error={errors.mediaUrl?.message}
                   {...register('mediaUrl')}
                 />
 
-                <PlateSelectField label="Tipo de conteúdo *" {...register('mediaType')}>
-                  <option value="REEL">Reel</option>
-                  <option value="VIDEO">Vídeo</option>
-                  <option value="IMAGE">Foto</option>
-                  <option value="STORY">Story</option>
+                <PlateSelectField label={t.app.creator.entregas.tipoConteudo} {...register('mediaType')}>
+                  <option value="REEL">{t.app.creator.entregas.tipos.REEL}</option>
+                  <option value="VIDEO">{t.app.creator.entregas.tipos.VIDEO}</option>
+                  <option value="IMAGE">{t.app.creator.entregas.tipos.IMAGE}</option>
+                  <option value="STORY">{t.app.creator.entregas.tipos.STORY}</option>
                 </PlateSelectField>
 
                 <KineticTextarea
-                  label="Legenda (opcional)"
+                  label={t.app.creator.entregas.legenda}
                   variant="plate"
-                  placeholder="Cole aqui a legenda do post…"
+                  placeholder={t.app.creator.entregas.legendaPlaceholder}
                   error={errors.caption?.message}
                   {...register('caption')}
                 />
@@ -192,9 +194,9 @@ function SubmitModal({
 
               <KineticActions
                 actions={[
-                  { label: 'Cancelar', onClick: onClose, width: 130 },
+                  { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
                   {
-                    label: isSubmitting ? 'Enviando…' : 'Enviar conteúdo',
+                    label: isSubmitting ? t.app.creator.entregas.enviando : t.app.creator.entregas.enviarConteudo,
                     type: 'submit',
                     disabled: isSubmitting,
                     primary: true,
@@ -237,6 +239,7 @@ function FeaturedPlate({
   featured: { s: MySubmission; mode: 'revise' | 'approved' | 'readonly' };
   onResend: () => void;
 }) {
+  const t = useT();
   const { s, mode } = featured;
 
   return (
@@ -245,7 +248,7 @@ function FeaturedPlate({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-              {s.application.campaign.brand.name} · {MEDIA_LABELS[s.mediaType]}
+              {s.application.campaign.brand.name} · {t.app.creator.entregas.tipos[s.mediaType]}
             </p>
             <p className="mt-2 font-display text-[26px] font-bold leading-[1.1] tracking-[-.045em] text-black">
               {s.application.campaign.title}
@@ -267,17 +270,17 @@ function FeaturedPlate({
         <KineticActions
           actions={[
             {
-              label: 'Ver atual',
+              label: t.app.creator.entregas.verAtual,
               width: 130,
               onClick: () => window.open(s.mediaUrl, '_blank'),
             },
-            { label: 'Reenviar link', onClick: onResend, primary: true },
+            { label: t.app.creator.entregas.reenviarLink, onClick: onResend, primary: true },
           ]}
         />
       )}
       {mode === 'approved' && (
         <KineticActions
-          actions={[{ label: 'Enviar novo conteúdo', onClick: onResend, primary: true }]}
+          actions={[{ label: t.app.creator.entregas.enviarNovo, onClick: onResend, primary: true }]}
         />
       )}
     </KineticPlate>
@@ -303,6 +306,7 @@ function Skeleton() {
 // Tela 7 do redesign 2a.
 
 export default function SubmissionsPage() {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const fromApplicationId = searchParams.get('apply') ?? undefined;
 
@@ -321,7 +325,7 @@ export default function SubmissionsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <div className="flex items-end justify-between gap-4">
         <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-          Entregas
+          {t.app.creator.entregas.titulo}
         </h1>
         <button
           onClick={() => openModal(undefined)}
@@ -335,11 +339,11 @@ export default function SubmissionsPage() {
 
       {isLoading && <Skeleton />}
 
-      {isError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+      {isError && <p className="text-sm text-destructive">{t.app.creator.entregas.erro}</p>}
 
       {!isLoading && !isError && submissions.length === 0 && (
         <p className="text-sm text-kinetic-muted">
-          Nenhum conteúdo enviado ainda. Quando você tiver uma candidatura aprovada, envie o link do
+          {t.app.creator.entregas.vazio}
           seu conteúdo aqui.
         </p>
       )}
@@ -347,7 +351,7 @@ export default function SubmissionsPage() {
       {!isLoading && !isError && submissions.length > 0 && (
         <>
           <p className="mb-4 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            {featured?.mode === 'revise' ? 'A marca pediu ajuste' : 'Precisa de você'}
+            {featured?.mode === 'revise' ? t.app.creator.entregas.pediuAjuste : t.app.creator.entregas.precisaDeVoce}
           </p>
           {featured && (
             <FeaturedPlate
@@ -357,7 +361,7 @@ export default function SubmissionsPage() {
           )}
 
           <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            Enviados
+            {t.app.creator.entregas.enviados}
           </p>
           <div className="flex flex-col gap-0.5">
             {submissions.map((s, i) => (
@@ -365,7 +369,7 @@ export default function SubmissionsPage() {
                 key={s.id}
                 index={i + 1}
                 title={s.application.campaign.title}
-                meta={`${MEDIA_LABELS[s.mediaType]} · ${formatRelativeDays(s.submittedAt)}`}
+                meta={`${t.app.creator.entregas.tipos[s.mediaType]} · ${formatRelativeDays(s.submittedAt)}`}
                 trailing={<StatusWord kind="content" status={s.status} />}
               />
             ))}
