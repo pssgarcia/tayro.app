@@ -1,6 +1,7 @@
 import KineticPlate from '../../../components/primitives/kinetic/KineticPlate';
 import { formatCurrency, publicUrlLabel } from '../../../utils/format';
 import { DEMO_CREATORS, DEMO_PROGRAMA } from './demo';
+import { useT } from '../../../i18n';
 
 // ─── Miniaturas de UI dos passos ─────────────────────────────────────────────
 // Construídas em código com o vocabulário real do produto (oferta, prazo,
@@ -39,35 +40,38 @@ const Rotulo = ({ children }: { children: React.ReactNode }) => (
   </span>
 );
 
-const oferta = formatCurrency(DEMO_PROGRAMA.offerAmount);
-
 export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
+  const t = useT();
+  // Dentro do componente de propósito: `formatCurrency` lê o idioma ativo, e
+  // como const de módulo o valor congelaria no idioma do boot.
+  const oferta = formatCurrency(DEMO_PROGRAMA.offerAmount);
+
   // ── 01 · Publicar a campanha ──────────────────────────────────────────────
   if (step === 1) {
     return (
-      <Moldura canto="campanha">
+      <Moldura canto={t.como.cantos.campanha}>
         <div className="w-full max-w-[280px] border border-kinetic-gray bg-kinetic-black p-4">
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <Rotulo>oferta</Rotulo>
+              <Rotulo>{t.como.oferta}</Rotulo>
               <span className="font-display text-sm font-bold tracking-tight text-foreground">
                 {oferta}
               </span>
             </div>
             <span className="h-px w-full bg-kinetic-gray" />
             <div className="flex items-center justify-between">
-              <Rotulo>prazo</Rotulo>
+              <Rotulo>{t.como.prazo}</Rotulo>
               <span className="font-mono text-[10px] text-kinetic-text">
-                {DEMO_PROGRAMA.prazoDias} dias
+                {t.como.dias(DEMO_PROGRAMA.prazoDias)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <Rotulo>vagas</Rotulo>
+              <Rotulo>{t.como.vagas}</Rotulo>
               <span className="font-mono text-[10px] text-kinetic-text">{DEMO_PROGRAMA.vagas}</span>
             </div>
           </div>
           <div className="mt-4 flex min-h-[28px] items-center justify-center bg-lime font-mono text-[9px] font-medium uppercase tracking-widest text-black">
-            Publicar
+            {t.como.publicar}
           </div>
         </div>
       </Moldura>
@@ -77,14 +81,14 @@ export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
   // ── 02 · A placa da campanha publicada, com o link pra divulgar ───────────
   if (step === 2) {
     return (
-      <Moldura canto="link">
+      <Moldura canto={t.como.cantos.link}>
         <KineticPlate flush marks="top" className="w-full max-w-[300px]">
           <div className="px-6 pb-5 pt-7">
             <p className="font-mono text-[9px] uppercase tracking-widest text-[#6a6a64]">
-              campanha ativa
+              {t.como.campanhaAtiva}
             </p>
             <p className="mt-2 text-balance font-display text-[15px] font-bold leading-tight tracking-[-.03em] text-black">
-              {DEMO_PROGRAMA.titulo}
+              {t.demo.campanha}
             </p>
             <p className="mt-3 font-display text-2xl font-bold tracking-[-.04em] text-black">
               {oferta}
@@ -95,7 +99,7 @@ export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
           </div>
           <div aria-hidden="true" className="flex border-t border-[#c9c9c3]">
             <span className="flex min-h-[36px] flex-1 items-center justify-center bg-lime font-mono text-[9px] font-medium uppercase tracking-widest text-black">
-              Copiar link
+              {t.como.copiarLink}
             </span>
           </div>
         </KineticPlate>
@@ -107,7 +111,7 @@ export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
   const creator = DEMO_CREATORS[0];
 
   return (
-    <Moldura canto="fila">
+    <Moldura canto={t.como.cantos.fila}>
       <div className="w-full max-w-[290px] border border-kinetic-gray bg-kinetic-black p-3">
         <div className="flex items-center gap-3">
           <img
@@ -122,7 +126,7 @@ export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
             </p>
             <p className="truncate font-mono text-[9px] text-kinetic-muted">@{creator.handle}</p>
           </div>
-          <span className="font-mono text-[9px] uppercase tracking-widest text-lime">Pendente</span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-lime">{t.comum.pendente}</span>
         </div>
         <div className="mt-3 grid grid-cols-6 gap-1">
           {creator.posts.slice(0, 6).map((post, i) => (
@@ -137,10 +141,10 @@ export default function StepVisual({ step }: { step: 1 | 2 | 3 }) {
         </div>
         <div className="mt-3 flex">
           <span className="flex min-h-[24px] flex-1 items-center justify-center bg-lime font-mono text-[9px] font-medium uppercase tracking-widest text-black">
-            Aprovar
+            {t.comum.aprovar}
           </span>
           <span className="flex min-h-[24px] flex-1 items-center justify-center border border-l-0 border-kinetic-gray font-mono text-[9px] uppercase tracking-widest text-kinetic-muted">
-            Recusar
+            {t.comum.recusar}
           </span>
         </div>
       </div>

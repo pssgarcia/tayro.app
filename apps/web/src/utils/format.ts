@@ -1,3 +1,4 @@
+import { getLocale } from '../i18n/locale';
 import type { ApplicationStatus, CampaignStatus, ContentStatus, RewardStatus } from '../types/api';
 
 /**
@@ -102,6 +103,20 @@ export function formatNumber(n: number): string {
   return n.toString();
 }
 
+// ─── Separador decimal ───────────────────────────────────────────────────────
+// O produto sempre escreveu "12,4k" e "5,8%" com vírgula, que é o certo em
+// português e ERRADO em inglês. Estes helpers leem o idioma ativo do store
+// module-level do i18n — não dá pra usar hook aqui, são funções puras chamadas
+// de fora de componente. Com `pt` (o padrão) a saída é byte a byte a de sempre.
+function decimal(n: string): string {
+  return getLocale() === 'pt' ? n.replace('.', ',') : n;
+}
+
+/** Locale BCP-47 pro Intl, derivado do idioma ativo. */
+function intlLocale(): string {
+  return getLocale() === 'pt' ? 'pt-BR' : 'en-US';
+}
+
 /**
  * Mesma escala do formatNumber, mas com o sufixo separado — a UI do redesign 2a
  * renderiza o "k"/"M" num <span> menor que o número. Quem precisa disso DEVE usar
@@ -111,28 +126,30 @@ export function formatNumber(n: number): string {
  */
 export function formatNumberParts(n: number): { value: string; suffix: string } {
   if (n >= 1_000_000) {
-    return { value: (n / 1_000_000).toFixed(1).replace('.', ','), suffix: 'M' };
+    return { value: decimal((n / 1_000_000).toFixed(1)), suffix: 'M' };
   }
   if (n >= 1_000) {
-    return { value: (n / 1_000).toFixed(1).replace('.', ','), suffix: 'k' };
+    return { value: decimal((n / 1_000).toFixed(1)), suffix: 'k' };
   }
   return { value: n.toString(), suffix: '' };
 }
 
 /** 3.5 → "3,5%" */
 export function formatEngagement(rate: number): string {
-  return `${rate.toFixed(1).replace('.', ',')}%`;
+  return `${decimal(rate.toFixed(1))}%`;
 }
 
 /** 10 → "10%" | 12.5 → "12,5%" — sem casa decimal forçada (diferente de formatEngagement). */
 export function formatPercent(value: number): string {
-  return `${Number.isInteger(value) ? value : value.toFixed(1).replace('.', ',')}%`;
+  return `${Number.isInteger(value) ? value : decimal(value.toFixed(1))}%`;
 }
 
 /** centavos → "R$ 300,00" */
 export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat(intlLocale(), {
     style: 'currency',
+    // A moeda continua BRL em qualquer idioma: o produto só lida com real.
+    // O que muda é a FORMA de escrever o número, não a moeda.
     currency: 'BRL',
   }).format(cents / 100);
 }
@@ -140,7 +157,7 @@ export function formatCurrency(cents: number): string {
 /** ISO → "15 de jun. de 2026" | null → fallback */
 export function formatDate(iso: string | null, fallback = 'Sem prazo'): string {
   if (!iso) return fallback;
-  return new Intl.DateTimeFormat('pt-BR', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

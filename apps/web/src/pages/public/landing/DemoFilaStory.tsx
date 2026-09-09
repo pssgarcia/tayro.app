@@ -5,6 +5,7 @@ import { formatCurrency, formatEngagement, formatNumberParts } from '../../../ut
 import PostGrid from './PostGrid';
 import { DEMO_PROGRAMA, type DemoCreator } from './demo';
 import type { Decisao } from './DemoFila';
+import { useT } from '../../../i18n';
 
 // ─── Fila no celular: o Story ────────────────────────────────────────────────
 // No produto, a marca não revisa candidatura numa lista quando está no celular:
@@ -30,22 +31,23 @@ interface Props {
 }
 
 export default function DemoFilaStory({ pendentes, onDecidir, onRecomecar }: Props) {
+  const t = useT();
   const [idx, setIdx] = useState(0);
   const [postsAbertos, setPostsAbertos] = useState(false);
 
   if (pendentes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center border border-kinetic-border bg-kinetic-dark px-6 py-16 text-center">
-        <p className={rotulo}>fim da fila</p>
+        <p className={rotulo}>{t.story.fimDaFila}</p>
         <p className="mt-4 text-balance font-display text-2xl font-bold tracking-[-.03em] text-foreground">
-          Nenhuma candidatura esperando decisão.
+          {t.story.fimDaFilaTitulo}
         </p>
         <button
           type="button"
           onClick={onRecomecar}
           className="mt-6 min-h-[44px] bg-lime px-6 font-mono text-[11px] font-semibold uppercase tracking-widest text-black transition-colors hover:bg-white"
         >
-          Rever a fila
+          {t.story.reverFila}
         </button>
       </div>
     );
@@ -74,7 +76,7 @@ export default function DemoFilaStory({ pendentes, onDecidir, onRecomecar }: Pro
         <div
           className="flex flex-1 gap-1"
           role="img"
-          aria-label={`${posicao + 1} de ${pendentes.length}`}
+          aria-label={t.story.progresso(posicao + 1, pendentes.length)}
         >
           {pendentes.map((c, i) => (
             <span
@@ -103,13 +105,13 @@ export default function DemoFilaStory({ pendentes, onDecidir, onRecomecar }: Pro
         <button
           type="button"
           onClick={() => ir(-1)}
-          aria-label="Candidatura anterior"
+          aria-label={t.story.anterior}
           className="absolute inset-y-0 left-0 w-1/2"
         />
         <button
           type="button"
           onClick={() => ir(1)}
-          aria-label="Próxima candidatura"
+          aria-label={t.story.proxima}
           className="absolute inset-y-0 right-0 w-1/2"
         />
 
@@ -129,21 +131,21 @@ export default function DemoFilaStory({ pendentes, onDecidir, onRecomecar }: Pro
       <div className="px-5 pt-5">
         <div className="flex gap-8">
           <div>
-            <p className={rotulo}>Seguidores</p>
+            <p className={rotulo}>{t.story.seguidores}</p>
             <p className="mt-1 font-display text-3xl font-bold tabular-nums tracking-[-.04em] text-white">
               {seg.value}
               {seg.suffix}
             </p>
           </div>
           <div>
-            <p className={rotulo}>Engajamento</p>
+            <p className={rotulo}>{t.story.engajamento}</p>
             <p className="mt-1 font-display text-3xl font-bold tabular-nums tracking-[-.04em] text-white">
               {formatEngagement(creator.engagement)}
             </p>
           </div>
         </div>
 
-        <p className={cn('mb-1 mt-6', rotulo)}>Oferta da campanha</p>
+        <p className={cn('mb-1 mt-6', rotulo)}>{t.story.ofertaDaCampanha}</p>
         <p className="text-lg font-semibold leading-snug text-white">
           {formatCurrency(DEMO_PROGRAMA.offerAmount)}
         </p>
@@ -159,7 +161,7 @@ export default function DemoFilaStory({ pendentes, onDecidir, onRecomecar }: Pro
             className={cn('transition-transform', postsAbertos && 'rotate-180')}
           />
           <span className="font-mono text-[10px] uppercase tracking-widest">
-            {postsAbertos ? 'Fechar posts' : 'Ver posts'}
+            {postsAbertos ? t.story.fecharPosts : t.story.verPosts}
           </span>
         </button>
 
@@ -174,14 +176,14 @@ export default function DemoFilaStory({ pendentes, onDecidir, onRecomecar }: Pro
           onClick={() => onDecidir(creator, 'recusada')}
           className="min-h-[56px] flex-1 border border-kinetic-border font-mono text-sm font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-[#555]"
         >
-          Recusar
+          {t.comum.recusar}
         </button>
         <button
           type="button"
           onClick={() => onDecidir(creator, 'aprovada')}
           className="min-h-[56px] flex-[1.4] bg-lime font-mono text-sm font-semibold uppercase tracking-widest text-black transition-colors hover:bg-white"
         >
-          Aprovar
+          {t.comum.aprovar}
         </button>
       </div>
     </div>

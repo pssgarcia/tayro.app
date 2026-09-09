@@ -10,6 +10,12 @@ import { BrowserRouter } from 'react-router-dom';
 import './assets/fonts/fonts.css';
 import './index.css';
 import App from './App.tsx';
+import { initLocale } from './i18n';
+
+// Resolve o idioma ANTES do React montar: detectar dentro de um efeito faria a
+// página pintar em português e piscar pro inglês. Também é aqui que o `lang` do
+// <html> passa a acompanhar a escolha (leitor de tela e tradução do browser).
+initLocale();
 
 const queryClient = new QueryClient({
   defaultOptions: {

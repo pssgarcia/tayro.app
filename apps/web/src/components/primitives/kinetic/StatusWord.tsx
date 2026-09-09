@@ -25,7 +25,18 @@ import type {
 // e usavam um vocabulário próprio ("Análise"/"Fechada" em vez de
 // "Pendente"/"Aprovada"). Os rótulos agora saem todos de `utils/format.ts`.
 
-type Props = { className?: string } & (
+type Props = {
+  className?: string;
+  /**
+   * Sobrescreve a palavra do status. Existe pela demonstração da landing, que
+   * é bilíngue enquanto o produto ainda não é: o vocabulário de status vive em
+   * `utils/format.ts` só em português, e a landing precisa dizer "Pending" sem
+   * arrastar as 20+ telas que consomem esses mapas.
+   * Nenhum call site do produto passa isto — a cor e a semântica continuam
+   * saindo do `kind`/`status`, que é o que importa neste primitivo.
+   */
+  label?: string;
+} & (
   | { kind: 'application'; status: ApplicationStatus }
   | { kind: 'campaign'; status: CampaignStatus }
   | { kind: 'content'; status: ContentStatus }
@@ -78,7 +89,7 @@ export default function StatusWord(props: Props) {
         props.className,
       )}
     >
-      {wordFor(props)}
+      {props.label ?? wordFor(props)}
     </span>
   );
 }

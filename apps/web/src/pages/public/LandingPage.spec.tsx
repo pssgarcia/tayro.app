@@ -6,6 +6,8 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import { DEMO_CREATORS, HERO_CREATOR } from './landing/demo';
 import { useAuthStore } from '../../stores/auth.store';
+import { changeLocale, LOCALES, type Locale } from '../../i18n';
+import { pt } from '../../i18n/dictionaries/pt';
 
 function renderAt(entry = '/') {
   return render(
@@ -28,6 +30,9 @@ const aprovarNaPlaca = () => within(placa()).getByRole('button', { name: /^aprov
 
 beforeEach(() => {
   useAuthStore.setState({ accessToken: null, user: null, isInitialized: true });
+  // O store de idioma é module-level e sobrevive entre casos. Sem este reset,
+  // um teste que troca pra inglês contamina os seguintes.
+  changeLocale('pt');
 });
 
 afterEach(() => {
@@ -111,6 +116,25 @@ describe('LandingPage', () => {
         'Quer ver se resolve o seu caso?',
       ]),
     );
+  });
+
+  // A logo do header ancora de volta no herói. É `<a href>`, não botão com
+  // scrollTo: funciona sem JS e aparece na navegação por teclado. O nome
+  // acessível precisa dizer PRA ONDE leva — "tayro" sozinho não diz nada a
+  // quem usa leitor de tela.
+  it('a logo do header leva de volta pro herói', () => {
+    renderAt();
+
+    const logo = screen.getByRole('link', { name: /tayro, voltar ao topo/i });
+    expect(logo).toHaveAttribute('href', '#hero');
+    expect(logo).toHaveTextContent(/tayro/i);
+
+    // O alvo tem que existir, senão a âncora é link morto.
+    const hero = document.querySelector('#hero');
+    expect(hero).not.toBeNull();
+    // O header é fixo: sem margem de rolagem a âncora encosta o topo do herói
+    // debaixo dele e o kicker some.
+    expect(hero?.className).toMatch(/scroll-mt-16/);
   });
 
   it('tem link "pular para o conteúdo" apontando pro <main>', () => {
@@ -287,10 +311,12 @@ describe('LandingPage', () => {
     await user.click(screen.getByRole('button', { name: /^recompensas$/i }));
     // A nota, não o valor: "R$ 300,00" também é a oferta do passo 01 do
     // "como funciona", e a busca acharia os dois.
-    expect(screen.getByText(primeira.recompensa.nota)).toBeInTheDocument();
+    expect(screen.getByText(pt.demo.creators[primeira.id].recompensaNota)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /^conteúdos$/i }));
-    expect(screen.getByText(new RegExp(primeira.entrega.legenda, 'i'))).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(pt.demo.creators[primeira.id].entregaLegenda, 'i')),
+    ).toBeInTheDocument();
   });
 
   // A aba Resultado é o que fecha os diferenciais nº2/nº3: aprovar abre a
@@ -315,7 +341,9 @@ describe('LandingPage', () => {
     expect(within(bloco).getByText(/a informar/i)).toBeInTheDocument();
 
     await user.click(within(bloco).getByRole('button', { name: /informar resultado/i }));
-    expect(within(bloco).getByText(new RegExp(primeira.resultado.nota, 'i'))).toBeInTheDocument();
+    expect(
+      within(bloco).getByText(new RegExp(pt.demo.creators[primeira.id].resultadoNota, 'i')),
+    ).toBeInTheDocument();
   });
 
   it('a recompensa avança pelo mesmo caminho do produto: pendente → emitida → entregue', async () => {
@@ -376,6 +404,234 @@ describe('LandingPage', () => {
       TERMS_PATH,
     );
     expect(within(rodape).getByRole('link', { name: /privacidade/i })).toHaveAttribute(
+      'href',
+      PRIVACY_PATH,
+    );
+  });
+});
+
+// ─── Honestidade em CADA idioma ──────────────────────────────────────────────
+// Os testes de honestidade acima rodam no idioma padrão (pt). Sem este bloco, a
+// landing em inglês seria uma superfície onde o `vision.md` nº 5 simplesmente
+// não é aplicado: bastaria "a good fit" ou "verified history" passar na
+// tradução pra página prometer métrica que o produto não tem, e nenhum teste
+// veria. As palavras são diferentes por idioma; a REGRA é a mesma.
+
+/** O que a página NÃO pode dizer, por idioma. */
+const PROIBIDAS: Record<Locale, RegExp[]> = {
+  pt: [
+    /verificad/i, // "histórico verificado" como feature pronta
+    /garimp/i, // garimpar influenciador (vision.md nº6)
+    /\bdescubr|\bdescobr/i, // "descubra creators" = discovery
+    /transpar[êe]ncia bilateral/i,
+    /alinhamento/i, // o matchScore que nunca teve regra de cálculo
+    /\bmatch\b/i,
+    /\bscore\b/i,
+    /\bfit\b/i,
+    /afinidade/i,
+    /gr[áa]tis|gratuit/i, // apelo pro "de graça" do lado da creator
+    /monetiz/i,
+    /cres[çc]a/i,
+    /audi[êe]ncia/i,
+  ],
+  en: [
+    /\bverified\b/i,
+    /\bdiscover/i,
+    /bilateral transparency/i,
+    /\balignment\b/i,
+    /\bmatch\b/i,
+    /\bscore\b/i,
+    // "a good fit" é a tradução natural de "faz sentido" e foi exatamente onde
+    // eu escorreguei na primeira redação. `\b` não pega "fitness"/"benefit".
+    /\bfit\b/i,
+    /\bfree\b/i,
+    /moneti[sz]/i,
+    /\baudience\b/i,
+    /grow your/i,
+  ],
+};
+
+/** O que a página PRECISA dizer: os diferenciais que existem em produção. */
+const OBRIGATORIAS: Record<Locale, string[]> = {
+  pt: [
+    'instagram real', // media kit vivo
+    'oferta já definida', // oferta antes da candidatura
+    'sem precisar criar conta', // candidatura sem conta prévia
+    'histórico', // histórico + transparência bilateral
+  ],
+  en: [
+    'real instagram',
+    'offer already set',
+    'without having to create an account',
+    'history',
+  ],
+};
+
+/** A ressalva de que o número do resultado é declarado, não medido. */
+const RESSALVA_RESULTADO: Record<Locale, { informado: RegExp; naoMede: RegExp }> = {
+  pt: { informado: /informad[ao]s? pel[ao] marca/, naoMede: /n[ãa]o mede/ },
+  en: { informado: /reported by the brand/, naoMede: /does not measure/ },
+};
+
+/** O aviso de que as pessoas e as fotos da demonstração não existem. */
+const RESSALVA_FICCAO: Record<Locale, string[]> = {
+  pt: ['fictícia', 'gerada'],
+  en: ['fictional', 'generated'],
+};
+
+describe.each(LOCALES)('LandingPage · honestidade em %s', (locale) => {
+  beforeEach(() => {
+    useAuthStore.setState({ accessToken: null, user: null, isInitialized: true });
+    changeLocale(locale);
+  });
+
+  it('não posiciona feature inexistente, discovery, nem métrica fabricada', () => {
+    renderAt();
+    const texto = document.body.textContent ?? '';
+
+    for (const proibida of PROIBIDAS[locale]) {
+      expect(texto).not.toMatch(proibida);
+    }
+  });
+
+  it('sustenta a página nos diferenciais que existem em produção', () => {
+    renderAt();
+    const texto = (document.body.textContent ?? '').toLowerCase();
+
+    for (const obrigatoria of OBRIGATORIAS[locale]) {
+      expect(texto).toContain(obrigatoria);
+    }
+  });
+
+  it('a aba Resultado diz que o número é informado pela marca, não medido pelo tayro', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    await user.click(screen.getAllByRole('button', { name: resultadoLabel(locale) })[0]);
+    const texto = (document.body.textContent ?? '').toLowerCase();
+
+    expect(texto).toMatch(RESSALVA_RESULTADO[locale].informado);
+    expect(texto).toMatch(RESSALVA_RESULTADO[locale].naoMede);
+  });
+
+  it('avisa que creators e imagens são fictícias', () => {
+    renderAt();
+    const texto = (document.body.textContent ?? '').toLowerCase();
+
+    for (const aviso of RESSALVA_FICCAO[locale]) {
+      expect(texto).toContain(aviso);
+    }
+  });
+
+  it('o @ da demonstração nunca vira link pro Instagram de uma pessoa real', () => {
+    renderAt();
+    const externos = screen
+      .getAllByRole('link')
+      .filter((l) => (l.getAttribute('href') ?? '').includes('instagram.com'));
+
+    expect(externos).toHaveLength(0);
+  });
+
+  it('não usa travessão na copy (regra do produto, nos dois idiomas)', () => {
+    renderAt();
+    // O `—` sozinho como marcador de valor vazio é exceção da regra, mas a
+    // landing não tem nenhum: qualquer ocorrência aqui é copy.
+    expect(document.body.textContent ?? '').not.toContain('—');
+  });
+});
+
+/** Rótulo da aba Resultado no idioma ativo. */
+function resultadoLabel(locale: Locale): RegExp {
+  return locale === 'pt' ? /^resultado$/i : /^result$/i;
+}
+
+// ─── Seletor de idioma ───────────────────────────────────────────────────────
+describe('LandingPage · seletor de idioma', () => {
+  beforeEach(() => {
+    useAuthStore.setState({ accessToken: null, user: null, isInitialized: true });
+    changeLocale('pt');
+  });
+
+  it('troca a página inteira pro inglês e marca a opção ativa', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /decidir com quem trabalhar/i,
+    );
+
+    await user.click(screen.getByRole('button', { name: /english/i }));
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /choosing who to work with/i,
+    );
+    // Estado comunicado por `aria-pressed`, não só por cor — quem usa leitor de
+    // tela precisa saber qual idioma está ativo.
+    expect(screen.getByRole('button', { name: /english/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /português/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('mantém a aba escolhida da demonstração ao trocar de idioma', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    await user.click(screen.getByRole('button', { name: /^recompensas$/i }));
+    await user.click(screen.getByRole('button', { name: /english/i }));
+
+    // O estado guarda o ID da aba, não o rótulo: trocar de idioma não pode
+    // jogar a pessoa de volta pra primeira aba.
+    // `KineticTabs` marca a aba ativa com `aria-current`, não `aria-selected`.
+    expect(screen.getByRole('button', { name: /^rewards$/i })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+  });
+
+  // O index.html é estático e nasce em português: sem sincronizar, a aba do
+  // navegador segue dizendo "decide na mão" com a página inteira em inglês.
+  it('atualiza o título da aba junto com o idioma', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    expect(document.title).toMatch(/decide na mão/i);
+
+    await user.click(screen.getByRole('button', { name: /english/i }));
+    expect(document.title).toMatch(/decide by hand/i);
+    expect(document.title).not.toMatch(/decide na mão/i);
+  });
+
+  it('atualiza o lang do <html> — é o que faz o leitor de tela mudar de voz', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    await user.click(screen.getByRole('button', { name: /english/i }));
+    expect(document.documentElement.lang).toBe('en');
+
+    await user.click(screen.getByRole('button', { name: /português/i }));
+    expect(document.documentElement.lang).toBe('pt-BR');
+  });
+
+  it('os documentos legais dizem que estão em português quando a página está em inglês', async () => {
+    const user = userEvent.setup();
+    renderAt();
+
+    await user.click(screen.getByRole('button', { name: /english/i }));
+
+    const rodape = screen.getByRole('navigation', { name: /footer/i });
+    // Os dois documentos existem SÓ em português e são a versão que vale.
+    // Prometer inglês num link que abre texto jurídico em português seria
+    // pior que não traduzir o rótulo.
+    expect(within(rodape).getByRole('link', { name: /terms of use \(in portuguese\)/i })).toHaveAttribute(
+      'href',
+      TERMS_PATH,
+    );
+    expect(within(rodape).getByRole('link', { name: /privacy \(in portuguese\)/i })).toHaveAttribute(
       'href',
       PRIVACY_PATH,
     );
