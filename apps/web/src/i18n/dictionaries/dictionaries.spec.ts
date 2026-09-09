@@ -67,8 +67,14 @@ describe('dicionários pt/en', () => {
       'app.cadastroCreator.telefonePlaceholder',
       // A palavra é a mesma nos dois idiomas.
       'app.nichos.lifestyle',
-      // URL de exemplo.
+      // URLs de exemplo.
       'app.creator.entregas.linkPlaceholder',
+      'app.marca.formulario.briefPlaceholder',
+      // "Media kit" é o mesmo termo nos dois idiomas (é o jargão do mercado,
+      // e o produto usa o termo em inglês também em português).
+      'app.marca.creators.mediaKit',
+      // "Logo (URL)": as duas palavras são iguais nos dois idiomas.
+      'app.marca.perfil.logo',
     ]);
 
     const iguais = TODOS.filter(

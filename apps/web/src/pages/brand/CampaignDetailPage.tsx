@@ -15,6 +15,7 @@ import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
 
 // ─── Abas ─────────────────────────────────────────────────────────────────────
 // Renomeadas no redesign 2a: Candidaturas→Fila, Visão Geral→Briefing,
@@ -26,15 +27,17 @@ import { cn } from '../../lib/utils';
 // (Pagamento) → informar o que deu (Resultado). O `KineticTabs` já rola na
 // horizontal, que é o que faz 5 rótulos em mono caberem em 360px.
 
-const TABS = [
-  { id: 'queue', label: 'Fila' },
-  { id: 'briefing', label: 'Briefing' },
-  { id: 'content', label: 'Entregas' },
-  { id: 'payment', label: 'Pagamento' },
-  { id: 'results', label: 'Resultado' },
-] as const;
+// Só os ids: o rótulo vem do dicionário no render.
+const TAB_IDS = ['queue', 'briefing', 'content', 'payment', 'results'] as const;
+const TAB_KEY = {
+  queue: 'fila',
+  briefing: 'briefing',
+  content: 'entregas',
+  payment: 'pagamento',
+  results: 'resultado',
+} as const;
 
-type TabId = (typeof TABS)[number]['id'];
+type TabId = (typeof TAB_IDS)[number];
 
 // ─── Header da campanha ───────────────────────────────────────────────────────
 
@@ -59,6 +62,7 @@ function CampaignHeader({
   onEncerrar: () => void;
   onApagar: () => void;
 }) {
+  const t = useT();
   const days = daysUntil(deadline);
   // Terminal = sem ação nenhuma (CLOSED/COMPLETED) — o rótulo de status ocupa
   // o espaço que a ação ocuparia, ao lado do título, pra a tela não ficar
@@ -79,7 +83,7 @@ function CampaignHeader({
           )}
         </div>
         <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
+          {days === null ? t.app.format.semPrazo : t.app.marca.campanhas.encerraEm(days)}
         </p>
         {/* DRAFT tem três saídas. "Publicar" é a que faltava: sem ela, um
             rascunho salvo com "Agora não" no NewCampaignPage ficava preso em
@@ -93,20 +97,20 @@ function CampaignHeader({
               onClick={onPublicar}
               className="font-mono text-[10px] uppercase tracking-widest text-lime underline-offset-4 transition-opacity hover:underline hover:opacity-80"
             >
-              Publicar campanha
+              {t.app.marca.detalhe.publicar}
             </button>
             <Link
               to={`/brand/campaigns/${campaignId}/edit`}
               className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
-              Editar
+              {t.app.marca.detalhe.editar}
             </Link>
             <button
               type="button"
               onClick={onApagar}
               className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
-              Apagar rascunho
+              {t.app.marca.detalhe.apagarRascunho}
             </button>
           </div>
         )}
@@ -118,7 +122,7 @@ function CampaignHeader({
             onClick={onEncerrar}
             className="flex min-h-[38px] items-center border border-kinetic-border px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-foreground hover:text-foreground"
           >
-            Encerrar campanha
+            {t.app.marca.detalhe.encerrar}
           </button>
         )}
         <p className="font-display text-[32px] font-bold leading-none tracking-[-.05em] tabular-nums text-foreground sm:text-[40px]">
@@ -139,6 +143,7 @@ function PublishCampaignModal({
   campaignId: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const publish = usePublishCampaign();
 
   return (
@@ -147,24 +152,22 @@ function PublishCampaignModal({
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-7 pt-11">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Publicar campanha?
+              {t.app.marca.detalhe.publicarTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              O link de candidatura fica ativo na hora e creators já podem se inscrever. Depois de
-              publicada a campanha não volta para rascunho e os detalhes não podem mais ser
-              editados.
+              {t.app.marca.detalhe.publicarDescricao}
             </p>
             {publish.isError && (
               <p className="mt-3 text-[13px] text-destructive">
-                Não foi possível publicar. Tente novamente.
+                {t.app.marca.detalhe.publicarErro}
               </p>
             )}
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
               {
-                label: publish.isPending ? 'Publicando…' : 'Publicar',
+                label: publish.isPending ? t.app.marca.detalhe.publicando : t.app.marca.detalhe.publicarConfirmar,
                 // Fecha só no sucesso: em erro o modal fica de pé pra dar retry,
                 // em vez de sumir por baixo do usuário fingindo que aconteceu.
                 onClick: () => publish.mutate(campaignId, { onSuccess: onClose }),
@@ -180,6 +183,7 @@ function PublishCampaignModal({
 }
 
 function CloseCampaignModal({ campaignId, onClose }: { campaignId: string; onClose: () => void }) {
+  const t = useT();
   const close = useCloseCampaign();
 
   return (
@@ -188,19 +192,17 @@ function CloseCampaignModal({ campaignId, onClose }: { campaignId: string; onClo
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-7 pt-11">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Encerrar campanha?
+              {t.app.marca.detalhe.encerrarTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              O link de candidatura deixa de aceitar novas inscrições na hora. Candidaturas e
-              conteúdos já em andamento continuam visíveis, mas não será possível reabrir a campanha
-              depois.
+              {t.app.marca.detalhe.encerrarDescricao}
             </p>
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
               {
-                label: close.isPending ? 'Encerrando…' : 'Encerrar',
+                label: close.isPending ? t.app.marca.detalhe.encerrando : t.app.marca.detalhe.encerrarConfirmar,
                 onClick: () => close.mutate(campaignId, { onSuccess: onClose }),
                 disabled: close.isPending,
                 primary: true,
@@ -214,6 +216,7 @@ function CloseCampaignModal({ campaignId, onClose }: { campaignId: string; onClo
 }
 
 function DeleteCampaignModal({ campaignId, onClose }: { campaignId: string; onClose: () => void }) {
+  const t = useT();
   const navigate = useNavigate();
   const deleteCampaign = useDeleteCampaign();
 
@@ -229,23 +232,22 @@ function DeleteCampaignModal({ campaignId, onClose }: { campaignId: string; onCl
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-7 pt-11">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Apagar rascunho?
+              {t.app.marca.detalhe.apagarTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              O rascunho e todos os dados preenchidos somem pra sempre - não dá pra desfazer. Só é
-              possível apagar campanhas que ainda não foram publicadas.
+              {t.app.marca.detalhe.apagarDescricao}
             </p>
             {deleteCampaign.isError && (
               <p className="mt-3 text-[13px] text-destructive">
-                Não foi possível apagar. Tente novamente.
+                {t.app.marca.detalhe.apagarErro}
               </p>
             )}
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
               {
-                label: deleteCampaign.isPending ? 'Apagando…' : 'Apagar',
+                label: deleteCampaign.isPending ? t.app.marca.detalhe.apagando : t.app.marca.detalhe.apagarConfirmar,
                 onClick: handleDelete,
                 disabled: deleteCampaign.isPending,
                 primary: true,
@@ -261,6 +263,7 @@ function DeleteCampaignModal({ campaignId, onClose }: { campaignId: string; onCl
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function CampaignDetailPage() {
+  const t = useT();
   const { id: campaignId = '' } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<TabId>('queue');
   const [openModal, setOpenModal] = useState<'publish' | 'close' | 'delete' | null>(null);
@@ -302,7 +305,11 @@ export default function CampaignDetailPage() {
         onApagar={() => setOpenModal('delete')}
       />
 
-      <KineticTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      <KineticTabs
+        tabs={TAB_IDS.map((id) => ({ id, label: t.app.marca.detalhe.abas[TAB_KEY[id]] }))}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
       <div
         className={cn(

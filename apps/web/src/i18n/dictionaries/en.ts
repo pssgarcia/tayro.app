@@ -53,6 +53,7 @@ export const en = {
     descricaoDepois:
       ' is the platform for the brand that already receives creator applications and decides by hand. Every application arrives with the creator real Instagram right next to the approve button.',
     ctaConversar: "Let's talk",
+    whatsappMensagem: "Hi! I saw TAYRO and I would like to understand how it works for my brand.",
     ctaCampanhas: 'See open campaigns',
     ressalvaFicticia: 'Fictional creator · generated image',
   },

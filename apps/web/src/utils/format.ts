@@ -144,7 +144,7 @@ export function formatCurrency(cents: number): string {
 }
 
 /** ISO → "15 de jun. de 2026" | null → fallback */
-export function formatDate(iso: string | null, fallback = 'Sem prazo'): string {
+export function formatDate(iso: string | null, fallback = dict().app.format.semPrazo): string {
   if (!iso) return fallback;
   return new Intl.DateTimeFormat(intlLocale(), {
     day: '2-digit',
@@ -174,7 +174,7 @@ export function formatOffer(offer: {
     return offer.offerDescription;
   }
   if (offer.offerType === 'COMMISSION' && offer.offerCommissionPercent != null) {
-    return `${formatPercent(offer.offerCommissionPercent)} por venda`;
+    return `${formatPercent(offer.offerCommissionPercent)} ${dict().app.format.porVenda}`;
   }
   return '—';
 }
@@ -193,7 +193,7 @@ export function formatOfferWhole(offer: {
     return { prefix: 'R$ ', value: String(Math.round(offer.offerAmount / 100)) };
   }
   if (offer.offerType === 'PRODUCT') {
-    return { value: 'produto' };
+    return { value: dict().app.format.produto };
   }
   if (offer.offerType === 'COMMISSION' && offer.offerCommissionPercent != null) {
     return { value: formatPercent(offer.offerCommissionPercent) };
@@ -204,9 +204,10 @@ export function formatOfferWhole(offer: {
 /** ISO → "hoje" | "há 1 dia" | "há N dias" */
 export function formatRelativeDays(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return 'hoje';
-  if (days === 1) return 'há 1 dia';
-  return `há ${days} dias`;
+  const t = dict();
+  if (days <= 0) return t.app.format.hoje;
+  if (days === 1) return t.app.format.haUmDia;
+  return t.app.format.haDias(days);
 }
 
 /**

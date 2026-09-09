@@ -8,6 +8,7 @@ import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import KineticSegments from '../../components/primitives/kinetic/KineticSegments';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { campaignStatusWord, daysUntil, publicUrl } from '../../utils/format';
+import { useT } from '../../i18n';
 
 // ─── Row (padrão "Campanhas") ────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ function CampaignRow({
 // ─── Placa (destaque — campanha ativa mais cheia) ────────────────────────────
 
 function CampaignFeatured({ campaign }: { campaign: Campaign }) {
+  const t = useT();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const days = daysUntil(campaign.deadline);
@@ -66,7 +68,7 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
               {campaign.title}
             </p>
             <p className="mt-2 text-[13px] text-[#6a6a64]">
-              {days === null ? 'Sem prazo' : `Encerra em ${days} dias`}
+              {days === null ? t.app.format.semPrazo : t.app.marca.campanhas.encerraEm(days)}
             </p>
           </div>
           <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
@@ -90,9 +92,9 @@ function CampaignFeatured({ campaign }: { campaign: Campaign }) {
 
       <KineticActions
         actions={[
-          { label: copied ? 'Copiado!' : 'Copiar link', onClick: handleCopy, width: 150 },
+          { label: copied ? t.app.comum.copiado : t.app.comum.copiarLink, onClick: handleCopy, width: 150 },
           {
-            label: 'Ver detalhes',
+            label: t.app.marca.campanhas.verDetalhes,
             onClick: () => navigate(`/brand/campaigns/${campaign.id}`),
             primary: true,
           },

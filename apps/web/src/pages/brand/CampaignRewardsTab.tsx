@@ -16,28 +16,19 @@ import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { creatorAvatarSrc } from '../../utils/format';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const TYPE_CONFIG: Record<
-  RewardType,
-  { label: string; icon: React.ReactNode; placeholder: string }
-> = {
-  MONETARY: { label: 'Monetária', icon: <Banknote size={13} />, placeholder: 'Ex: R$300,00' },
-  PRODUCT: { label: 'Produto', icon: <Package size={13} />, placeholder: 'Ex: Kit Whey 900g' },
-  DISCOUNT: {
-    label: 'Desconto',
-    icon: <Tag size={13} />,
-    placeholder: 'Ex: Cupom AMANDA20 (20% off)',
-  },
+// Só o ícone: rótulo e placeholder são copy e vivem no dicionário.
+const TYPE_ICON: Record<RewardType, React.ReactNode> = {
+  MONETARY: <Banknote size={13} />,
+  PRODUCT: <Package size={13} />,
+  DISCOUNT: <Tag size={13} />,
 };
 
-const FILTERS: { value: 'ALL' | RewardStatus; label: string }[] = [
-  { value: 'ALL', label: 'Todas' },
-  { value: 'PENDING', label: 'Pendente' },
-  { value: 'ISSUED', label: 'Emitida' },
-  { value: 'DELIVERED', label: 'Entregue' },
-];
+// Só os valores: o rótulo vem do dicionário no render.
+const FILTER_VALUES = ['ALL', 'PENDING', 'ISSUED', 'DELIVERED'] as const;
 
 // ─── Modal de criação ─────────────────────────────────────────────────────────
 
@@ -62,6 +53,7 @@ function CreateRewardModal({
   isPending: boolean;
   error?: string | null;
 }) {
+  const t = useT();
   const [influencerId, setInfluencerId] = useState(approvedCreators[0]?.influencerId ?? '');
   const [type, setType] = useState<RewardType>('MONETARY');
   const [value, setValue] = useState('');
@@ -79,13 +71,13 @@ function CreateRewardModal({
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="max-h-[70vh] overflow-y-auto px-6 pb-7 pt-11">
             <h3 className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Registrar recompensa
+              {t.app.marca.pagamento.registrar}
             </h3>
 
             <div className="mt-7 space-y-6">
               <div>
                 <label htmlFor="reward-creator" className={labelClasses}>
-                  Creator
+                  {t.app.marca.pagamento.creator}
                 </label>
                 <select
                   id="reward-creator"
@@ -102,25 +94,25 @@ function CreateRewardModal({
               </div>
 
               <div>
-                <span className={labelClasses}>Tipo</span>
+                <span className={labelClasses}>{t.app.marca.pagamento.tipo}</span>
                 {/* `flex-wrap` não é enfeite: em 360px os três blocos não cabem
                     numa linha e "Desconto" vazava pra fora do modal
                     (reportado 2026-08-27). */}
                 <div className="flex flex-wrap gap-2">
-                  {(Object.keys(TYPE_CONFIG) as RewardType[]).map((t) => (
+                  {(Object.keys(TYPE_ICON) as RewardType[]).map((tipo) => (
                     <button
-                      key={t}
+                      key={tipo}
                       type="button"
-                      onClick={() => setType(t)}
+                      onClick={() => setType(tipo)}
                       className={cn(
                         'flex min-h-[44px] items-center gap-2 border px-3 font-mono text-[10px] uppercase tracking-[.12em] transition-colors',
-                        type === t
+                        type === tipo
                           ? 'border-black bg-black text-[#e5e5e0]'
                           : 'border-[#b8b8b1] text-[#4a4a44] hover:border-black',
                       )}
                     >
-                      {TYPE_CONFIG[t].icon}
-                      {TYPE_CONFIG[t].label}
+                      {TYPE_ICON[tipo]}
+                      {t.app.marca.pagamento.tipos[tipo]}
                     </button>
                   ))}
                 </div>
@@ -128,7 +120,7 @@ function CreateRewardModal({
 
               <div>
                 <label htmlFor="reward-value" className={labelClasses}>
-                  Valor
+                  {t.app.marca.pagamento.valor}
                 </label>
                 <input
                   id="reward-value"
@@ -137,21 +129,21 @@ function CreateRewardModal({
                   onChange={(e) => setValue(e.target.value)}
                   /* O placeholder sai do tipo escolhido — era um ternário que
                      mostrava exemplo de produto quando o tipo era desconto. */
-                  placeholder={TYPE_CONFIG[type].placeholder}
+                  placeholder={t.app.marca.pagamento.placeholders[type]}
                   className={fieldClasses}
                 />
               </div>
 
               <div>
                 <label htmlFor="reward-notes" className={labelClasses}>
-                  Observações (opcional)
+                  {t.app.marca.pagamento.observacoes}
                 </label>
                 <textarea
                   id="reward-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  placeholder="Ex: Pix enviado em 15/06/2026"
+                  placeholder={t.app.marca.pagamento.observacoesPlaceholder}
                   className={cn(fieldClasses, 'resize-none')}
                 />
               </div>
@@ -162,9 +154,9 @@ function CreateRewardModal({
 
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
               {
-                label: isPending ? 'Salvando…' : 'Registrar',
+                label: isPending ? t.app.acoes.salvando : t.app.marca.pagamento.registrarConfirmar,
                 onClick: () =>
                   canSubmit &&
                   onCreate({
@@ -202,7 +194,8 @@ function RewardCard({
   isIssueing: boolean;
   isDelivering: boolean;
 }) {
-  const typeCfg = TYPE_CONFIG[reward.type];
+  const t = useT();
+  const typeIcon = TYPE_ICON[reward.type];
 
   return (
     <div className="flex flex-col gap-4 border border-kinetic-gray bg-kinetic-dark p-5">
@@ -235,8 +228,8 @@ function RewardCard({
       {/* Tipo + Valor */}
       <div className="flex items-end justify-between gap-3">
         <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-          {typeCfg.icon}
-          {typeCfg.label}
+          {typeIcon}
+          {t.app.marca.pagamento.tipos[reward.type]}
         </span>
         <span className="break-words text-right font-display text-lg font-bold tracking-[-.03em] text-foreground">
           {reward.value}
@@ -259,7 +252,7 @@ function RewardCard({
             className="flex min-h-[44px] flex-1 items-center justify-center gap-2 bg-lime px-3 font-mono text-[10px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Truck size={13} />
-            {isIssueing ? 'Processando…' : 'Marcar como emitida'}
+            {isIssueing ? t.app.marca.pagamento.processando : t.app.marca.pagamento.marcarEmitida}
           </button>
           <button
             onClick={onRemove}
@@ -279,7 +272,7 @@ function RewardCard({
             className="flex min-h-[44px] w-full items-center justify-center gap-2 bg-lime px-3 font-mono text-[10px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Gift size={13} />
-            {isDelivering ? 'Processando…' : 'Confirmar entrega'}
+            {isDelivering ? t.app.marca.pagamento.processando : t.app.marca.pagamento.confirmarEntrega}
           </button>
         </div>
       )}
@@ -304,31 +297,32 @@ function RemoveRewardModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
       <div className="w-full sm:max-w-md">
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-[26px] pt-[30px]">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Remover esta recompensa?
+              {t.app.marca.pagamento.removerTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              O registro de <span className="font-medium text-black">{reward.value}</span> para{' '}
-              <span className="font-medium text-black">{reward.influencer.name}</span> some pra
-              sempre, e some também da lista de recompensas dela. Não dá pra desfazer, mas você
-              pode registrar de novo.
+              {t.app.marca.pagamento.removerAntes}{' '}
+              <span className="font-medium text-black">{reward.value}</span> para{' '}
+              <span className="font-medium text-black">{reward.influencer.name}</span>{' '}
+              {t.app.marca.pagamento.removerDepois}
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
-                Não foi possível remover. Tente novamente.
+                {t.app.marca.pagamento.removerErro}
               </p>
             )}
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
               {
-                label: isPending ? 'Removendo…' : 'Remover',
+                label: isPending ? t.app.marca.pagamento.removendo : t.app.marca.pagamento.remover,
                 onClick: onConfirm,
                 disabled: isPending,
                 primary: true,
@@ -344,6 +338,7 @@ function RemoveRewardModal({
 // ─── Aba principal ────────────────────────────────────────────────────────────
 
 export default function CampaignRewardsTab({ campaignId }: { campaignId: string }) {
+  const t = useT();
   const [filter, setFilter] = useState<'ALL' | RewardStatus>('ALL');
   const [showCreate, setShowCreate] = useState(false);
   const [removing, setRemoving] = useState<CampaignReward | null>(null);
@@ -391,7 +386,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
       {/* Header com botão de criação */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {FILTERS.map(({ value, label }) => (
+          {FILTER_VALUES.map((value) => (
             <button
               key={value}
               onClick={() => setFilter(value)}
@@ -402,7 +397,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
                   : 'border-kinetic-gray text-kinetic-muted hover:text-foreground',
               )}
             >
-              {label}
+              {t.app.marca.pagamento.abas[value]}
               {value === 'ALL' && (
                 <span className="ml-2 tabular-nums text-kinetic-muted">{rewards.length}</span>
               )}
@@ -424,7 +419,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
             className="fixed inset-x-4 z-30 flex min-h-[52px] items-center justify-center gap-2 bg-lime px-4 font-mono text-[11px] font-medium uppercase tracking-widest text-black shadow-[0_8px_24px_-8px_rgba(0,0,0,.9)] transition-colors hover:bg-white md:static md:inset-auto md:min-h-[38px] md:w-auto md:shrink-0 md:border md:border-lime md:bg-transparent md:text-[10px] md:text-lime md:shadow-none md:hover:bg-lime md:hover:text-black"
           >
             <Plus size={12} />
-            Registrar recompensa
+            {t.app.marca.pagamento.registrar}
           </button>
         )}
       </div>
@@ -435,14 +430,14 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
           icon={<Gift size={20} />}
           title={
             filter === 'ALL'
-              ? 'Nenhuma recompensa registrada'
-              : 'Nenhuma recompensa com esse status'
+              ? t.app.marca.pagamento.vazio
+              : t.app.marca.pagamento.vazioComFiltro
           }
           description={
             filter === 'ALL' && approvedCreators.length > 0
-              ? 'Registre as recompensas das candidaturas aprovadas nessa campanha.'
+              ? t.app.marca.pagamento.vazioDescricao
               : filter === 'ALL'
-                ? 'Recompensas ficam disponíveis quando houver candidatura aprovada.'
+                ? t.app.marca.pagamento.semAprovadas
                 : undefined
           }
         />
@@ -471,7 +466,7 @@ export default function CampaignRewardsTab({ campaignId }: { campaignId: string 
           error={
             create.error && axios.isAxiosError(create.error)
               ? ((create.error.response?.data?.message as string | undefined) ??
-                'Erro ao registrar recompensa.')
+                t.app.marca.pagamento.erroRegistrar)
               : null
           }
           onCreate={(data) => {

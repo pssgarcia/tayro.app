@@ -637,6 +637,17 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
     navegador real** (Playwright não está no projeto) — é o passo que falta, e a lição de
     2026-08-28 diz que ele acha o que suíte nenhuma acha.
 
+- **Inglês no produto inteiro (2026-09-08, mesma sessão da landing):** depois da landing, o Pedro pediu "o inglês na plataforma em si também". Agora **todo o produto** é bilíngue: autenticação, painel da marca (15 telas), painel da creator (10), telas públicas, componentes compartilhados, vocabulário de status, mensagens de validação e helpers de formatação.
+  - **Dicionário do produto em arquivo próprio** (`i18n/dictionaries/pt.app.ts` + `en.app.ts`, ~800 linhas cada), composto sob `t.app.*`. O da landing (`pt.ts`/`en.ts`) ficou como estava.
+  - **Duas armadilhas que morderam de verdade e viraram regra** (estão no `i18n/README.md`): (1) **const de módulo congela o idioma do boot** — rótulo de aba, de nav, de passo de cadastro e mensagem de schema zod não podem viver numa const no topo do arquivo; o padrão é guardar só o **id** e montar o rótulo no render, e o schema virar `criarSchema(t)` memoizado. Foram **13 schemas zod** convertidos. (2) **Copy solta no JSX escapa do `en.ts`** — o `satisfies` só acusa chave que FALTA, não copy que nunca virou chave.
+  - **Guarda novo, validado por mutação: `apps/web/copy-no-dicionario.test.ts`** (na RAIZ do app, como o do travessão: dentro de `src/` não há os tipos de Node). Varre todo `src/` e falha se achar acentuação portuguesa em nó de texto JSX ou em prop de copy (`label`, `placeholder`, `title`, `aria-label`, `hint`…). É o que impede a versão em inglês de apodrecer uma tela por vez.
+  - **`utils/format.ts` ficou locale-aware por inteiro:** os 6 mapas de status viraram **funções** (eram consts indexadas em 19 call sites, nenhum em teste), e número/moeda/data/percentual/"há N dias" leem o idioma ativo. Moeda continua **BRL** em qualquer idioma: o produto só lida com real, o que muda é a forma de escrever o número.
+  - **O VALOR do nicho continua em português em qualquer idioma** — ele é gravado no perfil e usado como filtro de campanha (`?niches=`), então traduzir o valor faria a creator parar de casar com a campanha. Só a exibição muda.
+  - **Fora de escopo, declarado no `i18n/README.md`:** o TEXTO dos documentos legais (o aceite grava `acceptedTermsVersion` e **não guarda idioma**; os links dizem "(in Portuguese)"), as mensagens de erro da API e os e-mails — os dois últimos nascem no servidor. **Quem navegar em inglês ainda encontra português em erro vindo da API.**
+  - **Nenhum teste existente precisou mudar:** as strings em português ficaram byte a byte idênticas. Onde a cópia original tinha um hífen solto ("somem pra sempre - não dá pra desfazer"), o dicionário repetiu o hífen em vez de "melhorar" a pontuação em silêncio.
+  - **Erros meus que valem registro:** substituição cega por string curta mangleou 3 lugares (virou `label: '{t.app…}'` renderizando o código como texto, `attr="{expr}"` que é string literal com chaves, e um comentário alterado). O helper de patch passou a recusar alvo que também aparece em comentário ou dentro de atributo JSX. Uma varredura por `="{t.` e `'{t.` fecha essa classe.
+  - 800 testes web (72 arquivos), lint e typecheck limpos, build ok.
+
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)
 - Corpo: changelog (`## O que vai pra produção` + `## Migrations`)
@@ -743,6 +754,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Ler controllers/DTOs REAIS antes de assumir shape. Nunca inventar contrato.
 - Um chunk por vez: PASSO 0 (contratos/gap) → OK → implementar.
 - Rotas: literais antes de :id; públicas fora de guards.
+- **Copy visível sai do DICIONÁRIO (`apps/web/src/i18n/`), nunca escrita direto no JSX (desde 2026-09-08).** O produto é bilíngue pt/en; string solta no componente não chega no `en.ts` e some da versão em inglês. Travado por `apps/web/copy-no-dicionario.test.ts`. Ver `i18n/README.md` pro que fica fora de propósito (documentos legais, erros da API, e-mails).
 - **Rota, arquivo, hook, variável e endpoint em INGLÊS. Copy visível em PORTUGUÊS. (MORDEU 2026-09-04,
   e não foi a 1ª vez.)** Todas as rotas do produto são inglês: `/login`, `/register/brand`,
   `/apply/:id`, `/programs`, `/c/:handle`, `/forgot-password`, `/reset-password`, `/claim`,

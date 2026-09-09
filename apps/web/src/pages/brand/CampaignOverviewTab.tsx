@@ -5,6 +5,7 @@ import KineticFact from '../../components/primitives/kinetic/KineticFact';
 import KineticSegments from '../../components/primitives/kinetic/KineticSegments';
 import CountUp from '../../components/primitives/CountUp';
 import { formatCurrency, formatDate, formatOffer } from '../../utils/format';
+import { useT, type Dictionary } from '../../i18n';
 
 // ─── Aba Briefing ────────────────────────────────────────────────────────────
 // Migrada pro "Kinetic Editorial". Esta tela nunca chegou a seguir nem o
@@ -14,10 +15,10 @@ import { formatCurrency, formatDate, formatOffer } from '../../utils/format';
 // mono, e a OFERTA — a informação que decide se a creator entra — sobe pra
 // placa, que é o lugar do que mais importa na tela.
 
-function offerTypeLabel(type: Campaign['offerType']): string {
-  if (type === 'CASH') return 'Pagamento';
-  if (type === 'PRODUCT') return 'Produto';
-  if (type === 'COMMISSION') return 'Comissão';
+function offerTypeLabel(t: Dictionary, type: Campaign['offerType']): string {
+  if (type === 'CASH') return t.app.marca.visaoGeral.tipos.CASH;
+  if (type === 'PRODUCT') return t.app.marca.visaoGeral.tipos.PRODUCT;
+  if (type === 'COMMISSION') return t.app.marca.visaoGeral.tipos.COMMISSION;
   return '—';
 }
 
@@ -30,6 +31,7 @@ export default function CampaignOverviewTab({
   campaign: Campaign;
   approvedCount: number;
 }) {
+  const t = useT();
   // Só oferta em dinheiro ganha escala de display. Produto e comissão são
   // frase ("Kit Whey 900g + coqueteleira") e a 64px quebrariam em 3 linhas.
   const isCash = campaign.offerType === 'CASH' && campaign.offerAmount != null;
@@ -47,14 +49,14 @@ export default function CampaignOverviewTab({
     <div className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
       <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-14">
         <div className="min-w-0 flex-1">
-          <p className={monoLabel}>Sobre a campanha</p>
+          <p className={monoLabel}>{t.app.marca.visaoGeral.sobre}</p>
 
           {campaign.description ? (
             <p className="mt-5 whitespace-pre-line break-words text-[15px] leading-relaxed text-kinetic-text">
               {campaign.description}
             </p>
           ) : (
-            <p className="mt-5 text-sm text-kinetic-muted">Sem descrição.</p>
+            <p className="mt-5 text-sm text-kinetic-muted">{t.app.marca.visaoGeral.semDescricao}</p>
           )}
 
           {campaign.niches.length > 0 && (
@@ -78,7 +80,7 @@ export default function CampaignOverviewTab({
               className="mt-7 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-lime transition-opacity hover:opacity-80"
             >
               <FileText size={13} />
-              Ver briefing
+              {t.app.marca.visaoGeral.verBriefing}
             </a>
           )}
         </div>
@@ -86,7 +88,7 @@ export default function CampaignOverviewTab({
         <div className="w-full lg:w-[420px] lg:shrink-0">
           <KineticPlate marks="all" className="p-8">
             <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-              A oferta
+              {t.app.marca.visaoGeral.aOferta}
             </p>
 
             {isCash ? (
@@ -104,9 +106,9 @@ export default function CampaignOverviewTab({
             <div className="my-7 h-px bg-[#c9c9c3]" />
 
             <div className="grid grid-cols-2 gap-5">
-              <KineticFact label="Tipo" value={offerTypeLabel(campaign.offerType)} tone="plate" />
+              <KineticFact label={t.app.marca.visaoGeral.tipo} value={offerTypeLabel(t, campaign.offerType)} tone="plate" />
               <KineticFact
-                label="Prazo de pagamento"
+                label={t.app.marca.visaoGeral.prazoPagamento}
                 value={
                   campaign.offerDeadlineDays != null
                     ? `${campaign.offerDeadlineDays} dias após aprovação`
@@ -123,12 +125,12 @@ export default function CampaignOverviewTab({
             )}
           </KineticPlate>
 
-          <p className={`${monoLabel} mt-11`}>Detalhes</p>
+          <p className={`${monoLabel} mt-11`}>{t.app.marca.visaoGeral.detalhes}</p>
           <div className="mt-5 grid grid-cols-2 gap-6">
-            <KineticFact label="Prazo de candidatura" value={formatDate(campaign.deadline)} />
-            <KineticFact label="Criado em" value={formatDate(campaign.createdAt)} />
+            <KineticFact label={t.app.marca.visaoGeral.prazoCandidatura} value={formatDate(campaign.deadline)} />
+            <KineticFact label={t.app.marca.visaoGeral.criadoEm} value={formatDate(campaign.createdAt)} />
             <KineticFact
-              label="Total investido (estimado)"
+              label={t.app.marca.visaoGeral.totalInvestido}
               value={
                 campaign.offerType === 'CASH' && campaign.offerAmount != null
                   ? formatCurrency(campaign.offerAmount * campaign.maxSpots)
@@ -138,7 +140,7 @@ export default function CampaignOverviewTab({
             />
           </div>
 
-          <p className={`${monoLabel} mt-11`}>Vagas</p>
+          <p className={`${monoLabel} mt-11`}>{t.app.marca.visaoGeral.vagas}</p>
           <p className="mt-4 font-display text-3xl font-bold tracking-[-.05em] tabular-nums text-foreground">
             {approvedCount}/{campaign.maxSpots}
           </p>

@@ -22,6 +22,7 @@ import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import { creatorAvatarSrc, formatDate, formatNumberParts } from '../../utils/format';
 import { cn } from '../../lib/utils';
+import { dict, useT } from '../../i18n';
 
 // ─── Aba Resultado ───────────────────────────────────────────────────────────
 // Fecha os diferenciais nº 2 (histórico verificado) e nº 3 (transparência
@@ -34,16 +35,13 @@ import { cn } from '../../lib/utils';
 // digitados pela marca e toda superfície que os mostra diz isso
 // (`vision.md` nº 5 — nada de métrica de reputação que a gente não prove).
 
-const FILTERS: { value: 'ALL' | 'PENDING' | 'REGISTERED'; label: string }[] = [
-  { value: 'ALL', label: 'Todas' },
-  { value: 'PENDING', label: 'A informar' },
-  { value: 'REGISTERED', label: 'Informadas' },
-];
+// Só os valores: o rótulo vem do dicionário no render.
+const FILTER_VALUES = ['ALL', 'PENDING', 'REGISTERED'] as const;
 
 const METRICS = [
-  { key: 'reach', label: 'Alcance', placeholder: 'Ex: 12400' },
-  { key: 'impressions', label: 'Impressões', placeholder: 'Ex: 18900' },
-  { key: 'couponsUsed', label: 'Cupons usados', placeholder: 'Ex: 37' },
+  { key: 'reach', rotulo: 'alcance', ph: 'alcancePlaceholder' },
+  { key: 'impressions', rotulo: 'impressoes', ph: 'impressoesPlaceholder' },
+  { key: 'couponsUsed', rotulo: 'cuponsUsados', ph: 'cuponsPlaceholder' },
 ] as const;
 
 type MetricKey = (typeof METRICS)[number]['key'];
@@ -60,9 +58,9 @@ function parseMetric(raw: string): number | null {
 function extractSaveError(error: unknown): string | null {
   if (!error) return null;
   if (axios.isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data?.message ?? 'Não foi possível salvar o resultado.';
+    return error.response?.data?.message ?? dict().app.marca.resultado.erroSalvar;
   }
-  return 'Não foi possível salvar o resultado.';
+  return dict().app.marca.resultado.erroSalvar;
 }
 
 // ─── Modal de registro/edição ────────────────────────────────────────────────
@@ -80,6 +78,7 @@ function ResultModal({
   isPending: boolean;
   error?: string | null;
 }) {
+  const t = useT();
   const existing = partnership.result;
   const [values, setValues] = useState<Record<MetricKey, string>>({
     reach: existing?.reach?.toString() ?? '',
@@ -105,32 +104,31 @@ function ResultModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={existing ? 'Editar resultado' : 'Informar resultado'}
+      aria-label={existing ? t.app.marca.resultado.editarResultado : t.app.marca.resultado.informar}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
     >
       <div className="w-full sm:max-w-md">
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="max-h-[75vh] overflow-y-auto px-6 pb-7 pt-11">
             <h3 className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              {existing ? 'Editar resultado' : 'Informar resultado'}
+              {existing ? t.app.marca.resultado.editarResultado : t.app.marca.resultado.informar}
             </h3>
             <p className="mt-2 text-[13px] leading-[1.5] text-[#6a6a64]">
               A parceria com{' '}
               <span className="font-medium text-black">
                 {partnership.influencer.name}
               </span>
-              . Informe só o que você tem. Nada aqui é obrigatório
-              individualmente.
+              {t.app.marca.resultado.informeSoOqueTem}
             </p>
 
             <div className="mt-7 space-y-6">
               {/* Flex-wrap e campos de largura mínima: três números lado a
                   lado não caberiam em 360px. */}
               <div className="flex flex-wrap gap-x-5 gap-y-6">
-                {METRICS.map(({ key, label, placeholder }) => (
+                {METRICS.map(({ key, rotulo, ph }) => (
                   <div key={key} className="min-w-[120px] flex-1">
                     <label htmlFor={`result-${key}`} className={labelClasses}>
-                      {label}
+                      {t.app.marca.resultado[rotulo]}
                     </label>
                     <input
                       id={`result-${key}`}
@@ -143,7 +141,7 @@ function ResultModal({
                           [key]: e.target.value.replace(/\D/g, ''),
                         }))
                       }
-                      placeholder={placeholder}
+                      placeholder={t.app.marca.resultado[ph]}
                       className={cn(fieldClasses, 'tabular-nums')}
                     />
                   </div>
@@ -152,7 +150,7 @@ function ResultModal({
 
               <div>
                 <label htmlFor="result-note" className={labelClasses}>
-                  Observação (opcional)
+                  {t.app.marca.resultado.observacao}
                 </label>
                 <textarea
                   id="result-note"
@@ -160,11 +158,11 @@ function ResultModal({
                   onChange={(e) => setNote(e.target.value)}
                   rows={3}
                   maxLength={1000}
-                  placeholder="Ex: Melhor entrega da campanha. Vamos repetir no próximo drop."
+                  placeholder={t.app.marca.resultado.observacaoPlaceholder}
                   className={cn(fieldClasses, 'resize-none')}
                 />
                 <p className="mt-2 text-[11px] leading-[1.5] text-[#7a7a74]">
-                  Ela vê esta observação. Escreva pra ela.
+                  {t.app.marca.resultado.observacaoLegenda}
                 </p>
               </div>
 
@@ -174,19 +172,19 @@ function ResultModal({
               <div className="flex items-start justify-between gap-4 border-t border-[#c9c9c3] pt-6">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-black">
-                    Pode aparecer no perfil público dela
+                    {t.app.marca.resultado.podeAparecer}
                   </p>
                   <p className="mt-1.5 text-[12px] leading-[1.5] text-[#6a6a64]">
                     {allowPublic
-                      ? 'Os números e sua observação vão aparecer no perfil público dela, com o nome da sua marca ao lado.'
-                      : 'Desligado, o resultado fica só entre vocês duas: ela vê, o público não.'}
+                      ? t.app.marca.resultado.ligadoDescricao
+                      : t.app.marca.resultado.desligadoDescricao}
                   </p>
                 </div>
                 <KineticToggle
                   tone="plate"
                   checked={allowPublic}
                   onChange={setAllowPublic}
-                  label="Pode aparecer no perfil público dela"
+                  label={t.app.marca.resultado.podeAparecer}
                 />
               </div>
             </div>
@@ -196,9 +194,9 @@ function ResultModal({
 
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
               {
-                label: isPending ? 'Salvando…' : 'Salvar',
+                label: isPending ? t.app.acoes.salvando : t.app.acoes.salvar,
                 onClick: () =>
                   canSubmit &&
                   onSave({
@@ -237,43 +235,42 @@ function RemoveResultModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const wasPublic = partnership.result?.brandAllowsPublic;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Apagar este resultado?"
+      aria-label={t.app.marca.resultado.apagarTitulo}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
     >
       <div className="w-full sm:max-w-md">
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-[26px] pt-[30px]">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Apagar este resultado?
+              {t.app.marca.resultado.apagarTitulo}
             </p>
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
               O resultado da parceria com{' '}
               <span className="font-medium text-black">
                 {partnership.influencer.name}
               </span>{' '}
-              sai do registro dela
-              {wasPublic ? ' e do perfil público dela' : ''}, e a parceria volta
-              a contar como não informada. Ela já foi avisada de que você
+              {t.app.marca.resultado.apagarCorpo(wasPublic ? t.app.marca.resultado.apagarSufixo : '')} Ela já foi avisada de que você
               registrou. Corrigir os números editando é menos confuso pra ela
               do que apagar.
             </p>
             {isError && (
               <p className="mt-3 text-[13px] text-destructive">
-                Não foi possível apagar. Tente novamente.
+                {t.app.marca.resultado.apagarErro}
               </p>
             )}
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onClose, disabled: isPending, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onClose, disabled: isPending, width: 130 },
               {
-                label: isPending ? 'Apagando…' : 'Apagar',
+                label: isPending ? t.app.marca.detalhe.apagando : t.app.marca.detalhe.apagarConfirmar,
                 onClick: onConfirm,
                 disabled: isPending,
                 primary: true,
@@ -315,6 +312,7 @@ function PartnershipPlate({
   onEdit: () => void;
   onRemove: () => void;
 }) {
+  const t = useT();
   const { influencer, result } = partnership;
   const avatarSrc = creatorAvatarSrc(influencer);
   const metrics = result
@@ -349,7 +347,7 @@ function PartnershipPlate({
             </div>
           </div>
           <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
-            {result ? 'Informado' : 'A informar'}
+            {result ? t.app.marca.resultado.informado : t.app.marca.resultado.abas.PENDING}
           </span>
         </div>
 
@@ -357,9 +355,7 @@ function PartnershipPlate({
 
         {!result && (
           <p className="text-sm leading-[1.55] text-[#3a3a34]">
-            Você ainda não informou o que esta parceria deu. É o que transforma
-            a candidatura aprovada em histórico, e é a única forma de a creator
-            saber o resultado do trabalho dela.
+            {t.app.marca.resultado.convite}
           </p>
         )}
 
@@ -367,8 +363,12 @@ function PartnershipPlate({
           <>
             {metrics.length > 0 && (
               <div className="flex flex-wrap gap-x-10 gap-y-7">
-                {metrics.map(({ key, label }) => (
-                  <Metric key={key} label={label} value={result[key] as number} />
+                {metrics.map(({ key, rotulo }) => (
+                  <Metric
+                    key={key}
+                    label={t.app.marca.resultado[rotulo]}
+                    value={result[key] as number}
+                  />
                 ))}
               </div>
             )}
@@ -395,13 +395,13 @@ function PartnershipPlate({
             <div className="mt-6">
               <KineticFact
                 tone="plate"
-                label="No perfil público dela"
+                label={t.app.marca.resultado.noPerfilPublico}
                 value={
                   result.brandAllowsPublic
                     ? result.hiddenByCreator
-                      ? 'Liberado por você, mas ela escolheu não mostrar'
-                      : 'Aparece, com o nome da sua marca'
-                    : 'Não aparece. Só ela vê'
+                      ? t.app.marca.resultado.liberadoMasOculto
+                      : t.app.marca.resultado.aparece
+                    : t.app.marca.resultado.naoAparece
                 }
               />
             </div>
@@ -412,14 +412,14 @@ function PartnershipPlate({
       {result ? (
         <KineticActions
           actions={[
-            { label: 'Editar', onClick: onEdit, primary: true },
-            { label: 'Apagar', onClick: onRemove },
+            { label: t.app.marca.resultado.editar, onClick: onEdit, primary: true },
+            { label: t.app.marca.detalhe.apagarConfirmar, onClick: onRemove },
           ]}
         />
       ) : (
         <KineticActions
           actions={[
-            { label: 'Informar resultado', onClick: onRegister, primary: true },
+            { label: t.app.marca.resultado.informar, onClick: onRegister, primary: true },
           ]}
         />
       )}
@@ -430,6 +430,7 @@ function PartnershipPlate({
 // ─── Aba ─────────────────────────────────────────────────────────────────────
 
 export default function CampaignResultsTab({ campaignId }: { campaignId: string }) {
+  const t = useT();
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'REGISTERED'>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<CampaignPartnership | null>(null);
@@ -481,8 +482,8 @@ export default function CampaignResultsTab({ campaignId }: { campaignId: string 
           acessível inclui o status ("A informar"), então sem isto o filtro e a
           linha ficam indistinguíveis pra quem navega por leitor de tela — e
           pro teste. */}
-      <div role="group" aria-label="Filtrar parcerias" className="flex flex-wrap gap-2">
-        {FILTERS.map(({ value, label }) => (
+      <div role="group" aria-label={t.app.marca.resultado.filtrar} className="flex flex-wrap gap-2">
+        {FILTER_VALUES.map((value) => (
           <button
             key={value}
             type="button"
@@ -494,7 +495,7 @@ export default function CampaignResultsTab({ campaignId }: { campaignId: string 
                 : 'border-kinetic-gray text-kinetic-muted hover:text-foreground',
             )}
           >
-            {label}
+            {t.app.marca.resultado.abas[value]}
             {value === 'ALL' && (
               <span className="ml-2 tabular-nums text-kinetic-muted">
                 {partnerships.length}
@@ -513,8 +514,8 @@ export default function CampaignResultsTab({ campaignId }: { campaignId: string 
         <div className="mt-8">
           <EmptyState
             icon={<BarChart3 size={20} />}
-            title="Nenhuma parceria aprovada ainda"
-            description="Resultado existe depois de aprovar uma candidatura na Fila."
+            title={t.app.marca.resultado.vazio}
+            description={t.app.marca.resultado.vazioDescricao}
           />
         </div>
       ) : visible.length === 0 ? (
@@ -523,17 +524,15 @@ export default function CampaignResultsTab({ campaignId }: { campaignId: string 
             icon={<BarChart3 size={20} />}
             title={
               filter === 'PENDING'
-                ? 'Todas as parcerias já têm resultado informado'
-                : 'Nenhum resultado informado ainda'
+                ? t.app.marca.resultado.todasInformadas
+                : t.app.marca.resultado.nenhumInformado
             }
           />
         </div>
       ) : (
         <>
           <p className="mt-6 text-[13px] leading-[1.55] text-kinetic-muted">
-            Os números são informados por você. O tayro não mede alcance. Eles
-            aparecem pra creator sempre, e no perfil público dela só se você
-            liberar.
+            {t.app.marca.resultado.ressalva}
           </p>
 
           <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
@@ -541,9 +540,9 @@ export default function CampaignResultsTab({ campaignId }: { campaignId: string 
                 atualiza uma placa que já está à vista. */}
             <aside className="w-full lg:order-2 lg:w-[340px] lg:shrink-0">
               <p className="mb-5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                Parcerias · {visible.length}
+                {t.app.marca.resultado.titulo} · {visible.length}
               </p>
-              <ul aria-label="Parcerias" className="flex flex-col gap-0.5">
+              <ul aria-label={t.app.marca.resultado.titulo} className="flex flex-col gap-0.5">
                 {visible.map((p) => {
                   const rowAvatar = creatorAvatarSrc(p.influencer);
                   return (

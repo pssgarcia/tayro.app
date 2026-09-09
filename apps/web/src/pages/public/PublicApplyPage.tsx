@@ -462,14 +462,7 @@ export default function PublicApplyPage() {
                       adultField={register('declaredAdult')}
                       termsError={errors.acceptedTermsAndPrivacy?.message}
                       adultError={errors.declaredAdult?.message}
-                      intro={
-                        <>
-                          Ao enviar sua candidatura, uma conta de creator no TAYRO é criada com os
-                          dados acima (ou a sua conta existente é usada), e você recebe um e-mail
-                          para definir a senha. Os dados públicos do seu perfil do Instagram passam
-                          a ser consultados e exibidos para a marca desta campanha.
-                        </>
-                      }
+                      intro={t.app.publico.candidatura.avisoDados}
                     />
 
                     <button

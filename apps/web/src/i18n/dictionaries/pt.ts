@@ -56,6 +56,9 @@ export const pt = {
     descricaoDepois:
       ' é a plataforma pra marca que já recebe candidatura de creator e decide na mão. Cada candidatura chega com o Instagram real da creator do lado do botão de aprovar.',
     ctaConversar: 'Quero conversar',
+    /** Mensagem já preenchida no WhatsApp. Quem escreve é o visitante, então
+     *  sai no idioma da página que ele leu. */
+    whatsappMensagem: 'Oi! Vi o TAYRO e queria entender como funciona pra minha marca.',
     ctaCampanhas: 'Ver campanhas abertas',
     ressalvaFicticia: 'Creator fictícia · imagem gerada',
   },
