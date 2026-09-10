@@ -3,7 +3,7 @@ slug: email-notifications
 status: ACTIVE
 origin: RETROFIT
 source_of_truth: production_code
-last_updated: 2026-08-21
+last_updated: 2026-09-09
 implements:
   - apps/api/src/modules/email/email.service.ts
   - apps/api/src/modules/email/email.module.ts
@@ -12,6 +12,7 @@ implements:
   - apps/api/src/modules/applications/application/applications.service.ts
   - apps/api/src/modules/creators/application/creators.service.ts
 related_decisions: [D-13]
+related_roadmap: ["AGORA #0"]
 ---
 
 # Notificações por e-mail
@@ -39,17 +40,37 @@ um stub que não envia de verdade (dev/teste) ou uma integração real.
 
 ## Behavior
 
-### Três e-mails, três gatilhos
-| Evento | Conteúdo |
-|---|---|
-| Candidatura aprovada | Nome da creator, marca, campanha — direciona pra plataforma pros próximos passos |
-| Candidatura recusada | Mesmo formato, tom neutro |
-| Conta criada (claim pendente) | Link de definição de senha, aviso de expiração em 7 dias |
+### Gatilhos (lista incompleta — ver Known Gaps sobre deriva de spec)
+| Evento | Conteúdo | Destinatário |
+|---|---|---|
+| Candidatura aprovada | Nome da creator, marca, campanha — direciona pra plataforma pros próximos passos | Creator |
+| Candidatura recusada | Mesmo formato, tom neutro | Creator |
+| Conta criada (claim pendente) | Link de definição de senha, aviso de expiração em 7 dias | Creator |
+| **Conta de creator criada via candidatura pública** (2026-09-09) | Nome, e-mail e @ do Instagram da conta nova | **Operador** (`ADMIN_NOTIFICATION_EMAIL`), não a creator — instrumentação do funil, não notificação de produto (ver Behavior abaixo) |
 
 ### Regra de negócio: sempre best-effort
 Uma falha ao enviar e-mail **nunca** deve impedir ou reverter a ação de negócio que o
 originou — aprovação, recusa e criação de conta continuam válidas mesmo que o envio falhe. Uma
 falha de envio só é registrada em log; nunca é propagada como erro pra quem chamou.
+
+### Notificação do operador (não é notificação de produto)
+A notificação de conta nova (linha acima) é diferente de categoria das outras: não é um efeito
+que o PRODUTO deve ao usuário, é instrumentação que o OPERADOR (Pedro) pediu pra si mesmo, pra
+acompanhar o funil do item #0 do `roadmap.md` (rodar com uma marca real) sem consultar o banco na
+mão — mesma classe de justificativa do Sentry (`D-20`), avaliada e admitida no `/feature` em
+2026-09-09 apesar de falhar o critério 1 da regra de admissão do roadmap ("tira trabalho manual
+da marca OU engorda o registro da creator") justamente por não ser feature de produto.
+
+Consequência de desenho: `ADMIN_NOTIFICATION_EMAIL` é **opcional**, ao contrário de
+`FRONTEND_URL`/`JWT_*` (`shared/config/required-env.ts`). Sem ela configurada, a notificação
+simplesmente não dispara — não é falha, é "instrumentação desligada", e por isso é lida com
+`config.get`, nunca `getOrThrow`, e não faz parte do fail-fast de boot em produção.
+
+Dispara só quando `CreatorsService.findOrCreateInfluencer` CRIA de fato um `User`+`Influencer`
+novo — nunca nas reaplicações (handle ou e-mail já existentes, ver `creator-discovery-and-apply`).
+Escopo deliberadamente menor que "toda conta nova do produto": cadastro de marca
+(`AuthService.registerBrand`) e cadastro direto de creator (`AuthService.registerInfluencer`)
+ficam de fora por ora — ver Known Gaps.
 
 ## API / Interfaces
 Nenhum endpoint próprio — consumido internamente por `applications-pipeline` (decisão de
@@ -64,6 +85,12 @@ candidatura) e por `account-claim`/`creator-discovery-and-apply` (claim). Não h
       que o originou.
 - [ ] Existe teste, no nível de `ApplicationsService` (não só de `EmailService` isolado), que
       confirma que um provedor lançando exceção não impede o `approve`/`reject` — ver Known Gaps.
+- [x] Criar uma conta de creator nova via candidatura pública, com `ADMIN_NOTIFICATION_EMAIL`
+      configurada, tenta notificar o operador.
+- [x] Sem `ADMIN_NOTIFICATION_EMAIL` configurada, nenhuma tentativa de notificação acontece
+      (não é erro, é ausência de configuração).
+- [x] Reaplicação (handle ou e-mail já existente) NUNCA notifica — só criação de fato.
+- [x] Falha ao notificar o operador não impede a candidatura que a originou.
 
 ## Error Scenarios
 - Provedor de envio indisponível ou lançando erro → ação de negócio original é concluída
@@ -79,11 +106,25 @@ candidatura) e por `account-claim`/`creator-discovery-and-apply` (claim). Não h
   testado no nível de `EmailService` (provedor lançando exceção não propaga), mas não há teste
   que injete um provedor falho dentro do fluxo de `approve()`/`reject()` e confirme que a
   aprovação/recusa mesmo assim se completa.
+- **Tabela de gatilhos e "Current Implementation" ficaram atrás do código antes desta edição.**
+  `sendPasswordReset`, `sendPartnershipResult`, `sendEmailChanged` e `sendAccountDeleted` existem
+  em `email.service.ts` e não estavam documentados aqui — retrofit completo não fez parte desta
+  mudança (que só adicionou a notificação de conta nova); fica como dívida separada.
+- **Notificação de conta nova cobre só a candidatura pública, não os 3 caminhos de criação de
+  conta.** `AuthService.registerBrand` e `AuthService.registerInfluencer` (cadastro direto) não
+  disparam a notificação — decisão deliberada de menor escopo (roadmap.md, nota do item AGORA
+  #0), não esquecimento. Estender é replicar o mesmo padrão
+  (`config.get('ADMIN_NOTIFICATION_EMAIL')` + `sendNewAccountNotification`) nos dois métodos, se
+  se mostrar útil.
 
 ## Test Coverage
 - `apps/api/src/modules/email/email.service.spec.ts` — [x] comportamento best-effort no nível
-  do serviço de e-mail.
+  do serviço de e-mail; [x] `sendNewAccountNotification` (conteúdo + omissão do `detail` quando
+  ausente).
 - `apps/api/src/modules/email/providers/resend.email.provider.spec.ts` — [x] integração real.
+- `apps/api/src/modules/creators/application/creators.service.new-account-notification.spec.ts` —
+  [x] dispara só na criação de fato (não em reapply); [x] respeita ausência de
+  `ADMIN_NOTIFICATION_EMAIL`; [x] falha na notificação não derruba a candidatura.
 - [ ] Confirmação do best-effort no nível de `ApplicationsService` — não existe (ver Known Gaps).
 
 ## Current Implementation
@@ -97,7 +138,12 @@ candidatura) e por `account-claim`/`creator-discovery-and-apply` (claim). Não h
   `logger.warn`, nunca exceção propagada.
 - Métodos: `sendApplicationApproved`, `sendApplicationRejected` (chamados de
   `ApplicationsService.approve()`/`.reject()`), `sendClaimAccount` (chamado de
-  `CreatorsService`, ver `account-claim`).
+  `CreatorsService`, ver `account-claim`). Lista incompleta — ver Known Gaps.
+- `EmailService.sendNewAccountNotification({ to, role, name, email, detail? })` — genérico o
+  bastante pra cobrir `BRAND`/`INFLUENCER` de propósito, mesmo só um chamador existir hoje.
+  `CreatorsService.notifyAdminOfNewCreatorAccount` (privado) resolve `ADMIN_NOTIFICATION_EMAIL`
+  via `config.get`, decide SE dispara e é o único lugar que sabe qual variável de ambiente usar —
+  `EmailService` só monta e manda pro `to` que recebeu, sem acoplar a "quem é o admin".
 
 ## Change History
 - 2026-08-21 · retrofit inicial a partir do código em produção v0.36.0+.
@@ -115,3 +161,9 @@ candidatura) e por `account-claim`/`creator-discovery-and-apply` (claim). Não h
   `CreatorsService` (link de claim) e no `StubEmailProvider` (cujo default do `.env.example` é
   `stub`, então um deploy sem `EMAIL_PROVIDER` cairia ali logando endereços reais). O LINK
   continua sendo logado inteiro pelo stub: é a única forma de testar claim e reset em dev.
+- 2026-09-09 · **notificação do operador em conta de creator nova** (`/feature`, instrumentação
+  do item #0 do `roadmap.md`, não feature de produto). `EmailService.sendNewAccountNotification`
+  novo + `CreatorsService.notifyAdminOfNewCreatorAccount` (privado), disparado só na criação de
+  fato dentro de `findOrCreateInfluencer`. `ADMIN_NOTIFICATION_EMAIL` opcional, lida com
+  `config.get` (nunca `getOrThrow`) — ausência é "desligado", não falha. Cadastro de marca e
+  cadastro direto de creator ficam fora por ora (ver Known Gaps).
