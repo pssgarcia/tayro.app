@@ -82,19 +82,29 @@ Integrações externas (Instagram, e-mail) são isoladas atrás de uma interface
 
 ## Rodando localmente
 
-Requer Node ≥ 20, npm ≥ 10 e um Postgres (local via Docker, ou uma instância própria).
+Requer Node ≥ 20, npm ≥ 10 e um Postgres próprio (uma branch do Neon do projeto, se você tiver acesso, ou qualquer instância sua).
 
 ```bash
 git clone https://github.com/pssgarcia/tayro.app.git
 cd tayro.app
 npm install
 
-# banco local (opcional, pode apontar DATABASE_URL pro seu próprio Postgres)
-docker compose -f docker/docker-compose.yml up -d
-
-# variáveis de ambiente da API: ver comentários no próprio arquivo
 cp apps/api/.env.example apps/api/.env
+```
 
+Agora **preencha `apps/api/.env`** — o `.env.example` só documenta as chaves, não roda vazio. Sem isso a API não sobe (a leitura acontece no boot, então o erro aparece ao construir a `JwtAccessStrategy`, não faz sentido pra quem não conhece o código). Mínimo obrigatório em qualquer ambiente, mesmo dev:
+
+- `DATABASE_URL`: connection string do seu Postgres (branch de dev do Neon, se tiver acesso, ou uma instância própria).
+- `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET`: qualquer valor não-trivial serve em dev, mas gere um de verdade (dois valores DIFERENTES) com:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+  ```
+- `ALLOWED_ORIGINS=http://localhost:5173`
+- `FRONTEND_URL=http://localhost:5173`
+
+O resto do arquivo (`INSTAGRAM_PROVIDER=stub`, `EMAIL_PROVIDER=stub`, Sentry, R2) já vem com default seguro pra dev — só mexe se for testar a integração real.
+
+```bash
 cd apps/api
 npx prisma generate
 npx prisma migrate deploy
@@ -104,6 +114,8 @@ npm run dev
 ```
 
 API em `:3001`, Web em `:5173` (a Web não precisa de variáveis de ambiente próprias: o Vite já faz proxy de `/api` pra API local).
+
+**Não há seed de dados.** Um banco novo sobe vazio: não existe usuário pra logar de cara. Crie uma conta pelo próprio fluxo do produto (`/register/brand` na Web, ou `/apply/:id` pra criar uma conta de creator via candidatura).
 
 ## Testes
 
