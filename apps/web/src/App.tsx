@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { api } from './services/api';
+import ScrollToTop from './components/ScrollToTop';
 import SentryFallback from './components/SentryFallback';
 import { useAuthStore, type AuthUser } from './stores/auth.store';
 import AuthLayout from './components/layouts/AuthLayout';
@@ -153,6 +154,7 @@ function AppShell() {
 export default function App() {
   return (
     <Sentry.ErrorBoundary fallback={({ resetError }) => <SentryFallback onReset={resetError} />}>
+      <ScrollToTop />
       <AppShell />
     </Sentry.ErrorBoundary>
   );
