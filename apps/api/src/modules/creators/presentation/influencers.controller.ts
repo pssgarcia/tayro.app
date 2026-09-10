@@ -34,4 +34,14 @@ export class InfluencersController {
   ) {
     return this.creatorsService.updateMe(user.id, dto);
   }
+
+  @Get('me/export')
+  @UseGuards(RolesGuard)
+  @Roles('INFLUENCER')
+  @ApiOperation({
+    summary: 'Exportar os dados do creator autenticado (LGPD art. 18 II/V)',
+  })
+  exportMyData(@CurrentUser() user: { id: string }) {
+    return this.creatorsService.exportMyData(user.id);
+  }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBrowsePrograms } from '../../hooks/useBrowsePrograms';
 import ProgramCard from './ProgramCard';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/utils';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export default function ProgramsList({ title, hrefBuilder }: Props) {
+  const t = useT();
   const [page, setPage] = useState(1);
   const { data, isLoading, isError, isPlaceholderData } = useBrowsePrograms(page);
 
@@ -54,17 +56,17 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
       {isLoading && <Skeleton />}
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar as campanhas. Tente novamente.</p>
+        <p className="text-sm text-destructive">{t.app.creator.abertos.erro}</p>
       )}
 
       {!isLoading && !isError && programs.length === 0 && (
-        <p className="text-sm text-kinetic-muted">Nenhuma campanha aberta agora. Volte em breve.</p>
+        <p className="text-sm text-kinetic-muted">{t.app.creator.abertos.vazio}</p>
       )}
 
       {!isLoading && !isError && programs.length > 0 && (
         <div className={cn(isPlaceholderData && 'opacity-60')}>
           <h2 className="mb-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            Todos os abertos
+            {t.app.creator.abertos.todosAbertos}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {programs.map((c, i) => (
@@ -86,7 +88,7 @@ export default function ProgramsList({ title, hrefBuilder }: Props) {
                 <button
                   key={i}
                   type="button"
-                  aria-label={`Página ${i + 1} de ${totalPages}`}
+                  aria-label={t.app.creator.dashboard.pagina(i + 1, totalPages)}
                   aria-current={page === i + 1}
                   onClick={() => setPage(i + 1)}
                   className={cn(

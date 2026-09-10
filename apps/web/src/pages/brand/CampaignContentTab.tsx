@@ -13,8 +13,9 @@ import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import KineticRow from '../../components/primitives/kinetic/KineticRow';
 import KineticFact from '../../components/primitives/kinetic/KineticFact';
 import StatusWord from '../../components/primitives/kinetic/StatusWord';
-import { creatorAvatarSrc } from '../../utils/format';
+import { contentStatusWord, creatorAvatarSrc } from '../../utils/format';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
 
 // ─── Aba Entregas ────────────────────────────────────────────────────────────
 // Migrada pro "Kinetic Editorial". Era a tela mais fora do sistema do produto
@@ -27,13 +28,14 @@ import { cn } from '../../lib/utils';
 // lista vem primeiro e a placa logo abaixo (tocar numa linha atualiza a placa
 // que já está no campo de visão); no desktop a placa vai pra esquerda.
 
-const FILTERS: { value: 'ALL' | ContentStatus; label: string }[] = [
-  { value: 'ALL', label: 'Todos' },
-  { value: 'PENDING', label: 'Em análise' },
-  { value: 'APPROVED', label: 'Aprovados' },
-  { value: 'REJECTED', label: 'Recusados' },
-  { value: 'REVISION_REQUESTED', label: 'Revisão' },
-];
+// Só os valores: o rótulo vem do dicionário no render.
+const FILTER_VALUES = [
+  'ALL',
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'REVISION_REQUESTED',
+] as const;
 
 // ─── Modal de revisão ─────────────────────────────────────────────────────────
 
@@ -48,6 +50,7 @@ function RevisionModal({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const t = useT();
   const [feedback, setFeedback] = useState('');
 
   return (
@@ -56,25 +59,25 @@ function RevisionModal({
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-7 pt-11">
             <h3 className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Solicitar revisão
+              {t.app.marca.entregas.solicitarRevisao}
             </h3>
             <p className="mt-2 text-[13px] leading-[1.5] text-[#6a6a64]">
-              Descreva o que precisa ser ajustado no conteúdo.
+              {t.app.marca.entregas.solicitarRevisaoDescricao}
             </p>
             <textarea
               autoFocus
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               rows={4}
-              placeholder="Ex: Precisa mencionar o código de desconto..."
+              placeholder={t.app.marca.entregas.revisaoPlaceholder}
               className="mt-5 w-full resize-none border-b border-[#b8b8b1] bg-transparent pb-2 text-sm text-black placeholder:text-[#8a8a84] focus:border-black focus:outline-none"
             />
           </div>
           <KineticActions
             actions={[
-              { label: 'Cancelar', onClick: onCancel, width: 130 },
+              { label: t.app.acoes.cancelar, onClick: onCancel, width: 130 },
               {
-                label: isPending ? 'Enviando…' : 'Solicitar revisão',
+                label: isPending ? t.app.marca.entregas.enviando : t.app.marca.entregas.solicitarRevisao,
                 onClick: () => feedback.trim() && onConfirm(submissionId, feedback.trim()),
                 disabled: !feedback.trim() || isPending,
                 primary: true,
@@ -104,6 +107,7 @@ function SubmissionPlate({
   isApproving: boolean;
   isRejecting: boolean;
 }) {
+  const t = useT();
   const { influencer } = submission;
   const avatarSrc = creatorAvatarSrc(influencer);
   const isPending = submission.status === 'PENDING';
@@ -136,27 +140,23 @@ function SubmissionPlate({
             </div>
           </div>
           <span className="shrink-0 font-mono text-[11px] uppercase tracking-widest text-[#6a6a64]">
-            {submission.status === 'PENDING'
-              ? 'Em análise'
-              : submission.status === 'APPROVED'
-                ? 'Aprovado'
-                : submission.status === 'REJECTED'
-                  ? 'Recusado'
-                  : 'Revisar'}
+            {/* Fonte única do vocabulário (`utils/format.ts`), em vez de um
+                ternário repetindo os rótulos aqui. */}
+            {contentStatusWord(submission.status)}
           </span>
         </div>
 
         <div className="my-7 h-px bg-[#c9c9c3]" />
 
         <div className="flex items-end justify-between gap-4">
-          <KineticFact label="Tipo" value={submission.mediaType} tone="plate" />
+          <KineticFact label={t.app.marca.entregas.tipo} value={submission.mediaType} tone="plate" />
           <a
             href={submission.mediaUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-[#4a4a44] underline-offset-4 transition-colors hover:text-black hover:underline"
           >
-            Ver conteúdo
+            {t.app.marca.entregas.verConteudo}
             <ExternalLink size={12} />
           </a>
         </div>
@@ -164,7 +164,7 @@ function SubmissionPlate({
         {submission.caption && (
           <div className="mt-7">
             <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-              Legenda enviada
+              {t.app.marca.entregas.legendaEnviada}
             </p>
             <p className="whitespace-pre-line break-words text-sm leading-relaxed text-[#3a3a34]">
               {submission.caption}
@@ -175,7 +175,7 @@ function SubmissionPlate({
         {submission.feedback && (
           <div className="mt-7 border-l-2 border-[#b8b8b1] pl-4">
             <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-              Feedback enviado
+              {t.app.marca.entregas.feedbackEnviado}
             </p>
             <p className="break-words text-sm leading-relaxed text-[#3a3a34]">
               {submission.feedback}
@@ -188,14 +188,14 @@ function SubmissionPlate({
         <KineticActions
           actions={[
             {
-              label: isApproving ? 'Aprovando…' : 'Aprovar',
+              label: isApproving ? t.app.marca.entregas.aprovando : t.app.marca.entregas.aprovar,
               onClick: onApprove,
               disabled: isApproving || isRejecting,
               primary: true,
             },
-            { label: 'Revisão', onClick: onRevision, disabled: isApproving || isRejecting },
+            { label: t.app.marca.entregas.abas.REVISION_REQUESTED, onClick: onRevision, disabled: isApproving || isRejecting },
             {
-              label: isRejecting ? 'Recusando…' : 'Recusar',
+              label: isRejecting ? t.app.marca.entregas.recusando : t.app.marca.entregas.recusar,
               onClick: onReject,
               disabled: isApproving || isRejecting,
             },
@@ -209,6 +209,7 @@ function SubmissionPlate({
 // ─── Aba ──────────────────────────────────────────────────────────────────────
 
 export default function CampaignContentTab({ campaignId }: { campaignId: string }) {
+  const t = useT();
   const [filter, setFilter] = useState<'ALL' | ContentStatus>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revisionTarget, setRevisionTarget] = useState<string | null>(null);
@@ -247,7 +248,7 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
       <div className="flex flex-wrap gap-2">
-        {FILTERS.map(({ value, label }) => (
+        {FILTER_VALUES.map((value) => (
           <button
             key={value}
             type="button"
@@ -259,7 +260,7 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
                 : 'border-kinetic-gray text-kinetic-muted hover:text-foreground',
             )}
           >
-            {label}
+            {t.app.marca.entregas.abas[value]}
             {value === 'ALL' && (
               <span className="ml-2 tabular-nums text-kinetic-muted">{submissions.length}</span>
             )}
@@ -272,10 +273,10 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
           <EmptyState
             icon={<Layers size={20} />}
             title={
-              filter === 'ALL' ? 'Nenhum conteúdo enviado ainda' : 'Nenhum conteúdo com esse status'
+              filter === 'ALL' ? t.app.marca.entregas.vazio : t.app.marca.entregas.vazioComFiltro
             }
             description={
-              filter === 'ALL' ? 'Os conteúdos aparecem aqui assim que forem enviados.' : undefined
+              filter === 'ALL' ? t.app.marca.entregas.vazioDescricao : undefined
             }
           />
         </div>
@@ -285,9 +286,9 @@ export default function CampaignContentTab({ campaignId }: { campaignId: string 
               tocar numa linha atualiza uma placa que já está à vista. */}
           <aside className="w-full lg:order-2 lg:w-[340px] lg:shrink-0">
             <p className="mb-5 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-              Entregas · {visible.length}
+              {t.app.marca.entregas.titulo} · {visible.length}
             </p>
-            <ul aria-label="Entregas" className="flex flex-col gap-0.5">
+            <ul aria-label={t.app.marca.entregas.titulo} className="flex flex-col gap-0.5">
               {visible.map((sub) => {
                 const rowAvatar = creatorAvatarSrc(sub.influencer);
                 return (

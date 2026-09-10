@@ -341,6 +341,124 @@ Também é veículo declarado de aprendizado (filas, observabilidade).
 **Status:** `PROPOSTA` — desenhado, não construído. Hoje é `setImmediate` fire-and-forget.
 **Ligado ao bug conhecido:** IG não vem completo na 1ª candidatura.
 
+### D-23 · 2026-09-04 · Instagram conectado e verificado (OAuth) — direção futura, registrada e NÃO implementada
+**Status:** `PROPOSTA` — só backlog. Nenhuma pesquisa técnica foi feita, nenhum `/architect` rodou,
+nenhuma linha de código foi escrita. Não iniciar implementação sem passar por `/feature` +
+`/architect` de novo quando for puxada pra AGORA.
+**Nome de backlog:** `[Future] Instagram OAuth / Connected Social Account`
+
+**O problema que motiva:** hoje o TAYRO só sabe **consultar** se um `@` existe (`D-19`) — nunca
+prova que a creator **controla** aquela conta. E os dados de media kit (seguidores, engajamento,
+feed) vêm de um provedor não oficial via RapidAPI, com o footgun de URL de CDN assinada que
+expira (ver "Imagem do IG some depois de um tempo" em `roadmap.md`). Uma conexão OAuth oficial
+resolveria os dois: prova de titularidade + fonte de dado mais confiável.
+
+**Fluxo-alvo (visão, não implementação):**
+```
+Creator encontra uma campanha
+  → candidata-se informando o @ (fluxo atual, inalterado)
+  → candidatura é criada normalmente
+  → creator acessa a conta
+  → escolhe "Conectar Instagram" (ação nova, opcional, pós-candidatura)
+  → Instagram/Meta autentica (OAuth)
+  → TAYRO identifica a conta autenticada e vincula ao creator
+  → perfil mostra "Instagram conectado ✓"
+  → dados/métricas passam a vir preferencialmente da integração oficial
+```
+
+**Decisões de produto já firmes dentro desta proposta** (não mudam mesmo quando a implementação
+for desenhada — se algo aqui precisar mudar, é decisão nova, não ajuste de detalhe):
+- A creator **não precisa conectar o Instagram para se candidatar.** O `@` informado continua
+  suficiente para criar a candidatura — isto **não é** uma reabertura da proposta rejeitada em
+  2026-08-26 ("validar handle em tempo real antes de aceitar candidatura"); aqui a conexão é
+  **posterior e opcional**, não um gate do formulário. Preserva a `Regra 10` de
+  `creator-discovery-and-apply` e a razão pela qual `D-17` afirmou que a candidatura espontânea
+  é o produto.
+- A conexão acontece depois, dentro da conta já criada (claimada ou não).
+- Status de conexão fica **visível pra creator** (perfil dela) e **visível pra marca** (Fila,
+  media kit) — diferenciando claramente "só `@` informado" de "conectado/verificado".
+- Dado vindo de conta conectada tem **mais confiança** que dado vindo só da consulta pública do
+  `@` — a UI eventualmente precisa comunicar essa diferença, não só armazenar.
+- A integração oficial **substitui progressivamente** a dependência da RapidAPI **quando for
+  tecnicamente viável** — não há decisão de desligar a RapidAPI de uma vez; ela vira o
+  mecanismo pra quem não conectou (ver "Migração", abaixo).
+- Conceito de status, provável (pode ganhar estados intermediários no desenho real):
+  `Não conectado` → `Conectando` → `Conectado` → `Conexão expirada / requer reconexão`.
+
+**Direção arquitetural (explicitamente NÃO é requisito fechado — é ponto de partida pro
+`/architect` quando isto for puxado pra implementação):**
+- Evitar usar `instagramHandle` (campo hoje em `Influencer`) como identidade principal da conta
+  conectada — ele é digitado à mão e já teve pegadinha de `@` duplicado (ver `CLAUDE.md` → Feito,
+  "Fix `@@handle` no sync"). A conexão OAuth precisa de uma identidade que venha do próprio
+  provedor.
+- Modelo pensado (rascunho, não migration): tabela nova em vez de encher `Influencer` de campo
+  específico de rede social, pra deixar espaço pra outras redes no futuro sem repetir o padrão:
+  ```
+  SocialAccount
+  - id
+  - influencerId
+  - provider          (INSTAGRAM hoje; espaço pra outras redes depois)
+  - providerAccountId (id estável do provedor, não o @ digitado)
+  - username
+  - connectedAt
+  - lastSyncedAt
+  - status
+  ```
+- `instagramHandle` **não é removido nem descontinuado agora** — segue como está até este item
+  virar implementação de verdade.
+
+**Dependências e pontos que precisam ser pesquisados ANTES de qualquer implementação** (nada
+disto está assumido ou decidido; é lista de pesquisa, não de requisito):
+- Quais APIs oficiais do Instagram/Meta estão disponíveis hoje pro caso de uso (Instagram Graph
+  API pra contas profissionais/criador, Instagram Basic Display foi descontinuada — confirmar
+  estado atual antes de desenhar, a informação envelhece rápido no ecossistema Meta).
+- Requisitos da Meta pra app review, e se o TAYRO se qualifica sem CNPJ constituído (mesma
+  pendência que já bloqueia a Política de Privacidade — ver `CLAUDE.md` → Pendente).
+  Já se sabe também que a **API oficial não resolve sozinha o problema de URL de mídia
+  temporária** (`D-18` verificou isso pro caso de imagem: a API oficial também entrega URL
+  assinada que expira) — então "conectar via OAuth" não elimina por si só a necessidade de
+  guardar bytes (`IgImage`, `D-18`).
+- Permissões/escopos necessários, e quais métricas ficam realmente disponíveis (insights de
+  alcance/engajamento reais alimentariam o item 2 do AGORA em `roadmap.md`, mas isso é hipótese
+  até verificar o que a API expõe de fato).
+- Fluxo OAuth exato (redirect, PKCE, token de curta/longa duração) e onde ele se encaixa sem
+  quebrar o fluxo de candidatura existente (rodar dentro da conta já criada, nunca no formulário
+  público de apply).
+- Regras de expiração/revogação de token, e como o produto detecta e comunica "conexão expirada"
+  sem descobrir isso só quando uma sincronização falha silenciosamente (mesma classe de bug do
+  `instagram-sync` atual, ver Known Gaps de `specs/instagram-sync`).
+- Limitações pra conta pessoal vs. profissional/criador do Instagram — a maioria das creators do
+  TAYRO pode não ter conta profissional, o que mudaria o alcance real da feature.
+- Impacto de app review / homologação no cronograma (pode ser meses, não dias).
+
+**Requisitos de segurança já registrados pra quando isto for desenhado** (não são novidade de
+princípio, TAYRO já segue a maioria hoje — registrados aqui pra não serem esquecidos nesta
+feature especificamente):
+- Token de acesso nunca em texto puro; considerar criptografia em repouso pra credencial sensível
+  (vai além do padrão atual de hash unidirecional usado em `claimTokenHash`/`resetTokenHash`,
+  porque aqui o token precisa ser **usável** depois, não só verificado).
+- Token nunca exposto ao frontend.
+- Minimizar dado obtido e persistido (só o necessário pra media kit + sincronização).
+- Implementar desconexão/revogação como ação de primeira classe, não só "parar de sincronizar".
+- `instagramHandle` continua NÃO sendo prova de identidade — é rótulo, não autenticação.
+
+**Critérios de sucesso, quando isto virar entrega real:** creator consegue conectar dentro da
+conta · TAYRO identifica a conta autorizada de forma inequívoca · vínculo persiste ·
+produto diferencia visualmente "@ informado" de "conectado" · dado oficial sincroniza quando
+conectado · UI mostra status de conexão com clareza · creator consegue desconectar/revogar ·
+token expirado/revogado é tratado sem quebrar o resto do perfil · candidatura continua
+funcionando sem exigir conexão prévia (o critério que protege `D-17`).
+
+**O que isto NÃO decide ainda:** cronograma, se substitui a RapidAPI por completo algum dia,
+que métricas exatas ficam disponíveis, se app review é viável antes do CNPJ existir. Tudo isso é
+trabalho de pesquisa e de `/architect`, não desta entrada.
+**Gatilho de revisão:** puxar pra `/feature` quando (a) houver marca real pedindo prova de
+titularidade, ou (b) o footgun de URL de CDN expirada (bug conhecido em `roadmap.md`) continuar
+incomodando depois de resolvido só com cache de bytes (`D-18`).
+**Ligado a:** `D-18` (imagem cacheada no banco, não resolve por OAuth), `D-19` (verificação de
+existência do handle, que esta feature não substitui nem reabre), `D-17` (candidatura espontânea
+é o produto, protegida explicitamente aqui), `specs/instagram-sync`.
+
 ---
 
 ## Convenções que não se rediscute
@@ -423,3 +541,62 @@ mais o pedido:** desde 2026-08-31 a Fila (desktop e mobile) já mostra @handle e
 tem um caminho de um toque, sem in-app messaging. **Não ressuscitar** sem: (a) item 0 do
 roadmap rodando com marca real, e (b) marca real operando 2+ campanhas simultâneas e sentindo
 falta específica de agregação cross-campanha (o que a Fila por-campanha já não resolve).
+
+### 2026-09-08 · `PROPOSTA` — Internacionalizar o TAYRO (inglês, "principalmente na landing")
+**Veredito:** `NÃO — responda "inglês pra quem" e destrave `D-C` primeiro. É decisão de escopo
+geográfico da visão, não feature.`
+**Motivo em uma frase:** o pedido não pôde ser descrito como dor sem descrever a solução, e as
+três leituras possíveis ("inglês pra investidor", "pra marca estrangeira", "pra creator
+estrangeira") levam a três produtos diferentes — duas delas nem são código, e a terceira
+contradiz a visão, que diz por extenso *"o registro de trabalho do creator **brasileiro**"*, com
+ordem de expansão declarada `fitness BR → outros nichos BR → histórico portátil como padrão`.
+Internacionalizar não aparece em lugar nenhum de `vision.md`, `roadmap.md` ou `decisions.md`
+`[FATO — verificado 2026-09-08: zero ocorrências de "internacional", "inglês" ou "idioma"]`.
+**Por que bloqueia em `D-C` (ABERTA):** decidir com quem a landing fala **é** a pergunta de
+go-to-market. Escolher o idioma da porta de entrada antes de escolher o canal é responder a
+`D-C` por acidente, exatamente o que a regra de admissão nº 3 existe pra impedir.
+**Fatos de código que encarecem e que não são óbvios no pedido:**
+- A landing tem ~190 strings visíveis em 13 arquivos, e **não existe lib de i18n** no projeto.
+  Traduzir não é o custo; o custo é a infra e o imposto permanente de toda string nova nascer
+  em dois idiomas, num produto com 0 clientes.
+- Os **testes de honestidade** da landing travam copy exata em português (`not.toMatch(/verificad/i)`,
+  `/alinhamento|match|score/`, e a exigência de "histórico" + a ressalva de número declarado).
+  Uma segunda língua sem esses testes reescritos cria uma superfície onde a `vision.md` nº 5
+  deixa de ser aplicada — a promessa exagerada volta em inglês sem ninguém ver.
+- **O funil em inglês desemboca num produto em português**: `/programs`, `/apply/:id`, e-mails,
+  BRL/centavos, `pt-BR` no `Intl`, telefone com heurística de DDI 55 e WhatsApp como canal.
+  Landing em inglês que leva a app em português promete o que o produto não entrega.
+- **Consequência legal concreta:** os 3 fluxos de entrada gravam `acceptedTermsVersion` +
+  `acceptedPrivacyVersion`, e o registro **não guarda idioma**. Termos v1.0 (22 cláusulas) e
+  Política v1.0 (19 seções) só existem em português. Alguém que leia a landing em inglês e
+  crie conta aceita documento que não leu — e o registro fica ambíguo sobre o que foi aceito.
+  Traduzir documento jurídico não é trabalho de agente nem de engenharia. Some-se que o release
+  desses documentos **já está bloqueado** por razão social/CNPJ/foro em placeholder.
+**O que substitui (menor experimento):** um one-pager estático em inglês, fora do produto,
+**sem criação de conta** — CTA de contato apenas. Testa "existe conversa do outro lado?" sem lib
+de i18n, sem tocar na landing real, sem tocar em aceite, e é deletável. Antes disso, o teste de
+custo zero: mandar o texto em inglês pra 5 pessoas do público-alvo suposto e ver se alguma responde.
+**Não ressuscitar** sem uma destas: (a) `D-C` decidida com um canal internacional nomeado;
+(b) ≥3 conversas reais em que a barreira de idioma foi citada espontaneamente por quem decide;
+(c) decisão explícita de Pedro e Thais mudando o escopo geográfico da `vision.md` — que é debate
+de visão, e sobe pros dois, não pro roadmap.
+
+**Decisão do Pedro, mesma data (2026-09-08): seguir mesmo assim.** Apresentado o veredito acima,
+ele respondeu "Ta bom cara. Mas eu quero fazer" — reafirmação explícita depois de ler os
+motivos. **A entrada acima fica como está** (o registro do porquê vale mesmo com a decisão
+contrária; é o que permite avaliar daqui a três meses se o custo se pagou). O que muda é o
+status: de `NÃO` para **`FEITO POR DECISÃO DO PEDRO`**, com o escopo recortado pra pagar o
+mínimo do que foi levantado como risco:
+- **Só a landing** foi traduzida, mais a infraestrutura. O resto do produto segue em português.
+- **Os testes de honestidade rodam nos DOIS idiomas** (`describe.each(LOCALES)`), com lista de
+  palavras proibidas por idioma. Era o risco nº 2 do veredito: sem isso o inglês seria uma
+  superfície onde a `vision.md` nº 5 não é aplicada.
+- **Os documentos legais NÃO foram traduzidos** e os rótulos do rodapé dizem "(in Portuguese)".
+  Era o risco nº 4 (aceite em idioma não lido). Nenhum texto jurídico foi escrito por agente.
+- **Nenhuma lib de i18n** entrou: dicionário tipado próprio, `en.ts` checado contra `pt.ts` em
+  tempo de compilação. Reduz o "imposto permanente" apontado no veredito, não o elimina.
+**O que continua valendo do veredito, e não foi resolvido por código:** não se sabe pra quem é o
+inglês, `D-C` segue `ABERTA`, e não há instrumentação pra dizer se a landing em inglês serviu
+pra alguma coisa. **Gatilho de revisão:** se em 3 meses nenhuma conversa tiver nascido da versão
+em inglês, é evidência de que o veredito estava certo e o custo de manutenção deve ser cortado
+(apagar `en.ts` é barato justamente porque nada fora da landing depende dele).

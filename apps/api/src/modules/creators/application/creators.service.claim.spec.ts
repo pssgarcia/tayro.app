@@ -20,6 +20,8 @@ const applyDto = {
   name: 'Creator',
   phone: '11999990000',
   message: 'quero participar',
+  acceptedTermsAndPrivacy: true,
+  declaredAdult: true,
 };
 
 describe('CreatorsService — emissão de claim token', () => {
@@ -150,7 +152,16 @@ describe('CreatorsService — emissão de claim token', () => {
 
     await service.applyPublic('camp-1', applyDto);
 
-    expect(prisma.user.update).not.toHaveBeenCalled();
+    // A asserção é sobre o TOKEN DE CLAIM, não sobre `user.update` em geral:
+    // desde o aceite dos documentos legais esta mesma candidatura grava
+    // `acceptedTermsVersion`/`declaredAdultAt` na conta que já existia, e isso
+    // é escrita legítima. O que não pode acontecer é reemitir convite de senha
+    // pra quem já tem senha.
+    const claimTokenWrites = prisma.user.update.mock.calls.filter(
+      (call: [{ data?: Record<string, unknown> }]) =>
+        call[0]?.data !== undefined && 'claimTokenHash' in call[0].data,
+    );
+    expect(claimTokenWrites).toHaveLength(0);
     expect(sendClaimAccount).not.toHaveBeenCalled();
   });
 });

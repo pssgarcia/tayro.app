@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import ProgramsList from '../influencer/ProgramsList';
+import { useT } from '../../i18n';
 
 // ─── Página ──────────────────────────────────────────────────────────────────
 // Vitrine pública (roadmap.md, AGORA #4): mesma listagem de /influencer/browse
@@ -11,6 +12,7 @@ import ProgramsList from '../influencer/ProgramsList';
 // existente.
 
 export default function BrowseProgramsPublicPage() {
+  const t = useT();
   const { accessToken, user } = useAuthStore();
 
   const isLoggedInfluencer = !!accessToken && user?.role === 'INFLUENCER';
@@ -29,7 +31,7 @@ export default function BrowseProgramsPublicPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
-        <ProgramsList title="Campanhas abertas" hrefBuilder={hrefBuilder} />
+        <ProgramsList title={t.app.publico.vitrine.titulo} hrefBuilder={hrefBuilder} />
       </main>
     </div>
   );

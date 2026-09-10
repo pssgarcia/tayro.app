@@ -126,3 +126,7 @@ registrado no retrofit de 2026-08-21, foi **corrigido em 2026-08-23** — ver Ch
   constraint `@unique` e traduzir `P2002` em `409` com `field`, como o cadastro de creator já
   fazia. Fecha o Known Gap de corrida e o critério de aceitação correspondente; o corpo do erro
   ficou mais informativo (antes era a string genérica "Email already in use").
+## Change History (complemento)
+- 2026-09-04 · `POST /auth/register/brand` passou a exigir `acceptedTermsAndPrivacy` e
+  `declaredAdult`; as duas caixas vivem no último passo do cadastro. A exportação de dados da
+  marca ganhou `legalAcceptance`. Ver `specs/legal-acceptance`.

@@ -180,6 +180,17 @@ exclusão (depois de `D-E`).
 
 - **Fila assíncrona de Instagram (BullMQ + Redis)** — `D-16`. Justificado por confiabilidade **e**
   por aprendizado explícito (filas, observabilidade). Não antes de haver volume que justifique
+- **Instagram conectado e verificado (OAuth)** — `[Future] Instagram OAuth / Connected Social
+  Account`, registrado em `D-23` (2026-09-04). Só backlog: nenhuma pesquisa técnica feita, nenhum
+  `/architect` rodou. Resolveria dois problemas reais (prova de titularidade da conta, hoje
+  inexistente; e dependência de um provedor não oficial via RapidAPI, com o footgun de URL de
+  CDN que expira). **Não muda o fluxo de candidatura** — conexão é sempre posterior e opcional,
+  dentro da conta já criada, protegendo a `Regra 10` de `creator-discovery-and-apply` e `D-17`.
+  Puxar pra `/feature` quando houver marca real pedindo verificação, ou quando o footgun de
+  imagem expirada continuar incomodando mesmo depois do cache de bytes (`D-18`). Ver `D-23` pra
+  objetivos, decisões de produto, direção de modelo de dados e a lista de pesquisa técnica
+  necessária antes de desenhar (APIs oficiais disponíveis, escopos, fluxo OAuth, expiração de
+  token, requisitos de app review).
 - **Reenvio manual de link de claim** (`D-14`) — no dia em que a primeira creator real travar
 - **Capacitor / app de loja** (`D-11`) — só com tração
 - **Multi-cliente / agência** — **bloqueado por `D-B`**. Não começar sem decisão

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,17 +6,21 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT, type Dictionary } from '../../i18n';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { useClaimPreview } from '../../hooks/useClaimPreview';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
-const schema = z.object({
-  password: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    password: z.string().min(8, t.app.validacao.senhaMin).max(72, t.app.validacao.max72),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 interface ClaimResponse {
   accessToken: string;
@@ -34,13 +38,15 @@ function Wordmark() {
 }
 
 function InvalidLinkMessage({ message }: { message: string }) {
+  const t = useT();
+
   return (
     <div>
       <Wordmark />
       <p className="text-sm text-destructive">{message}</p>
       <p className="mt-[22px] text-xs leading-[1.5] text-kinetic-muted">
         <Link to="/login" className="font-medium text-lime hover:underline">
-          Entrar com e-mail
+          {t.app.ativarConta.entrarComEmail}
         </Link>
       </p>
     </div>
@@ -69,6 +75,8 @@ function PreviewSkeleton() {
 // quem valida o token de verdade é o POST /auth/claim.
 
 export default function ClaimAccountPage() {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { accessToken, user, setAuth } = useAuthStore();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -105,30 +113,30 @@ export default function ClaimAccountPage() {
       navigate('/influencer', { replace: true });
     } catch (err) {
       if (!axios.isAxiosError(err)) {
-        setRootError('Erro inesperado. Tente novamente.');
+        setRootError(t.app.erros.inesperado);
         return;
       }
       if (!err.response) {
-        setRootError('Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+        setRootError(t.app.erros.semConexao);
         return;
       }
       if (err.response.status === 401) {
         setRootError(
-          'Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a uma campanha.',
+          t.app.ativarConta.linkExpirado,
         );
         return;
       }
       if (err.response.status === 429) {
-        setRootError('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+        setRootError(t.app.erros.muitasTentativas);
         return;
       }
-      setRootError('Não foi possível definir sua senha. Tente novamente.');
+      setRootError(t.app.ativarConta.naoFoiPossivel);
     }
   };
 
   if (!token) {
     return (
-      <InvalidLinkMessage message="Link inválido: falta o token de acesso. Confira o link do e-mail." />
+      <InvalidLinkMessage message={t.app.ativarConta.linkSemToken} />
     );
   }
 
@@ -138,26 +146,27 @@ export default function ClaimAccountPage() {
 
   if (previewInvalid) {
     return (
-      <InvalidLinkMessage message="Este link expirou ou já foi utilizado. Peça um novo aplicando-se novamente a uma campanha." />
+      <InvalidLinkMessage message={t.app.ativarConta.linkExpirado} />
     );
   }
 
-  const avatarSrc = preview?.hasIgAvatar
-    ? `/api/v1/ig/avatar/${preview.influencerId}`
-    : preview?.avatarUrl;
+  // A foto vem embutida na prévia (ver ClaimPreview.igAvatarDataUri): sem
+  // sessão e com perfil público desligado, /ig/avatar/:id responderia 404.
+  const avatarSrc = preview?.igAvatarDataUri ?? preview?.avatarUrl;
 
   return (
     <div>
       <Wordmark />
 
       <h1 className="mb-[10px] font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] leading-[1.02] text-foreground">
-        Falta só
-        <br />a senha.
+        {t.app.ativarConta.titulo}
+        <br />
+        {t.app.ativarConta.tituloDestaque}
       </h1>
       <p className="mb-7 text-sm leading-[1.5] text-kinetic-muted">
         {preview?.campaignTitle
-          ? `Sua candidatura ao ${preview.campaignTitle} já foi enviada. Crie uma senha para acompanhar a resposta.`
-          : 'Falta só isso para acessar sua conta e acompanhar suas candidaturas.'}
+          ? t.app.ativarConta.comCandidatura(preview.campaignTitle)
+          : t.app.ativarConta.subtitulo}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -179,11 +188,11 @@ export default function ClaimAccountPage() {
               </div>
             )}
             <KineticField
-              label="Criar senha"
+              label={t.app.ativarConta.criarSenha}
               variant="plate"
               type={showPassword ? 'text' : 'password'}
               autoComplete="new-password"
-              hint="Mínimo 8 caracteres"
+              hint={t.app.cadastroCreator.senhaHint}
               error={errors.password?.message}
               suffix={
                 <button
@@ -191,7 +200,7 @@ export default function ClaimAccountPage() {
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
                   className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-label={showPassword ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -204,7 +213,7 @@ export default function ClaimAccountPage() {
           <KineticActions
             actions={[
               {
-                label: isSubmitting ? 'Ativando…' : 'Ativar minha conta',
+                label: isSubmitting ? t.app.ativarConta.ativando : t.app.ativarConta.ativar,
                 type: 'submit',
                 disabled: isSubmitting,
                 primary: true,
@@ -215,9 +224,9 @@ export default function ClaimAccountPage() {
       </form>
 
       <p className="mt-[22px] text-xs leading-[1.5] text-kinetic-muted">
-        Link inválido ou expirado?{' '}
+        {t.app.ativarConta.linkInvalidoPergunta}{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
-          Entrar com e-mail
+          {t.app.ativarConta.entrarComEmail}
         </Link>
       </p>
     </div>

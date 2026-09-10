@@ -19,6 +19,7 @@ import StatusWord from '../../components/primitives/kinetic/StatusWord';
 import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
+import { useT } from '../../i18n';
 
 // ─── Mobile: revisão em formato Story ─────────────────────────────────────────
 // NÃO é o desktop espremido — fluxo próprio pra celular, um candidato por vez
@@ -64,6 +65,7 @@ export default function CampaignPipelineMobileStory({
   refreshIg,
   onExit,
 }: Props) {
+  const t = useT();
   const queue = useMemo(() => applications.filter((a) => a.status === 'PENDING'), [applications]);
 
   const [mode, setMode] = useState<Mode>('review');
@@ -225,7 +227,7 @@ export default function CampaignPipelineMobileStory({
             <button
               type="button"
               onClick={onExit}
-              aria-label="Fechar revisão"
+              aria-label={t.app.marca.fila.fecharRevisao}
               className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
               <X size={18} />
@@ -235,11 +237,11 @@ export default function CampaignPipelineMobileStory({
               <button
                 type="button"
                 onClick={() => setAllSelectedId(null)}
-                aria-label="Voltar à lista"
+                aria-label={t.app.marca.fila.voltarALista}
                 className="flex items-center gap-1 font-mono text-xs uppercase tracking-widest text-kinetic-text transition-colors hover:text-white"
               >
                 <ChevronLeft size={14} />
-                Voltar
+                {t.app.acoes.voltar}
               </button>
             ) : (
               <ModeToggle mode={mode} onChange={changeMode} />
@@ -268,7 +270,7 @@ export default function CampaignPipelineMobileStory({
           />
         ) : showEmptyReview ? (
           <div className="flex flex-1 items-center justify-center px-8">
-            <p className="font-mono text-sm text-kinetic-muted">Nenhuma candidatura ainda.</p>
+            <p className="font-mono text-sm text-kinetic-muted">{t.app.marca.fila.nenhuma}</p>
           </div>
         ) : active ? (
           <CandidateStory
@@ -301,6 +303,7 @@ export default function CampaignPipelineMobileStory({
 // ─── Alternador de modo ────────────────────────────────────────────────────────
 
 function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
+  const t = useT();
   return (
     <div className="flex rounded-full border border-kinetic-border p-0.5 font-mono text-[11px] uppercase tracking-widest">
       {(['review', 'all'] as const).map((m) => (
@@ -314,7 +317,7 @@ function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
             mode === m ? 'bg-lime text-black' : 'text-kinetic-muted hover:text-white',
           )}
         >
-          {m === 'review' ? 'Revisar' : 'Todas'}
+          {m === 'review' ? t.app.marca.fila.revisar : t.app.marca.fila.todas}
         </button>
       ))}
     </div>
@@ -330,10 +333,11 @@ function AllList({
   applications: Application[];
   onSelect: (id: string) => void;
 }) {
+  const t = useT();
   if (applications.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center px-8">
-        <p className="font-mono text-sm text-kinetic-muted">Nenhuma candidatura ainda.</p>
+        <p className="font-mono text-sm text-kinetic-muted">{t.app.marca.fila.nenhuma}</p>
       </div>
     );
   }
@@ -403,6 +407,7 @@ function CandidateStory({
   refreshIgError: unknown;
   onRefreshIg: () => void;
 }) {
+  const t = useT();
   const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
   const avatarSrc = creatorAvatarSrc(influencer);
@@ -440,13 +445,13 @@ function CandidateStory({
           <button
             type="button"
             onClick={onPrev}
-            aria-label="Candidato anterior"
+            aria-label={t.app.marca.fila.anterior}
             className="absolute inset-y-0 left-0 w-1/2"
           />
           <button
             type="button"
             onClick={onNext}
-            aria-label="Próximo candidato"
+            aria-label={t.app.marca.fila.proximo}
             className="absolute inset-y-0 right-0 w-1/2"
           />
 
@@ -459,7 +464,7 @@ function CandidateStory({
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Chamar no WhatsApp"
+              aria-label={t.app.marca.fila.whatsapp}
               onClick={(e) => e.stopPropagation()}
               className="pointer-events-auto absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105"
             >
@@ -519,7 +524,7 @@ function CandidateStory({
           ) : igFailed ? (
             <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-xs text-kinetic-muted">
-                Dados do Instagram indisponíveis
+                {t.app.marca.fila.igIndisponivel}
               </span>
               <button
                 type="button"
@@ -534,10 +539,10 @@ function CandidateStory({
               >
                 <RefreshCw size={12} className={cn(isRefreshingIg && 'animate-spin')} />
                 {isRefreshingIg
-                  ? 'Atualizando…'
+                  ? t.app.marca.fila.atualizando
                   : cooldownWait !== null
                     ? `${cooldownWait} min`
-                    : 'Atualizar'}
+                    : t.app.marca.fila.atualizar}
               </button>
             </div>
           ) : (
@@ -545,7 +550,7 @@ function CandidateStory({
               {followers && (
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                    Seguidores
+                    {t.app.marca.fila.seguidores}
                   </p>
                   <p className="mt-1 text-3xl font-bold tracking-tight text-white">
                     {followers.value}
@@ -556,7 +561,7 @@ function CandidateStory({
               {influencer.igEngagementRate != null && (
                 <div>
                   <p className="font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-                    Engajamento
+                    {t.app.marca.fila.engajamento}
                   </p>
                   <p className="mt-1 text-3xl font-bold tracking-tight text-white">
                     {formatEngagement(influencer.igEngagementRate)}
@@ -567,7 +572,7 @@ function CandidateStory({
           )}
 
           <p className="mb-1 mt-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            Oferta da campanha
+            {t.app.marca.fila.ofertaDaCampanha}
           </p>
           <p className="text-lg font-semibold leading-snug text-white">{formatOffer(campaign)}</p>
 
@@ -577,7 +582,7 @@ function CandidateStory({
             className="mt-5 flex w-full flex-col items-center gap-1 py-2 text-kinetic-muted transition-colors hover:text-white"
           >
             <ChevronUp size={16} />
-            <span className="font-mono text-[10px] uppercase tracking-widest">Ver posts</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest">{t.app.marca.fila.verPosts}</span>
           </button>
         </div>
       </div>
@@ -596,7 +601,7 @@ function CandidateStory({
             disabled={isApproving || isRejecting}
             className="min-h-[56px] flex-1 border border-kinetic-border font-mono text-sm font-medium uppercase tracking-widest text-kinetic-text transition-colors hover:border-[#555] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isRejecting ? 'Recusando…' : 'Recusar'}
+            {isRejecting ? t.app.marca.fila.recusando : t.app.marca.fila.recusar}
           </button>
           <button
             type="button"
@@ -604,7 +609,7 @@ function CandidateStory({
             disabled={isApproving || isRejecting}
             className="min-h-[56px] flex-[1.4] bg-lime font-mono text-sm font-semibold uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isApproving ? 'Aprovando…' : 'Aprovar'}
+            {isApproving ? t.app.marca.fila.aprovando : t.app.marca.fila.aprovar}
           </button>
         </div>
       )}
@@ -613,7 +618,7 @@ function CandidateStory({
       {sheetOpen && (
         <button
           type="button"
-          aria-label="Fechar detalhes"
+          aria-label={t.app.marca.fila.fecharDetalhes}
           onClick={onCloseSheet}
           className="absolute inset-0 z-[5] bg-black/50"
         />
@@ -630,7 +635,7 @@ function CandidateStory({
           type="button"
           onClick={onCloseSheet}
           className="flex min-h-[44px] shrink-0 items-center justify-center"
-          aria-label="Fechar detalhes"
+          aria-label={t.app.marca.fila.fecharDetalhes}
         >
           <span className="h-1 w-10 rounded-full bg-kinetic-border" />
         </button>
@@ -641,7 +646,7 @@ function CandidateStory({
           {message && (
             <div className="mb-6">
               <p className="mb-2 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
-                Nota da candidatura
+                {t.app.marca.fila.nota}
               </p>
               <p className="text-[15px] leading-relaxed text-kinetic-text">
                 &ldquo;{message}&rdquo;
@@ -651,7 +656,7 @@ function CandidateStory({
           {influencer.niches.length > 0 && (
             <div className="mb-6">
               <p className="mb-2 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
-                Nichos
+                {t.app.marca.fila.nichos}
               </p>
               <div className="flex flex-wrap gap-2">
                 {influencer.niches.map((n) => (
@@ -667,7 +672,7 @@ function CandidateStory({
           )}
           <div>
             <p className="mb-2 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
-              Feed recente
+              {t.app.marca.fila.feedRecente}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {posts.map((post, i) =>
@@ -704,28 +709,29 @@ function CompletionState({
   remaining: number;
   onBack: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-8 py-8 text-center">
-      <p className="font-mono text-xs uppercase tracking-widest text-lime">Revisão concluída</p>
-      <h2 className="mt-3 text-4xl font-bold tracking-tight text-white">Fila em dia.</h2>
+      <p className="font-mono text-xs uppercase tracking-widest text-lime">{t.app.marca.fila.revisaoConcluida}</p>
+      <h2 className="mt-3 text-4xl font-bold tracking-tight text-white">{t.app.marca.fila.filaEmDia}</h2>
 
       <div className="mt-10 grid w-full max-w-xs grid-cols-3 gap-4 border-y border-kinetic-gray py-6">
         <div>
           <p className="text-2xl font-bold text-lime">{approved}</p>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-            Aprovadas
+            {t.app.marca.fila.aprovadas}
           </p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white">{rejected}</p>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-            Recusadas
+            {t.app.marca.fila.recusadas}
           </p>
         </div>
         <div>
           <p className="text-2xl font-bold text-white">{remaining}</p>
           <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-            Pendentes
+            {t.app.marca.fila.pendentes}
           </p>
         </div>
       </div>
@@ -735,7 +741,7 @@ function CompletionState({
         onClick={onBack}
         className="mt-10 min-h-[56px] w-full max-w-xs bg-lime font-mono text-sm font-semibold uppercase tracking-widest text-black transition-colors hover:bg-white"
       >
-        Voltar para a campanha
+        {t.app.marca.fila.voltarACampanha}
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Campaign } from '../../types/api';
 import type { CreateCampaignPayload } from '../../hooks/useCampaigns';
+import type { Dictionary } from '../../i18n';
 
 // Schema + conversores do formulário de campanha, compartilhados por "Nova
 // campanha" e "Editar campanha". Ficam fora do CampaignForm.tsx porque arquivo
@@ -39,30 +40,34 @@ function todayStr(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 }
 
-export const campaignFormSchema = z
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`). É o schema compartilhado por criar e
+// editar campanha.
+export const criarCampaignFormSchema = (t: Dictionary) =>
+  z
   .object({
-    title: z.string().min(3, 'Mínimo 3 caracteres'),
-    description: z.string().min(10, 'Mínimo 10 caracteres'),
-    briefUrl: z.string().url('URL inválida').or(z.literal('')).optional(),
+    title: z.string().min(3, t.app.marca.formulario.min3),
+    description: z.string().min(10, t.app.marca.formulario.min10),
+    briefUrl: z.string().url(t.app.marca.formulario.urlInvalida).or(z.literal('')).optional(),
     niches: z.array(z.string()),
-    maxSpots: z.coerce.number().int().min(1, 'Mínimo 1 vaga'),
+    maxSpots: z.coerce.number().int().min(1, t.app.marca.formulario.min1Vaga),
     // Comparação em string funciona pq yyyy-MM-dd ordena igual lexicograficamente.
     deadline: z
       .string()
       .optional()
-      .refine((v) => !v || v >= todayStr(), 'A data não pode ser no passado'),
+      .refine((v) => !v || v >= todayStr(), t.app.marca.formulario.dataNoPassado),
     offerType: z.enum(['CASH', 'PRODUCT', 'COMMISSION']),
     // em R$, convertido p/ centavos no submit
     offerAmountBRL: z.preprocess(
       (v) => (v === '' || v === null ? undefined : v),
-      z.coerce.number().min(0, 'Valor inválido').optional(),
+      z.coerce.number().min(0, t.app.marca.formulario.valorInvalido).optional(),
     ),
     offerDescription: z.string().optional(),
-    offerDeadlineDays: optionalPositiveInt('Mínimo 1 dia'),
+    offerDeadlineDays: optionalPositiveInt(t.app.marca.formulario.min1Dia),
     // percentual (ex: 10 = 10%)
     offerCommissionPercent: z.preprocess(
       (v) => (v === '' || v === null ? undefined : v),
-      z.coerce.number().min(0.01, 'Valor inválido').max(100, 'Máximo 100%').optional(),
+      z.coerce.number().min(0.01, t.app.marca.formulario.valorInvalido).max(100, t.app.marca.formulario.max100Porcento).optional(),
     ),
   })
   .superRefine((val, ctx) => {
@@ -70,14 +75,14 @@ export const campaignFormSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['offerAmountBRL'],
-        message: 'Informe o valor da oferta',
+        message: t.app.marca.formulario.informeValor,
       });
     }
     if (val.offerType === 'PRODUCT' && !val.offerDescription?.trim()) {
       ctx.addIssue({
         code: 'custom',
         path: ['offerDescription'],
-        message: 'Descreva o produto oferecido',
+        message: t.app.marca.formulario.descrevaProduto,
       });
     }
     if (
@@ -87,12 +92,12 @@ export const campaignFormSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['offerCommissionPercent'],
-        message: 'Informe o percentual de comissão',
+        message: t.app.marca.formulario.informePercentual,
       });
     }
   });
 
-export type CampaignFormValues = z.infer<typeof campaignFormSchema>;
+export type CampaignFormValues = z.infer<ReturnType<typeof criarCampaignFormSchema>>;
 
 /** Campaign (API: centavos + ISO) → valores do form (R$ + yyyy-MM-dd). */
 export function campaignToFormValues(campaign: Campaign): CampaignFormValues {

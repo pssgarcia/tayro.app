@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT, type Dictionary } from '../../i18n';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { brandProfileKeys } from '../../hooks/useBrandProfile';
 import { influencerProfileKeys } from '../../hooks/useInfluencerProfile';
@@ -13,12 +14,13 @@ import KineticPlate from '../primitives/kinetic/KineticPlate';
 import KineticField from '../primitives/kinetic/KineticField';
 import KineticActions from '../primitives/kinetic/KineticActions';
 
-const schema = z.object({
-  email: z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Informe a senha atual'),
+const criarSchema = (t: Dictionary) =>
+  z.object({
+  email: z.string().email(t.app.validacao.emailInvalido),
+  password: z.string().min(1, t.app.trocarEmail.informeSenhaAtual),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 interface ChangeEmailResponse {
   accessToken: string;
@@ -36,6 +38,8 @@ export default function ChangeEmailModal({
   currentEmail: string;
   onClose: () => void;
 }) {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const setAuth = useAuthStore((s) => s.setAuth);
   const qc = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
@@ -67,31 +71,31 @@ export default function ChangeEmailModal({
       setDone(true);
     } catch (err) {
       if (!axios.isAxiosError(err)) {
-        setRootError('Erro inesperado. Tente novamente.');
+        setRootError(t.app.erros.inesperado);
         return;
       }
       if (!err.response) {
-        setRootError('Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+        setRootError(t.app.erros.semConexao);
         return;
       }
       if (err.response.status === 409) {
         const body = err.response.data as { field?: string; message?: string } | undefined;
-        setError('email', { message: body?.message ?? 'Este e-mail já está em uso' });
+        setError('email', { message: body?.message ?? t.app.trocarEmail.emailEmUso });
         return;
       }
       if (err.response.status === 401) {
-        setRootError('Senha incorreta.');
+        setRootError(t.app.trocarEmail.senhaIncorreta);
         return;
       }
       if (err.response.status === 400) {
-        setRootError('Este já é o seu e-mail.');
+        setRootError(t.app.trocarEmail.jaEhSeuEmail);
         return;
       }
       if (err.response.status === 429) {
-        setRootError('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+        setRootError(t.app.erros.muitasTentativas);
         return;
       }
-      setRootError('Não foi possível trocar o e-mail. Tente novamente.');
+      setRootError(t.app.trocarEmail.naoFoiPossivel);
     }
   };
 
@@ -99,7 +103,7 @@ export default function ChangeEmailModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Trocar e-mail"
+      aria-label={t.app.trocarEmail.titulo}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
       onClick={onClose}
     >
@@ -108,12 +112,12 @@ export default function ChangeEmailModal({
           <div className="flex flex-col gap-6 px-6 pb-7 pt-11">
             {done ? (
               <p className="text-sm text-black">
-                E-mail alterado. Mandamos um aviso pro endereço antigo.
+                {t.app.trocarEmail.sucesso}
               </p>
             ) : (
               <>
                 <KineticField
-                  label="Novo e-mail"
+                  label={t.app.trocarEmail.novoEmail}
                   variant="plate"
                   type="email"
                   autoComplete="email"
@@ -122,7 +126,7 @@ export default function ChangeEmailModal({
                   {...register('email')}
                 />
                 <KineticField
-                  label="Senha atual"
+                  label={t.app.trocarEmail.senhaAtual}
                   variant="plate"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -133,7 +137,7 @@ export default function ChangeEmailModal({
                       tabIndex={-1}
                       onClick={() => setShowPassword((v) => !v)}
                       className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
-                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-label={showPassword ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -148,11 +152,11 @@ export default function ChangeEmailModal({
           <KineticActions
             actions={
               done
-                ? [{ label: 'Fechar', onClick: onClose, primary: true }]
+                ? [{ label: t.app.comum.fechar, onClick: onClose, primary: true }]
                 : [
-                    { label: 'Cancelar', onClick: onClose, width: 130 },
+                    { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
                     {
-                      label: isSubmitting ? 'Trocando…' : 'Trocar e-mail',
+                      label: isSubmitting ? t.app.trocarEmail.trocando : t.app.trocarEmail.titulo,
                       onClick: handleSubmit(onSubmit),
                       disabled: isSubmitting,
                       primary: true,

@@ -1,3 +1,5 @@
+import { getLocale } from '../i18n/locale';
+import { dict } from '../i18n';
 import type { ApplicationStatus, CampaignStatus, ContentStatus, RewardStatus } from '../types/api';
 
 /**
@@ -5,24 +7,18 @@ import type { ApplicationStatus, CampaignStatus, ContentStatus, RewardStatus } f
  * "candidatura"). Fonte única — usado pela lista Pipeline do desktop e pela
  * lista "Todas" da revisão mobile.
  */
-export const applicationStatusWord: Record<ApplicationStatus, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovada',
-  REJECTED: 'Recusada',
-  WITHDRAWN: 'Retirada',
-};
+export function applicationStatusWord(status: ApplicationStatus): string {
+  return dict().app.status.application[status];
+}
 
 /**
  * Rótulo em português de cada status de campanha, no feminino (concorda com
  * "campanha"). Vivia preso dentro de `StatusPill.tsx`; virou fonte única
  * quando o Kinetic passou a mostrar status como palavra, sem pill.
  */
-export const campaignStatusWord: Record<CampaignStatus, string> = {
-  DRAFT: 'Rascunho',
-  ACTIVE: 'Ativa',
-  CLOSED: 'Encerrada',
-  COMPLETED: 'Concluída',
-};
+export function campaignStatusWord(status: CampaignStatus): string {
+  return dict().app.status.campaign[status];
+}
 
 /**
  * Rótulo em português de cada status de conteúdo, no MASCULINO (concorda com
@@ -31,22 +27,17 @@ export const campaignStatusWord: Record<CampaignStatus, string> = {
  * REVISION_REQUESTED e não tem WITHDRAWN. Vivia preso em
  * `ContentStatusPill.tsx`.
  */
-export const contentStatusWord: Record<ContentStatus, string> = {
-  PENDING: 'Em análise',
-  APPROVED: 'Aprovado',
-  REJECTED: 'Recusado',
-  REVISION_REQUESTED: 'Revisar',
-};
+export function contentStatusWord(status: ContentStatus): string {
+  return dict().app.status.content[status];
+}
 
 /**
  * Rótulo em português de cada status de recompensa, no feminino (concorda com
  * "recompensa"). Vivia preso no `STATUS_CONFIG` do `CampaignRewardsTab`.
  */
-export const rewardStatusWord: Record<RewardStatus, string> = {
-  PENDING: 'Pendente',
-  ISSUED: 'Emitida',
-  DELIVERED: 'Entregue',
-};
+export function rewardStatusWord(status: RewardStatus): string {
+  return dict().app.status.reward[status];
+}
 
 /**
  * Estado do resultado de uma parceria, da ótica da MARCA: ou ela já informou
@@ -56,10 +47,9 @@ export const rewardStatusWord: Record<RewardStatus, string> = {
  */
 export type PartnershipResultState = 'PENDING' | 'REGISTERED';
 
-export const partnershipResultWord: Record<PartnershipResultState, string> = {
-  PENDING: 'A informar',
-  REGISTERED: 'Informado',
-};
+export function partnershipResultWord(status: PartnershipResultState): string {
+  return dict().app.status.partnershipResult[status];
+}
 
 /**
  * O MESMO status de recompensa, dito da ótica da creator. Não é drift de
@@ -68,11 +58,9 @@ export const partnershipResultWord: Record<PartnershipResultState, string> = {
  * que muda é quão perto está de chegar. Manter as duas listas separadas é
  * deliberado — não unificar.
  */
-export const creatorRewardStatusWord: Record<RewardStatus, string> = {
-  PENDING: 'A receber',
-  ISSUED: 'A caminho',
-  DELIVERED: 'Entregue',
-};
+export function creatorRewardStatusWord(status: RewardStatus): string {
+  return dict().app.status.creatorReward[status];
+}
 
 /**
  * Alfabeto aceito pro handle do Instagram: letras, números, ponto e
@@ -93,13 +81,29 @@ export const INSTAGRAM_HANDLE_FORMAT = /^[a-zA-Z0-9_.]{1,30}$/;
  * creator e edição de perfil. Espelha `shared/validation/phone.ts` na API.
  */
 export const PHONE_FORMAT = /^[0-9()+\-\s]{8,20}$/;
-export const PHONE_FORMAT_MESSAGE = 'Telefone inválido: use apenas números, espaços, ( ) - ou +';
+export function phoneFormatMessage(): string {
+  return dict().app.format.telefoneInvalido;
+}
 
 /** 8200 → "8.2k" | 1500000 → "1.5M" | 800 → "800" */
 export function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return n.toString();
+}
+
+// ─── Separador decimal ───────────────────────────────────────────────────────
+// O produto sempre escreveu "12,4k" e "5,8%" com vírgula, que é o certo em
+// português e ERRADO em inglês. Estes helpers leem o idioma ativo do store
+// module-level do i18n — não dá pra usar hook aqui, são funções puras chamadas
+// de fora de componente. Com `pt` (o padrão) a saída é byte a byte a de sempre.
+function decimal(n: string): string {
+  return getLocale() === 'pt' ? n.replace('.', ',') : n;
+}
+
+/** Locale BCP-47 pro Intl, derivado do idioma ativo. */
+function intlLocale(): string {
+  return getLocale() === 'pt' ? 'pt-BR' : 'en-US';
 }
 
 /**
@@ -111,36 +115,38 @@ export function formatNumber(n: number): string {
  */
 export function formatNumberParts(n: number): { value: string; suffix: string } {
   if (n >= 1_000_000) {
-    return { value: (n / 1_000_000).toFixed(1).replace('.', ','), suffix: 'M' };
+    return { value: decimal((n / 1_000_000).toFixed(1)), suffix: 'M' };
   }
   if (n >= 1_000) {
-    return { value: (n / 1_000).toFixed(1).replace('.', ','), suffix: 'k' };
+    return { value: decimal((n / 1_000).toFixed(1)), suffix: 'k' };
   }
   return { value: n.toString(), suffix: '' };
 }
 
 /** 3.5 → "3,5%" */
 export function formatEngagement(rate: number): string {
-  return `${rate.toFixed(1).replace('.', ',')}%`;
+  return `${decimal(rate.toFixed(1))}%`;
 }
 
 /** 10 → "10%" | 12.5 → "12,5%" — sem casa decimal forçada (diferente de formatEngagement). */
 export function formatPercent(value: number): string {
-  return `${Number.isInteger(value) ? value : value.toFixed(1).replace('.', ',')}%`;
+  return `${Number.isInteger(value) ? value : decimal(value.toFixed(1))}%`;
 }
 
 /** centavos → "R$ 300,00" */
 export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat(intlLocale(), {
     style: 'currency',
+    // A moeda continua BRL em qualquer idioma: o produto só lida com real.
+    // O que muda é a FORMA de escrever o número, não a moeda.
     currency: 'BRL',
   }).format(cents / 100);
 }
 
 /** ISO → "15 de jun. de 2026" | null → fallback */
-export function formatDate(iso: string | null, fallback = 'Sem prazo'): string {
+export function formatDate(iso: string | null, fallback = dict().app.format.semPrazo): string {
   if (!iso) return fallback;
-  return new Intl.DateTimeFormat('pt-BR', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -168,7 +174,7 @@ export function formatOffer(offer: {
     return offer.offerDescription;
   }
   if (offer.offerType === 'COMMISSION' && offer.offerCommissionPercent != null) {
-    return `${formatPercent(offer.offerCommissionPercent)} por venda`;
+    return `${formatPercent(offer.offerCommissionPercent)} ${dict().app.format.porVenda}`;
   }
   return '—';
 }
@@ -187,7 +193,7 @@ export function formatOfferWhole(offer: {
     return { prefix: 'R$ ', value: String(Math.round(offer.offerAmount / 100)) };
   }
   if (offer.offerType === 'PRODUCT') {
-    return { value: 'produto' };
+    return { value: dict().app.format.produto };
   }
   if (offer.offerType === 'COMMISSION' && offer.offerCommissionPercent != null) {
     return { value: formatPercent(offer.offerCommissionPercent) };
@@ -198,9 +204,10 @@ export function formatOfferWhole(offer: {
 /** ISO → "hoje" | "há 1 dia" | "há N dias" */
 export function formatRelativeDays(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return 'hoje';
-  if (days === 1) return 'há 1 dia';
-  return `há ${days} dias`;
+  const t = dict();
+  if (days <= 0) return t.app.format.hoje;
+  if (days === 1) return t.app.format.haUmDia;
+  return t.app.format.haDias(days);
 }
 
 /**
@@ -215,9 +222,9 @@ export function formatRelativeDays(iso: string): string {
  * só. Estava copiada em 5 telas e faltando em outras 2 (Entregas e
  * Recompensas), que por isso mostravam iniciais pra praticamente todo mundo.
  *
- * `ClaimAccountPage` fica de fora de propósito: o preview do claim não expõe a
- * URL da CDN, só um booleano `hasIgAvatar` — um DTO mais fechado que os
- * outros. Encaixá-lo aqui exigiria vazar a URL, o que seria piorar.
+ * `ClaimAccountPage` fica de fora de propósito: o preview do claim entrega a
+ * foto já embutida (`igAvatarDataUri`), porque aquela tela não tem sessão nem
+ * perfil público e as rotas de imagem passaram a exigir autorização.
  */
 export function creatorAvatarSrc(influencer: {
   id: string;

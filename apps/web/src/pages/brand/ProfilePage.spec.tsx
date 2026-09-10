@@ -191,6 +191,21 @@ describe('ProfilePage — seção Conta', () => {
     expect(screen.getByRole('dialog', { name: /trocar senha/i })).toBeInTheDocument();
   });
 
+  it('mostra a row "Exportar meus dados"', () => {
+    renderPage();
+    expect(
+      screen.getByRole('button', { name: /exportar meus dados/i }),
+    ).toBeInTheDocument();
+  });
+
+  // D-22: exclusão de conta é escopo de creator por ora.
+  it('NÃO mostra "Apagar minha conta" (fora de escopo pra marca)', () => {
+    renderPage();
+    expect(
+      screen.queryByRole('button', { name: /apagar minha conta/i }),
+    ).not.toBeInTheDocument();
+  });
+
   // Regressão: a seção Conta não participa do form de perfil — abrir/fechar
   // o modal de senha não pode habilitar o "Salvar" do perfil sem nada a salvar.
   it('abrir e fechar o modal de senha não habilita o "Salvar" do perfil', () => {

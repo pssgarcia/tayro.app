@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from '../../shared/infrastructure/database/database.module';
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
 import { InstagramSyncService } from './instagram-sync.service';
@@ -8,10 +9,13 @@ import { RapidApiInstagramProvider } from './providers/rapidapi.instagram.provid
 import { IgAvatarController } from './ig-avatar.controller';
 import { IgHandleController } from './ig-handle.controller';
 import { IgImageService } from './ig-image.service';
+import { IgImageAccessService } from './ig-image-access.service';
 import { IgProfileCache } from './ig-profile-cache';
 
 @Module({
-  imports: [DatabaseModule],
+  // JwtModule sem config: o `IgImageAccessService` passa o segredo explícito em
+  // cada `verify` (são dois — refresh no cookie, access no header).
+  imports: [DatabaseModule, JwtModule.register({})],
   controllers: [IgAvatarController, IgHandleController],
   providers: [
     {
@@ -33,6 +37,7 @@ import { IgProfileCache } from './ig-profile-cache';
     },
     InstagramSyncService,
     IgImageService,
+    IgImageAccessService,
   ],
   exports: [INSTAGRAM_PROVIDER, InstagramSyncService, IgImageService],
 })

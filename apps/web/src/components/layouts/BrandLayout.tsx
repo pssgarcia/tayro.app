@@ -3,17 +3,22 @@ import { Activity, Crosshair, Flag, LogOut, Users } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 // Rótulos e ícones do redesign 2a (README §Telas 2, 13, 14, 16), +"Creators"
 // (specs/creator-roster, 2026-09-02) — visão agregada de aprovadas, cross-campanha.
+// Só rota e ícone: o rótulo vem do dicionário no render, senão ficaria
+// congelado no idioma do boot.
 const navItems = [
-  { to: '/brand/dashboard', icon: Activity, label: 'Leitura' },
-  { to: '/brand/creators', icon: Users, label: 'Creators' },
-  { to: '/brand/campaigns', icon: Crosshair, label: 'Campanhas' },
-  { to: '/brand/profile', icon: Flag, label: 'Marca' },
-];
+  { to: '/brand/dashboard', icon: Activity, chave: 'dashboard' },
+  { to: '/brand/creators', icon: Users, chave: 'creators' },
+  { to: '/brand/campaigns', icon: Crosshair, chave: 'campanhas' },
+  { to: '/brand/profile', icon: Flag, chave: 'perfil' },
+] as const;
 
 export default function BrandLayout() {
+  const t = useT();
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
 
@@ -49,7 +54,8 @@ export default function BrandLayout() {
             Rótulo em mono caixa alta: é metadado de navegação, mesma classe
             dos rótulos de seção do Kinetic. */}
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map(({ to, icon: Icon, label }) => (
+          {navItems.map(({ to, icon: Icon, chave }) => (
+            
             <NavLink
               key={to}
               to={to}
@@ -63,20 +69,24 @@ export default function BrandLayout() {
               }
             >
               <Icon size={16} />
-              {label}
+              {t.app.nav.marca[chave]}
             </NavLink>
           ))}
         </nav>
 
         {/* Usuário + logout */}
         <div className="border-t border-kinetic-gray p-3">
+          {/* Acima do e-mail: é controle da interface, não identidade da
+              conta. Sem ele o produto seria bilíngue sem jeito de trocar por
+              dentro, já que o seletor só existe na landing. */}
+          <LanguageSwitcher size="sm" className="mb-3 ml-3 w-fit" />
           <div className="mb-2.5 truncate px-3 text-[11px] text-kinetic-muted">{user?.email}</div>
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[.16em] text-kinetic-muted transition-colors hover:bg-kinetic-dark hover:text-foreground"
           >
             <LogOut size={16} />
-            Sair
+            {t.app.nav.sair}
           </button>
         </div>
       </aside>
@@ -93,7 +103,7 @@ export default function BrandLayout() {
           </Link>
           <button
             onClick={handleLogout}
-            aria-label="Sair"
+            aria-label={t.app.nav.sair}
             className="flex h-9 w-9 items-center justify-center text-kinetic-muted transition-colors hover:bg-kinetic-dark hover:text-foreground"
           >
             <LogOut size={18} />
@@ -113,7 +123,8 @@ export default function BrandLayout() {
         className="fixed inset-x-0 bottom-0 z-40 flex bg-background pb-1 md:hidden"
         style={{ paddingBottom: 'calc(0.25rem + env(safe-area-inset-bottom))' }}
       >
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, chave }) => (
+            
           <NavLink
             key={to}
             to={to}
@@ -128,7 +139,7 @@ export default function BrandLayout() {
             }
           >
             <Icon size={19} strokeWidth={1.75} />
-            <span>{label}</span>
+            <span>{t.app.nav.marca[chave]}</span>
           </NavLink>
         ))}
       </nav>

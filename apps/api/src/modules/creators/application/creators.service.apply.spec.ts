@@ -28,6 +28,8 @@ const applyDto = {
   name: 'Creator',
   phone: '11999990000',
   message: 'quero participar',
+  acceptedTermsAndPrivacy: true,
+  declaredAdult: true,
 };
 
 describe('CreatorsService — candidatura pública resiste a falha acessória', () => {
@@ -133,7 +135,16 @@ describe('CreatorsService — candidatura pública resiste a falha acessória', 
       role: UserRole.INFLUENCER,
       claimTokenHash: 'hash-antigo',
     });
-    prisma.user.update.mockRejectedValue(new Error('deadlock'));
+    // Falha SÓ na gravação do token de claim, que é o efeito acessório sob
+    // teste. A gravação do aceite dos documentos legais (que hoje também usa
+    // `user.update`) tem que continuar funcionando: ela não é acessória, e
+    // rejeitar tudo aqui testaria uma coisa diferente da que o nome diz.
+    prisma.user.update.mockImplementation(
+      (args: { data?: Record<string, unknown> }) =>
+        args?.data && 'claimTokenHash' in args.data
+          ? Promise.reject(new Error('deadlock'))
+          : Promise.resolve(undefined),
+    );
 
     await expect(service.applyPublic('camp-1', applyDto)).resolves.toEqual({
       applicationId: 'app-1',

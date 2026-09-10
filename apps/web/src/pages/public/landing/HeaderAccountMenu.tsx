@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserRound } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { useT } from '../../../i18n';
 
 // ─── Entrada de conta do header ──────────────────────────────────────────────
 // Um único ponto de entrada — o ícone de pessoa — em vez de "Entrar" e "Criar
@@ -19,6 +20,7 @@ const item =
   'block px-4 py-3 font-mono text-[11px] uppercase tracking-widest text-kinetic-text transition-colors hover:bg-white/5 hover:text-lime focus-visible:bg-white/5 focus-visible:text-lime focus-visible:outline-none';
 
 export default function HeaderAccountMenu() {
+  const t = useT();
   const [aberto, setAberto] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,7 +49,7 @@ export default function HeaderAccountMenu() {
         onClick={() => setAberto((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={aberto}
-        aria-label="Conta"
+        aria-label={t.comum.conta}
         className={cn(
           'flex h-10 w-10 items-center justify-center border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           aberto
@@ -61,11 +63,11 @@ export default function HeaderAccountMenu() {
       {aberto && (
         <div
           role="menu"
-          aria-label="Conta"
+          aria-label={t.comum.conta}
           className="absolute right-0 top-full z-50 mt-2 w-[188px] border border-kinetic-border bg-kinetic-dark"
         >
           <Link role="menuitem" to="/login" className={item} onClick={() => setAberto(false)}>
-            Entrar
+            {t.comum.entrar}
           </Link>
           <Link
             role="menuitem"
@@ -73,7 +75,7 @@ export default function HeaderAccountMenu() {
             className={cn(item, 'border-t border-kinetic-gray')}
             onClick={() => setAberto(false)}
           >
-            Criar conta
+            {t.comum.criarConta}
           </Link>
         </div>
       )}

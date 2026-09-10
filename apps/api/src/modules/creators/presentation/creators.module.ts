@@ -15,5 +15,11 @@ import { InfluencersController } from './influencers.controller';
     ProgramsPublicController,
     InfluencersController,
   ],
+  // AuthModule injeta CreatorsService pra expor DELETE /auth/delete-account —
+  // a exclusão de conta precisa ficar em /auth/* (não /influencers/*) porque
+  // o interceptor de 401 do frontend trata 401 fora de /auth/* como sessão
+  // expirada e desloga; aqui o 401 é "senha atual incorreta", não token
+  // expirado (mesmo motivo de changePassword/changeEmail viverem em auth).
+  exports: [CreatorsService],
 })
 export class CreatorsModule {}

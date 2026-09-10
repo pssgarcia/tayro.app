@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApplicationStatus,
@@ -22,6 +23,13 @@ import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { EmailService } from '../../email/email.service';
 import { PublicApplyDto } from './dtos/public-apply.dto';
 import { UpdateInfluencerDto } from './dtos/update-influencer.dto';
+import { DeleteAccountDto } from './dtos/delete-account.dto';
+import {
+  PRIVACY_VERSION,
+  TERMS_VERSION,
+  legalAcceptanceFields,
+} from '../../../shared/legal/legal-documents';
+import { maskEmail } from '../../../shared/utils/mask-email';
 
 const CLAIM_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 
@@ -50,6 +58,12 @@ export class CreatorsService {
     }
 
     const influencer = await this.findOrCreateInfluencer(dto);
+
+    // A conta pode já existir (candidatura anterior, cadastro, apply
+    // autenticado) e nunca ter registrado aceite, ou ter aceitado uma versão
+    // anterior dos documentos. Este é o único ponto do fluxo público que sabe
+    // que a pessoa acabou de marcar as caixas.
+    await this.recordLegalAcceptance(influencer.userId);
 
     try {
       const application = await this.prisma.application.create({
@@ -220,6 +234,252 @@ export class CreatorsService {
     return this.getMe(userId);
   }
 
+  // ─── Exportar dados (LGPD art. 18 II/V) ─────────────────────────────────────────
+
+  /**
+   * Tudo que a creator forneceu ou que guardamos sobre ela, num JSON só.
+   * NUNCA inclui: `password` (hash), `refreshTokenHash`, `claimTokenHash`/
+   * `resetTokenHash` e seus `*ExpiresAt` (segredo técnico, não dado pessoal
+   * que a LGPD pede pra devolver) nem os bytes de `IgImage` (cache técnico de
+   * terceiro — a `sourceUrl` e os metadados de `igRecentPosts` já cobrem "o
+   * que guardamos vindo do Instagram"). O `select` explícito abaixo é a
+   * garantia: nada disso é alcançável por um `include` genérico.
+   */
+  async exportMyData(userId: string) {
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        phone: true,
+        instagramHandle: true,
+        tiktokHandle: true,
+        followersCount: true,
+        niches: true,
+        city: true,
+        igEngagementRate: true,
+        igRecentPosts: true,
+        igProfilePicUrl: true,
+        igFetchedAt: true,
+        igFetchStatus: true,
+        publicProfileEnabled: true,
+        createdAt: true,
+        user: {
+          select: {
+            email: true,
+            // Faz parte do que guardamos sobre a pessoa e é o registro que
+            // sustenta a relação contratual: sonegá-lo da exportação seria
+            // devolver menos do que temos (LGPD art. 18 II).
+            acceptedTermsVersion: true,
+            acceptedPrivacyVersion: true,
+            acceptedAt: true,
+            declaredAdultAt: true,
+          },
+        },
+      },
+    });
+    if (!influencer) {
+      throw new ForbiddenException('User does not have an influencer profile');
+    }
+
+    const [applications, rewards] = await Promise.all([
+      this.prisma.application.findMany({
+        where: { influencerId: influencer.id },
+        orderBy: { appliedAt: 'desc' },
+        include: {
+          campaign: {
+            select: {
+              title: true,
+              brand: { select: { name: true } },
+              offerType: true,
+              offerAmount: true,
+              offerDeadlineDays: true,
+              offerDescription: true,
+              offerCommissionPercent: true,
+            },
+          },
+          submissions: true,
+          result: true,
+        },
+      }),
+      this.prisma.reward.findMany({
+        where: { influencerId: influencer.id },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const { user, ...profile } = influencer;
+    const { email, ...legal } = user;
+
+    return {
+      exportedAt: new Date().toISOString(),
+      profile: { ...profile, email },
+      legalAcceptance: legal,
+      applications,
+      rewards,
+    };
+  }
+
+  // ─── Apagar conta (LGPD art. 18 VI, D-22) ───────────────────────────────────────
+
+  /**
+   * Apaga de fato a IDENTIDADE da creator (exige a senha atual — mesma prova
+   * de identidade de changePassword/changeEmail). `Application`,
+   * `ContentSubmission`, `Reward` e `PartnershipResult` NÃO são cascateados:
+   * ficam órfãos de identidade (o `Influencer` associado é esvaziado, mas o
+   * `id` permanece estável) porque são o registro de trabalho/pagamento da
+   * MARCA, não só da creator — ela também tem obrigação legal de guardar
+   * isso. Ver decisions.md D-22.
+   *
+   * Irreversível — sem link de recuperação, diferente de
+   * WithdrawModal/DeleteCampaignModal. Candidatura PENDING de campanha ainda
+   * ativa vira WITHDRAWN (mesma semântica de retirar manualmente): maxSpots
+   * só conta APPROVED, então isso não libera nem consome vaga, só evita uma
+   * candidatura fantasma na Fila de uma conta que não existe mais.
+   */
+  async deleteMyAccount(userId: string, dto: DeleteAccountDto): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException();
+    }
+    if (!(await bcrypt.compare(dto.password, user.password))) {
+      throw new UnauthorizedException('Senha incorreta');
+    }
+
+    const influencer = await this.prisma.influencer.findUnique({
+      where: { userId },
+    });
+    if (!influencer) {
+      throw new ForbiddenException('User does not have an influencer profile');
+    }
+
+    // Capturados ANTES da transação apagar os dois — é o par que vai no
+    // e-mail de confirmação, mandado pro endereço ORIGINAL (o tombstone
+    // gravado a seguir não seria alcançável).
+    const originalEmail = user.email;
+    const originalName = influencer.name;
+
+    // O hash da senha ANTIGA não pode continuar guardado. `isActive: false` já
+    // impede o login, mas o hash é material de credencial da pessoa: bcrypt é
+    // lento, não inquebrável, e a senha dela provavelmente é reusada em outros
+    // serviços. Substituímos por um hash de valor aleatório e descartado (não
+    // por string vazia nem por null: a coluna é obrigatória, e um valor que
+    // não é hash bcrypt válido faria `bcrypt.compare` se comportar de forma
+    // imprevisível se algum caminho futuro chegasse aqui).
+    const unusablePassword = await bcrypt.hash(randomUUID(), 12);
+
+    await this.prisma.$transaction([
+      this.prisma.application.updateMany({
+        where: {
+          influencerId: influencer.id,
+          status: ApplicationStatus.PENDING,
+        },
+        data: { status: ApplicationStatus.WITHDRAWN },
+      }),
+      // Fotos cacheadas são dado pessoal (D-18) — mantê-las depois da
+      // exclusão contradiria o pedido, mesmo com o Influencer esvaziado.
+      this.prisma.igImage.deleteMany({
+        where: { influencerId: influencer.id },
+      }),
+      this.prisma.influencer.update({
+        where: { id: influencer.id },
+        data: {
+          name: 'Conta excluída', // campo obrigatório, não pode ser null
+          avatarUrl: null,
+          bio: null,
+          phone: null,
+          tiktokHandle: null,
+          instagramHandle: null, // libera o @ pra uso futuro
+          igProfilePicUrl: null,
+          igRecentPosts: Prisma.DbNull,
+          igFetchedAt: null,
+          igFetchStatus: null,
+          followersCount: null,
+          igEngagementRate: null,
+          niches: [],
+          city: null,
+          publicProfileEnabled: false,
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          // Tombstone único: libera o endereço real pra um recadastro futuro
+          // sem violar a constraint @unique.
+          email: `deleted-${randomUUID()}@tayro.invalid`,
+          isActive: false, // mesmo campo que login() checa — cinturão e suspensório
+          password: unusablePassword,
+          refreshTokenHash: null,
+          claimTokenHash: null,
+          claimTokenExpiresAt: null,
+          resetTokenHash: null,
+          resetTokenExpiresAt: null,
+          // acceptedTermsVersion/acceptedPrivacyVersion/acceptedAt/
+          // declaredAdultAt PERMANECEM de propósito: são o registro de que a
+          // relação existiu sob determinada versão dos documentos, não dado
+          // que identifique a pessoa (uma versão e um horário). Apagá-los
+          // destruiria a prova do acordo justamente nos casos em que ela
+          // importa. Descrito na Política de Privacidade.
+        },
+      }),
+    ]);
+
+    await this.emailService.sendAccountDeleted({
+      to: originalEmail,
+      creatorName: originalName,
+    });
+  }
+
+  // ─── Aceite dos documentos legais ─────────────────────────────────────────────
+
+  /**
+   * Registra o aceite numa conta que JÁ EXISTIA quando a pessoa marcou as
+   * caixas (o caminho de criação grava junto com o `user.create`).
+   *
+   * Não sobrescreve aceite da MESMA versão: o que vale como prova é o primeiro
+   * aceite de um texto, não o mais recente. Reescrever a data a cada
+   * candidatura apagaria justamente a informação de quando a pessoa concordou
+   * com aquele documento.
+   *
+   * Versão diferente (documento republicado) re-registra: aí a pessoa está
+   * aceitando um texto novo, e é esse o aceite que passa a valer.
+   *
+   * `declaredAdultAt` só é preenchido se estiver vazio. Declarar maioridade
+   * duas vezes não é mais verdadeiro que declarar uma; a primeira data é a
+   * que interessa.
+   */
+  private async recordLegalAcceptance(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        acceptedTermsVersion: true,
+        acceptedPrivacyVersion: true,
+        declaredAdultAt: true,
+      },
+    });
+    if (!user) return;
+
+    const data: Prisma.UserUpdateInput = {};
+
+    const acceptedCurrent =
+      user.acceptedTermsVersion === TERMS_VERSION &&
+      user.acceptedPrivacyVersion === PRIVACY_VERSION;
+    if (!acceptedCurrent) {
+      const fields = legalAcceptanceFields();
+      data.acceptedTermsVersion = fields.acceptedTermsVersion;
+      data.acceptedPrivacyVersion = fields.acceptedPrivacyVersion;
+      data.acceptedAt = fields.acceptedAt;
+    }
+
+    if (!user.declaredAdultAt) data.declaredAdultAt = new Date();
+
+    if (Object.keys(data).length === 0) return;
+
+    await this.prisma.user.update({ where: { id: userId }, data });
+  }
+
   // ─── Helpers privados ─────────────────────────────────────────────────────────
 
   private async findOrCreateInfluencer(dto: PublicApplyDto) {
@@ -273,6 +533,10 @@ export class CreatorsService {
           role: UserRole.INFLUENCER,
           claimTokenHash: claimToken.tokenHash,
           claimTokenExpiresAt: claimToken.expiresAt,
+          // Conta e aceite no mesmo create. A caixa marcada em /apply/:id diz
+          // que a candidatura cria uma conta no TAYRO, então este é o aceite
+          // dessa conta, não um aceite genérico de formulário.
+          ...legalAcceptanceFields(),
           influencer: {
             create: {
               name: dto.name,
@@ -370,7 +634,7 @@ export class CreatorsService {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       this.logger.warn(
-        `Candidatura seguiu, mas o link de claim não foi emitido para ${email}: ${reason}`,
+        `Candidatura seguiu, mas o link de claim não foi emitido para ${maskEmail(email)}: ${reason}`,
       );
     }
   }
@@ -399,7 +663,7 @@ export class CreatorsService {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       this.logger.warn(
-        `Candidatura seguiu, mas o link de claim não foi enviado para ${email}: ${reason}`,
+        `Candidatura seguiu, mas o link de claim não foi enviado para ${maskEmail(email)}: ${reason}`,
       );
     }
   }

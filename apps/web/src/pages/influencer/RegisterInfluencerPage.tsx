@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,22 +13,28 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
+import LegalAcceptanceFields from '../../components/legal/LegalAcceptanceFields';
 import { cn } from '../../lib/utils';
-import { INSTAGRAM_HANDLE_FORMAT, PHONE_FORMAT, PHONE_FORMAT_MESSAGE } from '../../utils/format';
+import { INSTAGRAM_HANDLE_FORMAT, PHONE_FORMAT, phoneFormatMessage } from '../../utils/format';
+import { useT, type Dictionary } from '../../i18n';
 
-const schema = z.object({
-  name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
-  email: z.string().email('E-mail inválido').max(254, 'E-mail muito longo'),
-  password: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
+// Schema é FUNÇÃO do dicionário, não const de módulo: mensagem de validação
+// fixa no módulo congelaria no idioma do boot e não acompanharia a troca.
+// O componente memoiza por idioma.
+const criarSchema = (t: Dictionary) =>
+  z.object({
+  name: z.string().min(1, t.app.validacao.nomeObrigatorio).max(100, t.app.validacao.max100),
+  email: z.string().email(t.app.validacao.emailInvalido).max(254, t.app.validacao.emailLongo),
+  password: z.string().min(8, t.app.validacao.senhaMin).max(72, t.app.validacao.max72),
   // Obrigatório, como na candidatura pública: sem telefone a marca fica só com
   // o @ do Instagram, que não é canal de resposta garantido. Este cadastro era
   // a última porta de entrada de creator que não pedia.
   phone: z
     .string()
     .trim()
-    .min(1, 'Telefone obrigatório')
-    .max(20, 'Telefone muito longo')
-    .regex(PHONE_FORMAT, PHONE_FORMAT_MESSAGE),
+    .min(1, t.app.validacao.telefoneObrigatorio)
+    .max(20, t.app.validacao.telefoneLongo)
+    .regex(PHONE_FORMAT, phoneFormatMessage()),
   // Obrigatório desde 2026-09-02. O @ é a chave de tudo que a creator ganha
   // aqui — media kit vivo, seguidores, engajamento, posts, perfil público em
   // /c/:handle. Sem ele a conta nascia sem nada disso, e a marca via "Dados
@@ -38,19 +44,28 @@ const schema = z.object({
   // já mostra o "@" como prefixo. É a mesma normalização que a API aplica.
   instagramHandle: z
     .string()
-    .min(1, '@ do Instagram obrigatório')
+    .min(1, t.app.validacao.handleObrigatorio)
     .transform((v) => v.replace(/^@+/, '').toLowerCase().trim())
     .pipe(
       z
         .string()
-        .min(1, '@ do Instagram obrigatório')
-        .max(30, 'Máximo 30 caracteres')
-        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido: só letras, números, . e _'),
+        .min(1, t.app.validacao.handleObrigatorio)
+        .max(30, t.app.validacao.max30)
+        .regex(INSTAGRAM_HANDLE_FORMAT, t.app.validacao.handleInvalido),
     ),
   niches: z.array(z.string()),
-});
+  // `literal(true)` e não `boolean()`: é o que torna impossível concluir o
+  // cadastro sem marcar. A API repete a exigência (`@Equals(true)`), então
+  // nem chamada direta cria conta sem aceite.
+  acceptedTermsAndPrivacy: z.literal(true, {
+    errorMap: () => ({ message: t.app.validacao.aceiteObrigatorio }),
+  }),
+  declaredAdult: z.literal(true, {
+    errorMap: () => ({ message: t.app.validacao.maioridadeObrigatoria }),
+  }),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 interface RegisterResponse {
   accessToken: string;
@@ -71,10 +86,13 @@ function cleanHandle(raw?: string): string | undefined {
 // indicador visual (mesma linguagem da Fila de candidaturas), não clicável,
 // pra não deixar avançar sem validar o passo atual.
 
-const STEPS = ['Identidade', 'Acesso', 'Nichos'] as const;
+/** Só a quantidade e a ordem: o rótulo de cada passo vem do dicionário. */
+const STEPS = ['identidade', 'acesso', 'nichos'] as const;
 const STEP_FIELDS: (keyof FormValues)[][] = [
   ['name', 'phone', 'instagramHandle'],
   ['email', 'password'],
+  // As caixas de aceite ficam no último passo, junto do "Criar conta": é
+  // preciso aceitar imediatamente antes de criar, não três passos antes.
   [],
 ];
 const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
@@ -90,6 +108,8 @@ const FIELD_STEP: Partial<Record<keyof FormValues, number>> = {
 // NicheSelector ganha a variante "plate" aqui.
 
 export default function RegisterInfluencerPage() {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { accessToken, user, setAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -151,7 +171,7 @@ export default function RegisterInfluencerPage() {
         if (outcome === 'NOT_FOUND') {
           setError('instagramHandle', {
             type: 'manual',
-            message: 'Usuário não encontrado no Instagram. Confira o @',
+            message: t.app.handleCheck.naoEncontrado,
           });
           return;
         }
@@ -168,11 +188,11 @@ export default function RegisterInfluencerPage() {
   const instagramHandleHint = errors.instagramHandle
     ? undefined
     : handleCheck.checking
-      ? 'Verificando…'
+      ? t.app.acoes.verificando
       : instagramHandleAlreadyChecked && handleCheck.result === 'FOUND'
-        ? 'Perfil encontrado no Instagram'
+        ? t.app.handleCheck.encontrado
         : instagramHandleAlreadyChecked && handleCheck.result === 'UNKNOWN'
-          ? 'Não deu para confirmar agora. Você pode continuar'
+          ? t.app.handleCheck.incerto
           : undefined;
   const instagramHandleHintTone =
     instagramHandleAlreadyChecked && handleCheck.result === 'FOUND' ? 'success' : 'muted';
@@ -189,6 +209,10 @@ export default function RegisterInfluencerPage() {
       phone: values.phone,
       instagramHandle: cleanHandle(values.instagramHandle),
       ...(values.niches.length ? { niches: values.niches } : {}),
+      // O front manda só que as caixas foram marcadas. Quais VERSÕES dos
+      // documentos valem é decisão do servidor.
+      acceptedTermsAndPrivacy: values.acceptedTermsAndPrivacy,
+      declaredAdult: values.declaredAdult,
     };
 
     try {
@@ -197,7 +221,7 @@ export default function RegisterInfluencerPage() {
       navigate('/influencer', { replace: true });
     } catch (err) {
       if (!axios.isAxiosError(err)) {
-        setError('root', { message: 'Erro inesperado. Tente novamente.' });
+        setError('root', { message: t.app.erros.inesperado });
         return;
       }
 
@@ -205,7 +229,7 @@ export default function RegisterInfluencerPage() {
       // proxy 502). Só AQUI faz sentido falar em "conexão".
       if (!err.response) {
         setError('root', {
-          message: 'Sem conexão com o servidor. Verifique sua internet e tente de novo.',
+          message: t.app.erros.semConexao,
         });
         return;
       }
@@ -217,7 +241,7 @@ export default function RegisterInfluencerPage() {
       const serverMessage = Array.isArray(body?.message) ? body?.message[0] : body?.message;
 
       if (status === 429) {
-        setError('root', { message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' });
+        setError('root', { message: t.app.erros.muitasTentativas });
         return;
       }
 
@@ -230,7 +254,7 @@ export default function RegisterInfluencerPage() {
       ];
       if (body?.field && (FIELD_KEYS as string[]).includes(body.field)) {
         const field = body.field as keyof FormValues;
-        setError(field, { message: serverMessage ?? 'Valor inválido.' });
+        setError(field, { message: serverMessage ?? t.app.validacao.valorInvalido });
         // O erro pode ser de um campo que ficou pra trás num passo anterior —
         // sem isso a mensagem existe no form mas fica invisível pro usuário.
         setStep(FIELD_STEP[field] ?? STEPS.length - 1);
@@ -238,7 +262,7 @@ export default function RegisterInfluencerPage() {
       }
 
       setError('root', {
-        message: serverMessage ?? 'Não foi possível criar a conta. Tente novamente.',
+        message: serverMessage ?? t.app.erros.naoFoiPossivelCriarConta,
       });
     }
   };
@@ -250,10 +274,10 @@ export default function RegisterInfluencerPage() {
       </span>
 
       <h1 className="font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] text-foreground">
-        Criar sua conta
+        {t.app.cadastroCreator.titulo}
       </h1>
       <p className="mb-7 mt-2 text-[13px] text-kinetic-muted">
-        Leva 1 minuto. Depois você já vê as campanhas abertas.
+        {t.app.cadastroCreator.subtitulo}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -262,24 +286,24 @@ export default function RegisterInfluencerPage() {
             {step === 0 && (
               <>
                 <KineticField
-                  label="Nome"
+                  label={t.app.cadastroCreator.nome}
                   variant="plate"
                   autoComplete="name"
-                  placeholder="Ana Silva"
+                  placeholder={t.app.cadastroCreator.nomePlaceholder}
                   error={errors.name?.message}
                   {...register('name')}
                 />
                 <KineticField
-                  label="Telefone"
+                  label={t.app.cadastroCreator.telefone}
                   variant="plate"
                   type="tel"
                   autoComplete="tel"
-                  placeholder="(11) 91234-5678"
+                  placeholder={t.app.cadastroCreator.telefonePlaceholder}
                   error={errors.phone?.message}
                   {...register('phone')}
                 />
                 <KineticField
-                  label="@ do Instagram"
+                  label={t.app.cadastroCreator.handle}
                   variant="plate"
                   prefix="@"
                   autoComplete="off"
@@ -298,20 +322,20 @@ export default function RegisterInfluencerPage() {
             {step === 1 && (
               <>
                 <KineticField
-                  label="E-mail"
+                  label={t.app.cadastroCreator.email}
                   variant="plate"
                   type="email"
                   autoComplete="email"
-                  placeholder="voce@email.com"
+                  placeholder={t.app.cadastroCreator.emailPlaceholder}
                   error={errors.email?.message}
                   {...register('email')}
                 />
                 <KineticField
-                  label="Senha"
+                  label={t.app.cadastroCreator.senha}
                   variant="plate"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  hint="Mínimo 8 caracteres"
+                  hint={t.app.cadastroCreator.senhaHint}
                   error={errors.password?.message}
                   suffix={
                     <button
@@ -319,7 +343,7 @@ export default function RegisterInfluencerPage() {
                       tabIndex={-1}
                       onClick={() => setShowPassword((v) => !v)}
                       className="shrink-0 text-[#8A8A84] transition-colors hover:text-black"
-                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-label={showPassword ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -330,16 +354,29 @@ export default function RegisterInfluencerPage() {
             )}
 
             {step === 2 && (
-              <div>
-                <p className="mb-3 text-[11px] text-[#6a6a64]">Seus nichos</p>
-                <Controller
-                  name="niches"
-                  control={control}
-                  render={({ field }) => (
-                    <NicheSelector value={field.value} onChange={field.onChange} variant="plate" />
-                  )}
+              <>
+                <div>
+                  <p className="mb-3 text-[11px] text-[#6a6a64]">{t.app.cadastroCreator.seusNichos}</p>
+                  <Controller
+                    name="niches"
+                    control={control}
+                    render={({ field }) => (
+                      <NicheSelector
+                        value={field.value}
+                        onChange={field.onChange}
+                        variant="plate"
+                      />
+                    )}
+                  />
+                </div>
+                <LegalAcceptanceFields
+                  variant="plate"
+                  termsField={register('acceptedTermsAndPrivacy')}
+                  adultField={register('declaredAdult')}
+                  termsError={errors.acceptedTermsAndPrivacy?.message}
+                  adultError={errors.declaredAdult?.message}
                 />
-              </div>
+              </>
             )}
 
             {errors.root && <p className="text-[13px] text-destructive">{errors.root.message}</p>}
@@ -347,17 +384,22 @@ export default function RegisterInfluencerPage() {
 
           <KineticActions
             actions={[
-              ...(step > 0 ? [{ label: 'Voltar', onClick: back, width: 130 }] : []),
+              ...(step > 0 ? [{ label: t.app.acoes.voltar, onClick: back, width: 130 }] : []),
               step < STEPS.length - 1
                 ? {
-                    label: step === 0 && handleCheck.checking ? 'Verificando…' : 'Continuar',
+                    label:
+                      step === 0 && handleCheck.checking
+                        ? t.app.acoes.verificando
+                        : t.app.acoes.continuar,
                     type: 'button' as const,
                     onClick: next,
                     disabled: isStepGuarded || (step === 0 && handleCheck.checking),
                     primary: true,
                   }
                 : {
-                    label: isSubmitting ? 'Criando conta…' : 'Criar conta',
+                    label: isSubmitting
+                      ? t.app.cadastroCreator.criandoConta
+                      : t.app.cadastroCreator.criarConta,
                     type: 'submit' as const,
                     disabled: isSubmitting || isStepGuarded,
                     primary: true,
@@ -367,9 +409,9 @@ export default function RegisterInfluencerPage() {
         </KineticPlate>
 
         <div className="mt-[18px] flex items-center justify-center gap-[7px]">
-          {STEPS.map((label, i) => (
+          {STEPS.map((passo, i) => (
             <span
-              key={label}
+              key={passo}
               aria-hidden
               className={cn(
                 'h-0.5 w-[22px] rounded-full transition-colors',
@@ -381,9 +423,9 @@ export default function RegisterInfluencerPage() {
       </form>
 
       <p className="mt-[26px] text-[13px] text-kinetic-muted">
-        Já tem conta?{' '}
+        {t.app.cadastroCreator.jaTemConta}{' '}
         <Link to="/login" className="font-medium text-lime hover:underline">
-          Entrar
+          {t.app.acoes.entrar}
         </Link>
       </p>
     </div>

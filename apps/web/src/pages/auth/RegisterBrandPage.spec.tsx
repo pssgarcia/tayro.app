@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { acceptLegalDocuments } from '../../test/legal-acceptance';
 import { MemoryRouter } from 'react-router-dom';
 import RegisterBrandPage from './RegisterBrandPage';
 import { api } from '../../services/api';
@@ -35,6 +36,23 @@ function continueStep() {
 
 /** Preenche os 3 passos e deixa o form na tela final ("Criar conta"). */
 async function fillAllSteps() {
+  fireEvent.change(screen.getByLabelText('Nome da marca'), { target: { value: 'Marca Fit' } });
+  continueStep();
+
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
+    target: { value: 'marca@exemplo.com' },
+  });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senhaSegura1' } });
+  continueStep();
+
+  await screen.findByRole('button', { name: /criar conta/i });
+  // Aceite dos documentos + maioridade: obrigatórios desde 2026-09-04, e
+  // vivem no último passo, junto do "Criar conta".
+  acceptLegalDocuments();
+}
+
+/** Igual ao anterior, mas sem marcar as caixas de aceite. */
+async function fillAllStepsSemAceite() {
   fireEvent.change(screen.getByLabelText('Nome da marca'), { target: { value: 'Marca Fit' } });
   continueStep();
 
@@ -126,10 +144,41 @@ describe('RegisterBrandPage', () => {
         email: 'marca@exemplo.com',
         password: 'senhaSegura1',
         niches: ['fitness', 'wellness'],
+        // Prova que o aceite marcado na tela CHEGA à API. O front manda só
+        // que as caixas foram marcadas; a versão é estampada pelo servidor.
+        acceptedTermsAndPrivacy: true,
+        declaredAdult: true,
       }),
     );
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('/brand', { replace: true }));
     expect(useAuthStore.getState().accessToken).toBe('tok-123');
+  });
+
+  // ─── Aceite dos documentos (obrigatório) ──────────────────────────────────
+
+  it('NÃO cria conta sem marcar o aceite dos documentos', async () => {
+    render(<RegisterBrandPage />, { wrapper: MemoryRouter });
+    await fillAllStepsSemAceite();
+
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(
+      await screen.findByText(/necessário aceitar os Termos de Uso e a Política de Privacidade/i),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('NÃO cria conta sem declarar maioridade', async () => {
+    render(<RegisterBrandPage />, { wrapper: MemoryRouter });
+    await fillAllStepsSemAceite();
+    fireEvent.click(screen.getByRole('checkbox', { name: /concordo com os termos de uso/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(
+      await screen.findByText(/necessário declarar que você tem 18 anos ou mais/i),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('mostra erro no campo email e volta pro passo do e-mail quando a API retorna 409', async () => {

@@ -4,6 +4,7 @@ import { useCampaign } from '../../hooks/useCampaignApplications';
 import { useUpdateCampaign } from '../../hooks/useCampaigns';
 import CampaignForm from './CampaignForm';
 import { campaignToFormValues } from './campaignFormSchema';
+import { useT } from '../../i18n';
 
 // Editar campanha (PATCH /campaigns/:id). O endpoint existe desde o começo e
 // nunca teve tela — a marca criava um rascunho e não conseguia mais corrigir
@@ -14,6 +15,7 @@ import { campaignToFormValues } from './campaignFormSchema';
 // detalhe. Campanha publicada é contrato com quem já se candidatou.
 
 export default function EditCampaignPage() {
+  const t = useT();
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: campaign, isLoading, isError } = useCampaign(id);
@@ -31,13 +33,13 @@ export default function EditCampaignPage() {
           className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
-          Voltar
+          {t.app.acoes.voltar}
         </Link>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pb-10">
         <h1 className="mb-9 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
-          Editar campanha
+          {t.app.marca.editarCampanha.titulo}
         </h1>
 
         {isLoading && (
@@ -48,22 +50,21 @@ export default function EditCampaignPage() {
 
         {isError && (
           <p className="text-sm text-destructive">
-            Não foi possível carregar a campanha. Tente novamente.
+            {t.app.marca.editarCampanha.erroCarregar}
           </p>
         )}
 
         {!isLoading && !isError && campaign && campaign.status !== 'DRAFT' && (
           <div className="max-w-[520px]">
             <p className="text-sm text-kinetic-muted">
-              Esta campanha já foi publicada e não pode mais ser editada. Quem se candidatou viu
-              estes termos, e mudá-los agora quebraria o combinado.
+              {t.app.marca.editarCampanha.jaPublicada}
             </p>
             <button
               type="button"
               onClick={backToDetail}
               className="mt-7 min-h-[52px] border border-kinetic-border px-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted transition-colors hover:border-foreground hover:text-foreground"
             >
-              Voltar à campanha
+              {t.app.marca.editarCampanha.voltarACampanha}
             </button>
           </div>
         )}
@@ -77,11 +78,11 @@ export default function EditCampaignPage() {
             }}
             onCancel={backToDetail}
             isPending={update.isPending}
-            submitLabel="Salvar alterações"
-            pendingLabel="Salvando…"
+            submitLabel={t.app.marca.editarCampanha.salvarAlteracoes}
+            pendingLabel={t.app.acoes.salvando}
             errorMessage={
               update.isError
-                ? 'Erro ao salvar as alterações. Verifique os campos e tente novamente.'
+                ? t.app.marca.editarCampanha.erroSalvar
                 : null
             }
           />

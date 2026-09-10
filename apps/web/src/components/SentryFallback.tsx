@@ -1,3 +1,5 @@
+import { useT } from '../i18n';
+
 interface SentryFallbackProps {
   /** Reseta o boundary e re-renderiza a árvore. */
   onReset: () => void;
@@ -9,18 +11,20 @@ interface SentryFallbackProps {
  * O evento já foi pro Sentry pelo boundary; aqui só sobra dar uma saída.
  */
 export default function SentryFallback({ onReset }: SentryFallbackProps) {
+  const t = useT();
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center">
-      <h1 className="text-lg font-semibold text-foreground">Algo quebrou nesta tela.</h1>
+      <h1 className="text-lg font-semibold text-foreground">{t.app.erroBoundary.titulo}</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
-        O erro foi registrado. Tenta recarregar. Se continuar, volta daqui a pouco.
+        {t.app.erroBoundary.descricao}
       </p>
       <button
         type="button"
         onClick={onReset}
         className="mt-2 min-h-[52px] bg-lime px-6 font-mono text-[11px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
       >
-        Recarregar
+        {t.app.erroBoundary.recarregar}
       </button>
     </div>
   );

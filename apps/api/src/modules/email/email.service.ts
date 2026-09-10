@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { EMAIL_PROVIDER } from './email.constants';
 import type { EmailProvider, EmailMessage } from './email.types';
+import { maskEmail } from '../../shared/utils/mask-email';
 
 interface ApplicationDecisionEmailParams {
   to: string;
@@ -30,6 +31,11 @@ interface PartnershipResultEmailParams {
 interface EmailChangedParams {
   to: string;
   newEmail: string;
+}
+
+interface AccountDeletedEmailParams {
+  to: string;
+  creatorName: string;
 }
 
 @Injectable()
@@ -130,14 +136,39 @@ export class EmailService {
     });
   }
 
+  // Manda pro e-mail ORIGINAL, capturado pelo chamador antes do tombstone
+  // gravado na exclusão — o endereço novo (deleted-<uuid>@tayro.invalid)
+  // não é alcançável por ninguém.
+  async sendAccountDeleted(params: AccountDeletedEmailParams): Promise<void> {
+    await this.sendBestEffort({
+      to: params.to,
+      subject: 'Sua conta foi apagada',
+      html: `
+        <p>Oi, ${params.creatorName}!</p>
+        <p>Sua conta na plataforma foi apagada, como você pediu. Nome, foto, telefone, @ do
+        Instagram e demais dados de identificação foram removidos.</p>
+        <p>Registros de parceria e pagamento continuam existindo para as marcas com quem você
+        trabalhou, sem nenhuma informação que identifique você.</p>
+      `,
+    });
+  }
+
   // Best-effort: falha de e-mail nunca deve derrubar a ação de negócio
   // (approve/reject) que a originou. Loga e segue.
+  //
+  // O destinatário vai MASCARADO: log de aplicação fica retido no Railway e
+  // acessível a quem tem o painel, e endereço inteiro não é necessário pra
+  // diagnosticar uma falha de envio. O domínio (que o mascaramento preserva) é
+  // o que diz se o problema é do provedor de destino; o assunto identifica
+  // qual envio falhou. Ver shared/utils/mask-email.ts.
   private async sendBestEffort(message: EmailMessage): Promise<void> {
     try {
       await this.provider.send(message);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Falha ao enviar e-mail para ${message.to}: ${reason}`);
+      this.logger.warn(
+        `Falha ao enviar e-mail "${message.subject}" para ${maskEmail(message.to)}: ${reason}`,
+      );
     }
   }
 }

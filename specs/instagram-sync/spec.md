@@ -520,3 +520,66 @@ Verificação de existência de @:
   uma falha de imagem marcaria `FAILED` um sync que deu certo, apagando dado bom por causa de
   uma foto — corrigido com `catch` próprio, e o teste foi validado por mutação (sem a correção,
   ele falha). Known Gap da imagem que expirava fechado.
+
+## Autorização das imagens (2026-09-04)
+
+`GET /ig/avatar/:influencerId` e `GET /ig/post/:influencerId/:position` continuam **sem
+`@UseGuards`**, porque são carregados por `<img>`, que não anexa o header `Authorization` (o
+access token vive só em memória no front). Mas deixaram de ser irrestritos.
+
+`IgImageAccessService.canView` libera em três casos, nesta ordem de custo:
+1. `publicProfileEnabled === true` — a creator escolheu publicar o media kit;
+2. a própria creator (a prévia do Perfil dela mostra a própria foto);
+3. marca com candidatura desta creator em alguma campanha dela — é o que sustenta a Fila,
+   Creators, Entregas, Recompensas e Resultado.
+
+Qualquer outro caso responde **404**, não 403: mesma resposta de imagem ausente, sem revelar se o
+id existe. O front já cai nas iniciais.
+
+**Como o espectador é identificado sem header:** pelo cookie `refresh_token` (httpOnly), que É
+enviado em requisição de `<img>` por ser mesma origem (em produção `/api/*` é rewrite same-origin
+na Vercel; em dev, o proxy do Vite) com `sameSite: 'lax'`. O header `Authorization` também é
+aceito, para chamada direta e teste. Token inválido, expirado ou ausente resolve para "anônimo",
+nunca para exceção.
+
+Não é validação de sessão completa: um refresh token válido cujo hash já foi rotacionado ainda
+identifica a pessoa. É suficiente para decidir se ela pode ver uma foto que o Instagram já
+publica abertamente, e evita a imagem sumir em toda aba antiga.
+
+**A autorização roda ANTES de qualquer leitura de imagem ou requisição externa.** Sem isso, um id
+não autorizado ainda faria o backfill baixar a foto da CDN do Instagram para então recusá-la.
+Travado por teste (validado por mutação).
+
+**Cache:** `public, max-age=86400` só quando o perfil é mesmo público; caso contrário
+`private, max-age=86400` mais `Vary: Cookie, Authorization`. Antes era sempre `public`, o que
+permitiria a um cache compartilhado (a borda da Vercel, um proxy corporativo) entregar a foto a
+quem não passou pela autorização.
+
+**`@SkipThrottle` foi mantido:** uma tela da Fila carrega dezenas de imagens, e o limite global de
+60/min a quebraria. Com a autorização no lugar, raspagem em massa passa a exigir uma sessão com
+relação legítima.
+
+**Carve-out da tela de claim:** `/claim?token=` é a única superfície que mostra a foto da creator
+sem sessão nenhuma (ela ainda não tem senha) e com o perfil público desligado (o default).
+`GET /auth/claim/:token` passou a devolver a foto **embutida** como data URI
+(`igAvatarDataUri`, substituindo o antigo booleano `hasIgAvatar`), com teto de 256 KB e
+degradação para `null` em qualquer falha. A autorização daquela tela é o próprio token de claim,
+já validado; servir por ali evita abrir um segundo endereço público só para este caso.
+
+### Test Coverage (autorização)
+- `apps/api/src/modules/instagram/ig-image-access.service.spec.ts` (10): perfil público libera
+  qualquer pessoa; anônimo com perfil privado é bloqueado; a própria creator pelo cookie; marca
+  com candidatura libera; marca sem candidatura bloqueia; header `Authorization` aceito; token
+  com segredo errado, expirado ou lixo não libera; creator inexistente não libera.
+- `apps/api/src/modules/instagram/ig-avatar.controller.spec.ts`: 404 sem autorização nas duas
+  rotas **sem tocar na CDN**, `Cache-Control` private/public conforme o perfil. Os dois casos de
+  negação validados por mutação (a 1ª versão do teste de `post` passava com o gate removido,
+  porque o dublê não devolvia `igRecentPosts` — corrigido).
+- Verificado em HTTP real contra a API local, com imagem temporária no banco de dev (2026-09-04):
+  sem cookie + perfil privado → `404`; com o cookie da própria creator → `200` +
+  `Cache-Control: private` + `Vary: Cookie, Authorization`; perfil público sem cookie → `200` +
+  `Cache-Control: public`; cookie de marca sem candidatura → `404`.
+
+## Change History (complemento)
+- 2026-09-04 · autorização das rotas de imagem (acima). Fecha o achado da auditoria de que
+  desligar o perfil público não removia as imagens do acesso público.

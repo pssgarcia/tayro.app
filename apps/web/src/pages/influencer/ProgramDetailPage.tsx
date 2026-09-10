@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useT } from '../../i18n';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { useProgram } from '../../hooks/useProgram';
 import { useMyApplications } from '../../hooks/useMyApplications';
@@ -31,6 +32,7 @@ function Skeleton() {
 // daqui (o card do Abertos apenas navega para cá).
 
 export default function ProgramDetailPage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
@@ -57,19 +59,19 @@ export default function ProgramDetailPage() {
         className="mb-7 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} />
-        Voltar
+        {t.app.acoes.voltar}
       </button>
 
       {isLoading && <Skeleton />}
 
       {isError && (
         <div className="py-16 text-center">
-          <p className="font-display font-semibold text-foreground">Campanha não encontrada</p>
+          <p className="font-display font-semibold text-foreground">{t.app.creator.detalheCampanha.naoEncontrada}</p>
           <p className="mt-2 text-sm text-kinetic-muted">
-            Ele pode ter sido encerrado ou o link está desatualizado.
+            {t.app.creator.detalheCampanha.naoEncontradaDescricao}
           </p>
           <Link to="/influencer/browse" className="mt-4 inline-block text-sm text-lime">
-            Ver campanhas abertas
+            {t.app.creator.detalheCampanha.verCampanhas}
           </Link>
         </div>
       )}
@@ -87,7 +89,7 @@ export default function ProgramDetailPage() {
             </div>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-                Campanha de
+                {t.app.creator.detalheCampanha.campanhaDe}
               </p>
               <p className="mt-1.5 font-display text-base font-semibold tracking-[-.03em] text-foreground">
                 {campaign.brand?.name ?? '—'}
@@ -102,20 +104,20 @@ export default function ProgramDetailPage() {
           {/* Placa — a oferta (regra 5: uma placa por tela) */}
           <KineticPlate marks="all" className="p-8">
             <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-              O que você recebe
+              {t.app.creator.detalheCampanha.oQueRecebe}
             </p>
             <p className="font-display text-[30px] font-bold leading-[1.05] tracking-[-.045em] text-black">
               {formatOffer(campaign)}
             </p>
             <p className="mt-3 text-[13px] text-[#6a6a64]">
-              {isProduct ? 'produto enviado para você' : 'por candidatura aprovada'}
+              {isProduct ? t.app.creator.detalheCampanha.produtoEnviado : t.app.creator.detalheCampanha.porCandidaturaAprovada}
             </p>
 
             <div className="my-7 h-px bg-[#c9c9c3]" />
             <div className="grid grid-cols-2 gap-6">
               {campaign.offerDeadlineDays != null && (
                 <StatFigure
-                  label={isProduct ? 'dias até o envio' : 'dias até o pagamento'}
+                  label={isProduct ? t.app.creator.detalheCampanha.diasAteEnvio : t.app.creator.detalheCampanha.diasAtePagamento}
                   value={campaign.offerDeadlineDays}
                   size="md"
                   tone="plate"
@@ -134,7 +136,7 @@ export default function ProgramDetailPage() {
           {campaign.deadline && (
             <p className="mt-7 flex items-center gap-2 text-xs text-kinetic-muted">
               <CalendarDays size={13} />
-              Inscrições até {formatDate(campaign.deadline)}
+              {t.app.creator.detalheCampanha.inscricoesAte(formatDate(campaign.deadline))}
             </p>
           )}
 
@@ -152,7 +154,7 @@ export default function ProgramDetailPage() {
           )}
 
           <p className="mt-9 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-            Sobre a campanha
+            {t.app.creator.detalheCampanha.sobre}
           </p>
           <p className="mt-5 whitespace-pre-line break-words text-[15px] leading-relaxed text-kinetic-text">
             {campaign.description}
@@ -165,7 +167,7 @@ export default function ProgramDetailPage() {
               rel="noopener noreferrer"
               className="mt-6 inline-block font-mono text-[11px] uppercase tracking-widest text-lime transition-opacity hover:opacity-80"
             >
-              Ver briefing completo
+              {t.app.creator.detalheCampanha.verBriefing}
             </a>
           )}
 
@@ -176,21 +178,21 @@ export default function ProgramDetailPage() {
             <div className="flex items-center gap-3">
               <StatusWord kind="application" status={myApplication.status} />
               <p className="text-sm text-kinetic-muted">
-                Você já se candidatou a esta campanha.{' '}
+                {t.app.creator.detalheCampanha.jaSeCandidatou}{' '}
                 <Link to="/influencer/applications" className="text-lime hover:underline">
-                  Ver candidatura
+                  {t.app.creator.detalheCampanha.verCandidatura}
                 </Link>
               </p>
             </div>
           ) : campaign.status !== 'ACTIVE' ? (
-            <p className="text-sm text-kinetic-muted">Inscrições encerradas para esta campanha.</p>
+            <p className="text-sm text-kinetic-muted">{t.app.creator.detalheCampanha.encerradas}</p>
           ) : (
             <button
               type="button"
               onClick={() => setModalOpen(true)}
               className="min-h-[60px] w-full bg-lime font-mono text-[13px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
             >
-              Quero participar
+              {t.app.creator.candidatar.titulo}
             </button>
           )}
         </div>

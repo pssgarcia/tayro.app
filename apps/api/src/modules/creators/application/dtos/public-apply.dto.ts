@@ -14,6 +14,10 @@ import {
   PHONE_FORMAT_MESSAGE,
   PHONE_MAX_LENGTH,
 } from '../../../../shared/validation/phone';
+import {
+  AcceptedTermsAndPrivacyField,
+  DeclaredAdultField,
+} from '../../../../shared/legal/legal-acceptance.dto-fields';
 
 export class PublicApplyDto {
   @ApiProperty({ example: 'anafitness' })
@@ -51,4 +55,14 @@ export class PublicApplyDto {
   @IsString()
   @MaxLength(1000)
   message?: string;
+
+  // Este fluxo CRIA (ou reusa) uma conta de creator, então carrega o mesmo
+  // aceite dos cadastros. A diferença é a tela: em /apply/:id a caixa precisa
+  // dizer que a candidatura cria uma conta no TAYRO, senão a conta nasce em
+  // silêncio (ver specs/legal-acceptance).
+  @AcceptedTermsAndPrivacyField()
+  acceptedTermsAndPrivacy: boolean;
+
+  @DeclaredAdultField()
+  declaredAdult: boolean;
 }

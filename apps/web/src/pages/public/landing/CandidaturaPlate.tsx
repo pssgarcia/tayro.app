@@ -6,6 +6,7 @@ import KineticActions from '../../../components/primitives/kinetic/KineticAction
 import CreatorAvatar from './CreatorAvatar';
 import PostGrid from './PostGrid';
 import type { DemoCreator } from './demo';
+import { useT } from '../../../i18n';
 
 // ─── A candidatura como a marca vê ───────────────────────────────────────────
 // Reconstrução em código da placa de candidatura da Fila (`CampaignFilaTab`),
@@ -36,19 +37,20 @@ const numero = 'font-display text-4xl font-bold tabular-nums tracking-[-.05em] t
 
 /** Seguidores e engajamento lado a lado — o par que a Fila mostra no topo. */
 function Numeros({ creator }: { creator: DemoCreator }) {
+  const t = useT();
   const seg = formatNumberParts(creator.followers);
 
   return (
     <div className="grid grid-cols-2 gap-6">
       <div>
-        <p className={cn('mb-1', rotulo)}>seguidores</p>
+        <p className={cn('mb-1', rotulo)}>{t.fila.seguidores}</p>
         <p className={numero}>
           {seg.value}
           {seg.suffix}
         </p>
       </div>
       <div>
-        <p className={cn('mb-1', rotulo)}>engajamento</p>
+        <p className={cn('mb-1', rotulo)}>{t.fila.engajamento}</p>
         <p className={numero}>{formatEngagement(creator.engagement)}</p>
       </div>
     </div>
@@ -93,6 +95,8 @@ export function CandidaturaPainel({
   creator: DemoCreator;
   className?: string;
 }) {
+  const t = useT();
+
   return (
     <KineticPlate flush marks="top" className={className}>
       <div className="px-8 pb-6 pt-8">
@@ -103,7 +107,7 @@ export function CandidaturaPainel({
         </div>
 
         <div className="mt-6">
-          <p className={cn('mb-2', rotulo)}>posts recentes</p>
+          <p className={cn('mb-2', rotulo)}>{t.fila.postsRecentes}</p>
           {/* Faixa única no herói: em duas linhas a grade empurrava a barra de
               decisão pra fora da primeira dobra, e é justamente a vizinhança
               "Instagram ao lado do botão" que o herói precisa mostrar. */}
@@ -113,10 +117,10 @@ export function CandidaturaPainel({
 
       <div aria-hidden="true" className="flex border-t border-[#c9c9c3]">
         <span className="flex min-h-[60px] flex-1 items-center justify-center bg-lime font-mono text-xs font-medium uppercase tracking-widest text-black">
-          Aprovar
+          {t.comum.aprovar}
         </span>
         <span className="flex min-h-[60px] flex-1 items-center justify-center border-l border-[#c9c9c3] font-mono text-xs font-medium uppercase tracking-widest text-[#4a4a44]">
-          Recusar
+          {t.comum.recusar}
         </span>
       </div>
     </KineticPlate>
@@ -140,6 +144,9 @@ export function CandidaturaDetalhe({
   decidida,
   className,
 }: DetalheProps) {
+  const t = useT();
+  const copy = t.demo.creators[creator.id];
+
   return (
     <KineticPlate as="section" flush marks="top" className={cn('flex flex-col', className)}>
       <div className="flex-1 px-8 pb-8 pt-8">
@@ -150,28 +157,30 @@ export function CandidaturaDetalhe({
         </div>
 
         <div className="mt-6">
-          <p className={cn('mb-2', rotulo)}>mensagem da candidatura</p>
+          <p className={cn('mb-2', rotulo)}>{t.fila.mensagemDaCandidatura}</p>
           <p className="text-pretty text-sm leading-relaxed text-[#33332f]">
-            &ldquo;{creator.mensagem}&rdquo;
+            &ldquo;{copy.mensagem}&rdquo;
           </p>
         </div>
 
         <div className="mt-6">
-          <p className={cn('mb-2', rotulo)}>posts recentes</p>
+          <p className={cn('mb-2', rotulo)}>{t.fila.postsRecentes}</p>
           <PostGrid posts={creator.posts} />
         </div>
       </div>
 
       {decidida ? (
         <p className="border-t border-[#c9c9c3] px-8 py-5 font-mono text-xs uppercase tracking-widest text-[#4a4a44]">
-          candidatura {decidida}
+          {t.fila.decidida(
+            decidida === 'aprovada' ? t.fila.decisaoAprovada : t.fila.decisaoRecusada,
+          )}
         </p>
       ) : (
         <KineticActions
           className="shrink-0"
           actions={[
-            { label: 'Aprovar', onClick: onAprovar, primary: true },
-            { label: 'Recusar', onClick: onRecusar },
+            { label: t.comum.aprovar, onClick: onAprovar, primary: true },
+            { label: t.comum.recusar, onClick: onRecusar },
           ]}
         />
       )}

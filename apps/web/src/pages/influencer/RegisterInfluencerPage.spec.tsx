@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { acceptLegalDocuments } from '../../test/legal-acceptance';
 import { MemoryRouter } from 'react-router-dom';
 import RegisterInfluencerPage from './RegisterInfluencerPage';
 import { api } from '../../services/api';
@@ -47,6 +48,27 @@ function continueStep() {
 
 /** Preenche os 3 passos e deixa o form na tela final ("Criar conta"). */
 async function fillAllSteps({ instagramHandle = 'anafit' }: { instagramHandle?: string } = {}) {
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
+  fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
+  fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: instagramHandle } });
+  continueStep();
+
+  fireEvent.change(await screen.findByLabelText('E-mail'), {
+    target: { value: 'ana@exemplo.com' },
+  });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senhaSegura1' } });
+  continueStep();
+
+  await screen.findByRole('button', { name: /criar conta/i });
+  // Aceite dos documentos + maioridade: obrigatórios desde 2026-09-04, e
+  // vivem no último passo, junto do "Criar conta".
+  acceptLegalDocuments();
+}
+
+/** Igual ao anterior, mas sem marcar as caixas de aceite. */
+async function fillAllStepsSemAceite({
+  instagramHandle = 'anafit',
+}: { instagramHandle?: string } = {}) {
   fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Silva' } });
   fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '(11) 91234-5678' } });
   fireEvent.change(screen.getByLabelText(/instagram/i), { target: { value: instagramHandle } });
@@ -174,12 +196,43 @@ describe('RegisterInfluencerPage', () => {
         phone: '(11) 91234-5678',
         instagramHandle: 'anafit', // @ removido + lowercase
         niches: ['crossfit'],
+        // Prova que o aceite marcado na tela CHEGA à API. O front manda só
+        // que as caixas foram marcadas; a versão é estampada pelo servidor.
+        acceptedTermsAndPrivacy: true,
+        declaredAdult: true,
       }),
     );
     await waitFor(() =>
       expect(navigateMock).toHaveBeenCalledWith('/influencer', { replace: true }),
     );
     expect(useAuthStore.getState().accessToken).toBe('tok-1');
+  });
+
+  // ─── Aceite dos documentos (obrigatório) ──────────────────────────────────
+
+  it('NÃO cria conta sem marcar o aceite dos documentos', async () => {
+    render(<RegisterInfluencerPage />, { wrapper: MemoryRouter });
+    await fillAllStepsSemAceite();
+
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(
+      await screen.findByText(/necessário aceitar os Termos de Uso e a Política de Privacidade/i),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('NÃO cria conta sem declarar maioridade', async () => {
+    render(<RegisterInfluencerPage />, { wrapper: MemoryRouter });
+    await fillAllStepsSemAceite();
+    fireEvent.click(screen.getByRole('checkbox', { name: /concordo com os termos de uso/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    expect(
+      await screen.findByText(/necessário declarar que você tem 18 anos ou mais/i),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('mostra a mensagem do servidor no email e volta pro passo do e-mail quando 409', async () => {

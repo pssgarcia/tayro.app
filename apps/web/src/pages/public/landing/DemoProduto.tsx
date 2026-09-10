@@ -5,6 +5,7 @@ import DemoFila, { type Decisao } from './DemoFila';
 import DemoFilaStory from './DemoFilaStory';
 import { DemoConteudos, DemoRecompensas, DemoResultados } from './DemoParcerias';
 import { DEMO_CREATORS, type DemoCreator, type DemoParceria } from './demo';
+import { useT } from '../../../i18n';
 
 // ─── A demonstração do produto ───────────────────────────────────────────────
 // A seção mais forte da página, e a única interativa. Não é uma vitrine de
@@ -21,14 +22,9 @@ import { DEMO_CREATORS, type DemoCreator, type DemoParceria } from './demo';
 // Toda a UI é construída em código com os primitivos do produto. Só as FOTOS
 // são geradas (ver `demo.ts`).
 
-const ABAS = [
-  { id: 'fila', label: 'Fila' },
-  { id: 'recompensas', label: 'Recompensas' },
-  { id: 'conteudos', label: 'Conteúdos' },
-  { id: 'resultado', label: 'Resultado' },
-] as const;
+const ABA_IDS = ['fila', 'recompensas', 'conteudos', 'resultado'] as const;
 
-type Aba = (typeof ABAS)[number]['id'];
+type Aba = (typeof ABA_IDS)[number];
 
 /** A creator que já chega aprovada tem parceria em andamento desde o início —
  *  senão as duas abas seguintes abririam vazias e ninguém veria o que elas são. */
@@ -44,6 +40,7 @@ const PARCERIAS_INICIAIS: Record<string, DemoParceria> = Object.fromEntries(
 );
 
 export default function DemoProduto() {
+  const t = useT();
   const [aba, setAba] = useState<Aba>('fila');
   const [decisoes, setDecisoes] = useState<Record<string, Decisao>>({});
   const [parcerias, setParcerias] = useState<Record<string, DemoParceria>>(PARCERIAS_INICIAIS);
@@ -99,15 +96,19 @@ export default function DemoProduto() {
     setAba('fila');
   }
 
+  // Rótulo no render, id constante: a aba selecionada sobrevive à troca de
+  // idioma porque o estado guarda o id, não o texto.
+  const abas = ABA_IDS.map((id) => ({ id, label: t.produto.abas[id] }));
+
   return (
     <div>
-      <KineticTabs tabs={ABAS} active={aba} onChange={setAba} className="px-0 sm:px-0" />
+      <KineticTabs tabs={abas} active={aba} onChange={setAba} className="px-0 sm:px-0" />
 
       {/* A ressalva fica no TOPO, colada nas abas: embaixo ela virava uma linha
           solta no fim da seção, longe do que estava descrevendo. Diz as duas
           coisas que importam — as pessoas não existem e as fotos são geradas. */}
       <p className="mb-8 mt-4 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-        Creators fictícias · imagens geradas · dados de demonstração
+        {t.produto.ressalva}
       </p>
 
       {aba === 'fila' && (
@@ -142,7 +143,7 @@ export default function DemoProduto() {
             onClick={recomecar}
             className="rounded-sm font-mono text-[10px] uppercase tracking-widest text-kinetic-text underline-offset-4 transition-colors hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Recomeçar demonstração
+            {t.produto.recomecar}
           </button>
         )}
       </div>

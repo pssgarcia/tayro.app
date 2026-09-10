@@ -13,6 +13,11 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { EmailService } from '../../email/email.service';
+import { IgImageService } from '../../instagram/ig-image.service';
+import {
+  PRIVACY_VERSION,
+  TERMS_VERSION,
+} from '../../../shared/legal/legal-documents';
 
 const makeUser = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'user-abc',
@@ -31,6 +36,7 @@ describe('AuthService', () => {
   let scheduleRefresh: jest.Mock;
   let sendPasswordReset: jest.Mock;
   let sendEmailChanged: jest.Mock;
+  let findOrBackfill: jest.Mock;
 
   beforeEach(async () => {
     prisma = {
@@ -45,6 +51,7 @@ describe('AuthService', () => {
     scheduleRefresh = jest.fn();
     sendPasswordReset = jest.fn().mockResolvedValue(undefined);
     sendEmailChanged = jest.fn().mockResolvedValue(undefined);
+    findOrBackfill = jest.fn().mockResolvedValue(null);
 
     const config = {
       getOrThrow: jest.fn().mockReturnValue('test-secret'),
@@ -60,6 +67,13 @@ describe('AuthService', () => {
         {
           provide: EmailService,
           useValue: { sendPasswordReset, sendEmailChanged },
+        },
+        // Usado só pela prévia do claim, que embute a foto de perfil guardada
+        // (a tela não tem sessão nem perfil público, então não pode depender
+        // de /ig/avatar/:id). Sem imagem por default.
+        {
+          provide: IgImageService,
+          useValue: { findOrBackfill: findOrBackfill },
         },
       ],
     }).compile();
@@ -253,6 +267,15 @@ describe('AuthService', () => {
       });
 
       prisma.user.findUnique.mockResolvedValue(user);
+      prisma.influencer = {
+        findUnique: jest.fn().mockResolvedValue({
+          igProfilePicUrl: 'https://scontent.cdninstagram.com/pic.jpg',
+        }),
+      };
+      findOrBackfill.mockResolvedValue({
+        data: Buffer.from([0xff, 0xd8, 0xff]),
+        mimeType: 'image/jpeg',
+      });
 
       const result = await service.getClaimPreview(rawToken);
 
@@ -264,9 +287,73 @@ describe('AuthService', () => {
         email: user.email,
         avatarUrl: null,
         influencerId: 'inf-1',
-        hasIgAvatar: true,
+        // A foto vai EMBUTIDA: esta tela não tem sessão e o perfil público
+        // está desligado, então ela não pode depender de /ig/avatar/:id, que
+        // passou a exigir autorização.
+        igAvatarDataUri: 'data:image/jpeg;base64,/9j/',
         campaignTitle: 'Basic Drop 2026',
       });
+    });
+
+    it('a prévia continua funcionando quando a foto guardada não existe', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const user = makeUser({
+        role: UserRole.INFLUENCER,
+        claimTokenHash: tokenHash,
+        claimTokenExpiresAt: new Date(Date.now() + 60_000),
+        influencer: {
+          id: 'inf-1',
+          instagramHandle: 'thaismoreira',
+          avatarUrl: null,
+          igProfilePicUrl: null,
+          applications: [],
+        },
+      });
+
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.influencer = {
+        findUnique: jest.fn().mockResolvedValue({ igProfilePicUrl: null }),
+      };
+      findOrBackfill.mockResolvedValue(null);
+
+      const result = await service.getClaimPreview(rawToken);
+
+      expect(result.igAvatarDataUri).toBeNull();
+      expect(result.instagramHandle).toBe('thaismoreira');
+    });
+
+    it('falha ao carregar a foto não derruba a prévia', async () => {
+      const rawToken = 'raw-claim-token';
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
+      const user = makeUser({
+        role: UserRole.INFLUENCER,
+        claimTokenHash: tokenHash,
+        claimTokenExpiresAt: new Date(Date.now() + 60_000),
+        influencer: {
+          id: 'inf-1',
+          instagramHandle: 'thaismoreira',
+          avatarUrl: null,
+          igProfilePicUrl: 'https://scontent.cdninstagram.com/pic.jpg',
+          applications: [],
+        },
+      });
+
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.influencer = {
+        findUnique: jest.fn().mockRejectedValue(new Error('banco fora')),
+      };
+
+      const result = await service.getClaimPreview(rawToken);
+
+      expect(result.igAvatarDataUri).toBeNull();
+      expect(result.instagramHandle).toBe('thaismoreira');
     });
 
     it('campaignTitle é null quando a creator ainda não tem nenhuma candidatura', async () => {
@@ -294,7 +381,7 @@ describe('AuthService', () => {
       const result = await service.getClaimPreview(rawToken);
 
       expect(result.campaignTitle).toBeNull();
-      expect(result.hasIgAvatar).toBe(false);
+      expect(result.igAvatarDataUri).toBeNull();
     });
 
     it('lança UnauthorizedException quando o token não existe', async () => {
@@ -859,6 +946,8 @@ describe('AuthService', () => {
       password: 'senhaSegura1',
       brandName: 'Lilo',
       niches: [],
+      acceptedTermsAndPrivacy: true,
+      declaredAdult: true,
     };
 
     const p2002 = () =>
@@ -876,6 +965,19 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result.user.role).toBe(UserRole.BRAND);
+    });
+
+    it('grava o aceite dos documentos no mesmo create da conta', async () => {
+      prisma.user.create.mockResolvedValue(makeUser({ role: UserRole.BRAND }));
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      await service.registerBrand(dto);
+
+      const data = prisma.user.create.mock.calls[0][0].data;
+      expect(data.acceptedTermsVersion).toBe(TERMS_VERSION);
+      expect(data.acceptedPrivacyVersion).toBe(PRIVACY_VERSION);
+      expect(data.acceptedAt).toBeInstanceOf(Date);
+      expect(data.declaredAdultAt).toBeInstanceOf(Date);
     });
 
     // Regressão: até 2026-08-23 este fluxo fazia findUnique antes do create
@@ -923,6 +1025,8 @@ describe('AuthService', () => {
       phone: '(11) 91234-5678',
       instagramHandle: 'anafit',
       niches: [],
+      acceptedTermsAndPrivacy: true,
+      declaredAdult: true,
     };
 
     const p2002 = (target: string) =>
@@ -949,6 +1053,21 @@ describe('AuthService', () => {
     // a creator que se cadastrava com senha nascia com igFetchStatus = null e
     // a marca via "Dados do Instagram indisponíveis" para sempre, porque o
     // front trata null igual a falha. Só a candidatura pública sincronizava.
+
+    it('grava o aceite dos documentos no mesmo create da conta', async () => {
+      prisma.user.create.mockResolvedValue(
+        makeUser({ role: UserRole.INFLUENCER, influencer: { id: 'inf-1' } }),
+      );
+      prisma.user.update.mockResolvedValue(makeUser());
+
+      await service.registerInfluencer(dto);
+
+      const data = prisma.user.create.mock.calls[0][0].data;
+      expect(data.acceptedTermsVersion).toBe(TERMS_VERSION);
+      expect(data.acceptedPrivacyVersion).toBe(PRIVACY_VERSION);
+      expect(data.acceptedAt).toBeInstanceOf(Date);
+      expect(data.declaredAdultAt).toBeInstanceOf(Date);
+    });
 
     it('nasce com igFetchStatus PENDING', async () => {
       prisma.user.create.mockResolvedValue(

@@ -1,3 +1,5 @@
+import { dict } from '../i18n';
+
 /**
  * Resolve a config de contato do produto a partir de `import.meta.env`.
  *
@@ -14,9 +16,6 @@ export interface ContactConfig {
   whatsappUrl: string | undefined;
 }
 
-const WHATSAPP_MESSAGE =
-  'Oi! Vi o TAYRO e queria entender como funciona pra minha marca.';
-
 export function resolveContactConfig(env: ImportMetaEnv): ContactConfig {
   // Aceita número já limpo ou mascarado ("+55 (37) 9...") — só os dígitos importam.
   const digits = (env.VITE_CONTACT_WHATSAPP ?? '').replace(/\D/g, '');
@@ -24,6 +23,10 @@ export function resolveContactConfig(env: ImportMetaEnv): ContactConfig {
   if (digits === '') return { whatsappUrl: undefined };
 
   return {
-    whatsappUrl: `https://wa.me/${digits}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`,
+    // A mensagem já preenchida sai no idioma da página que a pessoa leu: quem
+    // escreve é ela, não nós. `dict()` e não hook porque isto não é componente.
+    whatsappUrl: `https://wa.me/${digits}?text=${encodeURIComponent(
+      dict().hero.whatsappMensagem,
+    )}`,
   };
 }

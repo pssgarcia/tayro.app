@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT, type Dictionary } from '../../i18n';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import { redirectPath } from '../../utils/redirectPath';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
@@ -14,12 +15,15 @@ import KineticActions from '../../components/primitives/kinetic/KineticActions';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  email: z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Senha obrigatória'),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    email: z.string().email(t.app.validacao.emailInvalido),
+    password: z.string().min(1, t.app.login.senhaObrigatoria),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 interface LoginResponse {
   accessToken: string;
@@ -31,6 +35,8 @@ interface LoginResponse {
 // nos 3 cadastros, Ativar conta e nos modais de PublishModal/Entregas.
 
 export default function LoginPage() {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { accessToken, user, setAuth } = useAuthStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -52,15 +58,26 @@ export default function LoginPage() {
       setAuth(data.accessToken, data.user);
       navigate(redirectPath(data.user.role), { replace: true });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        if (status === 401 || status === 400) {
-          setError('root', { message: 'Email ou senha incorretos' });
-        } else {
-          setError('root', { message: 'Erro de conexão. Tente novamente.' });
-        }
+      if (!axios.isAxiosError(err)) {
+        setError('root', { message: t.app.erros.inesperado });
+        return;
+      }
+
+      const status = err.response?.status;
+      if (status === 401 || status === 400) {
+        setError('root', { message: t.app.login.credenciaisInvalidas });
+      } else if (status === 429) {
+        // O throttle de /auth/* é 5 req por 15 min por IP. Dizer "erro de
+        // conexão" aqui manda a pessoa tentar de novo, que é justamente o que
+        // não resolve — e a conexão está perfeita.
+        setError('root', { message: t.app.erros.muitasTentativas });
+      } else if (!err.response) {
+        // Sem response = a request não chegou ao servidor (rede caiu, API fora,
+        // proxy 502). Só AQUI faz sentido falar em "conexão" — mesma regra que
+        // os cadastros já seguiam.
+        setError('root', { message: t.app.login.erroConexao });
       } else {
-        setError('root', { message: 'Erro inesperado. Tente novamente.' });
+        setError('root', { message: t.app.erros.inesperado });
       }
     }
   };
@@ -72,25 +89,25 @@ export default function LoginPage() {
       </span>
 
       <h1 className="mb-7 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] sm:text-[46px] text-foreground">
-        Que bom te ver
+        {t.app.login.titulo}
         <br />
-        de novo.
+        {t.app.login.tituloDestaque}
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <KineticPlate marks="top" flush>
           <div className="flex flex-col gap-6 px-6 pb-[26px] pt-[30px]">
             <KineticField
-              label="E-mail"
+              label={t.app.cadastroCreator.email}
               type="email"
               variant="plate"
               autoComplete="email"
-              placeholder="seu@email.com"
+              placeholder={t.app.login.emailPlaceholder}
               error={errors.email?.message}
               {...register('email')}
             />
             <KineticField
-              label="Senha"
+              label={t.app.cadastroCreator.senha}
               type={showPassword ? 'text' : 'password'}
               variant="plate"
               autoComplete="current-password"
@@ -102,7 +119,7 @@ export default function LoginPage() {
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
                   className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-label={showPassword ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -119,9 +136,9 @@ export default function LoginPage() {
           <KineticActions
             compact
             actions={[
-              { label: 'Esqueci minha senha', to: '/forgot-password' },
+              { label: t.app.login.esqueciSenha, to: '/forgot-password' },
               {
-                label: isSubmitting ? 'Entrando…' : 'Entrar',
+                label: isSubmitting ? t.app.login.entrando : t.app.acoes.entrar,
                 type: 'submit',
                 disabled: isSubmitting,
                 primary: true,
@@ -132,15 +149,15 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-[26px] text-[13px] text-kinetic-muted">
-        Não tem conta?{' '}
+        {t.app.login.naoTemConta}{' '}
         <Link to="/register" className="font-medium text-lime hover:underline">
-          Cadastre-se
+          {t.app.login.cadastreSe}
         </Link>
       </p>
 
       <p className="mt-3 text-[13px] text-kinetic-muted">
         <Link to="/programs" className="hover:underline">
-          Ver campanhas abertas
+          {t.app.login.verCampanhas}
         </Link>
       </p>
     </div>
