@@ -555,6 +555,12 @@ export class CreatorsService {
         claimToken.rawToken,
       );
 
+      await this.notifyAdminOfNewCreatorAccount(
+        user.influencer!.name,
+        dto.email,
+        dto.igHandle,
+      );
+
       return user.influencer!;
     } catch (err) {
       // Race condition: entre os findUnique acima e este create, outro request
@@ -653,6 +659,38 @@ export class CreatorsService {
   }
 
   /** Mesma garantia do `offerAccountClaim`, para quem já gravou o token. */
+  /**
+   * Instrumentação do funil pro operador (roadmap.md AGORA #0) — visibilidade
+   * de quem entra por candidatura pública, sem consultar o Neon na mão.
+   * Não é a mesma classe do claim: sem `ADMIN_NOTIFICATION_EMAIL` configurada,
+   * a notificação simplesmente NÃO existe (não é falha, é instrumentação
+   * desligada) — por isso `config.get`, não `getOrThrow`. Dispara só na
+   * criação de fato de conta+influencer, nunca em reaplicação.
+   */
+  private async notifyAdminOfNewCreatorAccount(
+    name: string,
+    email: string,
+    igHandle: string,
+  ): Promise<void> {
+    const adminEmail = this.config.get<string>('ADMIN_NOTIFICATION_EMAIL');
+    if (!adminEmail) return;
+
+    try {
+      await this.emailService.sendNewAccountNotification({
+        to: adminEmail,
+        role: UserRole.INFLUENCER,
+        name,
+        email,
+        detail: `@${igHandle}`,
+      });
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      this.logger.warn(
+        `Candidatura seguiu, mas a notificação de conta nova pro admin falhou: ${reason}`,
+      );
+    }
+  }
+
   private async sendClaimEmailBestEffort(
     email: string,
     creatorName: string,

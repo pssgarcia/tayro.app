@@ -51,6 +51,7 @@ describe('CreatorsService — emissão de claim token', () => {
     const emailService = { sendClaimAccount };
     const config = {
       getOrThrow: jest.fn().mockReturnValue('http://localhost:5173'),
+      get: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

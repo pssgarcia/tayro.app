@@ -92,6 +92,38 @@ describe('EmailService', () => {
     );
   });
 
+  it('sendNewAccountNotification avisa o admin com nome, e-mail e papel da conta nova', async () => {
+    await service.sendNewAccountNotification({
+      to: 'pedro@example.com',
+      role: 'INFLUENCER',
+      name: 'Alex',
+      email: 'alex@example.com',
+      detail: '@alexfit',
+    });
+
+    expect(sendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'pedro@example.com',
+        subject: expect.stringContaining('Alex'),
+        html: expect.stringContaining('alex@example.com'),
+      }),
+    );
+    const { html } = sendMock.mock.calls[0][0];
+    expect(html).toContain('@alexfit');
+  });
+
+  it('sendNewAccountNotification omite o detalhe quando não informado (ex: marca, sem @ do Instagram)', async () => {
+    await service.sendNewAccountNotification({
+      to: 'pedro@example.com',
+      role: 'BRAND',
+      name: 'Marca Fit',
+      email: 'contato@marcafit.com',
+    });
+
+    const { html } = sendMock.mock.calls[0][0];
+    expect(html).not.toContain('undefined');
+  });
+
   it('falha no provider é engolida (best-effort) — não lança', async () => {
     sendMock.mockRejectedValueOnce(new Error('Resend fora do ar'));
 

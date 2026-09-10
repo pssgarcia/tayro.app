@@ -38,6 +38,15 @@ interface AccountDeletedEmailParams {
   creatorName: string;
 }
 
+interface NewAccountNotificationParams {
+  to: string;
+  role: 'INFLUENCER' | 'BRAND';
+  name: string;
+  email: string;
+  /** Ex: @ do Instagram. Não existe equivalente pra marca — fica de fora. */
+  detail?: string;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -149,6 +158,29 @@ export class EmailService {
         Instagram e demais dados de identificação foram removidos.</p>
         <p>Registros de parceria e pagamento continuam existindo para as marcas com quem você
         trabalhou, sem nenhuma informação que identifique você.</p>
+      `,
+    });
+  }
+
+  /**
+   * Notificação pro OPERADOR (Pedro), não pro usuário — instrumentação do
+   * funil (roadmap.md, AGORA #0), não efeito colateral do cadastro em si.
+   * Quem decide SE dispara (existe `ADMIN_NOTIFICATION_EMAIL`?) e PRA QUEM é
+   * o chamador — este método só monta e manda. best-effort por herdar
+   * `sendBestEffort`: nunca deve atrapalhar o cadastro que a originou.
+   */
+  async sendNewAccountNotification(
+    params: NewAccountNotificationParams,
+  ): Promise<void> {
+    const roleLabel = params.role === 'BRAND' ? 'marca' : 'creator';
+    await this.sendBestEffort({
+      to: params.to,
+      subject: `Nova conta no TAYRO (${roleLabel}): ${params.name}`,
+      html: `
+        <p>Uma conta nova de <strong>${roleLabel}</strong> acabou de ser criada.</p>
+        <p><strong>Nome:</strong> ${params.name}</p>
+        <p><strong>E-mail:</strong> ${params.email}</p>
+        ${params.detail ? `<p><strong>Instagram:</strong> ${params.detail}</p>` : ''}
       `,
     });
   }
