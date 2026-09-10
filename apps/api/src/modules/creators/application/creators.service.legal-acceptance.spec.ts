@@ -58,7 +58,10 @@ describe('CreatorsService — aceite dos documentos na candidatura pública', ()
         },
         {
           provide: ConfigService,
-          useValue: { getOrThrow: jest.fn().mockReturnValue('http://web') },
+          useValue: {
+            getOrThrow: jest.fn().mockReturnValue('http://web'),
+            get: jest.fn(),
+          },
         },
       ],
     }).compile();

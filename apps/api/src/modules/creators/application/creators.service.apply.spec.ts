@@ -66,7 +66,12 @@ describe('CreatorsService — candidatura pública resiste a falha acessória', 
           useValue: { scheduleRefresh, refresh: jest.fn() },
         },
         { provide: EmailService, useValue: { sendClaimAccount } },
-        { provide: ConfigService, useValue: { getOrThrow } },
+        {
+          provide: ConfigService,
+          // `get` sem valor default = ADMIN_NOTIFICATION_EMAIL "não configurada"
+          // nestes testes, que não são sobre a notificação do admin.
+          useValue: { getOrThrow, get: jest.fn() },
+        },
       ],
     }).compile();
 

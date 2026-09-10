@@ -36,6 +36,14 @@ claim** (é o teste do risco da P2 em `personas.md`: "pode simplesmente não que
 plataforma") · quanto tempo a marca leva por decisão · quantas voltam depois.
 > Custo: zero release. É o item de maior aprendizado por real gasto de toda esta lista.
 
+**Instrumentação admitida em 2026-09-09 (`/feature`), não é entrada nova do roadmap:**
+notificação por e-mail pro Pedro a cada conta nova criada (mesma classe do Sentry/`D-20` —
+observabilidade do operador, não feature de produto; falha no critério 1 da regra de admissão
+de propósito). Serve só pra dar visibilidade em tempo real a ESTE experimento, sem precisar
+consultar o banco na mão. Menor escopo: só no ponto de criação de conta via candidatura pública
+(`CreatorsService.findOrCreateInfluencer`, só quando cria de fato, não em reaplicação); estender
+pra `registerBrand`/`registerInfluencer` depois, se útil.
+
 ### 1. Cinco entrevistas com marca (P1) 🔴 não é código
 Destrava `D-A` (monetização), `D-B` (marca vs agência) e o posicionamento inteiro.
 Enquanto isso não acontece, **toda priorização abaixo é chute** — inclusive esta.
