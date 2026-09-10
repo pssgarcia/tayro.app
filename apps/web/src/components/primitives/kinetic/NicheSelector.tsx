@@ -1,4 +1,15 @@
 import { cn } from '../../../lib/utils';
+import { useT, type Dictionary } from '../../../i18n';
+
+/**
+ * Como o nicho é ESCRITO. O valor continua canônico e em português: ele é
+ * gravado no perfil e usado como filtro de campanha (`?niches=`), então
+ * traduzir o valor faria a creator parar de casar com a campanha. Nicho fora
+ * da lista (veio de texto livre) aparece como está.
+ */
+function nicheLabel(t: Dictionary, niche: string): string {
+  return (t.app.nichos as Record<string, string | undefined>)[niche] ?? niche;
+}
 
 // Nichos padrão (fitness). Valores canônicos em minúsculas — usados também
 // como filtro de campanha, então a consistência aqui evita drift.
@@ -43,6 +54,7 @@ export default function NicheSelector({
   extraOptions = [],
   variant = 'dark',
 }: Props) {
+  const t = useT();
   const options = [...new Set([...NICHE_OPTIONS, ...extraOptions, ...value])];
   const isPlate = variant === 'plate';
 
@@ -78,7 +90,7 @@ export default function NicheSelector({
                   : 'border border-kinetic-border px-[10px] py-[5px] text-kinetic-muted',
             )}
           >
-            {niche}
+            {nicheLabel(t, niche)}
           </button>
         );
       })}

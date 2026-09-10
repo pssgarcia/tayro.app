@@ -86,7 +86,29 @@ describe('CreatorsService — exportMyData (LGPD)', () => {
 
     const select = prisma.influencer.findUnique.mock.calls[0][0]
       .select as Record<string, unknown>;
-    expect(select.user).toEqual({ select: { email: true } });
+    // Lista exata do que é alcançável no `user`: e-mail e o registro de
+    // aceite dos documentos (que é dado sobre a conta e entra na exportação).
+    expect(select.user).toEqual({
+      select: {
+        email: true,
+        acceptedTermsVersion: true,
+        acceptedPrivacyVersion: true,
+        acceptedAt: true,
+        declaredAdultAt: true,
+      },
+    });
+    const userSelect = (select.user as { select: Record<string, unknown> })
+      .select;
+    for (const forbidden of [
+      'password',
+      'refreshTokenHash',
+      'claimTokenHash',
+      'claimTokenExpiresAt',
+      'resetTokenHash',
+      'resetTokenExpiresAt',
+    ]) {
+      expect(userSelect).not.toHaveProperty(forbidden);
+    }
     expect(Object.keys(select)).not.toContain('password');
     expect(Object.keys(select)).not.toContain('refreshTokenHash');
     expect(Object.keys(select)).not.toContain('claimTokenHash');

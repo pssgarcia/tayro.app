@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { EMAIL_PROVIDER } from './email.constants';
 import type { EmailProvider, EmailMessage } from './email.types';
+import { maskEmail } from '../../shared/utils/mask-email';
 
 interface ApplicationDecisionEmailParams {
   to: string;
@@ -154,12 +155,20 @@ export class EmailService {
 
   // Best-effort: falha de e-mail nunca deve derrubar a ação de negócio
   // (approve/reject) que a originou. Loga e segue.
+  //
+  // O destinatário vai MASCARADO: log de aplicação fica retido no Railway e
+  // acessível a quem tem o painel, e endereço inteiro não é necessário pra
+  // diagnosticar uma falha de envio. O domínio (que o mascaramento preserva) é
+  // o que diz se o problema é do provedor de destino; o assunto identifica
+  // qual envio falhou. Ver shared/utils/mask-email.ts.
   private async sendBestEffort(message: EmailMessage): Promise<void> {
     try {
       await this.provider.send(message);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Falha ao enviar e-mail para ${message.to}: ${reason}`);
+      this.logger.warn(
+        `Falha ao enviar e-mail "${message.subject}" para ${maskEmail(message.to)}: ${reason}`,
+      );
     }
   }
 }

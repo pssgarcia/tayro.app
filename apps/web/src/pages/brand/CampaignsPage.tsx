@@ -5,15 +5,12 @@ import { useCampaigns } from '../../hooks/useCampaigns';
 import type { Campaign, CampaignStatus } from '../../types/api';
 import CampaignCard from './CampaignCard';
 import KineticTabs from '../../components/primitives/kinetic/KineticTabs';
+import { useT } from '../../i18n';
 
 type Filter = 'ALL' | CampaignStatus;
 
-const TABS: { id: Filter; label: string }[] = [
-  { id: 'ALL', label: 'Todas' },
-  { id: 'ACTIVE', label: 'Ativas' },
-  { id: 'DRAFT', label: 'Rascunho' },
-  { id: 'CLOSED', label: 'Encerradas' },
-];
+// Só os ids: o rótulo vem do dicionário no render.
+const TAB_IDS = ['ALL', 'ACTIVE', 'DRAFT', 'CLOSED'] as const;
 
 function applyFilter(campaigns: Campaign[], filter: Filter): Campaign[] {
   if (filter === 'ALL') return campaigns;
@@ -54,6 +51,7 @@ function Skeleton() {
 // reportado: a placa aparecia em qualquer aba, sem relação com o filtro).
 
 export default function CampaignsPage() {
+  const t = useT();
   const navigate = useNavigate();
   const { data: campaigns, isLoading, isError } = useCampaigns();
   const [filter, setFilter] = useState<Filter>('ALL');
@@ -66,30 +64,35 @@ export default function CampaignsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <div className="flex items-end justify-between gap-4">
         <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-          Campanhas
+          {t.app.marca.campanhas.titulo}
         </h1>
         <button
           onClick={() => navigate('/brand/campaigns/new')}
           className="flex min-h-[38px] shrink-0 items-center gap-2 border border-lime px-4 font-mono text-[10px] font-medium uppercase tracking-widest text-lime transition-colors hover:bg-lime hover:text-black"
         >
           <Plus size={12} />
-          Novo
+          {t.app.marca.campanhas.nova}
         </button>
       </div>
 
       <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
 
-      <KineticTabs tabs={TABS} active={filter} onChange={setFilter} className="mb-8 px-0" />
+      <KineticTabs
+        tabs={TAB_IDS.map((id) => ({ id: id as Filter, label: t.app.marca.campanhas.abas[id] }))}
+        active={filter}
+        onChange={setFilter}
+        className="mb-8 px-0"
+      />
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar campanhas. Tente novamente.</p>
+        <p className="text-sm text-destructive">{t.app.marca.campanhas.erro}</p>
       )}
 
       {isLoading && <Skeleton />}
 
       {!isLoading && !isError && campaigns?.length === 0 && (
         <p className="text-sm text-kinetic-muted">
-          Você ainda não criou nenhuma campanha. Crie a primeira para começar a receber candidaturas.
+          {t.app.marca.campanhas.vazio}
         </p>
       )}
 
@@ -99,7 +102,7 @@ export default function CampaignsPage() {
 
           {visible.length === 0 ? (
             <p className="mt-8 text-sm text-kinetic-muted">
-              Nenhuma campanha com status "{TABS.find((f) => f.id === filter)?.label}".
+              {t.app.marca.campanhas.vazioComFiltro(t.app.marca.campanhas.abas[filter as keyof typeof t.app.marca.campanhas.abas])}
             </p>
           ) : (
             <div className="mt-8 flex flex-col gap-0.5">

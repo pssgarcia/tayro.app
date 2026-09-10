@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,18 +11,32 @@ import KineticEditField from '../../components/primitives/kinetic/KineticEditFie
 import KineticEditNiches from '../../components/primitives/kinetic/KineticEditNiches';
 import AccountSection from '../../components/account/AccountSection';
 import { cn } from '../../lib/utils';
+import { useT, type Dictionary } from '../../i18n';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
-  website: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
-  logoUrl: z.string().url('URL inválida (inclua https://)').max(2048).optional().or(z.literal('')),
-  bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
-  niches: z.array(z.string()),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    name: z.string().min(1, t.app.validacao.nomeObrigatorio).max(100, t.app.validacao.max100),
+    website: z
+      .string()
+      .url(t.app.creator.perfil.urlInvalida)
+      .max(2048)
+      .optional()
+      .or(z.literal('')),
+    logoUrl: z
+      .string()
+      .url(t.app.creator.perfil.urlInvalida)
+      .max(2048)
+      .optional()
+      .or(z.literal('')),
+    bio: z.string().max(500, t.app.creator.perfil.bioMax).optional(),
+    niches: z.array(z.string()),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 // Tela 16 do redesign 2a — espelho exato do Perfil da creator (tela 8): marca
@@ -31,6 +45,8 @@ type FormValues = z.infer<typeof schema>;
 // KineticEditNiches) — padrão literal do mock, a pedido do usuário.
 
 function ProfileForm({ profile }: { profile: BrandProfile }) {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const update = useUpdateBrandProfile();
   const [justSaved, setJustSaved] = useState(false);
 
@@ -81,8 +97,8 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
     } catch (err) {
       const msg =
         axios.isAxiosError(err) && err.response?.status === 429
-          ? 'Muitas tentativas. Aguarde alguns minutos.'
-          : 'Não foi possível salvar. Tente novamente.';
+          ? t.app.creator.perfil.muitasTentativas
+          : t.app.creator.perfil.naoFoiPossivelSalvar;
       setError('root', { message: msg });
     }
   };
@@ -104,7 +120,7 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-[#6a6a64]">Campanha de</p>
+            <p className="text-xs text-[#6a6a64]">{t.app.marca.perfil.campanhaDe}</p>
             <p className="mt-[4px] truncate font-display text-[21px] font-bold tracking-[-.045em] text-black">
               {watchedName || '—'}
             </p>
@@ -140,40 +156,40 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
 
       {/* Editar — rows que abrem um modal de campo único (padrão do mock) */}
       <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-        Editar
+        {t.app.comum.editar}
       </p>
       <div className="flex flex-col gap-[22px]">
         <KineticEditField
-          label="Nome da marca"
+          label={t.app.marca.perfil.nome}
           value={watchedName}
           error={errors.name?.message}
           onSave={(v) => setValue('name', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
-          label="Logo (URL)"
+          label={t.app.marca.perfil.logo}
           value={watchedLogo ?? ''}
-          placeholder="https://cdn.suamarca.com/logo.png"
+          placeholder={t.app.marca.perfil.logoPlaceholder}
           error={errors.logoUrl?.message}
           onSave={(v) => setValue('logoUrl', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
-          label="Bio"
+          label={t.app.marca.perfil.bio}
           value={watchedBio ?? ''}
           multiline
-          placeholder="Conte sobre sua marca para quem for se candidatar."
+          placeholder={t.app.marca.perfil.bioPlaceholder}
           error={errors.bio?.message}
           onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditNiches
-          label="Nichos"
+          label={t.app.marca.perfil.nichos}
           value={watchedNiches}
           extraOptions={profile.niches}
           onSave={(v) => setValue('niches', v, { shouldDirty: true })}
         />
         <KineticEditField
-          label="Website"
+          label={t.app.marca.perfil.website}
           value={watchedWebsite ?? ''}
-          placeholder="https://suamarca.com"
+          placeholder={t.app.marca.perfil.websitePlaceholder}
           error={errors.website?.message}
           onSave={(v) => setValue('website', v, { shouldDirty: true, shouldValidate: true })}
         />
@@ -192,13 +208,13 @@ function ProfileForm({ profile }: { profile: BrandProfile }) {
         )}
       >
         {isSubmitting ? (
-          'Salvando…'
+          t.app.acoes.salvando
         ) : justSaved && !isDirty ? (
           <>
-            Salvo <Check size={16} />
+            {t.app.marca.perfil.salvo} <Check size={16} />
           </>
         ) : (
-          'Salvar'
+          t.app.acoes.salvar
         )}
       </button>
     </form>
@@ -223,21 +239,22 @@ function Skeleton() {
 // ─── Página ──────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const t = useT();
   const { data: profile, isLoading, isError } = useBrandProfile();
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-        Marca
+        {t.app.marca.perfil.titulo}
       </h1>
       <p className="mb-[22px] mt-2 text-[13px] text-kinetic-muted">
-        É a primeira coisa que aparece no seu link.
+        {t.app.marca.perfil.legenda}
       </p>
 
       {isLoading && <Skeleton />}
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>
+        <p className="text-sm text-destructive">{t.app.marca.perfil.erro}</p>
       )}
 
       {!isLoading && !isError && profile && <ProfileForm profile={profile} />}

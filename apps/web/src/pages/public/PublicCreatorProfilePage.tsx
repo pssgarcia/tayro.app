@@ -13,6 +13,7 @@ import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import ThumbGrid from '../../components/primitives/ThumbGrid';
 import WhatsAppIcon from '../../components/primitives/WhatsAppIcon';
+import { useT } from '../../i18n';
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ function IgStats({
   followersCount: number | null;
   igEngagementRate: number | null;
 }) {
+  const t = useT();
   if (status === 'PENDING' || status === null) {
     return (
       <div className="flex flex-1 animate-pulse gap-3.5">
@@ -53,7 +55,7 @@ function IgStats({
   if (status === 'FAILED' || followersCount == null) {
     return (
       <p className="flex flex-1 items-center text-xs text-muted-foreground">
-        Dados do Instagram indisponíveis no momento.
+        {t.app.publico.perfilCreator.igIndisponivel}
       </p>
     );
   }
@@ -94,11 +96,12 @@ function IgStats({
 // `vision.md` nº 5 proíbe. O tayro não mede nada disso e a página diz isso.
 
 function PartnershipCard({ result }: { result: PublicPartnershipResult }) {
+  const t = useT();
   const metrics = (
     [
-      ['Alcance', result.reach],
-      ['Impressões', result.impressions],
-      ['Cupons usados', result.couponsUsed],
+      [t.app.publico.perfilCreator.alcance, result.reach],
+      [t.app.publico.perfilCreator.impressoes, result.impressions],
+      [t.app.publico.perfilCreator.cuponsUsados, result.couponsUsed],
     ] as const
   ).filter(([, value]) => value !== null);
 
@@ -151,6 +154,7 @@ function PartnershipCard({ result }: { result: PublicPartnershipResult }) {
 // isolada demais pra justificar um layout compartilhado ainda.
 
 export default function PublicCreatorProfilePage() {
+  const t = useT();
   const { handle } = useParams<{ handle: string }>();
   const navigate = useNavigate();
 
@@ -181,7 +185,7 @@ export default function PublicCreatorProfilePage() {
           className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
-          Voltar
+          {t.app.acoes.voltar}
         </button>
       </header>
 
@@ -191,10 +195,10 @@ export default function PublicCreatorProfilePage() {
         {isError && (
           <div className="py-16 text-center">
             <p className="font-display font-semibold text-foreground">
-              Este perfil não está disponível
+              {t.app.publico.perfilCreator.indisponivel}
             </p>
             <p className="mt-1 text-sm text-kinetic-muted">
-              O link pode estar incorreto ou o perfil não é público.
+              {t.app.publico.perfilCreator.indisponivelDescricao}
             </p>
           </div>
         )}
@@ -262,7 +266,7 @@ export default function PublicCreatorProfilePage() {
                 igEngagementRate={profile.igEngagementRate}
               />
               <StatFigure
-                label="parcerias concluídas"
+                label={t.app.publico.perfilCreator.parceriasConcluidas}
                 value={profile.completedPartnerships}
                 highlight
                 delay={240}
@@ -275,8 +279,7 @@ export default function PublicCreatorProfilePage() {
                 aparece quando há o que explicar. */}
             {profile.completedPartnerships > 0 && (
               <p className="mt-4 text-xs leading-[1.5] text-kinetic-muted">
-                Conta candidatura aprovada com conteúdo aprovado pela marca ou
-                com resultado informado por ela.
+                {t.app.publico.perfilCreator.regraContagem}
               </p>
             )}
 
@@ -289,7 +292,7 @@ export default function PublicCreatorProfilePage() {
                   id="historico-parcerias"
                   className="mb-5 font-display text-base font-semibold tracking-[-.03em] text-foreground"
                 >
-                  Histórico de parcerias
+                  {t.app.publico.perfilCreator.historico}
                 </h2>
                 <div className="flex flex-col gap-3">
                   {profile.results.map((result) => (
@@ -306,7 +309,7 @@ export default function PublicCreatorProfilePage() {
             {profile.igRecentPosts && profile.igRecentPosts.length > 0 && (
               <>
                 <h2 className="mb-5 mt-9 font-display text-base font-semibold tracking-[-.03em] text-foreground">
-                  Conteúdo recente
+                  {t.app.publico.perfilCreator.conteudoRecente}
                 </h2>
                 <ThumbGrid posts={profile.igRecentPosts} influencerId={profile.id} />
               </>
@@ -331,13 +334,13 @@ export default function PublicCreatorProfilePage() {
                   className="mt-5 flex min-h-[56px] w-full items-center justify-center gap-2 bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
                 >
                   <WhatsAppIcon size={16} />
-                  Falar no WhatsApp
+                  {t.app.publico.perfilCreator.falarWhatsApp}
                 </a>
                 <Link
                   to="/register/brand"
                   className="mt-5 block text-center text-sm text-kinetic-muted underline-offset-2 transition-colors hover:text-foreground hover:underline"
                 >
-                  Crie sua campanha no tayro
+                  {t.app.publico.perfilCreator.crieCampanhaTitulo}
                 </Link>
               </>
             ) : (
@@ -349,7 +352,7 @@ export default function PublicCreatorProfilePage() {
                   to="/register/brand"
                   className="mt-5 flex min-h-[56px] w-full items-center justify-center bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white"
                 >
-                  Crie sua campanha
+                  {t.app.publico.perfilCreator.crieCampanha}
                 </Link>
               </>
             )}

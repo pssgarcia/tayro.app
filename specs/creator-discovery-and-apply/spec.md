@@ -364,3 +364,10 @@ Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage
   normalização do handle e as quatro respostas de erro da API. Era a única tela do produto sem
   guard nenhum e sem teste.
 - 2026-08-30 · terminologia de produto: "programa" passou a ser "campanha" em toda a copy visível (rótulos, botões, mensagens de erro, placeholders). Sem mudança de comportamento, rota, endpoint ou modelo de dados — só texto.
+## Change History (complemento)
+- 2026-09-04 · `POST /programs/:id/apply/public` passou a exigir `acceptedTermsAndPrivacy` e
+  `declaredAdult` (mudança de contrato: cliente antigo recebe `400`). A tela `/apply/:id` passou a
+  dizer, ANTES do botão, que a candidatura cria (ou reusa) uma conta de creator no TAYRO, que um
+  e-mail para definir senha será enviado, e que os dados públicos do Instagram passam a ser
+  consultados e exibidos para a marca. Era o furo apontado na auditoria: a conta nascia em
+  silêncio. Ver `specs/legal-acceptance`.

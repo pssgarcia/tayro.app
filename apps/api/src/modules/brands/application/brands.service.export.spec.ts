@@ -55,7 +55,7 @@ describe('BrandsService — exportMyData (LGPD)', () => {
     expect(result.partnershipResults).toEqual([]);
   });
 
-  it('o select do perfil não vaza o objeto user aninhado além do e-mail', async () => {
+  it('o select do perfil só alcança e-mail e o registro de aceite no user', async () => {
     prisma.brand.findUnique.mockResolvedValue(makeBrand());
 
     await service.exportMyData('user-1');
@@ -64,7 +64,29 @@ describe('BrandsService — exportMyData (LGPD)', () => {
       string,
       unknown
     >;
-    expect(select.user).toEqual({ select: { email: true } });
+    // Lista exata (não `objectContaining`): é justamente o campo NOVO que não
+    // deveria estar aqui que precisa fazer o teste falhar.
+    expect(select.user).toEqual({
+      select: {
+        email: true,
+        acceptedTermsVersion: true,
+        acceptedPrivacyVersion: true,
+        acceptedAt: true,
+        declaredAdultAt: true,
+      },
+    });
+    const userSelect = (select.user as { select: Record<string, unknown> })
+      .select;
+    for (const forbidden of [
+      'password',
+      'refreshTokenHash',
+      'claimTokenHash',
+      'claimTokenExpiresAt',
+      'resetTokenHash',
+      'resetTokenExpiresAt',
+    ]) {
+      expect(userSelect).not.toHaveProperty(forbidden);
+    }
   });
 
   it('campanhas trazem só a contagem de candidaturas, não o dado de cada creator', async () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -11,13 +11,15 @@ import {
   formatOffer,
   INSTAGRAM_HANDLE_FORMAT,
   PHONE_FORMAT,
-  PHONE_FORMAT_MESSAGE,
+  phoneFormatMessage,
 } from '../../utils/format';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import CountUp from '../../components/primitives/CountUp';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import { useInstagramHandleCheck } from '../../hooks/useInstagramHandleCheck';
+import LegalAcceptanceFields from '../../components/legal/LegalAcceptanceFields';
+import { useT, type Dictionary } from '../../i18n';
 
 function normalizeHandle(v: string): string {
   return v.replace(/^@+/, '').toLowerCase().trim();
@@ -36,29 +38,45 @@ function formatDateLong(iso: string): string {
 
 // ─── Schema Zod ───────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  igHandle: z
-    .string()
-    .min(1, 'Informe seu @ do Instagram')
-    .transform(normalizeHandle)
-    .pipe(
-      z
-        .string()
-        .max(30, 'Handle muito longo')
-        .regex(INSTAGRAM_HANDLE_FORMAT, 'Handle inválido: só letras, números, . e _'),
-    ),
-  email: z.string().email('E-mail inválido'),
-  name: z.string().trim().min(1, 'Nome obrigatório').max(100, 'Nome muito longo'),
-  phone: z
-    .string()
-    .trim()
-    .min(1, 'Telefone obrigatório')
-    .max(20, 'Telefone muito longo')
-    .regex(PHONE_FORMAT, PHONE_FORMAT_MESSAGE),
-  message: z.string().max(1000).optional(),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    igHandle: z
+      .string()
+      .min(1, t.app.publico.candidatura.handleObrigatorio)
+      .transform(normalizeHandle)
+      .pipe(
+        z
+          .string()
+          .max(30, t.app.publico.candidatura.handleLongo)
+          .regex(INSTAGRAM_HANDLE_FORMAT, t.app.validacao.handleInvalido),
+      ),
+    email: z.string().email(t.app.validacao.emailInvalido),
+    name: z
+      .string()
+      .trim()
+      .min(1, t.app.validacao.nomeObrigatorio)
+      .max(100, t.app.publico.candidatura.nomeLongo),
+    phone: z
+      .string()
+      .trim()
+      .min(1, t.app.validacao.telefoneObrigatorio)
+      .max(20, t.app.validacao.telefoneLongo)
+      .regex(PHONE_FORMAT, phoneFormatMessage()),
+    message: z.string().max(1000).optional(),
+    // Este formulário CRIA (ou reusa) uma conta de creator no TAYRO, então
+    // carrega o mesmo aceite dos cadastros. `literal(true)` é o que impede o
+    // envio sem marcar; a API repete a exigência (`@Equals(true)`).
+    acceptedTermsAndPrivacy: z.literal(true, {
+      errorMap: () => ({ message: t.app.validacao.aceiteObrigatorio }),
+    }),
+    declaredAdult: z.literal(true, {
+      errorMap: () => ({ message: t.app.validacao.maioridadeObrigatoria }),
+    }),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 // ─── Estado pós-submit ────────────────────────────────────────────────────────
 
@@ -96,6 +114,8 @@ function PageSkeleton() {
 // mesma vira a confirmação (regra 5 — uma placa, um job).
 
 export default function PublicApplyPage() {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: 'idle' });
@@ -150,11 +170,11 @@ export default function PublicApplyPage() {
   const handleHint = errors.igHandle
     ? undefined
     : handleCheck.checking
-      ? 'Verificando…'
+      ? t.app.acoes.verificando
       : handleAlreadyChecked && handleCheck.result === 'FOUND'
-        ? 'Perfil encontrado no Instagram'
+        ? t.app.handleCheck.encontrado
         : handleAlreadyChecked && handleCheck.result === 'UNKNOWN'
-          ? 'Não deu para confirmar agora. Você pode continuar'
+          ? t.app.handleCheck.incerto
           : undefined;
   const handleHintTone =
     handleAlreadyChecked && handleCheck.result === 'FOUND' ? 'success' : 'muted';
@@ -168,7 +188,7 @@ export default function PublicApplyPage() {
     if (outcome === 'NOT_FOUND') {
       setError('igHandle', {
         type: 'manual',
-        message: 'Usuário não encontrado no Instagram. Confira o @',
+        message: t.app.handleCheck.naoEncontrado,
       });
       return;
     }
@@ -180,8 +200,12 @@ export default function PublicApplyPage() {
         name: values.name,
         phone: values.phone,
         message: values.message || undefined,
+        // O front manda só que as caixas foram marcadas. Quais VERSÕES dos
+        // documentos valem é decisão do servidor.
+        acceptedTermsAndPrivacy: values.acceptedTermsAndPrivacy,
+        declaredAdult: values.declaredAdult,
       });
-      setSubmitState({ kind: 'success', brandName: campaign?.brand?.name ?? 'A marca' });
+      setSubmitState({ kind: 'success', brandName: campaign?.brand?.name ?? t.app.publico.candidatura.aMarca });
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number; data?: { message?: string } } })
         ?.response?.status;
@@ -195,7 +219,7 @@ export default function PublicApplyPage() {
           message:
             typeof msg === 'string' && msg.length < 120
               ? msg
-              : 'Você já se candidatou ou este e-mail já está em uso.',
+              : t.app.publico.candidatura.jaSeCandidatou,
         });
       } else {
         setSubmitState({ kind: 'error' });
@@ -225,7 +249,7 @@ export default function PublicApplyPage() {
           className="flex items-center gap-[7px] text-[13px] text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
-          Voltar
+          {t.app.acoes.voltar}
         </button>
       </header>
 
@@ -234,9 +258,9 @@ export default function PublicApplyPage() {
 
         {isError && (
           <div className="py-16 text-center">
-            <p className="font-display font-semibold text-foreground">Campanha não encontrada</p>
+            <p className="font-display font-semibold text-foreground">{t.app.publico.candidatura.naoEncontrada}</p>
             <p className="mt-1 text-sm text-kinetic-muted">
-              O link pode estar desatualizado ou a campanha foi encerrada.
+              {t.app.publico.candidatura.naoEncontradaDescricao}
             </p>
           </div>
         )}
@@ -253,7 +277,7 @@ export default function PublicApplyPage() {
                 )}
               </div>
               <div>
-                <p className="text-xs text-kinetic-muted">Campanha de</p>
+                <p className="text-xs text-kinetic-muted">{t.app.publico.candidatura.campanhaDe}</p>
                 <p className="mt-[3px] font-display text-[15px] font-semibold tracking-[-.025em] text-foreground">
                   {campaign.brand?.name ?? '—'}
                 </p>
@@ -269,29 +293,29 @@ export default function PublicApplyPage() {
               {isSuccess ? (
                 <>
                   <p className="font-display text-[34px] font-bold leading-[1.05] tracking-[-.05em] text-black">
-                    Candidatura enviada
+                    {t.app.publico.candidatura.enviada}
                   </p>
                   <div className="mt-5 flex flex-col gap-2 text-[13px] leading-[1.5] text-[#6a6a64]">
                     <p>
                       <span className="font-medium text-[#3a3a34]">{submitState.brandName}</span>{' '}
                       vai analisar seu perfil do Instagram.
                     </p>
-                    <p>Você recebe a decisão por e-mail.</p>
-                    <p>Se a candidatura for aprovada, os detalhes da parceria chegam por lá.</p>
+                    <p>{t.app.publico.candidatura.decisaoPorEmail}</p>
+                    <p>{t.app.publico.candidatura.seAprovada}</p>
                   </div>
                 </>
               ) : (
                 <>
                   <p className="mb-3 font-mono text-[9px] uppercase tracking-[.16em] text-[#6a6a64]">
-                    O que você recebe
+                    {t.app.publico.candidatura.oQueRecebe}
                   </p>
                   <p className="font-display text-[26px] font-bold leading-[1.04] tracking-[-.045em] text-black">
                     {formatOffer(campaign)}
                   </p>
                   <p className="mt-2.5 text-xs text-[#6a6a64]">
                     {campaign.offerType === 'PRODUCT'
-                      ? 'produto enviado para você'
-                      : 'por candidatura aprovada'}
+                      ? t.app.publico.candidatura.produtoEnviado
+                      : t.app.creator.detalheCampanha.porCandidaturaAprovada}
                   </p>
 
                   {campaign.offerDeadlineDays != null && (
@@ -306,8 +330,8 @@ export default function PublicApplyPage() {
                           </CountUp>
                           <p className="mt-3 text-xs text-[#7a7a74]">
                             {campaign.offerType === 'PRODUCT'
-                              ? 'dias até o envio'
-                              : 'dias até o pagamento'}
+                              ? t.app.publico.candidatura.diasAteEnvio
+                              : t.app.publico.candidatura.diasAtePagamento}
                           </p>
                         </div>
                         <div>
@@ -330,7 +354,7 @@ export default function PublicApplyPage() {
                 {campaign.deadline && (
                   <p className="mt-[22px] flex items-center gap-2 text-xs text-kinetic-muted">
                     <CalendarDays size={13} />
-                    Inscrições até {formatDateLong(campaign.deadline)}
+                    {t.app.publico.candidatura.inscricoesAte(formatDateLong(campaign.deadline))}
                   </p>
                 )}
 
@@ -355,20 +379,20 @@ export default function PublicApplyPage() {
 
                 {campaign.status !== 'ACTIVE' ? (
                   <p className="text-sm text-kinetic-muted">
-                    Inscrições encerradas para esta campanha.
+                    {t.app.publico.candidatura.encerradas}
                   </p>
                 ) : (
                   <form onSubmit={handleSubmit(onSubmit)} noValidate>
                     <h2 className="font-display text-base font-semibold tracking-[-.03em] text-foreground">
-                      Quero participar
+                      {t.app.publico.candidatura.participar}
                     </h2>
                     <p className="mb-[26px] mt-[6px] text-[13px] text-kinetic-muted">
-                      Leva menos de 1 minuto.
+                      {t.app.publico.candidatura.levaUmMinuto}
                     </p>
 
                     <div className="flex flex-col gap-6">
                       <KineticField
-                        label="Seu @ do Instagram"
+                        label={t.app.publico.candidatura.handle}
                         required
                         prefix="@"
                         autoComplete="off"
@@ -382,7 +406,7 @@ export default function PublicApplyPage() {
                         onChange={handleIgHandleChange}
                       />
                       <KineticField
-                        label="E-mail"
+                        label={t.app.publico.candidatura.email}
                         required
                         type="email"
                         autoComplete="email"
@@ -390,15 +414,15 @@ export default function PublicApplyPage() {
                         {...register('email')}
                       />
                       <KineticField
-                        label="Seu nome"
+                        label={t.app.publico.candidatura.nome}
                         required
-                        placeholder="Como você se chama?"
+                        placeholder={t.app.publico.candidatura.nomePlaceholder}
                         autoComplete="name"
                         error={errors.name?.message}
                         {...register('name')}
                       />
                       <KineticField
-                        label="Telefone"
+                        label={t.app.publico.candidatura.telefone}
                         required
                         type="tel"
                         placeholder="(11) 91234-5678"
@@ -407,8 +431,8 @@ export default function PublicApplyPage() {
                         {...register('phone')}
                       />
                       <KineticTextarea
-                        label="Mensagem para a marca (opcional)"
-                        placeholder="Por que você é ideal para essa campanha?"
+                        label={t.app.publico.candidatura.mensagem}
+                        placeholder={t.app.publico.candidatura.mensagemPlaceholder}
                         error={errors.message?.message}
                         {...register('message')}
                       />
@@ -419,31 +443,39 @@ export default function PublicApplyPage() {
                     )}
                     {submitState.kind === 'throttled' && (
                       <p className="mt-6 text-sm text-destructive">
-                        Muitas tentativas. Aguarde alguns minutos e tente de novo.
+                        {t.app.erros.muitasTentativas}
                       </p>
                     )}
                     {submitState.kind === 'error' && (
                       <p className="mt-6 text-sm text-destructive">
-                        Algo deu errado. Verifique os dados e tente novamente.
+                        {t.app.publico.candidatura.algoDeuErrado}
                       </p>
                     )}
+
+                    {/* O aviso de criação de conta vem ANTES do botão, não
+                        num rodapé depois dele: a conta nasce no envio, e quem
+                        preenche este formulário quase nunca sabe disso (era o
+                        furo apontado na auditoria). */}
+                    <LegalAcceptanceFields
+                      className="mt-8"
+                      termsField={register('acceptedTermsAndPrivacy')}
+                      adultField={register('declaredAdult')}
+                      termsError={errors.acceptedTermsAndPrivacy?.message}
+                      adultError={errors.declaredAdult?.message}
+                      intro={t.app.publico.candidatura.avisoDados}
+                    />
 
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="mt-9 min-h-[56px] w-full bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="mt-8 min-h-[56px] w-full bg-lime font-mono text-[12px] font-medium uppercase tracking-widest text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmitting
                         ? handleCheck.checking
-                          ? 'Verificando…'
-                          : 'Enviando…'
+                          ? t.app.acoes.verificando
+                          : t.app.publico.candidatura.enviando
                         : 'Quero participar'}
                     </button>
-
-                    <p className="mt-4 text-center text-[11px] leading-[1.5] text-kinetic-muted">
-                      Ao enviar, você concorda que seus dados de perfil do Instagram sejam
-                      consultados pela marca.
-                    </p>
                   </form>
                 )}
               </>

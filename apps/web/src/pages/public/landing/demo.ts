@@ -35,6 +35,12 @@ import feed12 from '../../../assets/landing/feed-12.webp';
 // Não existe score de "fit"/"match"/"alinhamento" — nem aqui nem na tela. O
 // que a marca vê é o dado bruto do Instagram (seguidores, engajamento
 // calculado, posts recentes) do lado do botão de decidir.
+//
+// TODA FRASE saiu daqui e vive no dicionário (`i18n/dictionaries/*`), indexada
+// pelo `id` da creator: a landing é bilíngue e uma mensagem de candidatura em
+// português numa página em inglês entregaria a demonstração como maquete mal
+// acabada. O que fica aqui é o que NÃO se traduz: nome próprio, @, número e
+// imagem.
 
 const FEED = [
   feed01, feed02, feed03, feed04, feed05, feed06,
@@ -50,26 +56,32 @@ export interface DemoPost {
   src?: string;
 }
 
+/** Chaves do elenco. É também a chave de `t.demo.creators`, então creator nova
+ *  sem copy nos dois idiomas não compila. */
+export type DemoCreatorId = 'demo-hero' | 'demo-1' | 'demo-2' | 'demo-3' | 'demo-4';
+
+export type DemoContentType = 'REEL' | 'VIDEO' | 'IMAGE' | 'STORY';
+
 export interface DemoCreator {
-  id: string;
+  id: DemoCreatorId;
   nome: string;
   handle: string;
   followers: number;
   /** Taxa em %, no mesmo formato que a API devolve (`igEngagementRate`). */
   engagement: number;
   status: 'PENDING' | 'APPROVED';
-  mensagem: string;
   avatar: string;
   posts: DemoPost[];
-  /** A recompensa que a marca registra quando a parceria começa. Tipo e valor
-   *  no formato real do produto (`RewardType` + `value` como texto livre). */
-  recompensa: { tipo: RewardType; valor: string; nota: string };
-  /** O conteúdo que a creator envia depois de aprovada. */
-  entrega: { tipo: 'REEL' | 'VIDEO' | 'IMAGE' | 'STORY'; legenda: string };
+  /** Tipo da recompensa que a marca registra quando a parceria começa. O VALOR
+   *  ("R$ 300,00", "Kit Whey 900g") é texto livre no produto, então é copy e
+   *  vive no dicionário. */
+  recompensaTipo: RewardType;
+  /** Tipo do conteúdo que a creator envia depois de aprovada. */
+  entregaTipo: DemoContentType;
   /** O que a marca informa depois da entrega — fecha o histórico da creator
    *  (diferenciais nº2/nº3 do `positioning.md`). Números DECLARADOS pela
    *  marca, nunca medidos pelo tayro; a demonstração diz isso em texto. */
-  resultado: { reach: number; impressions: number; couponsUsed: number; nota: string };
+  resultado: { reach: number; impressions: number; couponsUsed: number };
 }
 
 /**
@@ -84,18 +96,11 @@ export const HERO_CREATOR: DemoCreator = {
   followers: 12_400,
   engagement: 5.8,
   status: 'PENDING',
-  mensagem:
-    'Treino em casa e falo muito sobre rotina real, sem estética de academia. Meu público é quase todo mulher de 25 a 34.',
   avatar: heroFoto,
   posts: feedDe(0, 1, 2, 3, 4, 5),
-  recompensa: { tipo: 'MONETARY', valor: 'R$ 300,00', nota: 'Pix combinado para o dia 15.' },
-  entrega: { tipo: 'REEL', legenda: 'Minha rotina de treino em casa em 30 segundos.' },
-  resultado: {
-    reach: 18_200,
-    impressions: 24_600,
-    couponsUsed: 41,
-    nota: 'Melhor entrega da campanha. Vamos repetir no próximo drop.',
-  },
+  recompensaTipo: 'MONETARY',
+  entregaTipo: 'REEL',
+  resultado: { reach: 18_200, impressions: 24_600, couponsUsed: 41 },
 };
 
 export const DEMO_CREATORS: DemoCreator[] = [
@@ -106,18 +111,11 @@ export const DEMO_CREATORS: DemoCreator[] = [
     followers: 9_700,
     engagement: 5.1,
     status: 'PENDING',
-    mensagem:
-      'Falo de rotina de treino sem promessa milagrosa. Meu público confia bastante no que eu indico.',
     avatar: creator1,
     posts: feedDe(0, 3, 6, 9, 1, 4),
-    recompensa: { tipo: 'MONETARY', valor: 'R$ 280,00', nota: 'Pix combinado para o dia 15.' },
-    entrega: { tipo: 'REEL', legenda: 'Reel com a rotina de treino da semana.' },
-    resultado: {
-      reach: 9_800,
-      impressions: 13_100,
-      couponsUsed: 18,
-      nota: 'Engajamento acima da média das outras creators da campanha.',
-    },
+    recompensaTipo: 'MONETARY',
+    entregaTipo: 'REEL',
+    resultado: { reach: 9_800, impressions: 13_100, couponsUsed: 18 },
   },
   {
     id: 'demo-2',
@@ -126,17 +124,11 @@ export const DEMO_CREATORS: DemoCreator[] = [
     followers: 21_300,
     engagement: 3.7,
     status: 'APPROVED',
-    mensagem: 'Musculação e alimentação sem dieta restritiva.',
     avatar: creator2,
     posts: feedDe(2, 5, 8, 11, 0, 3),
-    recompensa: { tipo: 'MONETARY', valor: 'R$ 450,00', nota: 'Pix enviado.' },
-    entrega: { tipo: 'IMAGE', legenda: 'Carrossel com o antes e depois da rotina alimentar.' },
-    resultado: {
-      reach: 22_400,
-      impressions: 31_900,
-      couponsUsed: 63,
-      nota: 'Maior número de cupons usados entre as creators aprovadas.',
-    },
+    recompensaTipo: 'MONETARY',
+    entregaTipo: 'IMAGE',
+    resultado: { reach: 22_400, impressions: 31_900, couponsUsed: 63 },
   },
   {
     id: 'demo-3',
@@ -145,17 +137,11 @@ export const DEMO_CREATORS: DemoCreator[] = [
     followers: 8_900,
     engagement: 4.1,
     status: 'PENDING',
-    mensagem: 'Corrida de rua e maratona amadora. Posto treino longo todo domingo.',
     avatar: creator3,
     posts: feedDe(6, 7, 8, 9, 10, 11),
-    recompensa: { tipo: 'PRODUCT', valor: 'Kit Whey 900g', nota: 'Envio pelos Correios.' },
-    entrega: { tipo: 'STORY', legenda: 'Sequência de 3 stories no treino longo de domingo.' },
-    resultado: {
-      reach: 7_100,
-      impressions: 9_400,
-      couponsUsed: 9,
-      nota: 'Público bem alinhado com a campanha, mesmo com poucos seguidores.',
-    },
+    recompensaTipo: 'PRODUCT',
+    entregaTipo: 'STORY',
+    resultado: { reach: 7_100, impressions: 9_400, couponsUsed: 9 },
   },
   {
     id: 'demo-4',
@@ -164,17 +150,11 @@ export const DEMO_CREATORS: DemoCreator[] = [
     followers: 15_600,
     engagement: 6.2,
     status: 'PENDING',
-    mensagem: 'Mobilidade e alongamento. Conteúdo curto, muito salvamento.',
     avatar: creator4,
     posts: feedDe(9, 4, 7, 1, 10, 6),
-    recompensa: { tipo: 'DISCOUNT', valor: 'Cupom CAIO20 (20% off)', nota: 'Válido por 60 dias.' },
-    entrega: { tipo: 'VIDEO', legenda: 'Vídeo de 1 minuto com a série de mobilidade.' },
-    resultado: {
-      reach: 14_700,
-      impressions: 19_300,
-      couponsUsed: 27,
-      nota: 'Vídeo salvo bastante, boa reativação de seguidor antigo.',
-    },
+    recompensaTipo: 'DISCOUNT',
+    entregaTipo: 'VIDEO',
+    resultado: { reach: 14_700, impressions: 19_300, couponsUsed: 27 },
   },
 ];
 
@@ -184,27 +164,12 @@ export const DEMO_CREATORS: DemoCreator[] = [
  * não haver três valores diferentes contando a mesma história.
  */
 export const DEMO_PROGRAMA = {
-  titulo: 'Creators de Verão',
+  // O título é copy e mora no dicionário (`t.demo.campanha`).
   offerType: 'CASH' as const,
   offerAmount: 30_000,
   offerDescription: null,
   prazoDias: 14,
   vagas: 5,
-};
-
-/** Rótulo em português do tipo de recompensa — o mesmo do `CampaignRewardsTab`. */
-export const rewardTypeWord: Record<RewardType, string> = {
-  MONETARY: 'Monetária',
-  PRODUCT: 'Produto',
-  DISCOUNT: 'Desconto',
-};
-
-/** Rótulo do tipo de conteúdo — o mesmo do `SubmissionsPage` da creator. */
-export const contentTypeWord: Record<DemoCreator['entrega']['tipo'], string> = {
-  REEL: 'Reel',
-  VIDEO: 'Vídeo',
-  IMAGE: 'Foto',
-  STORY: 'Story',
 };
 
 /** Estado de uma parceria em andamento na demonstração. `resultado` usa o

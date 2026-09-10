@@ -135,3 +135,11 @@ e-mail) e o título da candidatura mais recente. Sucesso no submit autentica e n
 - 2026-08-21 · retrofit inicial a partir do código em produção.
 - 2026-08-21 · reestruturado pro padrão SDD — sem mudança de comportamento; ciclo de vida do
   token movido de "Máquina de estados (implícita)" pra `Behavior`, mantendo o mesmo conteúdo.
+
+## Change History (complemento)
+- 2026-09-04 · `GET /auth/claim/:token` passou a devolver a foto de perfil **embutida** como data
+  URI (`igAvatarDataUri`), no lugar do booleano `hasIgAvatar`. Motivo: as rotas de imagem
+  (`/ig/avatar/:id`) passaram a exigir autorização, e esta é a única tela que mostra a foto sem
+  sessão nenhuma e com o perfil público desligado. A autorização aqui é o próprio token de claim,
+  já validado. Teto de 256 KB; qualquer falha degrada para `null` e a tela cai nas iniciais. Ver
+  `specs/instagram-sync` → "Autorização das imagens".

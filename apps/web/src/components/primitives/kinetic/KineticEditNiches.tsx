@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import KineticPlate from './KineticPlate';
 import KineticActions from './KineticActions';
 import NicheSelector from './NicheSelector';
+import { useT } from '../../../i18n';
 
 // Mesmo padrão do KineticEditField (row + modal placa-formulário), mas pro
 // caso de nichos — o valor não é texto, é um NicheSelector(variant="plate").
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function KineticEditNiches({ label, value, onSave, extraOptions }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(value);
 
@@ -77,8 +79,8 @@ export default function KineticEditNiches({ label, value, onSave, extraOptions }
               </div>
               <KineticActions
                 actions={[
-                  { label: 'Cancelar', onClick: () => setOpen(false), width: 130 },
-                  { label: 'Salvar', onClick: handleSave, primary: true },
+                  { label: t.app.acoes.cancelar, onClick: () => setOpen(false), width: 130 },
+                  { label: t.app.acoes.salvar, onClick: handleSave, primary: true },
                 ]}
               />
             </KineticPlate>

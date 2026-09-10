@@ -7,10 +7,12 @@ import { publicUrl } from '../../utils/format';
 import KineticPlate from '../../components/primitives/kinetic/KineticPlate';
 import KineticActions from '../../components/primitives/kinetic/KineticActions';
 import CampaignForm from './CampaignForm';
+import { useT } from '../../i18n';
 
 // ─── Modal de publicação — placa-formulário, mesmo padrão do Login ───────────
 
 function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
+  const t = useT();
   const navigate = useNavigate();
   const publish = usePublishCampaign();
   const applyUrl = publicUrl(`/apply/${campaign.id}`);
@@ -34,10 +36,10 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
           <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
             <div className="px-6 pb-[26px] pt-[30px]">
               <p className="font-display text-[34px] font-bold leading-[1.05] tracking-[-.05em] text-black">
-                Campanha publicada
+                {t.app.marca.novaCampanha.publicada}
               </p>
               <p className="mt-5 text-[13px] leading-[1.5] text-[#6a6a64]">
-                Compartilhe o link abaixo para receber candidaturas.
+                {t.app.marca.novaCampanha.compartilhe}
               </p>
               <div className="mt-5 flex items-center gap-2.5 border-b border-[rgba(14,14,14,.18)] pb-[9px]">
                 <span className="flex-1 truncate text-[13px] text-[#6a6a64]">{applyUrl}</span>
@@ -53,7 +55,7 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
             <KineticActions
               actions={[
                 {
-                  label: 'Ver campanha',
+                  label: t.app.marca.novaCampanha.verCampanha,
                   onClick: () => navigate(`/brand/campaigns/${campaign.id}`),
                   primary: true,
                 },
@@ -71,22 +73,20 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
         <KineticPlate marks="top" flush className="rounded-b-none sm:rounded-b-lg">
           <div className="px-6 pb-[26px] pt-[30px]">
             <p className="font-display text-xl font-bold tracking-[-.04em] text-black">
-              Publicar agora?
+              {t.app.marca.novaCampanha.publicarAgora}
             </p>
             {/* A copy antiga prometia "editar a qualquer momento" — mentira: o
                 backend só aceita edição em DRAFT. E "agora não" deixou de ser
                 beco sem saída: dá pra publicar depois, pelo detalhe. */}
             <p className="mt-3 text-[13px] leading-[1.5] text-[#6a6a64]">
-              Ao publicar, o link de candidatura fica ativo na hora e creators já podem se
-              inscrever. Depois de publicada a campanha não volta para rascunho e os detalhes não
-              podem mais ser editados. Se preferir, publique depois, pelo detalhe da campanha.
+              {t.app.marca.novaCampanha.publicarAgoraDescricao}
             </p>
           </div>
           <KineticActions
             actions={[
-              { label: 'Agora não', onClick: onClose, width: 140 },
+              { label: t.app.marca.novaCampanha.agoraNao, onClick: onClose, width: 140 },
               {
-                label: publish.isPending ? 'Publicando…' : 'Publicar',
+                label: publish.isPending ? t.app.marca.detalhe.publicando : t.app.marca.detalhe.publicarConfirmar,
                 onClick: handlePublish,
                 disabled: publish.isPending,
                 primary: true,
@@ -107,6 +107,7 @@ function PublishModal({ campaign, onClose }: { campaign: Campaign; onClose: () =
 // O form em si vive em CampaignForm, compartilhado com a tela de edição.
 
 export default function NewCampaignPage() {
+  const t = useT();
   const navigate = useNavigate();
   const createCampaign = useCreateCampaign();
   const [createdCampaign, setCreatedCampaign] = useState<Campaign | null>(null);
@@ -124,13 +125,13 @@ export default function NewCampaignPage() {
           className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft size={14} />
-          Voltar
+          {t.app.acoes.voltar}
         </Link>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pb-10">
         <h1 className="mb-9 font-display text-[36px] font-bold leading-[.95] tracking-[-.05em] text-foreground sm:text-[46px]">
-          Nova campanha
+          {t.app.marca.novaCampanha.titulo}
         </h1>
 
         <CampaignForm
@@ -140,11 +141,11 @@ export default function NewCampaignPage() {
           }}
           onCancel={() => navigate('/brand/campaigns')}
           isPending={createCampaign.isPending}
-          submitLabel="Salvar rascunho"
-          pendingLabel="Salvando…"
+          submitLabel={t.app.marca.novaCampanha.salvarRascunho}
+          pendingLabel={t.app.acoes.salvando}
           errorMessage={
             createCampaign.isError
-              ? 'Erro ao criar campanha. Verifique os campos e tente novamente.'
+              ? t.app.marca.novaCampanha.erro
               : null
           }
         />

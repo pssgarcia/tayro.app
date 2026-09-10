@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { acceptLegalDocuments } from '../../test/legal-acceptance';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -83,6 +84,9 @@ async function preencherEEnviar(
   await user.type(screen.getByLabelText(/e-mail/i), overrides.email ?? 'ana@email.com');
   await user.type(screen.getByLabelText(/seu nome/i), overrides.name ?? 'Ana Fitness');
   await user.type(screen.getByLabelText(/telefone/i), overrides.phone ?? '11999990000');
+  // Aceite dos documentos + maioridade: obrigatórios desde 2026-09-04. Nesta
+  // tela a caixa também é onde a pessoa é avisada de que uma conta será criada.
+  acceptLegalDocuments();
   await user.click(screen.getByRole('button', { name: /quero participar/i }));
 }
 
@@ -139,8 +143,66 @@ describe('PublicApplyPage — envio da candidatura', () => {
         name: 'Ana Fitness',
         phone: '11999990000',
         message: undefined,
+        // Prova que o aceite marcado na tela CHEGA à API. O front manda só
+        // que as caixas foram marcadas; a versão é estampada pelo servidor.
+        acceptedTermsAndPrivacy: true,
+        declaredAdult: true,
       }),
     );
+  });
+
+  // ─── Aceite dos documentos e aviso de criação de conta ────────────────────
+
+  it('NÃO envia a candidatura sem marcar o aceite dos documentos', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Lilo');
+
+    await user.type(screen.getByLabelText(/@ do instagram/i), 'anafit');
+    await user.type(screen.getByLabelText(/e-mail/i), 'ana@email.com');
+    await user.type(screen.getByLabelText(/seu nome/i), 'Ana Fitness');
+    await user.type(screen.getByLabelText(/telefone/i), '11999990000');
+    await user.click(screen.getByRole('button', { name: /quero participar/i }));
+
+    expect(
+      await screen.findByText(/necessário aceitar os Termos de Uso e a Política de Privacidade/i),
+    ).toBeInTheDocument();
+    // Sem aceite não existe conta: a rota que CRIA a conta não é chamada.
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('NÃO envia a candidatura sem declarar maioridade', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Lilo');
+
+    await user.type(screen.getByLabelText(/@ do instagram/i), 'anafit');
+    await user.type(screen.getByLabelText(/e-mail/i), 'ana@email.com');
+    await user.type(screen.getByLabelText(/seu nome/i), 'Ana Fitness');
+    await user.type(screen.getByLabelText(/telefone/i), '11999990000');
+    await user.click(screen.getByRole('checkbox', { name: /concordo com os termos de uso/i }));
+    await user.click(screen.getByRole('button', { name: /quero participar/i }));
+
+    expect(
+      await screen.findByText(/necessário declarar que você tem 18 anos ou mais/i),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  // Era o furo da auditoria: a conta nascia em silêncio. Quem preenche este
+  // formulário precisa saber ANTES de enviar que uma conta será criada.
+  it('avisa que a candidatura cria (ou usa) uma conta no TAYRO, antes do botão', async () => {
+    renderPage();
+    await screen.findByText('Lilo');
+
+    const aviso = await screen.findByText(/uma conta de creator no TAYRO é criada/i);
+    expect(aviso).toBeInTheDocument();
+    expect(aviso).toHaveTextContent(/e-mail para definir a senha/i);
+
+    // Ordem no DOM: o aviso vem ANTES do botão de enviar, não num rodapé
+    // depois dele.
+    const botao = screen.getByRole('button', { name: /quero participar/i });
+    expect(aviso.compareDocumentPosition(botao)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   // O @ digitado é normalizado antes de sair do browser: o backend chaveia a
@@ -359,6 +421,7 @@ describe('PublicApplyPage — verificação do @ do Instagram', () => {
     fireEvent.change(screen.getByLabelText(/telefone/i), {
       target: { value: '11999990000' },
     });
+    acceptLegalDocuments();
     fireEvent.click(screen.getByRole('button', { name: /quero participar/i }));
 
     await waitFor(() => expect(api.post).toHaveBeenCalled());

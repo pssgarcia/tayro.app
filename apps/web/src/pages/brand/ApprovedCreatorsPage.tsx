@@ -15,6 +15,7 @@ import {
   whatsappLinkFromPhone,
 } from '../../utils/format';
 import type { ApprovedCreator } from '../../types/api';
+import { useT, type Dictionary } from '../../i18n';
 
 // ─── Creators — visão agregada de aprovadas cross-campanha (specs/creator-roster) ──
 // Fecha o gap que a Fila (por campanha) não resolve: depois de aprovar, a
@@ -27,13 +28,14 @@ import type { ApprovedCreator } from '../../types/api';
 // candidatura, não com quem se candidatou (regra de copy do CLAUDE.md — nada
 // de assumir o gênero de quem usa o produto). Como o par (campanha, creator) é
 // único, a contagem de candidaturas aprovadas é a de campanhas.
-function approvalsLabel(count: number): string {
-  return count === 1 ? '1 candidatura aprovada' : `${count} candidaturas aprovadas`;
+function approvalsLabel(t: Dictionary, count: number): string {
+  return t.app.marca.creators.aprovacoes(count);
 }
 
 // ─── Placa: a creator selecionada ─────────────────────────────────────────────
 
 function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
+  const t = useT();
   const { influencer, approvals } = creator;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
   const avatarSrc = creatorAvatarSrc(influencer);
@@ -42,7 +44,7 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
     influencer.followersCount != null ? formatNumberParts(influencer.followersCount) : null;
 
   return (
-    <KineticPlate as="section" marks="all" flush ariaLabel="Media kit">
+    <KineticPlate as="section" marks="all" flush ariaLabel={t.app.marca.creators.mediaKit}>
       <div className="px-6 pb-8 pt-11 sm:px-8">
         {/* Sem ícone de WhatsApp aqui em cima: nesta página o contato JÁ é a
             ação principal da placa (barra "Falar no WhatsApp" na base) — um
@@ -81,7 +83,7 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
                 {influencer.phone}
               </a>
             ) : (
-              <p className="mt-1 font-mono text-sm text-gray-500">Telefone não informado</p>
+              <p className="mt-1 font-mono text-sm text-gray-500">{t.app.marca.creators.telefoneNaoInformado}</p>
             )}
           </div>
         </div>
@@ -92,14 +94,14 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
               saía cortado. */}
           {followers && (
             <StatFigure
-              label="Seguidores"
+              label={t.app.marca.creators.seguidores}
               value={`${followers.value}${followers.suffix}`}
               tone="plate"
             />
           )}
           {influencer.igEngagementRate != null && (
             <StatFigure
-              label="Engajamento"
+              label={t.app.marca.creators.engajamento}
               value={formatEngagement(influencer.igEngagementRate)}
               tone="plate"
             />
@@ -108,7 +110,7 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
 
         <div className="mb-6">
           <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-gray-500">
-            {approvalsLabel(approvals.length)}
+            {approvalsLabel(t, approvals.length)}
           </h3>
           <ul className="space-y-1">
             {approvals.map((a) => (
@@ -121,7 +123,7 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
 
         <div>
           <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-gray-500">
-            Posts recentes
+            {t.app.marca.creators.postsRecentes}
           </h3>
           <ThumbGrid posts={influencer.igRecentPosts} influencerId={influencer.id} />
         </div>
@@ -131,7 +133,7 @@ function CreatorPlate({ creator }: { creator: ApprovedCreator }) {
         <KineticActions
           actions={[
             {
-              label: 'Falar no WhatsApp',
+              label: t.app.marca.creators.whatsapp,
               href: waLink,
               icon: <WhatsAppIcon />,
               primary: true,
@@ -162,6 +164,7 @@ function Skeleton() {
 }
 
 export default function ApprovedCreatorsPage() {
+  const t = useT();
   const { data: creators = [], isLoading, isError } = useApprovedCreators();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -178,7 +181,7 @@ export default function ApprovedCreatorsPage() {
           é sem depender de um rótulo visível. */}
       <div className="flex items-baseline gap-3">
         <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Creators
+          {t.app.marca.creators.titulo}
         </h1>
         {creators.length > 0 && (
           // Ao lado de um título de 30/36px, o mono de 11px dos rótulos de
@@ -193,14 +196,14 @@ export default function ApprovedCreatorsPage() {
       <div className="my-8 h-px bg-kinetic-gray" />
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar os dados. Tente novamente.</p>
+        <p className="text-sm text-destructive">{t.app.marca.creators.erro}</p>
       )}
 
       {!isError && creators.length === 0 && (
         <EmptyState
           icon={<Users size={20} />}
-          title="Nenhuma candidatura aprovada ainda"
-          description="Aprove uma candidatura na Fila de alguma campanha para ver o media kit aqui."
+          title={t.app.marca.creators.vazio}
+          description={t.app.marca.creators.vazioDescricao}
         />
       )}
 
@@ -209,14 +212,14 @@ export default function ApprovedCreatorsPage() {
           {/* Lista primeiro no DOM: no celular ela fica acima da placa, então
               tocar numa linha atualiza uma placa que já está à vista. */}
           <aside className="w-full lg:order-2 lg:w-[340px] lg:shrink-0">
-            <ul aria-label="Creators com candidatura aprovada" className="flex flex-col gap-0.5">
+            <ul aria-label={t.app.marca.creators.subtitulo} className="flex flex-col gap-0.5">
               {creators.map((creator) => {
                 const rowAvatar = creatorAvatarSrc(creator.influencer);
                 return (
                   <li key={creator.influencer.id}>
                     <KineticRow
                       title={creator.influencer.name}
-                      meta={approvalsLabel(creator.approvals.length)}
+                      meta={approvalsLabel(t, creator.approvals.length)}
                       selected={selected?.influencer.id === creator.influencer.id}
                       onClick={() => setSelectedId(creator.influencer.id)}
                       leading={

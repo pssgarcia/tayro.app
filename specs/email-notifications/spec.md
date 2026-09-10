@@ -104,3 +104,14 @@ candidatura) e por `account-claim`/`creator-discovery-and-apply` (claim). Não h
 - 2026-08-21 · reestruturado pro padrão SDD (Objective/Scope/Domain/Behavior/API/Acceptance
   Criteria/Error Scenarios/Known Gaps/Test Coverage/Current Implementation). Sem UI Behavior —
   capacidade sem frontend próprio.
+
+## Change History (complemento)
+- 2026-09-04 · **minimização de dado pessoal em log.** `EmailService.sendBestEffort` logava o
+  endereço de destino INTEIRO no caminho de falha, e log de aplicação fica retido no Railway,
+  acessível a quem tem o painel. Agora o destinatário sai mascarado (`maskEmail`, em
+  `shared/utils/mask-email.ts`: `an***@gmail.com`) e o ASSUNTO entra na mensagem, que é o que
+  identifica qual envio falhou. O domínio é preservado de propósito: é ele que diz se o problema é
+  do provedor de destino, e não identifica a pessoa por si só. Mesmo tratamento nos dois `warn` de
+  `CreatorsService` (link de claim) e no `StubEmailProvider` (cujo default do `.env.example` é
+  `stub`, então um deploy sem `EMAIL_PROVIDER` cairia ali logando endereços reais). O LINK
+  continua sendo logado inteiro pelo stub: é a única forma de testar claim e reset em dev.

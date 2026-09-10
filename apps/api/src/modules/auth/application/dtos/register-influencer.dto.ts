@@ -17,6 +17,10 @@ import {
   PHONE_FORMAT_MESSAGE,
   PHONE_MAX_LENGTH,
 } from '../../../../shared/validation/phone';
+import {
+  AcceptedTermsAndPrivacyField,
+  DeclaredAdultField,
+} from '../../../../shared/legal/legal-acceptance.dto-fields';
 
 export class RegisterInfluencerDto {
   @ApiProperty({ example: 'influencer@exemplo.com' })
@@ -69,4 +73,10 @@ export class RegisterInfluencerDto {
   @IsString({ each: true })
   @MaxLength(50, { each: true })
   niches?: string[];
+
+  @AcceptedTermsAndPrivacyField()
+  acceptedTermsAndPrivacy: boolean;
+
+  @DeclaredAdultField()
+  declaredAdult: boolean;
 }

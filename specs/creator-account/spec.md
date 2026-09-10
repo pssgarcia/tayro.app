@@ -247,3 +247,7 @@ Verificação do @ no cadastro:
   telefone passou a sair no perfil público junto do `publicProfileEnabled` (ver
   `public-creator-profile`). Dois Known Gaps de 2026-08-27/31 fechados; sobra o de contas antigas
   sem handle, que exigiria fluxo de troca de handle.
+## Change History (complemento)
+- 2026-09-04 · `POST /auth/register/influencer` passou a exigir `acceptedTermsAndPrivacy` e
+  `declaredAdult`; as duas caixas vivem no último passo do cadastro, junto do "Criar conta". Ver
+  `specs/legal-acceptance`.

@@ -1,21 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../../services/api';
+import { useT, type Dictionary } from '../../i18n';
 import { useAuthStore, type AuthUser } from '../../stores/auth.store';
 import KineticPlate from '../primitives/kinetic/KineticPlate';
 import KineticField from '../primitives/kinetic/KineticField';
 import KineticActions from '../primitives/kinetic/KineticActions';
 
-const schema = z.object({
-  currentPassword: z.string().min(1, 'Informe a senha atual'),
-  newPassword: z.string().min(8, 'Mínimo 8 caracteres').max(72, 'Máximo 72 caracteres'),
-});
+// Schema é função do dicionário (ver RegisterInfluencerPage): mensagem fixa
+// no módulo congelaria no idioma do boot.
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    currentPassword: z.string().min(1, t.app.trocarSenha.informeSenhaAtual),
+    newPassword: z.string().min(8, t.app.validacao.senhaMin).max(72, t.app.validacao.max72),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 interface ChangePasswordResponse {
   accessToken: string;
@@ -30,6 +34,8 @@ interface ChangePasswordResponse {
 // igual ao "Salvar" do KineticEditField.
 
 export default function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const setAuth = useAuthStore((s) => s.setAuth);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -50,26 +56,26 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
       setDone(true);
     } catch (err) {
       if (!axios.isAxiosError(err)) {
-        setRootError('Erro inesperado. Tente novamente.');
+        setRootError(t.app.erros.inesperado);
         return;
       }
       if (!err.response) {
-        setRootError('Sem conexão com o servidor. Verifique sua internet e tente de novo.');
+        setRootError(t.app.erros.semConexao);
         return;
       }
       if (err.response.status === 401) {
-        setRootError('Senha atual incorreta.');
+        setRootError(t.app.trocarSenha.senhaAtualIncorreta);
         return;
       }
       if (err.response.status === 400) {
-        setRootError('A nova senha deve ser diferente da atual.');
+        setRootError(t.app.trocarSenha.deveSerDiferente);
         return;
       }
       if (err.response.status === 429) {
-        setRootError('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+        setRootError(t.app.erros.muitasTentativas);
         return;
       }
-      setRootError('Não foi possível trocar a senha. Tente novamente.');
+      setRootError(t.app.trocarSenha.naoFoiPossivel);
     }
   };
 
@@ -77,7 +83,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Trocar senha"
+      aria-label={t.app.trocarSenha.titulo}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
       onClick={onClose}
     >
@@ -86,12 +92,12 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
           <div className="flex flex-col gap-6 px-6 pb-7 pt-11">
             {done ? (
               <p className="text-sm text-black">
-                Senha alterada. Outros dispositivos logados precisarão entrar de novo.
+                {t.app.trocarSenha.sucesso}
               </p>
             ) : (
               <>
                 <KineticField
-                  label="Senha atual"
+                  label={t.app.trocarSenha.senhaAtual}
                   variant="plate"
                   type={showCurrent ? 'text' : 'password'}
                   autoComplete="current-password"
@@ -103,7 +109,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
                       tabIndex={-1}
                       onClick={() => setShowCurrent((v) => !v)}
                       className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
-                      aria-label={showCurrent ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-label={showCurrent ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                     >
                       {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -111,11 +117,11 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
                   {...register('currentPassword')}
                 />
                 <KineticField
-                  label="Nova senha"
+                  label={t.app.trocarSenha.novaSenha}
                   variant="plate"
                   type={showNew ? 'text' : 'password'}
                   autoComplete="new-password"
-                  hint="Mínimo 8 caracteres"
+                  hint={t.app.cadastroCreator.senhaHint}
                   error={errors.newPassword?.message}
                   suffix={
                     <button
@@ -123,7 +129,7 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
                       tabIndex={-1}
                       onClick={() => setShowNew((v) => !v)}
                       className="shrink-0 text-[#8a8a84] transition-colors hover:text-black"
-                      aria-label={showNew ? 'Ocultar senha' : 'Mostrar senha'}
+                      aria-label={showNew ? t.app.acoes.ocultarSenha : t.app.acoes.mostrarSenha}
                     >
                       {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
@@ -138,11 +144,11 @@ export default function ChangePasswordModal({ onClose }: { onClose: () => void }
           <KineticActions
             actions={
               done
-                ? [{ label: 'Fechar', onClick: onClose, primary: true }]
+                ? [{ label: t.app.comum.fechar, onClick: onClose, primary: true }]
                 : [
-                    { label: 'Cancelar', onClick: onClose, width: 130 },
+                    { label: t.app.acoes.cancelar, onClick: onClose, width: 130 },
                     {
-                      label: isSubmitting ? 'Trocando…' : 'Trocar senha',
+                      label: isSubmitting ? t.app.trocarSenha.trocando : t.app.trocarSenha.titulo,
                       onClick: handleSubmit(onSubmit),
                       disabled: isSubmitting,
                       primary: true,

@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { IgFetchStatus, Prisma, UserRole } from '@prisma/client';
+import { IgFetchStatus, IgImageKind, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../shared/infrastructure/database/prisma.service';
 import { InstagramSyncService } from '../../instagram/instagram-sync.service';
 import { EmailService } from '../../email/email.service';
@@ -20,6 +20,15 @@ import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { ChangeEmailDto } from './dtos/change-email.dto';
+import { legalAcceptanceFields } from '../../../shared/legal/legal-documents';
+import { IgImageService } from '../../instagram/ig-image.service';
+
+/**
+ * Teto pra embutir a foto de perfil na prévia do claim. Foto de perfil do
+ * Instagram fica na casa das dezenas de KB; acima disto o custo em base64
+ * (+33%) num corpo JSON não se justifica e a tela cai nas iniciais.
+ */
+const CLAIM_AVATAR_MAX_BYTES = 256_000;
 
 type AuthUser = { id: string; email: string; role: UserRole };
 
@@ -36,6 +45,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly instagramSync: InstagramSyncService,
     private readonly emailService: EmailService,
+    private readonly igImages: IgImageService,
   ) {}
 
   async registerBrand(dto: RegisterBrandDto) {
@@ -51,6 +61,9 @@ export class AuthService {
           email: dto.email,
           password: hash,
           role: UserRole.BRAND,
+          // Gravado no mesmo create que a conta: aceite e conta nascem juntos,
+          // sem janela em que exista conta sem registro de aceite.
+          ...legalAcceptanceFields(),
           brand: {
             create: {
               name: dto.brandName,
@@ -92,6 +105,7 @@ export class AuthService {
           email: dto.email,
           password: hash,
           role: UserRole.INFLUENCER,
+          ...legalAcceptanceFields(),
           influencer: {
             create: {
               name: dto.name,
@@ -231,9 +245,44 @@ export class AuthService {
       email: user.email,
       avatarUrl: user.influencer.avatarUrl,
       influencerId: user.influencer.id,
-      hasIgAvatar: Boolean(user.influencer.igProfilePicUrl),
+      // A foto vai EMBUTIDA aqui, não como URL para /ig/avatar/:id.
+      //
+      // Esta tela é o único lugar do produto que mostra a foto da creator sem
+      // sessão nenhuma (ela ainda não tem senha) e com o perfil público
+      // desligado (é o default). Enquanto /ig/avatar era irrestrito isso
+      // funcionava de graça; agora que ele exige autorização, a autorização
+      // desta tela é o próprio token de claim, que já validamos acima. Servir
+      // por aqui evita abrir um segundo endereço público só para este caso.
+      igAvatarDataUri: await this.loadClaimAvatar(user.influencer.id),
       campaignTitle: latestApplication?.campaign.title ?? null,
     };
+  }
+
+  /**
+   * Foto de perfil guardada, como data URI. `null` quando não temos imagem,
+   * quando ela é grande demais para embutir, ou em qualquer falha: a prévia
+   * não pode deixar de funcionar por causa de uma foto (a tela cai nas
+   * iniciais, como em toda outra superfície do produto).
+   */
+  private async loadClaimAvatar(influencerId: string): Promise<string | null> {
+    try {
+      const influencer = await this.prisma.influencer.findUnique({
+        where: { id: influencerId },
+        select: { igProfilePicUrl: true },
+      });
+
+      const image = await this.igImages.findOrBackfill(
+        influencerId,
+        IgImageKind.PROFILE,
+        0,
+        influencer?.igProfilePicUrl,
+      );
+      if (!image || image.data.byteLength > CLAIM_AVATAR_MAX_BYTES) return null;
+
+      return `data:${image.mimeType};base64,${image.data.toString('base64')}`;
+    } catch {
+      return null;
+    }
   }
 
   /**

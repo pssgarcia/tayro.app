@@ -27,7 +27,7 @@ const basePreview: ClaimPreview = {
   email: 'thais@email.com',
   avatarUrl: null,
   influencerId: 'inf-1',
-  hasIgAvatar: false,
+  igAvatarDataUri: null,
   campaignTitle: 'Basic Drop 2026',
 };
 

@@ -187,4 +187,56 @@ describe('CreatorsService — deleteMyAccount (LGPD, D-22)', () => {
       creatorName: 'Ana Original',
     });
   });
+
+  // ─── Credencial e registro de aceite ──────────────────────────────────────
+
+  it('destrói o hash da senha antiga (não basta desativar a conta)', async () => {
+    const original = await makeUser();
+    prisma.user.findUnique.mockResolvedValue(original);
+    prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
+    prisma.influencer.update.mockResolvedValue(makeInfluencer());
+    prisma.user.update.mockResolvedValue(original);
+
+    await service.deleteMyAccount('user-1', { password: 'senhaAtual1' });
+
+    const gravado = prisma.user.update.mock.calls[0][0].data.password;
+    // Continua sendo um hash bcrypt válido (a coluna é obrigatória e algum
+    // caminho futuro pode chamar bcrypt.compare contra ela)...
+    expect(gravado).toMatch(/^\$2[aby]\$/);
+    // ...mas não é mais o hash da senha da pessoa...
+    expect(gravado).not.toBe(original.password);
+    // ...e a senha que ela usava não abre mais nada.
+    await expect(bcrypt.compare('senhaAtual1', gravado)).resolves.toBe(false);
+  });
+
+  it('PRESERVA o registro de aceite dos documentos', async () => {
+    prisma.user.findUnique.mockResolvedValue(await makeUser());
+    prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
+    prisma.influencer.update.mockResolvedValue(makeInfluencer());
+    prisma.user.update.mockResolvedValue(await makeUser());
+
+    await service.deleteMyAccount('user-1', { password: 'senhaAtual1' });
+
+    // É prova de que a relação existiu sob determinada versão dos documentos
+    // (uma versão e um horário, nada que identifique a pessoa). Apagar
+    // destruiria o registro do acordo. Descrito na Política de Privacidade.
+    const data = prisma.user.update.mock.calls[0][0].data;
+    expect(data).not.toHaveProperty('acceptedTermsVersion');
+    expect(data).not.toHaveProperty('acceptedPrivacyVersion');
+    expect(data).not.toHaveProperty('acceptedAt');
+    expect(data).not.toHaveProperty('declaredAdultAt');
+  });
+
+  it('desliga o perfil público na exclusão', async () => {
+    prisma.user.findUnique.mockResolvedValue(await makeUser());
+    prisma.influencer.findUnique.mockResolvedValue(makeInfluencer());
+    prisma.influencer.update.mockResolvedValue(makeInfluencer());
+    prisma.user.update.mockResolvedValue(await makeUser());
+
+    await service.deleteMyAccount('user-1', { password: 'senhaAtual1' });
+
+    expect(prisma.influencer.update.mock.calls[0][0].data).toMatchObject({
+      publicProfileEnabled: false,
+    });
+  });
 });

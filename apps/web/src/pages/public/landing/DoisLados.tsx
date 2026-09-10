@@ -4,6 +4,7 @@ import { cn } from '../../../lib/utils';
 import { formatCurrency, formatOfferWhole } from '../../../utils/format';
 import CreatorAvatar from './CreatorAvatar';
 import { DEMO_CREATORS, DEMO_PROGRAMA } from './demo';
+import { useT } from '../../../i18n';
 
 // ─── Os dois lados da plataforma ─────────────────────────────────────────────
 // A landing contava só a metade da marca. O TAYRO tem dois usuários e a tese do
@@ -24,27 +25,29 @@ const kicker = 'font-mono text-[11px] uppercase tracking-widest text-kinetic-mut
 // ─── O que a marca vê: a campanha publicada e as candidaturas chegando ───────
 
 function LadoMarca() {
+  const t = useT();
+
   return (
     <div>
       <KineticPlate flush marks="top" className="max-w-[340px]">
         <div className="px-6 pb-5 pt-7">
           <p className="font-mono text-[9px] uppercase tracking-widest text-[#6a6a64]">
-            campanha ativa
+            {t.como.campanhaAtiva}
           </p>
           <p className="mt-2 font-display text-[15px] font-bold leading-tight tracking-[-.03em] text-black">
-            {DEMO_PROGRAMA.titulo}
+            {t.demo.campanha}
           </p>
           <div className="mt-4 flex items-end justify-between border-t border-black/10 pt-4">
             <div>
               <p className="font-mono text-[9px] uppercase tracking-widest text-[#6a6a64]">
-                oferta
+                {t.como.oferta}
               </p>
               <p className="mt-1 font-display text-xl font-bold tracking-[-.04em] text-black">
                 {formatCurrency(DEMO_PROGRAMA.offerAmount)}
               </p>
             </div>
             <p className="font-mono text-[9px] uppercase tracking-widest text-[#6a6a64]">
-              {DEMO_PROGRAMA.vagas} vagas
+              {t.doisLados.nVagas(DEMO_PROGRAMA.vagas)}
             </p>
           </div>
         </div>
@@ -52,7 +55,7 @@ function LadoMarca() {
 
       {/* As candidaturas chegam por baixo da campanha — é literalmente o que a
           marca vê acontecer depois de publicar. */}
-      <p className={cn('mb-3 mt-6', kicker)}>candidaturas recebidas</p>
+      <p className={cn('mb-3 mt-6', kicker)}>{t.doisLados.candidaturasRecebidas}</p>
       <ul className="flex max-w-[340px] flex-col gap-2">
         {DEMO_CREATORS.filter((c) => c.status === 'PENDING')
           .slice(0, 3)
@@ -71,7 +74,7 @@ function LadoMarca() {
                 </span>
               </span>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-lime">
-                Pendente
+                {t.comum.pendente}
               </span>
             </li>
           ))}
@@ -83,6 +86,7 @@ function LadoMarca() {
 // ─── O que a creator vê: a campanha aberta e a própria parceria ──────────────
 
 function LadoCreator() {
+  const t = useT();
   const oferta = formatOfferWhole(DEMO_PROGRAMA);
 
   return (
@@ -93,16 +97,18 @@ function LadoCreator() {
         <div>
           <div className="flex items-start justify-between gap-3">
             <p className="font-display text-lg font-semibold leading-snug tracking-[-.03em] text-foreground">
-              {DEMO_PROGRAMA.titulo}
+              {t.demo.campanha}
             </p>
             <span className="shrink-0 pt-1 font-mono text-[11px] text-kinetic-muted">01</span>
           </div>
-          <p className="mt-2 text-xs text-kinetic-muted">Marca · {DEMO_PROGRAMA.vagas} vagas</p>
+          <p className="mt-2 text-xs text-kinetic-muted">
+            {t.doisLados.marcaEVagas(DEMO_PROGRAMA.vagas)}
+          </p>
         </div>
         <div className="mt-7 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-              A oferta
+              {t.doisLados.aOferta}
             </p>
             <p className="mt-2 truncate font-display text-2xl font-bold tabular-nums tracking-[-.04em] text-foreground">
               {oferta?.prefix}
@@ -117,26 +123,29 @@ function LadoCreator() {
         </div>
       </div>
 
-      <p className={cn('mb-3 mt-6', kicker)}>minhas candidaturas</p>
+      <p className={cn('mb-3 mt-6', kicker)}>{t.doisLados.minhasCandidaturas}</p>
       <div className="max-w-[340px] border border-kinetic-gray bg-kinetic-dark p-4">
         <div className="flex items-center justify-between gap-3">
           <span className="min-w-0">
             <span className="block truncate font-display text-sm font-semibold tracking-[-.02em] text-kinetic-text">
-              {DEMO_PROGRAMA.titulo}
+              {t.demo.campanha}
             </span>
             <span className="mt-1 block font-mono text-[10px] text-kinetic-muted">
-              {formatCurrency(DEMO_PROGRAMA.offerAmount)} · {DEMO_PROGRAMA.prazoDias} dias
+              {t.doisLados.ofertaEPrazo(
+                formatCurrency(DEMO_PROGRAMA.offerAmount),
+                DEMO_PROGRAMA.prazoDias,
+              )}
             </span>
           </span>
           <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-            Aprovada
+            {t.comum.aprovada}
           </span>
         </div>
         <div
           aria-hidden="true"
           className="mt-4 flex min-h-[36px] items-center justify-center border-t border-kinetic-gray bg-lime font-mono text-[10px] font-medium uppercase tracking-widest text-black"
         >
-          Enviar conteúdo
+          {t.doisLados.enviarConteudo}
         </div>
       </div>
     </div>
@@ -145,23 +154,27 @@ function LadoCreator() {
 
 // ─── O ciclo: quem faz o quê, na ordem em que acontece ───────────────────────
 
-const CICLO: { lado: 'marca' | 'creator'; texto: string }[] = [
-  { lado: 'marca', texto: 'Publica a campanha com a oferta definida' },
-  { lado: 'creator', texto: 'Encontra a campanha aberta e vê a oferta' },
-  { lado: 'creator', texto: 'Se candidata pelo link' },
-  { lado: 'marca', texto: 'Decide com o Instagram da creator do lado' },
-  { lado: 'marca', texto: 'Registra a recompensa da parceria' },
-  { lado: 'creator', texto: 'Envia o conteúdo combinado' },
-  { lado: 'marca', texto: 'Recebe e revisa o conteúdo' },
-  { lado: 'marca', texto: 'Informa o resultado da parceria' },
-  { lado: 'creator', texto: 'Vê o resultado no histórico do seu perfil' },
+/** Quem faz cada passo. O TEXTO vive no dicionário, na mesma ordem: é a
+ *  alternância de lado que carrega o argumento, e ela não muda com o idioma. */
+const CICLO_LADOS: ('marca' | 'creator')[] = [
+  'marca',
+  'creator',
+  'creator',
+  'marca',
+  'marca',
+  'creator',
+  'marca',
+  'marca',
+  'creator',
 ];
 
 function Ciclo() {
+  const t = useT();
+
   return (
     <ol className="mx-auto mt-16 max-w-[900px] sm:mt-20">
-      {CICLO.map((passo, i) => {
-        const daMarca = passo.lado === 'marca';
+      {CICLO_LADOS.map((lado, i) => {
+        const daMarca = lado === 'marca';
         return (
           <li
             key={i}
@@ -176,9 +189,9 @@ function Ciclo() {
                 daMarca && 'md:col-start-1 md:text-right',
               )}
             >
-              <p className={kicker}>{daMarca ? 'marca' : 'creator'}</p>
+              <p className={kicker}>{daMarca ? t.doisLados.marca : t.doisLados.creator}</p>
               <p className="mt-1 text-pretty text-sm leading-relaxed text-kinetic-text">
-                {passo.texto}
+                {t.doisLados.ciclo[i]}
               </p>
             </div>
 
@@ -207,17 +220,18 @@ function Ciclo() {
 }
 
 export default function DoisLados() {
+  const t = useT();
+
   return (
     <div>
       <div className="grid gap-12 md:grid-cols-2 md:gap-10 lg:gap-16">
         <div className="md:border-r md:border-white/10 md:pr-10 lg:pr-16">
-          <p className={kicker}>marcas</p>
+          <p className={kicker}>{t.doisLados.marcas}</p>
           <h3 className="mt-3 text-balance font-display text-2xl font-bold tracking-[-.03em] text-foreground sm:text-3xl">
-            Encontre quem faz sentido.
+            {t.doisLados.marcaTitulo}
           </h3>
           <p className="mt-4 max-w-[46ch] text-pretty text-base leading-relaxed text-kinetic-text">
-            Publique a campanha com a oferta definida, receba as candidaturas e decida com o
-            Instagram de cada uma na mesma tela.
+            {t.doisLados.marcaDescricao}
           </p>
           <div className="mt-8">
             <LadoMarca />
@@ -225,13 +239,12 @@ export default function DoisLados() {
         </div>
 
         <div>
-          <p className={kicker}>creators</p>
+          <p className={kicker}>{t.doisLados.creators}</p>
           <h3 className="mt-3 text-balance font-display text-2xl font-bold tracking-[-.03em] text-foreground sm:text-3xl">
-            Encontre oportunidades que fazem sentido pra você.
+            {t.doisLados.creatorTitulo}
           </h3>
           <p className="mt-4 max-w-[46ch] text-pretty text-base leading-relaxed text-kinetic-text">
-            Veja o valor, o tipo e o prazo antes de se candidatar, acompanhe a decisão e envie o
-            conteúdo pelo mesmo lugar.
+            {t.doisLados.creatorDescricao}
           </p>
           <div className="mt-8">
             <LadoCreator />

@@ -27,6 +27,9 @@ import PublicApplyPage from './pages/public/PublicApplyPage';
 import PublicCreatorProfilePage from './pages/public/PublicCreatorProfilePage';
 import BrowseProgramsPublicPage from './pages/public/BrowseProgramsPublicPage';
 import LandingPage from './pages/public/LandingPage';
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage';
+import TermsOfUsePage from './pages/public/TermsOfUsePage';
+import { PRIVACY_PATH, TERMS_PATH } from './config/legal';
 import MyApplicationsPage from './pages/influencer/MyApplicationsPage';
 import InfluencerProfilePage from './pages/influencer/ProfilePage';
 import BrowseProgramsPage from './pages/influencer/BrowseProgramsPage';
@@ -133,6 +136,14 @@ function AppShell() {
 
       {/* Perfil público da creator (media kit) — sem auth, sem layout */}
       <Route path="/c/:handle" element={<PublicCreatorProfilePage />} />
+
+      {/* Documentos legais — sem auth, sem layout (LGPD, Bloco 2). Os dois
+          caminhos saem de config/legal.ts: definir o endereço aqui E no
+          componente que linka é como uma das rotas sai em outro idioma. */}
+      <Route path={PRIVACY_PATH} element={<PrivacyPolicyPage />} />
+      {/* O texto dos Termos ainda não foi escrito (ver TermsOfUsePage); a
+          rota existe porque as caixas de aceite linkam para cá. */}
+      <Route path={TERMS_PATH} element={<TermsOfUsePage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </SentryRoutes>

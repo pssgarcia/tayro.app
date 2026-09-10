@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,37 +17,41 @@ import {
   formatEngagement,
   formatNumberParts,
   PHONE_FORMAT,
-  PHONE_FORMAT_MESSAGE,
+  phoneFormatMessage,
   publicUrl,
   publicUrlLabel,
 } from '../../utils/format';
 import { cn } from '../../lib/utils';
+import { useT, type Dictionary } from '../../i18n';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const schema = z.object({
-  name: z.string().min(1, 'Nome obrigatório').max(100, 'Máximo 100 caracteres'),
-  avatarUrl: z
-    .string()
-    .url('URL inválida (inclua https://)')
-    .max(2048)
-    .optional()
-    .or(z.literal('')),
-  bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
-  city: z.string().max(100, 'Máximo 100 caracteres').optional(),
-  // Vazio é permitido: apagar o campo é como a creator REMOVE o telefone (a
-  // API grava null). Por isso o formato não pode ser exigido em string vazia.
-  phone: z
-    .string()
-    .max(20, 'Telefone muito longo')
-    .refine((v) => !v || PHONE_FORMAT.test(v), PHONE_FORMAT_MESSAGE)
-    .optional(),
-  tiktokHandle: z.string().max(30, 'Máximo 30 caracteres').optional(),
-  niches: z.array(z.string()),
-  publicProfileEnabled: z.boolean(),
-});
+// Schema é função do dicionário: mensagem fixa no módulo congelaria no
+// idioma do boot (ver `i18n/README.md`).
+const criarSchema = (t: Dictionary) =>
+  z.object({
+    name: z.string().min(1, t.app.validacao.nomeObrigatorio).max(100, t.app.validacao.max100),
+    avatarUrl: z
+      .string()
+      .url(t.app.creator.perfil.urlInvalida)
+      .max(2048)
+      .optional()
+      .or(z.literal('')),
+    bio: z.string().max(500, t.app.creator.perfil.bioMax).optional(),
+    city: z.string().max(100, t.app.validacao.max100).optional(),
+    // Vazio é permitido: apagar o campo é como a creator REMOVE o telefone (a
+    // API grava null). Por isso o formato não pode ser exigido em string vazia.
+    phone: z
+      .string()
+      .max(20, t.app.validacao.telefoneLongo)
+      .refine((v) => !v || PHONE_FORMAT.test(v), phoneFormatMessage())
+      .optional(),
+    tiktokHandle: z.string().max(30, t.app.validacao.max30).optional(),
+    niches: z.array(z.string()),
+    publicProfileEnabled: z.boolean(),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 function cleanHandle(raw?: string): string {
   if (!raw) return '';
@@ -65,12 +69,13 @@ function cleanHandle(raw?: string): string {
 //    e ainda não salvo, o backend continua devolvendo 404.
 
 function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled: boolean }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   if (!handle) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
-        Adicione seu @ do Instagram para ganhar um endereço em {publicUrlLabel('/c/')}.
+        {t.app.creator.perfil.adicioneHandle(publicUrlLabel('/c/'))}
       </p>
     );
   }
@@ -81,7 +86,7 @@ function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled
   if (!enabled) {
     return (
       <p className="mt-1.5 text-xs leading-[1.5] text-kinetic-muted">
-        Ative para as marcas encontrarem você em {publicUrlLabel(path)}.
+        {t.app.creator.perfil.ativeParaMarcas(publicUrlLabel(path))}
       </p>
     );
   }
@@ -110,7 +115,7 @@ function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled
         onClick={handleCopy}
         className="text-xs text-kinetic-muted underline-offset-2 transition-colors hover:text-foreground hover:underline"
       >
-        {copied ? 'Copiado!' : 'Copiar link'}
+        {copied ? t.app.comum.copiado : t.app.comum.copiarLink}
       </button>
     </div>
   );
@@ -121,6 +126,8 @@ function PublicProfileLink({ handle, enabled }: { handle: string | null; enabled
 // de campo único (KineticEditField/KineticEditNiches) — igual ao mock.
 
 function ProfileForm({ profile }: { profile: InfluencerProfile }) {
+  const t = useT();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const update = useUpdateInfluencerProfile();
   const [justSaved, setJustSaved] = useState(false);
 
@@ -187,8 +194,8 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
     } catch (err) {
       const msg =
         axios.isAxiosError(err) && err.response?.status === 429
-          ? 'Muitas tentativas. Aguarde alguns minutos.'
-          : 'Não foi possível salvar. Tente novamente.';
+          ? t.app.creator.perfil.muitasTentativas
+          : t.app.creator.perfil.naoFoiPossivelSalvar;
       setError('root', { message: msg });
     }
   };
@@ -205,7 +212,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
           em lugar nenhum da placa. */}
       <KineticPlate
         as="section"
-        ariaLabel="Prévia do que a marca vê"
+        ariaLabel={t.app.creator.perfil.previaTitulo}
         marks="all"
         className="max-w-[520px]"
       >
@@ -236,7 +243,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
               <p className="mt-1 font-mono text-[13px] text-[#6a6a64]">{watchedPhone}</p>
             ) : (
               <p className="mt-1 font-mono text-[13px] text-[#8a8a84]">
-                Telefone não informado
+                {t.app.creator.perfil.telefoneNaoInformado}
               </p>
             )}
           </div>
@@ -295,17 +302,17 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
       {/* Editar — rows que abrem um modal de campo único (padrão do mock) */}
       <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-        Editar
+        {t.app.comum.editar}
       </p>
       <div className="flex flex-col gap-[22px]">
         <KineticEditField
-          label="Nome"
+          label={t.app.creator.perfil.nome}
           value={watchedName}
           error={errors.name?.message}
           onSave={(v) => setValue('name', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
-          label="Cidade"
+          label={t.app.creator.perfil.cidade}
           value={watch('city') ?? ''}
           onSave={(v) => setValue('city', v, { shouldDirty: true })}
         />
@@ -314,35 +321,35 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
             2026-09-02 tem o campo vazio e esta é a única superfície onde dá
             pra preencher. */}
         <KineticEditField
-          label="Telefone"
+          label={t.app.creator.perfil.telefone}
           value={watch('phone') ?? ''}
-          placeholder="(11) 91234-5678"
+          placeholder={t.app.cadastroCreator.telefonePlaceholder}
           error={errors.phone?.message}
           onSave={(v) => setValue('phone', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
-          label="Foto (URL)"
+          label={t.app.creator.perfil.foto}
           value={watchedAvatar ?? ''}
-          placeholder="https://cdn.exemplo.com/voce.png"
+          placeholder={t.app.creator.perfil.fotoPlaceholder}
           error={errors.avatarUrl?.message}
           onSave={(v) => setValue('avatarUrl', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
-          label="TikTok"
+          label={t.app.creator.perfil.tiktok}
           value={watch('tiktokHandle') ?? ''}
           error={errors.tiktokHandle?.message}
           onSave={(v) => setValue('tiktokHandle', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditField
-          label="Bio"
+          label={t.app.creator.perfil.bio}
           value={watchedBio ?? ''}
           multiline
-          placeholder="Fale um pouco sobre você para as marcas."
+          placeholder={t.app.creator.perfil.bioPlaceholder}
           error={errors.bio?.message}
           onSave={(v) => setValue('bio', v, { shouldDirty: true, shouldValidate: true })}
         />
         <KineticEditNiches
-          label="Nichos"
+          label={t.app.creator.perfil.nichos}
           value={watchedNiches}
           extraOptions={profile.niches}
           onSave={(v) => setValue('niches', v, { shouldDirty: true })}
@@ -350,7 +357,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
 
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm text-foreground">Perfil público</p>
+            <p className="text-sm text-foreground">{t.app.creator.perfil.perfilPublico}</p>
             <PublicProfileLink
               handle={profile.instagramHandle}
               enabled={profile.publicProfileEnabled}
@@ -363,7 +370,7 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
               <KineticToggle
                 checked={field.value}
                 onChange={field.onChange}
-                label="Tornar meu perfil público"
+                label={t.app.creator.perfil.tornarPublico}
               />
             )}
           />
@@ -383,13 +390,13 @@ function ProfileForm({ profile }: { profile: InfluencerProfile }) {
         )}
       >
         {isSubmitting ? (
-          'Salvando…'
+          t.app.acoes.salvando
         ) : justSaved && !isDirty ? (
           <>
-            Salvo <Check size={16} />
+            {t.app.creator.perfil.salvo} <Check size={16} />
           </>
         ) : (
-          'Salvar'
+          t.app.acoes.salvar
         )}
       </button>
     </form>
@@ -415,21 +422,22 @@ function Skeleton() {
 // Tela 8 do redesign 2a.
 
 export default function ProfilePage() {
+  const t = useT();
   const { data: profile, isLoading, isError } = useInfluencerProfile();
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px] lg:text-[72px]">
-        Perfil
+        {t.app.creator.perfil.titulo}
       </h1>
       <p className="mb-[22px] mt-2 text-[13px] text-kinetic-muted">
-        É exatamente isso que a marca vê.
+        {t.app.creator.perfil.previaLegenda}
       </p>
 
       {isLoading && <Skeleton />}
 
       {isError && (
-        <p className="text-sm text-destructive">Erro ao carregar o perfil. Tente novamente.</p>
+        <p className="text-sm text-destructive">{t.app.creator.perfil.erro}</p>
       )}
 
       {!isLoading && !isError && profile && <ProfileForm profile={profile} />}

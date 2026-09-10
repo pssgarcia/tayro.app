@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CreateCampaignPayload } from '../../hooks/useCampaigns';
 import {
-  campaignFormSchema,
+  criarCampaignFormSchema,
   formValuesToPayload,
   type CampaignFormValues,
 } from './campaignFormSchema';
@@ -13,6 +14,7 @@ import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import KineticField from '../../components/primitives/kinetic/KineticField';
 import KineticTextarea from '../../components/primitives/kinetic/KineticTextarea';
 import NicheSelector from '../../components/primitives/kinetic/NicheSelector';
+import { useT } from '../../i18n';
 
 // Formulário da campanha, compartilhado por "Nova campanha" e "Editar
 // campanha". Extraído do NewCampaignPage quando a edição ganhou tela —
@@ -28,6 +30,7 @@ function OfferTypeToggle({
   value: 'CASH' | 'PRODUCT' | 'COMMISSION';
   onChange: (v: 'CASH' | 'PRODUCT' | 'COMMISSION') => void;
 }) {
+  const t = useT();
   return (
     <div className="mb-7 flex flex-wrap gap-2">
       {(['CASH', 'PRODUCT', 'COMMISSION'] as const).map((type) => (
@@ -42,7 +45,7 @@ function OfferTypeToggle({
               : 'border-kinetic-gray text-kinetic-muted hover:text-foreground',
           )}
         >
-          {type === 'CASH' ? 'Dinheiro (PIX)' : type === 'PRODUCT' ? 'Produto' : 'Comissão'}
+          {t.app.marca.formulario.tipos[type]}
         </button>
       ))}
     </div>
@@ -71,6 +74,8 @@ export default function CampaignForm({
   pendingLabel,
   errorMessage,
 }: Props) {
+  const t = useT();
+  const schema = useMemo(() => criarCampaignFormSchema(t), [t]);
   const {
     register,
     control,
@@ -78,7 +83,7 @@ export default function CampaignForm({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<CampaignFormValues>({
-    resolver: zodResolver(campaignFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: defaultValues ?? { offerType: 'CASH', niches: [] },
   });
 
@@ -117,32 +122,32 @@ export default function CampaignForm({
     <form onSubmit={handleSubmit(submit)}>
       <div className="max-w-[560px]">
         <h2 className="mb-6 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          A campanha
+          {t.app.marca.formulario.aCampanha}
         </h2>
         <div className="flex flex-col gap-6">
           <KineticField
-            label="Título"
+            label={t.app.marca.formulario.titulo}
             required
-            placeholder="Ex: Verão Fitness 2026"
+            placeholder={t.app.marca.formulario.tituloPlaceholder}
             error={errors.title?.message}
             {...register('title')}
           />
           <KineticTextarea
-            label="Descrição"
+            label={t.app.marca.formulario.descricao}
             required
-            placeholder="O que você espera do conteúdo, que tipo de post quer, qual é a vibe da marca…"
+            placeholder={t.app.marca.formulario.descricaoPlaceholder}
             error={errors.description?.message}
             {...register('description')}
           />
           <KineticField
-            label="Link do brief (opcional)"
+            label={t.app.marca.formulario.briefLink}
             type="url"
-            placeholder="https://drive.google.com/…"
+            placeholder={t.app.marca.formulario.briefPlaceholder}
             error={errors.briefUrl?.message}
             {...register('briefUrl')}
           />
           <div>
-            <p className="mb-3 text-[12px] text-[#75756E]">Nichos</p>
+            <p className="mb-3 text-[12px] text-[#75756E]">{t.app.marca.formulario.nichos}</p>
             <Controller
               name="niches"
               control={control}
@@ -157,7 +162,7 @@ export default function CampaignForm({
           <div className="flex gap-[22px]">
             <div className="flex-1">
               <KineticField
-                label="Vagas"
+                label={t.app.marca.formulario.vagas}
                 required
                 type="number"
                 min={1}
@@ -168,7 +173,7 @@ export default function CampaignForm({
             </div>
             <div className="flex-1">
               <KineticField
-                label="Inscrições até"
+                label={t.app.marca.formulario.inscricoesAte}
                 type="date"
                 error={errors.deadline?.message}
                 {...register('deadline')}
@@ -178,9 +183,9 @@ export default function CampaignForm({
         </div>
 
         <h2 className="mb-2 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          A oferta
+          {t.app.marca.formulario.aOferta}
         </h2>
-        <p className="mb-5 text-xs text-[#75756E]">É a primeira coisa que quem se candidata lê.</p>
+        <p className="mb-5 text-xs text-[#75756E]">{t.app.marca.formulario.ofertaLegenda}</p>
 
         <Controller
           name="offerType"
@@ -191,7 +196,7 @@ export default function CampaignForm({
         <div className="flex flex-col gap-6">
           {offerType === 'CASH' ? (
             <KineticField
-              label="Valor (R$)"
+              label={t.app.marca.formulario.valor}
               required
               type="number"
               min={0}
@@ -203,15 +208,15 @@ export default function CampaignForm({
             />
           ) : offerType === 'PRODUCT' ? (
             <KineticTextarea
-              label="Descrição do produto"
+              label={t.app.marca.formulario.descricaoProduto}
               required
-              placeholder="Ex: Kit Whey 900g + coqueteleira da marca"
+              placeholder={t.app.marca.formulario.descricaoProdutoPlaceholder}
               error={errors.offerDescription?.message}
               {...register('offerDescription')}
             />
           ) : (
             <KineticField
-              label="Comissão (%)"
+              label={t.app.marca.formulario.comissao}
               required
               type="number"
               min={0.01}
@@ -227,7 +232,7 @@ export default function CampaignForm({
           <div className="w-[110px]">
             <KineticField
               label={
-                offerType === 'PRODUCT' ? 'Prazo p/ envio (dias)' : 'Prazo p/ pagamento (dias)'
+                offerType === 'PRODUCT' ? t.app.marca.formulario.prazoEnvio : t.app.marca.formulario.prazoPagamento
               }
               type="number"
               min={1}
@@ -239,11 +244,11 @@ export default function CampaignForm({
         </div>
 
         <p className="mb-4 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          Prévia da oferta
+          {t.app.marca.formulario.previaOferta}
         </p>
         <KineticPlate marks="all" className="p-8">
           <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-[#6a6a64]">
-            O que você recebe
+            {t.app.marca.formulario.oQueRecebe}
           </p>
           {previewOffer ? (
             <p className="font-display text-[30px] font-bold leading-[1.05] tracking-[-.045em] text-black">
@@ -255,19 +260,19 @@ export default function CampaignForm({
             </p>
           )}
           <p className="mt-3 text-[13px] text-[#6a6a64]">
-            {offerType === 'PRODUCT' ? 'produto enviado para você' : 'por candidatura aprovada'}
+            {offerType === 'PRODUCT' ? t.app.marca.formulario.produtoEnviado : t.app.creator.detalheCampanha.porCandidaturaAprovada}
           </p>
 
           <div className="my-7 h-px bg-[#c9c9c3]" />
           <div className="grid grid-cols-2 gap-6">
             <StatFigure
-              label={offerType === 'PRODUCT' ? 'dias até o envio' : 'dias até o pagamento'}
+              label={offerType === 'PRODUCT' ? t.app.marca.formulario.diasAteEnvio : t.app.marca.formulario.diasAtePagamento}
               value={watchedDeadlineDays || '—'}
               size="md"
               tone="plate"
             />
             <StatFigure
-              label="vagas abertas"
+              label={t.app.marca.formulario.vagasAbertas}
               value={watchedMaxSpots || '—'}
               size="md"
               tone="plate"
@@ -284,7 +289,7 @@ export default function CampaignForm({
             onClick={onCancel}
             className="min-h-[56px] w-[130px] shrink-0 border border-kinetic-border font-mono text-[11px] font-medium uppercase tracking-widest text-kinetic-muted transition-colors hover:border-foreground hover:text-foreground"
           >
-            Cancelar
+            {t.app.acoes.cancelar}
           </button>
           <button
             type="submit"

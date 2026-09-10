@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import ChangeEmailModal from './ChangeEmailModal';
 import DeleteAccountModal from './DeleteAccountModal';
+import { useT } from '../../i18n';
 
 // ─── Seção "Conta" das duas telas de Perfil (marca e creator) ────────────────
 // E-mail e Senha são rows interativas — mesmo visual de row do
@@ -29,6 +30,7 @@ export default function AccountSection({
   email: string;
   role: 'BRAND' | 'INFLUENCER';
 }) {
+  const t = useT();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changeEmailOpen, setChangeEmailOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -58,17 +60,17 @@ export default function AccountSection({
 
   const exportLabel =
     exportState === 'loading'
-      ? 'Exportando…'
+      ? t.app.conta.exportando
       : exportState === 'done'
-        ? 'Baixado'
+        ? t.app.conta.exportado
         : exportState === 'error'
-          ? 'Erro ao exportar. Tente de novo.'
-          : 'Exportar meus dados';
+          ? t.app.conta.erroExportar
+          : t.app.conta.exportar;
 
   return (
     <>
       <p className="mb-6 mt-11 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-        Conta
+        {t.app.conta.titulo}
       </p>
       <div className="flex flex-col gap-[22px]">
         <button
@@ -78,7 +80,7 @@ export default function AccountSection({
         >
           <span className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-              E-mail
+              {t.app.conta.email}
             </p>
             <p className="mt-2 truncate text-[15px] text-foreground">{email}</p>
           </span>
@@ -92,9 +94,9 @@ export default function AccountSection({
         >
           <span className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-              Senha
+              {t.app.conta.senha}
             </p>
-            <p className="mt-2 truncate text-[15px] text-foreground">••••••••</p>
+            <p className="mt-2 truncate text-[15px] text-foreground">{t.app.conta.senhaValor}</p>
           </span>
           <ChevronRight size={14} className="shrink-0 text-kinetic-border" />
         </button>
@@ -103,12 +105,12 @@ export default function AccountSection({
           type="button"
           onClick={handleExport}
           disabled={exportState === 'loading'}
-          aria-label="Exportar meus dados"
+          aria-label={t.app.conta.exportar}
           className="flex w-full items-center gap-4 border-b border-kinetic-gray py-4 text-left transition-colors hover:bg-kinetic-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-              Meus dados
+              {t.app.apagarConta.meusDados}
             </p>
             <p className="mt-2 truncate text-[15px] text-foreground">{exportLabel}</p>
           </span>
@@ -126,10 +128,10 @@ export default function AccountSection({
           >
             <span className="min-w-0 flex-1">
               <p className="font-mono text-[10px] uppercase tracking-widest text-destructive">
-                Apagar minha conta
+                {t.app.conta.apagarConta}
               </p>
               <p className="mt-2 text-[13px] text-kinetic-muted">
-                Irreversível. Seus dados de identificação são removidos.
+                {t.app.apagarConta.resumo}
               </p>
             </span>
             <Trash2 size={14} className="shrink-0 text-destructive" />

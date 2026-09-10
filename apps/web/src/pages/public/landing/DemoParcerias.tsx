@@ -5,13 +5,8 @@ import { cn } from '../../../lib/utils';
 import { formatNumberParts } from '../../../utils/format';
 import type { ContentStatus, RewardStatus, RewardType } from '../../../types/api';
 import CreatorAvatar from './CreatorAvatar';
-import {
-  DEMO_CREATORS,
-  contentTypeWord,
-  rewardTypeWord,
-  type DemoCreator,
-  type DemoParceria,
-} from './demo';
+import { DEMO_CREATORS, type DemoCreator, type DemoParceria } from './demo';
+import { useT } from '../../../i18n';
 
 // ─── Abas Recompensas, Conteúdos e Resultado da demonstração ─────────────────
 // As três capacidades que vêm DEPOIS da decisão, e que a landing não contava.
@@ -82,38 +77,36 @@ export function DemoRecompensas({
   parcerias: Record<string, DemoParceria>;
   onAvancar: (creatorId: string, status: RewardStatus) => void;
 }) {
+  const t = useT();
   const ativos = DEMO_CREATORS.filter((c) => parcerias[c.id]);
 
   if (ativos.length === 0) {
-    return (
-      <Vazio>
-        Nenhuma recompensa ainda. Aprove uma candidatura na Fila e a recompensa dela aparece aqui.
-      </Vazio>
-    );
+    return <Vazio>{t.recompensas.vazio}</Vazio>;
   }
 
   return (
     <Lista>
       {ativos.map((creator) => {
         const status = parcerias[creator.id].recompensa;
-        const { tipo, valor, nota } = creator.recompensa;
+        const tipo = creator.recompensaTipo;
+        const { recompensaValor, recompensaNota } = t.demo.creators[creator.id];
 
         return (
           <Bloco key={creator.id}>
             <div className="flex items-start justify-between gap-4">
               <Cabecalho creator={creator} />
-              <StatusWord kind="reward" status={status} />
+              <StatusWord kind="reward" status={status} label={t.recompensas.status[status]} />
             </div>
 
             <div className="mt-5 border-t border-kinetic-gray pt-4">
               <p className={cn('mb-2 flex items-center gap-1.5', rotulo)}>
                 {REWARD_ICON[tipo]}
-                {rewardTypeWord[tipo]}
+                {t.recompensas.tipo[tipo]}
               </p>
               <p className="font-display text-2xl font-bold tracking-[-.04em] text-foreground">
-                {valor}
+                {recompensaValor}
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-kinetic-muted">{nota}</p>
+              <p className="mt-2 text-xs leading-relaxed text-kinetic-muted">{recompensaNota}</p>
             </div>
 
             {status !== 'DELIVERED' && (
@@ -124,7 +117,7 @@ export function DemoRecompensas({
                   className={acaoPrimaria}
                 >
                   {status === 'PENDING' ? <Truck size={13} /> : <Gift size={13} />}
-                  {status === 'PENDING' ? 'Marcar como emitida' : 'Confirmar entrega'}
+                  {status === 'PENDING' ? t.recompensas.marcarEmitida : t.recompensas.confirmarEntrega}
                 </button>
               </div>
             )}
@@ -144,35 +137,32 @@ export function DemoConteudos({
   parcerias: Record<string, DemoParceria>;
   onRevisar: (creatorId: string, status: ContentStatus) => void;
 }) {
+  const t = useT();
   const ativos = DEMO_CREATORS.filter((c) => parcerias[c.id]);
 
   if (ativos.length === 0) {
-    return (
-      <Vazio>
-        Nenhum conteúdo ainda. Depois de aprovada, a creator envia a entrega pelo próprio TAYRO e
-        ela chega aqui para revisão.
-      </Vazio>
-    );
+    return <Vazio>{t.conteudos.vazio}</Vazio>;
   }
 
   return (
     <Lista>
       {ativos.map((creator) => {
         const status = parcerias[creator.id].conteudo;
-        const { tipo, legenda } = creator.entrega;
+        const tipo = creator.entregaTipo;
+        const { entregaLegenda } = t.demo.creators[creator.id];
 
         return (
           <Bloco key={creator.id}>
             <div className="flex items-start justify-between gap-4">
               <Cabecalho creator={creator} />
-              <StatusWord kind="content" status={status} />
+              <StatusWord kind="content" status={status} label={t.conteudos.status[status]} />
             </div>
 
             <div className="mt-5 border-t border-kinetic-gray pt-4">
-              <p className={cn('mb-4', rotulo)}>{contentTypeWord[tipo]}</p>
-              <p className={cn('mb-1', rotulo)}>legenda enviada</p>
+              <p className={cn('mb-4', rotulo)}>{t.conteudos.tipo[tipo]}</p>
+              <p className={cn('mb-1', rotulo)}>{t.conteudos.legendaEnviada}</p>
               <p className="text-pretty text-sm leading-relaxed text-kinetic-text">
-                &ldquo;{legenda}&rdquo;
+                &ldquo;{entregaLegenda}&rdquo;
               </p>
             </div>
 
@@ -183,7 +173,7 @@ export function DemoConteudos({
                   onClick={() => onRevisar(creator.id, 'APPROVED')}
                   className={acaoPrimaria}
                 >
-                  Aprovar
+                  {t.comum.aprovar}
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -191,14 +181,14 @@ export function DemoConteudos({
                     onClick={() => onRevisar(creator.id, 'REVISION_REQUESTED')}
                     className={acaoSecundaria}
                   >
-                    Revisão
+                    {t.conteudos.revisao}
                   </button>
                   <button
                     type="button"
                     onClick={() => onRevisar(creator.id, 'REJECTED')}
                     className={acaoSecundaria}
                   >
-                    Recusar
+                    {t.comum.recusar}
                   </button>
                 </div>
               </div>
@@ -240,41 +230,40 @@ export function DemoResultados({
   parcerias: Record<string, DemoParceria>;
   onInformar: (creatorId: string) => void;
 }) {
+  const t = useT();
   const ativos = DEMO_CREATORS.filter((c) => parcerias[c.id]);
 
   if (ativos.length === 0) {
-    return (
-      <Vazio>
-        Nenhuma parceria aprovada ainda. Aprove uma candidatura na Fila e o resultado dela aparece
-        aqui pra ser informado.
-      </Vazio>
-    );
+    return <Vazio>{t.resultado.vazio}</Vazio>;
   }
 
   return (
     <div className="max-w-[1080px]">
       <p className="mb-6 text-pretty text-sm leading-relaxed text-kinetic-muted">
-        Os números são informados pela marca. O tayro não mede alcance nem impressão. Eles
-        aparecem pra creator sempre, e no perfil público dela só quando a marca libera.
+        {t.resultado.ressalva}
       </p>
 
       <Lista>
         {ativos.map((creator) => {
           const status = parcerias[creator.id].resultado;
-          const { reach, impressions, couponsUsed, nota } = creator.resultado;
+          const { reach, impressions, couponsUsed } = creator.resultado;
+          const { resultadoNota } = t.demo.creators[creator.id];
 
           return (
             <Bloco key={creator.id}>
               <div className="flex items-start justify-between gap-4">
                 <Cabecalho creator={creator} />
-                <StatusWord kind="partnershipResult" status={status} />
+                <StatusWord
+                  kind="partnershipResult"
+                  status={status}
+                  label={t.resultado.status[status]}
+                />
               </div>
 
               {status === 'PENDING' ? (
                 <div className="mt-5 border-t border-kinetic-gray pt-4">
                   <p className="text-pretty text-sm leading-relaxed text-kinetic-text">
-                    Você ainda não informou o que esta parceria deu. É o que transforma a
-                    candidatura aprovada em histórico da creator.
+                    {t.resultado.convite}
                   </p>
                   <button
                     type="button"
@@ -282,21 +271,21 @@ export function DemoResultados({
                     className={cn('mt-4', acaoPrimaria)}
                   >
                     <BarChart3 size={13} />
-                    Informar resultado
+                    {t.resultado.informar}
                   </button>
                 </div>
               ) : (
                 <div className="mt-5 border-t border-kinetic-gray pt-4">
                   <div className="flex flex-wrap gap-x-6 gap-y-4">
-                    <Metrica label="Alcance" valor={reach} />
-                    <Metrica label="Impressões" valor={impressions} />
-                    <Metrica label="Cupons" valor={couponsUsed} />
+                    <Metrica label={t.resultado.alcance} valor={reach} />
+                    <Metrica label={t.resultado.impressoes} valor={impressions} />
+                    <Metrica label={t.resultado.cupons} valor={couponsUsed} />
                   </div>
                   <p className="mt-4 border-l-2 border-kinetic-gray pl-3 text-pretty text-xs leading-relaxed text-kinetic-text">
-                    &ldquo;{nota}&rdquo;
+                    &ldquo;{resultadoNota}&rdquo;
                   </p>
                   <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-                    Informado pela marca · aparece no perfil público dela
+                    {t.resultado.atribuicao}
                   </p>
                 </div>
               )}

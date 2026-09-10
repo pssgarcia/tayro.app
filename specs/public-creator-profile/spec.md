@@ -174,3 +174,11 @@ nunca um link quebrado, mesma regra de `creator-roster`.
   Implementation). Sem mudança de comportamento — a regra de acesso, antes descrita junto com
   "o que expõe", foi destacada como requisito de segurança explícito em vez de um parágrafo a
   mais no meio da descrição do endpoint.
+
+## Change History (complemento)
+- 2026-09-04 · **o interruptor de perfil público passou a valer para as IMAGENS.** Até aqui
+  `GET /ig/avatar/:influencerId` e `GET /ig/post/:influencerId/:position` eram públicos e não
+  checavam `publicProfileEnabled`: desligar o perfil público não tirava foto nem thumbnails do
+  ar, e qualquer pessoa com o `influencerId` (uma marca que viu a creator uma vez, ou quem ela
+  repassasse a URL) mantinha acesso permanente e não autenticado. Agora quem pode ver é decidido
+  pelo `IgImageAccessService` — ver `specs/instagram-sync` → "Autorização das imagens".

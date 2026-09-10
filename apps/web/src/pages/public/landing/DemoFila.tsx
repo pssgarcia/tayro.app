@@ -4,7 +4,8 @@ import { formatNumberParts } from '../../../utils/format';
 import type { ApplicationStatus } from '../../../types/api';
 import CreatorAvatar from './CreatorAvatar';
 import { CandidaturaDetalhe } from './CandidaturaPlate';
-import { DEMO_CREATORS, type DemoCreator } from './demo';
+import { DEMO_CREATORS, type DemoCreator, type DemoCreatorId } from './demo';
+import { useT } from '../../../i18n';
 
 // ─── Aba Fila da demonstração ────────────────────────────────────────────────
 // Reconstrói a Fila real da marca (`CampaignFilaTab`) com os primitivos do
@@ -25,7 +26,7 @@ export type Decisao = 'aprovada' | 'recusada';
 interface Props {
   decisoes: Record<string, Decisao>;
   selecionada: DemoCreator;
-  onSelecionar: (id: string) => void;
+  onSelecionar: (id: DemoCreatorId) => void;
   onDecidir: (decisao: Decisao) => void;
 }
 
@@ -48,6 +49,8 @@ function decisaoDe(creator: DemoCreator, decisoes: Record<string, Decisao>): Dec
 }
 
 export default function DemoFila({ decisoes, selecionada, onSelecionar, onDecidir }: Props) {
+  const t = useT();
+
   return (
     <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
       {/* `min-w-0` nas duas colunas: item de grid nasce com `min-width: auto`,
@@ -55,12 +58,13 @@ export default function DemoFila({ decisoes, selecionada, onSelecionar, onDecidi
           em vez de truncar, e a seção inteira vazava a viewport em 360px. */}
       <div className="min-w-0 lg:col-span-5">
         <p className="mb-3 border-b border-kinetic-border pb-3 font-mono text-[11px] uppercase tracking-widest text-kinetic-muted">
-          candidaturas
+          {t.fila.candidaturas}
         </p>
 
         <ul className="flex flex-col gap-1">
           {DEMO_CREATORS.map((creator, i) => {
             const seg = formatNumberParts(creator.followers);
+            const status = statusDe(creator.id, creator.status, decisoes);
             return (
               <li key={creator.id}>
                 <KineticRow
@@ -71,11 +75,12 @@ export default function DemoFila({ decisoes, selecionada, onSelecionar, onDecidi
                     <CreatorAvatar nome={creator.nome} src={creator.avatar} size={36} tone="dark" />
                   }
                   title={creator.nome}
-                  meta={`@${creator.handle} · ${seg.value}${seg.suffix} seguidores`}
+                  meta={t.fila.meta(creator.handle, `${seg.value}${seg.suffix}`)}
                   trailing={
                     <StatusWord
                       kind="application"
-                      status={statusDe(creator.id, creator.status, decisoes)}
+                      status={status}
+                      label={t.fila.status[status]}
                     />
                   }
                 />

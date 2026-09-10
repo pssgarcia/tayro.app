@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import type { Campaign } from '../../types/api';
 import { formatOfferWhole } from '../../utils/format';
+import { useT } from '../../i18n';
 
 // O card NÃO candidata — leva pro detalhe da campanha. Decidir participar é
 // passo posterior, com os termos na tela (ProgramDetailPage).
@@ -38,9 +39,10 @@ export default function ProgramCard({
   className,
   hrefBuilder = programPath,
 }: Props) {
+  const t = useT();
   const offer = formatOfferWhole(campaign);
-  const brand = campaign.brand?.name ?? 'Marca';
-  const spots = `${campaign.maxSpots} vaga${campaign.maxSpots !== 1 ? 's' : ''}`;
+  const brand = campaign.brand?.name ?? t.app.creator.abertos.marca;
+  const spots = t.app.creator.abertos.vagas(campaign.maxSpots);
 
   return (
     <div className={className}>
@@ -67,7 +69,7 @@ export default function ProgramCard({
         <div className="mt-7 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="font-mono text-[10px] uppercase tracking-widest text-kinetic-muted">
-              A oferta
+              {t.app.creator.abertos.aOferta}
             </p>
             {offer ? (
               <p className="mt-2 truncate font-display text-2xl font-bold tracking-[-.04em] tabular-nums text-foreground">

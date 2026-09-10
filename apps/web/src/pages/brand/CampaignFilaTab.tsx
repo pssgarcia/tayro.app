@@ -25,6 +25,7 @@ import {
 } from '../../utils/format';
 import { cn } from '../../lib/utils';
 import type { Application, Campaign } from '../../types/api';
+import { useT } from '../../i18n';
 
 // ─── Aba Fila — identidade "Kinetic Editorial" (aprovada 2026-08-16) ─────────
 // Substitui o carrossel antigo (QueueTab/ApplicationCard). Desktop: lista
@@ -94,6 +95,7 @@ function ProfilePlate({
   isRefreshingIg: boolean;
   refreshIgError: unknown;
 }) {
+  const t = useT();
   const { influencer, message } = application;
   const handle = influencer.instagramHandle?.replace(/^@+/, '');
   const avatarSrc = creatorAvatarSrc(influencer);
@@ -116,7 +118,7 @@ function ProfilePlate({
       as="section"
       marks="all"
       flush
-      ariaLabel="Detalhe da candidatura"
+      ariaLabel={t.app.marca.fila.detalhe}
       className="flex h-full min-h-0 flex-col"
     >
       <div className="min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
@@ -156,7 +158,7 @@ function ProfilePlate({
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Chamar no WhatsApp"
+              aria-label={t.app.marca.fila.whatsapp}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform hover:scale-105"
             >
               <WhatsAppIcon size={16} />
@@ -173,7 +175,7 @@ function ProfilePlate({
           ) : igFailed ? (
             <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-sm text-gray-500">
-                Dados do Instagram indisponíveis
+                {t.app.marca.fila.igIndisponivel}
               </span>
               <button
                 type="button"
@@ -188,10 +190,10 @@ function ProfilePlate({
               >
                 <RefreshCw size={13} className={cn(isRefreshingIg && 'animate-spin')} />
                 {isRefreshingIg
-                  ? 'Atualizando…'
+                  ? t.app.marca.fila.atualizando
                   : cooldownWait !== null
-                    ? `Tente em ${cooldownWait} min`
-                    : 'Atualizar'}
+                    ? t.app.marca.fila.tenteEm(cooldownWait)
+                    : t.app.marca.fila.atualizar}
               </button>
             </div>
           ) : (
@@ -199,7 +201,7 @@ function ProfilePlate({
               {followers && (
                 <div>
                   <p className="mb-1 font-mono text-xs uppercase tracking-widest text-gray-500">
-                    Seguidores
+                    {t.app.marca.fila.seguidores}
                   </p>
                   <CountUp>
                     <span className="text-4xl font-bold tracking-tighter">
@@ -213,13 +215,13 @@ function ProfilePlate({
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <p className="font-mono text-xs uppercase tracking-widest text-gray-500">
-                      Engajamento
+                      {t.app.marca.fila.engajamento}
                     </p>
                     <button
                       type="button"
                       onClick={onRefreshIg}
                       disabled={isRefreshingIg}
-                      aria-label="Atualizar dados do Instagram"
+                      aria-label={t.app.marca.fila.atualizarIg}
                       className="text-gray-400 transition-colors hover:text-black disabled:cursor-not-allowed"
                     >
                       <RefreshCw size={13} className={cn(isRefreshingIg && 'animate-spin')} />
@@ -239,7 +241,7 @@ function ProfilePlate({
         {message && (
           <div className="mb-6">
             <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-gray-500">
-              Mensagem da candidatura
+              {t.app.marca.fila.mensagem}
             </h3>
             <p className="text-sm leading-relaxed text-gray-800">&ldquo;{message}&rdquo;</p>
           </div>
@@ -247,7 +249,7 @@ function ProfilePlate({
 
         <div>
           <h3 className="mb-3 font-mono text-xs uppercase tracking-widest text-gray-500">
-            Posts recentes
+            {t.app.marca.fila.postsRecentes}
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {posts.map((post, i) =>
@@ -273,13 +275,13 @@ function ProfilePlate({
           className="shrink-0"
           actions={[
             {
-              label: isApproving ? 'Aprovando…' : 'Aprovar',
+              label: isApproving ? t.app.marca.fila.aprovando : t.app.marca.fila.aprovar,
               onClick: onApprove,
               disabled: isApproving || isRejecting,
               primary: true,
             },
             {
-              label: isRejecting ? 'Recusando…' : 'Recusar',
+              label: isRejecting ? t.app.marca.fila.recusando : t.app.marca.fila.recusar,
               onClick: onReject,
               disabled: isApproving || isRejecting,
             },
@@ -301,6 +303,7 @@ interface Props {
 }
 
 export default function CampaignFilaTab({ campaign, campaignId, onExitMobile }: Props) {
+  const t = useT();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pollTimedOut, setPollTimedOut] = useState(false);
   const pollStartRef = useRef<number | null>(null);
@@ -387,19 +390,19 @@ export default function CampaignFilaTab({ campaign, campaignId, onExitMobile }: 
             />
           ) : (
             <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-kinetic-gray font-mono text-sm text-kinetic-muted">
-              Selecione uma candidatura na pipeline
+              {t.app.marca.fila.selecione}
             </div>
           )}
         </div>
 
         <aside className="flex min-h-0 flex-col lg:col-span-4 lg:h-full">
           <h3 className="mb-4 shrink-0 font-mono text-xs uppercase tracking-widest text-kinetic-muted">
-            Candidaturas
+            {t.app.marca.fila.candidaturas}
           </h3>
           {appsLoading ? (
             <div className="h-40 animate-pulse rounded bg-kinetic-dark" />
           ) : applications.length === 0 ? (
-            <p className="font-mono text-sm text-kinetic-muted">Nenhuma candidatura ainda.</p>
+            <p className="font-mono text-sm text-kinetic-muted">{t.app.marca.fila.nenhuma}</p>
           ) : (
             <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
               {applications.map((app) => (

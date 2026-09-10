@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { campaignFormSchema } from './campaignFormSchema';
+import { criarCampaignFormSchema } from './campaignFormSchema';
+import { pt } from '../../i18n/dictionaries/pt';
+
+// O schema virou função do dicionário (i18n): mensagem de validação fixa no
+// módulo congelaria no idioma do boot. O teste constrói com o dicionário
+// padrão, que é o português.
+const campaignFormSchema = criarCampaignFormSchema(pt);
 
 // O fuso da validação de "Inscrições até" tem que ser o do PRODUTO
 // (America/Sao_Paulo), não o do navegador de quem preenche.

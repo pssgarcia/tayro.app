@@ -1,9 +1,9 @@
 import { Trophy } from 'lucide-react';
 import { useMyRewards } from '../../hooks/useMyRewards';
-import type { RewardType } from '../../types/api';
 import StatFigure from '../../components/primitives/kinetic/StatFigure';
 import { creatorRewardStatusWord, formatDate } from '../../utils/format';
 import { cn } from '../../lib/utils';
+import { useT } from '../../i18n';
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 // Migrada pro "Kinetic Editorial". Não tinha primitivo nenhum: era
@@ -13,12 +13,6 @@ import { cn } from '../../lib/utils';
 // `rewardStatusWord` da marca de propósito — "A receber"/"A caminho" é a ótica
 // de quem espera, "Pendente"/"Emitida" é a de quem paga. Por isso esta tela
 // não usa o `StatusWord`: ele carrega o vocabulário da marca.
-
-const REWARD_TYPE_LABEL: Record<RewardType, string> = {
-  MONETARY: 'Pagamento',
-  PRODUCT: 'Produto',
-  DISCOUNT: 'Desconto',
-};
 
 function Skeleton() {
   return (
@@ -31,6 +25,7 @@ function Skeleton() {
 }
 
 export default function RewardsPage() {
+  const t = useT();
   const { data: rewards = [], isLoading, isError } = useMyRewards();
 
   const pending = rewards.filter((r) => r.status === 'PENDING').length;
@@ -40,9 +35,9 @@ export default function RewardsPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-12 pt-6 sm:px-6 lg:pt-10">
       <h1 className="font-display text-[42px] font-bold leading-[.9] tracking-[-.055em] text-foreground sm:text-[56px]">
-        Recompensas
+        {t.app.creator.recompensas.titulo}
       </h1>
-      <p className="mt-4 text-sm text-kinetic-muted">Tudo que você ganhou e tem a receber</p>
+      <p className="mt-4 text-sm text-kinetic-muted">{t.app.creator.recompensas.subtitulo}</p>
 
       <div className="my-8 h-px bg-kinetic-gray lg:my-10" />
 
@@ -56,16 +51,16 @@ export default function RewardsPage() {
 
       {isLoading && <Skeleton />}
 
-      {isError && <p className="text-sm text-destructive">Erro ao carregar. Tente novamente.</p>}
+      {isError && <p className="text-sm text-destructive">{t.app.creator.recompensas.erro}</p>}
 
       {!isLoading && !isError && rewards.length === 0 && (
         <div className="border border-kinetic-gray px-5 py-12 text-center">
           <Trophy size={20} className="mx-auto mb-4 text-kinetic-muted" />
           <p className="font-display text-base font-semibold text-foreground">
-            Nenhuma recompensa ainda
+            {t.app.creator.recompensas.vazioTitulo}
           </p>
           <p className="mt-2 text-xs text-kinetic-muted">
-            Suas recompensas aparecem aqui após a marca registrá-las.
+            {t.app.creator.recompensas.vazio}
           </p>
         </div>
       )}
@@ -87,7 +82,7 @@ export default function RewardsPage() {
 
                 <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="font-mono text-[10px] uppercase tracking-[.12em] text-kinetic-muted">
-                    {REWARD_TYPE_LABEL[reward.type]}
+                    {t.app.creator.recompensas.tipos[reward.type]}
                   </span>
                   <span className="break-words font-display text-lg font-bold tracking-[-.03em] text-lime">
                     {reward.value}
@@ -112,7 +107,7 @@ export default function RewardsPage() {
                   reward.status === 'DELIVERED' ? 'text-kinetic-muted' : 'text-lime',
                 )}
               >
-                {creatorRewardStatusWord[reward.status]}
+                {creatorRewardStatusWord(reward.status)}
               </span>
             </li>
           ))}
