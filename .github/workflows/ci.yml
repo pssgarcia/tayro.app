@@ -34,6 +34,9 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://tayro_test:tayro_test@localhost:5432/tayro_test
+      # Testes *.integration.spec.ts (store do throttle) rodam contra este banco
+      # descartável. Sem a variável eles FALHAM no CI (não pulam em silêncio).
+      INTEGRATION_DATABASE_URL: postgresql://tayro_test:tayro_test@localhost:5432/tayro_test
       JWT_ACCESS_SECRET: ci-access-secret
       JWT_REFRESH_SECRET: ci-refresh-secret
       JWT_ACCESS_EXPIRES_IN: 15m
