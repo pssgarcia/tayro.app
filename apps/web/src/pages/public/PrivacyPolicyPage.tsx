@@ -44,7 +44,9 @@ import {
 //
 // Identidade do controlador (2026-09-09): o TAYRO ainda não tem razão social
 // nem CNPJ constituídos, então o controlador registrado é a pessoa física
-// (Pedro, CPF preenchido na seção 1). Endereço decidido por ele para NÃO
+// (Pedro, identificado só por nome + e-mail na seção 1; o CPF foi publicado em
+// 2026-09-09 e REMOVIDO em 2026-11-16 a pedido dele, mesma lógica do endereço:
+// exposição desproporcional antes de existir CNPJ). Endereço decidido por ele para NÃO
 // aparecer (exposição desproporcional antes de existir CNPJ) — não é campo a
 // preencher depois, é omissão deliberada. Não readicionar sem pedido dele.
 /**
@@ -100,7 +102,6 @@ function PrivacyPolicyPt() {
         </p>
         <Placeholder>
           <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
-          <p>CPF: 119.407.186-43</p>
           <p>E-mail: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>
         <p>

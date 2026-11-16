@@ -109,7 +109,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - Nome e telefone obrigatórios no apply público (2026-08-31) → telefone e @ obrigatórios no cadastro de creator + WhatsApp no perfil público (2026-09-02) → Creators aprovadas cross-campanha (`/brand/creators`, 2026-09-02).
 - Recuperação de senha (`/forgot-password`+`/reset-password`) · Trocar senha logada · Trocar e-mail logado (todos 2026-09-02, seção "Conta" do Perfil) — todos em `/auth/*` de propósito, ver footgun de auth abaixo.
 - **Resultado de parceria** (`D-21`, 2026-09-03) — fecha os diferenciais "histórico verificado"/"transparência bilateral". Marca informa e registrar É atestar (sem passo de "concluir parceria"); creator **sempre** vê (não existe gate de visibilidade); só fica público com os DOIS consentimentos (marca libera + creator não escondeu). Módulo `partnerships`, aba "Resultado" na marca, seção no Registro da creator, histórico real em `/c/:handle`.
-- **LGPD (Blocos 1-2):** exportar meus dados (2026-09-03) · apagar conta de creator (`D-22`, 2026-09-04, só creator) · Política de Privacidade + Termos de Uso escritos (2026-09-04, texto validado pelo Pedro) · aceite obrigatório nos 3 fluxos de entrada + declaração de maioridade (2026-09-04) · fontes hospedadas por nós (Google Fonts eliminado) · imagens do IG passam a respeitar `publicProfileEnabled` · dado pessoal mascarado em log · hash de senha destruído na exclusão de conta. Nome/CPF do controlador preenchidos em 2026-09-09 (ver "Pendente" pro que falta e por quê).
+- **LGPD (Blocos 1-2):** exportar meus dados (2026-09-03) · apagar conta de creator (`D-22`, 2026-09-04, só creator) · Política de Privacidade + Termos de Uso escritos (2026-09-04, texto validado pelo Pedro) · aceite obrigatório nos 3 fluxos de entrada + declaração de maioridade (2026-09-04) · fontes hospedadas por nós (Google Fonts eliminado) · imagens do IG passam a respeitar `publicProfileEnabled` · dado pessoal mascarado em log · hash de senha destruído na exclusão de conta. Nome do controlador preenchido em 2026-09-09; **CPF publicado junto e REMOVIDO em 2026-11-16** a pedido do Pedro (ver "Pendente").
 - **i18n** (2026-09-08/09): landing e depois o produto inteiro bilíngues pt/en, dicionário tipado próprio (sem lib); erros da API e e-mails **não** traduzidos (nascem no servidor). Conferência visual em Playwright real (168 combinações) achou 3 furos que a suíte não pegava — ver metodologia de verificação visual em "Convenções de trabalho".
 - **Documentos legais em inglês (2026-09-09):** Termos e Política passam a existir nos dois idiomas, e o seletor troca o documento inteiro, não só a moldura. **É tradução de cortesia e o português PREVALECE** (decisão do Pedro, que perguntou por quê): o aceite grava `acceptedTermsVersion` e **não guarda idioma**, o produto é regido por lei brasileira, e duas versões de mesmo peso transformariam divergência de tradução em ambiguidade de contrato de adesão, que se resolve contra quem redigiu. Por isso a **versão é a mesma nos dois** (`1.0`) e nada mudou no registro de aceite (sem coluna, sem migration, sem campo de DTO). O texto NÃO foi pro dicionário: `pages/public/legal/{TermsOfUseEn,PrivacyPolicyEn}.tsx` são arquivos irmãos e cada página despacha por idioma — documento traduzido é outro TEXTO, não copy parametrizada. **Preço: mudou o português, muda o inglês no mesmo commit**, e as asserções de honestidade rodam nos dois idiomas (+30 testes), senão o inglês vira a superfície onde uma negativa incômoda some numa revisão de redação. A comarca do foro segue pendente **nos dois**. Ver `specs/legal-acceptance` → Regra 4 e `i18n/README.md`.
 - Estrutura de testes (Jest + Vitest): invariante — **toda tela em `apps/web/src/pages` tem `.spec.tsx` ao lado**. Confere com: `for f in $(find src/pages -maxdepth 2 -name "*.tsx" ! -name "*.spec.tsx"); do [ -f "${f%.tsx}.spec.tsx" ] || echo "$f"; done` (não confiar numa contagem fixa aqui, ela envelhece rápido — rodar a suíte pro número real).
@@ -135,19 +135,23 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
     ACEITE + declaração de maioridade nos 3 fluxos de entrada (2026-09-04) fechados** — ver
     "Feito". Exclusão de conta de **marca** segue fora de escopo (`D-22` cobriu só creator).
     **O TEXTO dos dois documentos foi escrito em 2026-09-04** (Termos v1.0 com 22 cláusulas,
-    Política v1.0 com 19 seções) — ver "Feito". **Nome e CPF do controlador preenchidos em
-    2026-09-09** (pessoa física, Pedro — o TAYRO ainda não tem CNPJ). **Falta ainda, e depende
+    Política v1.0 com 19 seções) — ver "Feito". **Nome do controlador preenchido em
+    2026-09-09** (pessoa física, Pedro — o TAYRO ainda não tem CNPJ). **O CPF também foi
+    publicado nessa data e REMOVIDO em 2026-11-16 a pedido dele** (mesma lógica do endereço:
+    exposição desproporcional de pessoa física; teste trava a AUSÊNCIA de qualquer CPF nos
+    quatro documentos). Não readicionar: quando existir CNPJ (ex.: MEI), é ele que entra.
+    O CPF segue no histórico do git (repo público) e no que já foi indexado/arquivado. **Falta ainda, e depende
     do Pedro, não de código:**
     (1) **Endereço removido de propósito (seção 1 da Política, cláusula 22 dos Termos) —
     NÃO é placeholder, é omissão deliberada do Pedro (2026-09-09):** endereço residencial é
     exposição desproporcional antes de existir CNPJ, e ele não quer publicar isso agora.
-    Identificação do controlador ficou só nome + CPF + e-mail. Teste garante a AUSÊNCIA (não a
+    Identificação do controlador ficou só nome + e-mail. Teste garante a AUSÊNCIA (não a
     presença) do texto de endereço nos dois documentos — não readicionar sem pedido dele.
     **Comarca do foro (cláusula 21 dos Termos)** continua como placeholder VISÍVEL, travado por
     teste, também por decisão dele (menor urgência, pode esperar). Desde 2026-09-09 ele existe
     em DOIS lugares (o documento em português e a tradução em inglês): preencher um exige
     preencher o outro. **Nenhum dos dois é
-    bloqueio de release**: e-mail + nome/CPF já cobrem o dever de identificação/contato da
+    bloqueio de release**: e-mail + nome já cobrem o dever de identificação/contato da
     LGPD, e a ausência de comarca não desprotege ninguém (o CDC já garante foro do domicílio
     do consumidor em disputa de consumo, independente do que o contrato diga). Residual: um
     contrato de adesão sem endereço físico do fornecedor é tecnicamente mais frágil como prova

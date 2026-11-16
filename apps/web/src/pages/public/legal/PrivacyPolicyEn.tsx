@@ -85,7 +85,6 @@ export default function PrivacyPolicyEn() {
         </p>
         <Placeholder>
           <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
-          <p>CPF: 119.407.186-43</p>
           <p>Email: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>
         <p>
