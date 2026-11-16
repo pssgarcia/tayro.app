@@ -459,6 +459,97 @@ incomodando depois de resolvido só com cache de bytes (`D-18`).
 existência do handle, que esta feature não substitui nem reabre), `D-17` (candidatura espontânea
 é o produto, protegida explicitamente aqui), `specs/instagram-sync`.
 
+### D-24 · 2026-11-16 · API sai do Railway e vira função serverless no MESMO projeto Vercel do front
+**Status:** `RATIFICADA` pelo Pedro em 2026-11-16 (desenhada no `/architect` no mesmo dia).
+**SUPERA `D-12`** (Railway Hobby pago) quando a fatia de desligar o Railway for concluída.
+Ratificadas junto, como recomendado: throttle no **Postgres** (não Upstash), `IgProfileCache`
+**por instância**, Preview deployments **sem env da API** (falha fechada). Ainda abertas:
+pendências (3) e (4) abaixo, que não bloqueiam as primeiras fatias. Não é feature de produto (infra, decisão de custo do dono), por isso não passou pelo
+`/feature`.
+**Decisão:** a API NestJS passa a rodar como **uma** função Node na Vercel (plano Hobby),
+dentro do projeto que já serve `apps/web`: entrypoint fino em `apps/web/api/`, que só importa
+um handler Express compilado de `apps/api` (a instância do Nest fica em cache no escopo do
+módulo entre invocações). O rewrite `/api/*` deixa de apontar pro Railway e passa a apontar pra
+função. Banco continua no Neon (Supabase descartado). Migração em fases, com o Railway no ar em
+paralelo até um critério objetivo, e só então desligado.
+**Motivo:** projeto pessoal sem receita (`D-A` aberta), 0 usuários pagantes; US$5/mês do
+Railway é o único custo fixo de compute. Bônus real, não só economia: web e API passam a sair no
+**mesmo deploy atômico** (hoje saem em jobs paralelos, sem ordem entre eles), e o step de deploy
+que gerou 4 incidentes de CD (`railway up` travando/mudo, ver `CLAUDE.md`) deixa de existir.
+**O que depende de servidor sempre ligado, e como cada um fica:**
+1. *Throttle (`ThrottlerModule`, memória):* regra inviolável (`/auth/*` 5/15min por IP) deixaria
+   de valer com memória por instância. **Store no próprio Postgres (Neon)**: uma tabela técnica
+   de contadores com incremento atômico num único `INSERT … ON CONFLICT … RETURNING` (sem
+   check-then-act). Sem fornecedor novo, sem credencial nova, sem sub-processador novo (a chave
+   já é hash do IP gerado pelo throttler). Junto: o rastreador de IP passa a ler o IP do cliente
+   do cabeçalho que a Vercel controla, não `req.ip` (ver "achado" abaixo).
+2. *Trabalho depois da resposta (`InstagramSyncService.scheduleRefresh`, `setImmediate`):* vira
+   uma **porta** (`BackgroundTasks`) com dois adaptadores: `setImmediate` (dev/teste/Railway) e
+   `waitUntil` de `@vercel/functions` (escolhido por `VERCEL=1`). O domínio não importa nada da
+   Vercel. O pior caso do sync hoje é ~50s (3 tentativas de perfil × 10s + backoff + feed 10s +
+   imagens 8s em paralelo), então `maxDuration` da função precisa cobrir isso.
+3. *`IgProfileCache` (Map, TTL 15min):* **aceito por instância**. Custo: às vezes paga-se o
+   perfil 2× na RapidAPI (verificação do @ + sync). É exatamente a degradação que `D-19` já
+   aceitou ("degrada, não quebra"). Mover pra tabela reabriria a alternativa que `D-19` recusou.
+4. *Teto global da verificação de @ (`IG_HANDLE_CHECK_BUDGET_PER_MINUTE`, contador no
+   controller):* por instância, multiplica pelo nº de instâncias. Fatia opcional: reusar o MESMO
+   store do throttle como contador global (sem conceito novo).
+5. *Sentry:* `flush` antes de congelar (via a mesma porta de `waitUntil`); release passa a vir de
+   `VERCEL_GIT_COMMIT_SHA`; source map por `process.setSourceMapsEnabled(true)` no entrypoint
+   (não há como passar `node --enable-source-maps`). `resolveSentryConfig` continua exigindo DSN
+   em produção.
+6. *Prisma + Neon:* runtime usa a URL **com pooler** (`-pooler`, `pgbouncer=true`); migration
+   continua usando a URL **direta**, que já vive só no secret do CD. Por isso **não** entra
+   `directUrl` no schema (seria mais uma variável obrigatória em todo lugar que roda `migrate`).
+   `binaryTargets` ganha `rhel-openssl-3.0.x` (runtime da Vercel) por defesa. Região da função =
+   `iad1`, a mesma do Neon (`us-east-1`, conferido no host do branch de dev).
+**Alternativas consideradas:**
+(a) *Não migrar (ficar no Railway).* Custa US$60/ano e zero risco. Defensável; recusada pelo
+dono por custo. (b) *Projeto Vercel separado só pra API* (Root Directory `apps/api`): isola
+build e env, mas mantém dois deploys não atômicos e rewrite externo, como hoje. Fica como
+plano B se o build conjunto ficar lento ou o tamanho da função apertar. (c) *Throttle em Upstash
+Redis:* correto e rápido, mas fornecedor + credencial novos e **novo sub-processador de IP**
+(Política de Privacidade muda de novo, `vision.md` nº 3). Recusado enquanto o volume couber no
+Postgres. (d) *Rate limit do Vercel Firewall:* barra antes de invocar a função (economiza
+invocação), mas a regra vive no painel, não no repo, e não tem teste (mesma classe do
+"branch protection que nunca tinha sido aplicada"). Pode virar camada EXTRA depois, nunca a
+única. (e) *Aceitar throttle por instância:* quebra regra inviolável. Recusado. (f) *Sync
+síncrono (await na resposta):* quebra a regra "resposta nunca espera API externa" de
+`instagram-sync`. Recusado. (g) *Fila de verdade (`D-16`, QStash/BullMQ):* resolve melhor, mas é
+infra nova; `waitUntil` cobre o volume atual.
+**Achado no caminho (bug que existe HOJE, independente da migração):** a API nunca configurou
+`trust proxy` nem `getTracker`, e o `ThrottlerGuard` (v6.5) usa `req.ip` como rastreador. Atrás
+do proxy do Railway (e do rewrite da Vercel), `req.ip` é o endereço do proxy, não do cliente:
+os limites "por IP" provavelmente são **compartilhados por todo mundo** (5 logins/15min, 5
+candidaturas públicas/60s pro produto inteiro). Inferido do código, não medido em produção.
+Registrado em `specs/creator-discovery-and-apply` → Known Gaps. A fatia do throttle corrige.
+**Restrição que vira gatilho:** o Hobby da Vercel é **uso não comercial** (termos da Vercel;
+SUPOSIÇÃO a reconferir na doc no dia). Quando o TAYRO cobrar qualquer coisa (`D-A`), ou trocar
+pra Pro (US$20/mês, **4× o Railway**) ou levar a API pra outra casa. Por isso `main.ts` (servidor
+com `listen`) e o `Dockerfile.api` **continuam funcionando**: o bootstrap é compartilhado e o
+domínio não conhece a Vercel, então sair é trocar o entrypoint, não reescrever.
+**O que isto torna difícil:** worker de longa duração (`D-16` com BullMQ), WebSocket/SSE e cron
+frequente não cabem em função Hobby; `D-16` passaria a exigir fila gerenciada (QStash ou
+similar). Cold start (Nest + Prisma) aparece na 1ª requisição depois de ociosidade, somado ao
+autosuspend do Neon que já existe hoje.
+**Pendências do Pedro antes de implementar:** (1) ratificar; (2) Preview deployments ganham API:
+sem env de Preview (falha fechada, recomendado) ou apontando pro branch de dev do Neon (que pode
+ter dado real); (3) atualização da Política (Railway sai, Vercel passa a executar a API): sobe a
+versão pra `1.1` ou não, e se exige re-aceite; (4) confirmar que o secret `DATABASE_URL` do
+GitHub é a URL **direta** (sem `-pooler`).
+**Gatilho de revisão:** TAYRO passa a cobrar (Hobby deixa de valer) · consumo do Hobby passar
+de ~50% de algum limite mensal · cold start virar reclamação de usuária real · `D-16` puxada
+pra AGORA.
+**Fatia do throttle, implementada em 2026-11-16 (escolhas que o desenho não fixava):** janela
+**fixa** por chave (não a deslizante do Map padrão; na virada cabem até 2×limit em sequência,
+aceito); relógio do **banco** pra toda conta de tempo; **falha aberta** com Sentry se o banco cair
+(fechar daria 500 em toda rota, e login/cadastro/candidatura dependem do mesmo banco de qualquer
+jeito); limpeza de linhas vencidas sorteada em 1% dos hits, sem esperar. O rastreador de IP só lê
+`x-real-ip` com `VERCEL=1`: no Railway não há cabeçalho confiável (com a Vercel na frente, o
+`X-Real-IP` do Railway é o IP da Vercel), então lá segue `req.ip` até a virada.
+**Ligado a:** `D-12` (supera), `D-16` (fila, fica mais cara em serverless), `D-19` (cache por
+instância já aceito), `D-20` (Sentry, flush), `D-A` (monetização, gatilho do Hobby).
+
 ---
 
 ## Convenções que não se rediscute

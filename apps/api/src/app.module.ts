@@ -12,6 +12,9 @@ import { PartnershipResultsModule } from './modules/partnerships/presentation/pa
 import { CreatorsModule } from './modules/creators/presentation/creators.module';
 import { DashboardModule } from './modules/dashboard/presentation/dashboard.module';
 import { BrandsModule } from './modules/brands/presentation/brands.module';
+import { DatabaseModule } from './shared/infrastructure/database/database.module';
+import { PrismaService } from './shared/infrastructure/database/prisma.service';
+import { throttlerOptionsFactory } from './shared/throttle/throttler-options';
 
 @Module({
   imports: [
@@ -23,13 +26,13 @@ import { BrandsModule } from './modules/brands/presentation/brands.module';
       envFilePath: '.env',
     }),
 
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60000,
-        limit: 60,
-      },
-    ]),
+    // Contadores no Postgres, não em memória: em serverless cada instância
+    // teria o próprio Map e o limite de /auth/* deixaria de valer (D-24).
+    ThrottlerModule.forRootAsync({
+      imports: [DatabaseModule],
+      inject: [PrismaService],
+      useFactory: throttlerOptionsFactory,
+    }),
 
     AuthModule,
     CampaignsModule,
