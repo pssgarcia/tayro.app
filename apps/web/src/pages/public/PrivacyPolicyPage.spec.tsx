@@ -305,11 +305,12 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByRole('link', { name: /tayro/i })).toHaveAttribute('href', '/');
   });
 
-  it('identifica o controlador por nome e CPF, sem expor endereço (omissão deliberada)', () => {
+  it('identifica o controlador por nome, sem expor CPF nem endereço (omissão deliberada)', () => {
     renderPage();
 
     expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
-    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    expect(screen.queryByText(/\d{3}\.\d{3}\.\d{3}-\d{2}/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/CPF:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\[ENDEREÇO/i)).not.toBeInTheDocument();
   });
 });
@@ -453,7 +454,8 @@ describe('PrivacyPolicyPage · em inglês', () => {
     renderPage();
 
     expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
-    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    expect(screen.queryByText(/\d{3}\.\d{3}\.\d{3}-\d{2}/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/CPF:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\[ENDERE/i)).not.toBeInTheDocument();
   });
 

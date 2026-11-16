@@ -191,7 +191,9 @@ Era o furo apontado na auditoria: a conta nascia em silêncio.
       a versão exibida no cabeçalho, batendo com `TERMS_VERSION`
 - [x] Texto da Política de Privacidade publicado em `/privacy-policy` (v1.0, 2026-09-04), com 19
       seções e a versão exibida no cabeçalho, batendo com `PRIVACY_VERSION`
-- [ ] Razão social, CPF/CNPJ e comarca do foro preenchidos nos dois documentos (ver Known Gaps)
+- [ ] Razão social, CPF/CNPJ e comarca do foro preenchidos nos dois documentos (ver Known Gaps).
+      Atualização 2026-11-16: o controlador é identificado por nome + e-mail; o CPF foi publicado
+      em 2026-09-09 e removido a pedido do Pedro, com teste travando a ausência. Só um CNPJ entra no lugar.
 - [ ] Re-aceite in-app para contas anteriores a 2026-09-04
 
 ## Error Scenarios

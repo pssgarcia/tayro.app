@@ -34,8 +34,9 @@ import {
 // de auditoria de 2026-09-04.
 //
 // AINDA FALTA PARA PUBLICAR EM PRODUÇÃO: a comarca do foro (cláusula 21),
-// continua marcada na página como campo a preencher, de propósito. Nome/CPF
-// preenchidos em 2026-09-09 (pessoa física, TAYRO ainda sem CNPJ). O endereço
+// continua marcada na página como campo a preencher, de propósito. Nome
+// preenchido em 2026-09-09 (pessoa física, TAYRO ainda sem CNPJ); o CPF foi
+// publicado na mesma data e REMOVIDO em 2026-11-16 a pedido do Pedro. O endereço
 // (seção 1 da Política e cláusula 22 destes Termos) foi decidido por Pedro
 // para NÃO aparecer (exposição desproporcional antes de existir CNPJ) — não é
 // campo a preencher depois, é omissão deliberada. Não readicionar sem pedido
@@ -987,7 +988,6 @@ function TermsOfUsePt() {
         </p>
         <Placeholder>
           <p className="font-medium text-foreground">Pedro Soares de Souza Garcia</p>
-          <p>CPF: 119.407.186-43</p>
           <p>E-mail: {LEGAL_CONTACT_EMAIL}</p>
         </Placeholder>
       </Section>
