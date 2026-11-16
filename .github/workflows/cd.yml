@@ -88,7 +88,12 @@ jobs:
           POLL_TIMEOUT_SECONDS: '900'
           POLL_INTERVAL_SECONDS: '15'
         run: |
-          set -uo pipefail
+          # `set +e` explícito: o GitHub roda `run:` com `bash -e`, e `set -uo`
+          # NÃO desliga o -e. Este script checa cada exit code na mão; com -e
+          # ligado, uma falha do `railway up` matava o step dentro do `$(...)`,
+          # antes de imprimir a saída do CLI e o ::error:: (2026-11-16, release
+          # #210: exit 1 mudo em 3s). Teste: .github/workflows/test/deploy-step.test.sh
+          set +e -uo pipefail
 
           # 1) Sobe sem attachar no log. `timeout` porque mesmo o upload pode
           #    pendurar — o que não pode é ficar esperando log.

@@ -77,12 +77,16 @@ run_case() {
   out=$(env PATH="$BIN_POSIX:$PATH" MOCK_UUID="$UUID" MOCK_STATE_DIR="$dir" \
         RAILWAY_TOKEN=fake RAILWAY_SERVICE=svc RAILWAY_CLI=cli \
         POLL_TIMEOUT_SECONDS="${TIMEOUT_OVERRIDE:-6}" POLL_INTERVAL_SECONDS=1 \
-        "$@" bash "$STEP" 2>&1)
+        "$@" bash -e "$STEP" 2>&1)
+  # `bash -e` porque é ASSIM que o GitHub Actions roda um `run:` (shell padrão
+  # = `bash -e {0}`). Rodando sem o -e, este teste passava enquanto em produção
+  # o `-e` matava o script no `UP_OUT=$(...)` e engolia o erro do Railway
+  # (release #210, 2026-11-16: exit 1 mudo em 3s, nenhuma mensagem).
   local code=$?
-  if [ "$code" = "$expected" ]; then
+  if [ "$code" = "$expected" ] && { [ -z "${EXPECT_OUT:-}" ] || grep -qF -- "$EXPECT_OUT" <<<"$out"; }; then
     echo "  ✓ $name (exit $code)"; PASS=$((PASS+1))
   else
-    echo "  ✗ $name — esperado exit $expected, veio $code"; echo "$out" | sed 's/^/      /' | head -8
+    echo "  ✗ $name — esperado exit $expected${EXPECT_OUT:+ e saída contendo '$EXPECT_OUT'}, veio $code"; echo "$out" | sed 's/^/      /' | head -8
     FAIL=$((FAIL+1))
   fi
 }
@@ -94,6 +98,10 @@ run_case "build falhou → FAILED"                          1 MOCK_FINAL_STATUS=
 run_case "container quebrou → CRASHED"                    1 MOCK_FINAL_STATUS=CRASHED
 run_case "BUILDING antes de SUCCESS (poll de verdade)"    0 MOCK_FINAL_STATUS=SUCCESS MOCK_TERMINAL_AFTER=3
 run_case "upload falha → não publica"                     1 MOCK_UP_FAILS=1
+EXPECT_OUT="erro de upload" \
+run_case "upload falha → MOSTRA o erro do CLI"             1 MOCK_UP_FAILS=1
+EXPECT_OUT="Falha ao enviar o deploy" \
+run_case "upload falha → anota ::error:: no job"           1 MOCK_UP_FAILS=1
 run_case "sem id na saída do CLI → falha explícita"       1 MOCK_NO_ID=1
 run_case "JSON aninhado (wrapper diferente)"              0 MOCK_SHAPE=wrapped MOCK_FINAL_STATUS=SUCCESS
 run_case "status nunca aparece → timeout, não sucesso"    1 MOCK_SHAPE=absent
