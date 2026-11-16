@@ -354,3 +354,20 @@ model Notification {
   @@index([userId, read, createdAt(sort: Desc)])
   @@map("notifications")
 }
+
+// Contadores do rate limit (@nestjs/throttler). Tabela TÉCNICA, não de domínio:
+// existe porque a API vai rodar em função serverless (D-24), onde cada
+// instância tem memória própria e o store padrão (Map) deixaria o limite de
+// /auth/* (5/15min) valendo por instância, não por IP. `key` é o hash que o
+// próprio throttler gera (contexto + IP + nome do throttler), então a tabela
+// não guarda IP em claro. Linhas vencidas são apagadas pelo próprio store.
+// Escrita SÓ via PostgresThrottlerStorage (SQL atômico), nunca pelo client.
+model ThrottleHit {
+  key          String    @id
+  hits         Int
+  expiresAt    DateTime
+  blockedUntil DateTime?
+
+  @@index([expiresAt])
+  @@map("throttle_hits")
+}
