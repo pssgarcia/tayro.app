@@ -210,11 +210,12 @@ describe('TermsOfUsePage', () => {
   // apagando o aviso em vez de preenchendo o dado. Endereço é omissão
   // deliberada (não expor), não campo pendente — por isso o teste garante a
   // ausência dele, e não um placeholder.
-  it('identifica o responsável por nome e CPF, mostra a comarca pendente e não expõe endereço', () => {
+  it('identifica o responsável por nome (sem CPF), mostra a comarca pendente e não expõe endereço', () => {
     renderPage();
 
     expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
-    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    expect(screen.queryByText(/\d{3}\.\d{3}\.\d{3}-\d{2}/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/CPF:/)).not.toBeInTheDocument();
     expect(screen.getByText(/COMARCA \/ FORO/i)).toBeInTheDocument();
     expect(screen.queryByText(/\[ENDEREÇO/i)).not.toBeInTheDocument();
   });
@@ -389,7 +390,8 @@ describe('TermsOfUsePage · em inglês', () => {
     renderPage();
 
     expect(screen.getByText(/Pedro Soares de Souza Garcia/i)).toBeInTheDocument();
-    expect(screen.getByText(/119\.407\.186-43/)).toBeInTheDocument();
+    expect(screen.queryByText(/\d{3}\.\d{3}\.\d{3}-\d{2}/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/CPF:/)).not.toBeInTheDocument();
     // A MESMA pendência do documento original (cláusula 21), não uma pendência
     // da tradução: preencher a comarca preenche os dois.
     expect(screen.getByText(/COURT DISTRICT \/ VENUE/i)).toBeInTheDocument();

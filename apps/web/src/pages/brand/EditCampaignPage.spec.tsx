@@ -17,6 +17,17 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => navigate, useParams: () => ({ id: 'camp-1' }) };
 });
 
+// Prazo SEMPRE no futuro, relativo a hoje. Era fixo em '2026-09-30' e o schema
+// recusa data no passado (`dataNoPassado`): quando o calendário passou dessa
+// data, salvar ficou bloqueado e 2 testes começaram a falhar sem ninguém mexer
+// no código. Não voltar a fixar data aqui.
+const FUTURE_DEADLINE = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 60);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+})();
+
 function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
   return {
     id: 'camp-1',
@@ -31,7 +42,7 @@ function makeCampaign(overrides: Partial<Campaign> = {}): Campaign {
     offerAmount: 30000, // R$ 300,00 em centavos
     offerDeadlineDays: 15,
     offerDescription: null,
-    deadline: '2026-09-30T00:00:00.000Z',
+    deadline: `${FUTURE_DEADLINE}T12:00:00.000Z`,
     createdAt: '2026-06-01T00:00:00.000Z',
     _count: { applications: 0 },
     ...overrides,
@@ -65,7 +76,7 @@ describe('EditCampaignPage', () => {
     expect(await screen.findByDisplayValue('Verão 2026')).toBeInTheDocument();
     // 30000 centavos não podem chegar como "30000" no campo de reais.
     expect(screen.getByDisplayValue('300')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('2026-09-30')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(FUTURE_DEADLINE)).toBeInTheDocument();
   });
 
   it('salvar envia PATCH com o valor de volta em centavos e volta pro detalhe', async () => {
