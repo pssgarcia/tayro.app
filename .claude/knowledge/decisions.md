@@ -549,6 +549,12 @@ jeito); limpeza de linhas vencidas sorteada em 1% dos hits, sem esperar. O rastr
 `X-Real-IP` do Railway é o IP da Vercel), então lá segue `req.ip` até a virada.
 **Ligado a:** `D-12` (supera), `D-16` (fila, fica mais cara em serverless), `D-19` (cache por
 instância já aceito), `D-20` (Sentry, flush), `D-A` (monetização, gatilho do Hobby).
+**Fatia do bootstrap, implementada em 2026-11-17:** `apps/api/src/bootstrap.ts` exporta
+`configureApp(app, env)` (helmet, cookies, `ValidationPipe` com whitelist, CORS allow-list, prefixo
+`api/v1`, Swagger só fora de produção) e `createApp(env)` (`assertRequiredEnv` + `NestFactory` +
+`configureApp`, sem `listen`). `main.ts` virou `createApp()` + `listen`. O teste é de comportamento
+HTTP contra um módulo de sonda (não de "chamou `app.use`"), validado por mutação (6/6). O
+`instrument.ts` continua fora dele de propósito: precisa ser o 1º import de cada ponto de entrada.
 
 ---
 
