@@ -2,7 +2,10 @@
 // antes dos módulos carregarem.
 import './instrument';
 import { createApp } from './bootstrap';
-import { createServerlessHandler } from './serverless-handler';
+import {
+  createServerlessHandler,
+  VERCEL_REWRITE_PARAM,
+} from './serverless-handler';
 
 // Equivale ao `node --enable-source-maps` do start:prod: numa função não dá pra
 // passar flag pro node, e sem isto o stack trace no Sentry aponta pro dist/.
@@ -13,4 +16,6 @@ process.setSourceMapsEnabled(true);
  * `apps/web/api/index.ts`. Mesma montagem do `main.ts` (via `createApp`), sem
  * `listen`: quem escuta a porta é a Vercel.
  */
-export const handler = createServerlessHandler(() => createApp());
+export const handler = createServerlessHandler(() => createApp(), {
+  rewriteParam: VERCEL_REWRITE_PARAM,
+});
