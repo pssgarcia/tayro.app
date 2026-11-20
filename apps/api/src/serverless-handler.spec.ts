@@ -102,4 +102,40 @@ describe('createServerlessHandler', () => {
     expect(res2.body).toBe('ok');
     expect(create).toHaveBeenCalledTimes(2);
   });
+  // O rewrite da Vercel (/api/:__api_path* -> /api/index) acrescenta o trecho
+  // capturado como query (?__api_path=v1/campaigns). A ValidationPipe recusa
+  // campo desconhecido, então isso virava 400 em toda rota com DTO de query
+  // (achado no canário de 2026-11-20). O handler tira só esse parâmetro.
+  it('remove o parâmetro do rewrite e preserva o resto da query', async () => {
+    const seen: string[] = [];
+    const express = jest.fn(
+      (q: IncomingMessage, r: ReturnType<typeof fakeRes>) => {
+        seen.push(q.url ?? '');
+        r.end('ok');
+      },
+    );
+    const handler = createServerlessHandler(
+      jest.fn().mockResolvedValue(fakeApp(express)),
+      { rewriteParam: '__api_path' },
+    );
+
+    for (const url of [
+      '/api/v1/campaigns?__api_path=v1%2Fcampaigns',
+      '/api/v1/campaigns?page=2&__api_path=v1%2Fcampaigns&limit=12',
+      '/api/v1/health',
+      '/api/v1/campaigns?page=1',
+    ]) {
+      await handler(
+        { url } as IncomingMessage,
+        fakeRes() as unknown as ServerResponse,
+      );
+    }
+
+    expect(seen).toEqual([
+      '/api/v1/campaigns',
+      '/api/v1/campaigns?page=2&limit=12',
+      '/api/v1/health',
+      '/api/v1/campaigns?page=1',
+    ]);
+  });
 });
