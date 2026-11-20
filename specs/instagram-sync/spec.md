@@ -583,3 +583,8 @@ já validado; servir por ali evita abrir um segundo endereço público só para 
 ## Change History (complemento)
 - 2026-09-04 · autorização das rotas de imagem (acima). Fecha o achado da auditoria de que
   desligar o perfil público não removia as imagens do acesso público.
+- 2026-11-20 · `scheduleRefresh` passa pela porta `BackgroundTasks`
+  (`shared/background/background-tasks.ts`, `D-24`) em vez de chamar `setImmediate` direto.
+  Comportamento igual no Railway (roda depois da resposta, nunca derruba quem chamou); na Vercel a
+  promessa vai pro `waitUntil`, sem o qual o sync morreria quando a função congela depois da
+  resposta. O que escapar do `catch` do sync vai pro Sentry com a tag `area: background-task`.

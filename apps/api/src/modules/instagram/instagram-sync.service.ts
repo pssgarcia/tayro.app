@@ -7,6 +7,7 @@ import { INSTAGRAM_PROVIDER } from './instagram.constants';
 import type { InstagramProvider } from './instagram.types';
 import { calcEngagementRate } from './engagement.utils';
 import { IgImageService } from './ig-image.service';
+import { BackgroundTasks } from '../../shared/background/background-tasks';
 
 @Injectable()
 export class InstagramSyncService {
@@ -17,6 +18,7 @@ export class InstagramSyncService {
     private readonly config: ConfigService,
     @Inject(INSTAGRAM_PROVIDER) private readonly provider: InstagramProvider,
     private readonly igImages: IgImageService,
+    private readonly background: BackgroundTasks,
   ) {}
 
   /**
@@ -31,7 +33,9 @@ export class InstagramSyncService {
    * dado fresco sai sem tocar no provedor.
    */
   scheduleRefresh(influencerId: string): void {
-    setImmediate(() => {
+    // Pela porta, não `setImmediate` direto: numa função serverless o trabalho
+    // morreria quando a instância congela depois da resposta (D-24).
+    void this.background.run(() =>
       this.refresh(influencerId).catch((err: unknown) => {
         const reason = err instanceof Error ? err.message : String(err);
         this.logger.error(
@@ -44,8 +48,8 @@ export class InstagramSyncService {
           tags: { area: 'instagram-sync', trigger: 'scheduleRefresh' },
           extra: { influencerId },
         });
-      });
-    });
+      }),
+    );
   }
 
   /**

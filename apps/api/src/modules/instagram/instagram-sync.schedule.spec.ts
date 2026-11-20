@@ -17,12 +17,14 @@ import { InstagramSyncService } from './instagram-sync.service';
 import { PrismaService } from '../../shared/infrastructure/database/prisma.service';
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
 import { IgImageService } from './ig-image.service';
+import { BackgroundTasks } from '../../shared/background/background-tasks';
 
 const flushMicrotasks = () => new Promise((resolve) => setImmediate(resolve));
 
 describe('InstagramSyncService.scheduleRefresh', () => {
   let service: InstagramSyncService;
   let refresh: jest.SpyInstance;
+  let background: BackgroundTasks;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,10 +34,12 @@ describe('InstagramSyncService.scheduleRefresh', () => {
         { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: INSTAGRAM_PROVIDER, useValue: { fetchProfile: jest.fn() } },
         { provide: IgImageService, useValue: { storeFromProfile: jest.fn() } },
+        BackgroundTasks,
       ],
     }).compile();
 
     service = module.get(InstagramSyncService);
+    background = module.get(BackgroundTasks);
     refresh = jest.spyOn(service, 'refresh').mockResolvedValue(undefined);
   });
 
@@ -69,5 +73,17 @@ describe('InstagramSyncService.scheduleRefresh', () => {
     expect(logError).toHaveBeenCalledWith(
       expect.stringContaining('RapidAPI fora do ar'),
     );
+  });
+
+  // Em serverless, trabalho agendado fora da porta morre quando a função
+  // congela depois da resposta (D-24). O agendamento TEM que passar por ela.
+  it('agenda pela porta BackgroundTasks (que segura a função viva na Vercel)', async () => {
+    const run = jest.spyOn(background, 'run');
+
+    service.scheduleRefresh('inf-1');
+    await run.mock.results[0].value;
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(refresh).toHaveBeenCalledWith('inf-1');
   });
 });

@@ -11,6 +11,7 @@ import { IgHandleController } from './ig-handle.controller';
 import { IgImageService } from './ig-image.service';
 import { IgImageAccessService } from './ig-image-access.service';
 import { IgProfileCache } from './ig-profile-cache';
+import { BackgroundTasks } from '../../shared/background/background-tasks';
 
 @Module({
   // JwtModule sem config: o `IgImageAccessService` passa o segredo explícito em
@@ -36,6 +37,7 @@ import { IgProfileCache } from './ig-profile-cache';
       inject: [ConfigService],
     },
     InstagramSyncService,
+    BackgroundTasks,
     IgImageService,
     IgImageAccessService,
   ],

@@ -1,5 +1,8 @@
 generator client {
   provider = "prisma-client-js"
+  // "native" = a máquina que roda o generate (dev, CI, Railway). A Vercel
+  // (D-24) executa funções em Amazon Linux 2023, que é rhel-openssl-3.0.x.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

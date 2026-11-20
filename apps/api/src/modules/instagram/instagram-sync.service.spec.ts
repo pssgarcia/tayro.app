@@ -17,6 +17,7 @@ import { InstagramSyncService } from './instagram-sync.service';
 import { PrismaService } from '../../shared/infrastructure/database/prisma.service';
 import { INSTAGRAM_PROVIDER } from './instagram.constants';
 import { IgImageService } from './ig-image.service';
+import { BackgroundTasks } from '../../shared/background/background-tasks';
 
 const perfil = {
   followers: 10_000,
@@ -69,6 +70,7 @@ describe('InstagramSyncService', () => {
         // Guardar imagem é best-effort e tem testes próprios — aqui só não
         // pode atrapalhar o contrato de staleness/falha do sync.
         { provide: IgImageService, useValue: igImages },
+        BackgroundTasks,
       ],
     }).compile();
 
