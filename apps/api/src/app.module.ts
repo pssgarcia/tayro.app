@@ -13,6 +13,7 @@ import { CreatorsModule } from './modules/creators/presentation/creators.module'
 import { DashboardModule } from './modules/dashboard/presentation/dashboard.module';
 import { BrandsModule } from './modules/brands/presentation/brands.module';
 import { DatabaseModule } from './shared/infrastructure/database/database.module';
+import { HealthModule } from './modules/health/health.module';
 import { PrismaService } from './shared/infrastructure/database/prisma.service';
 import { throttlerOptionsFactory } from './shared/throttle/throttler-options';
 
@@ -43,6 +44,7 @@ import { throttlerOptionsFactory } from './shared/throttle/throttler-options';
     CreatorsModule,
     DashboardModule,
     BrandsModule,
+    HealthModule,
   ],
   providers: [
     // Antes de qualquer outro filtro: reporta ao Sentry o que NÃO for
