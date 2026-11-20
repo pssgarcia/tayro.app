@@ -309,7 +309,7 @@ Verificação do @, em `PublicApplyPage.spec.tsx` → `describe('PublicApplyPage
   `randomBytes(32)` com hash SHA-256 persistido (`claimTokenHash`) e o token cru só no e-mail.
 - Envio do e-mail de claim é `await`ado antes de retornar (não é fire-and-forget), mas passa por
   `offerAccountClaim`/`sendClaimEmailBestEffort`, que capturam qualquer falha e apenas logam. A
-  busca de dados do Instagram roda via `InstagramSyncService.scheduleRefresh` (`setImmediate`),
+  busca de dados do Instagram roda via `InstagramSyncService.scheduleRefresh` (porta `BackgroundTasks`: depois da resposta, com `waitUntil` na Vercel),
   fora do ciclo da resposta HTTP.
 - `hrefBuilder` em `ProgramsList`/`BrowseProgramsPublicPage` decide o destino do card lendo o
   estado de auth do Zustand store no momento do render.

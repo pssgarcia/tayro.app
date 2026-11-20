@@ -1,11 +1,38 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "git": { "deploymentEnabled": { "main": false } },
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
+  "buildCommand": "cd ../api && npm run build && cd ../web && npm run build",
+  "regions": [
+    "iad1"
+  ],
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "cookie",
+          "key": "tayro_api",
+          "value": "vercel"
+        }
+      ],
+      "destination": "/api/index"
+    },
     {
       "source": "/api/:path*",
       "destination": "https://api-production-a813.up.railway.app/api/:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

@@ -64,6 +64,22 @@ describe('resolveSentryConfig', () => {
     expect(resolveSentryConfig({ SENTRY_DSN: DSN }).release).toBeUndefined();
   });
 
+  // D-24: na Vercel quem injeta o commit é VERCEL_GIT_COMMIT_SHA. Sem isto,
+  // todo evento da API serverless chegaria sem release.
+  it('release: na Vercel usa VERCEL_GIT_COMMIT_SHA', () => {
+    expect(
+      resolveSentryConfig({ SENTRY_DSN: DSN, VERCEL_GIT_COMMIT_SHA: 'cafe01' })
+        .release,
+    ).toBe('cafe01');
+    expect(
+      resolveSentryConfig({
+        SENTRY_DSN: DSN,
+        SENTRY_RELEASE: 'v1.2.3',
+        VERCEL_GIT_COMMIT_SHA: 'cafe01',
+      }).release,
+    ).toBe('v1.2.3');
+  });
+
   it('tracesSampleRate: default 0.1 quando ausente, vazio, inválido, negativo ou > 1', () => {
     expect(resolveSentryConfig({ SENTRY_DSN: DSN }).tracesSampleRate).toBe(0.1);
     // String vazia não pode virar 0 e desligar o tracing sem ninguém pedir.
