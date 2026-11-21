@@ -89,6 +89,14 @@ export function createServerlessHandler(
     }
     if (options.rewriteParam && req.url) {
       req.url = stripQueryParam(req.url, options.rewriteParam);
+      // O runtime Node da Vercel define `req.query` como propriedade PRÓPRIA,
+      // lida da URL original (com o parâmetro do rewrite). No Express 5,
+      // `req.query` é um getter no protótipo que lê `req.url`; a propriedade
+      // própria o esconde. Sem apagá-la, limpar a URL não adianta (canário de
+      // 2026-11-21).
+      if (Object.prototype.hasOwnProperty.call(req, 'query')) {
+        Reflect.deleteProperty(req, 'query');
+      }
     }
     listener(req, res);
   };
