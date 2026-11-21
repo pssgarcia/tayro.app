@@ -16,7 +16,7 @@
   },
   "rewrites": [
     {
-      "source": "/api/:path*",
+      "source": "/api/:__api_path*",
       "has": [
         {
           "type": "cookie",
