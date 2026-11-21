@@ -17,18 +17,7 @@
   "rewrites": [
     {
       "source": "/api/:__api_path*",
-      "has": [
-        {
-          "type": "cookie",
-          "key": "tayro_api",
-          "value": "vercel"
-        }
-      ],
       "destination": "/api/index"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "https://api-production-a813.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",

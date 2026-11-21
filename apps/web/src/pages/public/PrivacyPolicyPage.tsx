@@ -460,14 +460,11 @@ function PrivacyPolicyPt() {
               imagem do Instagram.
             </>,
             <>
-              <strong className="text-foreground">Railway</strong> (hospedagem da API). Executa a
-              aplicação de servidor, e portanto processa todos os dados em trânsito nas
-              funcionalidades, além de manter registros operacionais de execução.
-            </>,
-            <>
-              <strong className="text-foreground">Vercel</strong> (hospedagem da aplicação web).
-              Distribui as páginas ao navegador e encaminha as requisições à API. Recebe dados de
-              conexão, como endereço IP e informações do navegador.
+              <strong className="text-foreground">Vercel</strong> (hospedagem da aplicação web e da
+              API). Distribui as páginas ao navegador e executa a aplicação de servidor, e portanto
+              processa todos os dados em trânsito nas funcionalidades, além de manter registros
+              operacionais de execução. Recebe dados de conexão, como endereço IP e informações do
+              navegador.
             </>,
             <>
               <strong className="text-foreground">Resend</strong> (envio de e-mails). Recebe o
