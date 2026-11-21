@@ -555,6 +555,22 @@ instância já aceito), `D-20` (Sentry, flush), `D-A` (monetização, gatilho do
 `configureApp`, sem `listen`). `main.ts` virou `createApp()` + `listen`. O teste é de comportamento
 HTTP contra um módulo de sonda (não de "chamou `app.use`"), validado por mutação (6/6). O
 `instrument.ts` continua fora dele de propósito: precisa ser o 1º import de cada ponto de entrada.
+**Função, canário e virada, 2026-11-20/21:** releases v0.66.0 (função sem tráfego, só com o
+cookie `tayro_api=vercel`), v0.67.0 e v0.68.0 (dois fixes achados SÓ no canário) e a virada
+(todo `/api/*` → função; Railway segue ligado como plano de volta: voltar é reverter o commit da
+virada). Política de Privacidade: Railway sai, Vercel passa a "hospedagem da aplicação web e da
+API", **versão mantida em 1.0, sem re-aceite** (decisão do Pedro, opção 1: a Vercel já era
+listada, nenhum dado novo, mesma finalidade). Três coisas que só a Vercel de verdade mostrou:
+(1) **variável de ambiente cadastrada depois do deploy não vale pra ele**: sem `SENTRY_DSN` o
+`instrument.ts` lança na importação e a função morre com `FUNCTION_INVOCATION_FAILED`, antes do
+handler existir (cadastrar as variáveis ANTES do deploy que liga a função; o log não pôde
+confirmar porque o Hobby guarda 1h); (2) o rewrite `/api/:param*` → `/api/index` **acrescenta o
+parâmetro capturado à query** (`?__api_path=v1/...`) e a `ValidationPipe` recusava com 400;
+(3) o runtime Node da Vercel **define `req.query` como propriedade própria** a partir da URL
+original, escondendo o getter do Express 5, então limpar só a URL não bastava. Os dois últimos
+estão travados por `vercel-config.spec.ts` e `serverless-handler.vercel.spec.ts` (este com a
+requisição montada como a Vercel entrega). Falta: CD sem o Railway (fatia 6) e desligar o
+Railway (fatia 8).
 
 ---
 
