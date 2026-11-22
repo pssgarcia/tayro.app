@@ -18,12 +18,12 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 - **Monorepo:** Turborepo (npm workspaces) — `apps/api` + `apps/web`
 - **API:** NestJS (Clean Architecture) · Prisma · PostgreSQL (Neon) · JWT (access + refresh com rotação SHA-256) · Jest
 - **Web:** React + Vite · React Router (BrowserRouter) · Zustand · TanStack Query · Tailwind · Vitest + Testing Library
-- **Deploy:** API → Railway · Web → Vercel · CI/CD → GitHub Actions
+- **Deploy:** API → **função da Vercel desde 2026-11-21** (`apps/web/api/index.ts` → `apps/api/dist/serverless.js`, `D-24`; Railway ainda ligado só como plano de volta) · Web → Vercel · CI/CD → GitHub Actions
 
 ## URLs de produção
 - Web: https://tayro-app.vercel.app
 - **Domínio próprio: `https://tayro.app.br` — COMPRADO e NO AR desde ~2026-08-29**, apontado pra Vercel (`216.198.79.1`, HTTP 200), servindo o app com o rewrite `/api/*` funcionando. **Não confundir com `tayro.app` (sem `.br`), que é NXDOMAIN** — a nota antiga do "MORDEU 2026-08-24" era sobre esse outro domínio. Nada de código muda: `publicUrl`/`publicUrlLabel` derivam de `window.location.origin` (foi a proteção criada pra esse dia). Pendência de painel: `www.tayro.app.br` não resolve — adicionar subdomínio com redirect pro apex.
-- API: https://api-production-a813.up.railway.app (prefixo global `api/v1`)
+- API: `https://tayro.app.br/api/v1` (função da Vercel, região `iad1`). O endereço antigo do Railway (`https://api-production-a813.up.railway.app`) segue no ar até a fatia 8 da `D-24`, sem tráfego do site. **Variáveis da API moram no projeto da Vercel (Production)** e precisam estar lá ANTES do deploy que as usa.
 - Railway Service ID: `f0afafae-1cd2-41e2-b462-8c413dd53209`
 - **Railway: plano Hobby (pago, US$5/mês) desde 2026-07-05.** Trial de créditos grátis acabou silenciosamente (sem aviso) e derrubou a API em prod — `curl` na API respondia 404 do EDGE do Railway ("Application not found"), não do NestJS. Banco (Neon) não é afetado por isso, só o compute. Se a API cair de novo do nada, checar billing do Railway ANTES de investigar código/deploy.
 - **Neon tem 2 branches: dev e prod, com hosts DIFERENTES.** `apps/api/.env` local aponta pro branch de **dev**. A `DATABASE_URL` de prod fica só no Railway (env do serviço), nunca no `.env` local — dev e prod NÃO compartilham o mesmo banco. Pegadinha: o branch de dev pode conter uma cópia real de dados de creators (ex: handles reais), então "ver dado real" ao consultar o `.env` local NÃO prova que é prod — já causou confusão (2026-08-03). Migrations locais (`prisma migrate deploy` manual) só afetam o branch de DEV; produção só recebe migration via CD.
@@ -119,6 +119,7 @@ Terceira categoria, além das duas acima: `specs/<slug>/spec.md` (raiz do repo, 
 
 - **Rate limit no Postgres (2026-11-16, `D-24` fatia 1 de execução):** contadores do `@nestjs/throttler` saem do Map em memória pra tabela `throttle_hits` (`PostgresThrottlerStorage`, incremento atômico num único `INSERT … ON CONFLICT … RETURNING`, falha aberta com Sentry). Pré-requisito da API em serverless. **1º teste de integração contra Postgres real** (`*.integration.spec.ts`, roda com `INTEGRATION_DATABASE_URL`; no CI é obrigatório, localmente pula sem ela — use um container, NUNCA o Neon). Bug conhecido que segue até a virada pra Vercel: atrás do Railway os limites "por IP" são compartilhados (ver `specs/creator-discovery-and-apply` → Known Gaps).
 - **Bootstrap compartilhado da API (2026-11-17, `D-24` fatia 2 de execução):** `apps/api/src/bootstrap.ts` (`configureApp`/`createApp`) é o ÚNICO lugar que monta helmet, cookies, validação, CORS, prefixo e Swagger. Todo ponto de entrada (`main.ts` hoje, a função serverless depois) passa por ele, e cada um importa `./instrument` como 1º import por conta própria.
+- **API na Vercel (2026-11-21, `D-24`):** todo `/api/*` vai pra função (`serverless.ts`/`serverless-handler.ts`; app criado uma vez por instância, `BackgroundTasks` com `waitUntil` pro trabalho pós-resposta, `GET /api/v1/health`). **Fecha o bug do limite por IP compartilhado** (medido: 429 no 6º login do mesmo IP, outro IP livre). Duas armadilhas da Vercel travadas por teste: o rewrite injeta o parâmetro capturado na query, e o runtime pré-preenche `req.query` escondendo o do Express 5. Política de Privacidade: Railway trocado pela Vercel, versão segue 1.0.
 
 ## Convenção de release (develop → main)
 - Título: `release: vX.Y.0 — <desc>` (SemVer pré-1.0; features de produto incrementam o minor)

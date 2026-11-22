@@ -440,14 +440,11 @@ export default function PrivacyPolicyEn() {
               campaigns, applications, content, rewards, results and the Instagram image copies.
             </>,
             <>
-              <strong className="text-foreground">Railway</strong> (API hosting). Runs the server
-              application, and therefore processes all data in transit in the features, as well as
-              keeping operational records of execution.
-            </>,
-            <>
-              <strong className="text-foreground">Vercel</strong> (web application hosting).
-              Delivers the pages to the browser and forwards requests to the API. Receives
-              connection data, such as IP address and browser information.
+              <strong className="text-foreground">Vercel</strong> (web application and API
+              hosting). Delivers the pages to the browser and runs the server application, and
+              therefore processes all data in transit in the features, as well as keeping
+              operational records of execution. Receives connection data, such as IP address and
+              browser information.
             </>,
             <>
               <strong className="text-foreground">Resend</strong> (email delivery). Receives the
