@@ -114,9 +114,20 @@ describe('PrivacyPolicyPage', () => {
     renderPage();
     const texto = documentText();
 
-    ['Neon', 'Railway', 'Vercel', 'Resend', 'Sentry', 'RapidAPI', 'GitHub'].forEach((fornecedor) =>
+    ['Neon', 'Vercel', 'Resend', 'Sentry', 'RapidAPI', 'GitHub'].forEach((fornecedor) =>
       expect(texto).toContain(fornecedor),
     );
+  });
+
+  // D-24 (2026-11-21): a API saiu do Railway e passou a rodar na Vercel. A
+  // Vercel já estava listada; o que muda é ela também executar a API.
+  it('a Vercel aparece como quem executa a API, e o Railway não aparece mais', () => {
+    renderPage();
+    const texto = documentText();
+
+    expect(texto).toMatch(/Vercel \(hospedagem da aplicação web e da API\)/);
+    expect(texto).toMatch(/executa a aplicação de servidor/i);
+    expect(texto).not.toMatch(/Railway/i);
   });
 
   it('não lista terceiro que não está em uso', () => {
@@ -387,9 +398,12 @@ describe('PrivacyPolicyPage · em inglês', () => {
     renderPage();
     const texto = documentText();
 
-    ['Neon', 'Railway', 'Vercel', 'Resend', 'Sentry', 'RapidAPI', 'GitHub'].forEach((fornecedor) =>
+    ['Neon', 'Vercel', 'Resend', 'Sentry', 'RapidAPI', 'GitHub'].forEach((fornecedor) =>
       expect(texto).toContain(fornecedor),
     );
+    expect(texto).toMatch(/Vercel \(web application and API hosting\)/);
+    expect(texto).toMatch(/runs the server application/i);
+    expect(texto).not.toMatch(/Railway/i);
     expect(texto).not.toMatch(/Cloudflare/i);
     expect(texto).not.toMatch(/Google Analytics/i);
     expect(texto).not.toMatch(/Google Fonts/i);

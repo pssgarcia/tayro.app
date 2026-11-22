@@ -241,17 +241,12 @@ cobertura. Ver Test Coverage.)
   conta antiga: quem se cadastrou antes dessa data e se candidata pelo fluxo autenticado não
   preenche telefone em lugar nenhum do caminho — só entrando no Perfil por conta própria, e
   ninguém a avisa disso.
-- **O limite "5 candidaturas públicas por IP em 60s" provavelmente não é por IP** `[INFERIDO do
-  código em 2026-11-16, não medido em produção]`. A API não configura de onde vem o IP do
-  cliente, e o rastreador padrão do limitador usa o endereço da conexão, que atrás do proxy de
-  hospedagem (e do rewrite da Vercel) é o do proxy. Efeito provável: o limite é compartilhado
-  por todas as visitantes, e 5 candidaturas de pessoas diferentes no mesmo minuto fazem a 6ª
-  receber `429`. O mesmo vale para o limite de `/auth/*` (5/15min) e para o global (60/min).
-  **Não tem conserto confiável enquanto a API estiver no Railway**: com a Vercel na frente, o
-  `X-Real-IP` que o Railway entrega é o IP da Vercel, e ler `X-Forwarded-For` deixaria qualquer um
-  burlar o limite. Desde 2026-11-16 os contadores ficam no Postgres (`throttle_hits`) e o
-  rastreador (`clientIpTracker`) já lê o `x-real-ip` da Vercel quando `VERCEL=1`: o gap fecha
-  sozinho quando o `/api/*` passar a apontar pra função da Vercel (`decisions.md` → `D-24`).
+- ~~**O limite "5 candidaturas públicas por IP em 60s" provavelmente não é por IP**~~ **FECHADO
+  em 2026-11-21** pela virada da API pra Vercel (`decisions.md` → `D-24`). Atrás do Railway, o IP
+  visto pela API era o do proxy, e o limite (e o de `/auth/*`, e o global) ficava compartilhado por
+  todo mundo. Na função da Vercel o rastreador (`clientIpTracker`) lê o `x-real-ip`, que a Vercel
+  sobrescreve (o cliente não forja). Medido em produção: 6 logins seguidos do mesmo IP levam `429`
+  no 6º, e outro IP segue liberado. Contadores no Postgres (`throttle_hits`) desde 2026-11-16.
 - Nenhuma tela de detalhe pública própria existe: `/apply/:id` cumpre esse papel também pro
   visitante anônimo. Não é gap — é a decisão de escopo registrada em `roadmap.md`.
 
