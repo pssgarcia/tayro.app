@@ -572,6 +572,16 @@ estão travados por `vercel-config.spec.ts` e `serverless-handler.vercel.spec.ts
 requisição montada como a Vercel entrega). Falta: CD sem o Railway (fatia 6) e desligar o
 Railway (fatia 8).
 
+**CD sem o Railway (fatia 6), 2026-11-21:** um job só, em sequência: migration → deploy da
+Vercel → smoke test no `/api/v1/health`. Com a API no mesmo deploy do web, os dois jobs
+paralelos de antes deixavam o código novo ir ao ar antes da migration terminar. Migration
+pelo endpoint direto do Neon (host sem `-pooler`, derivado do mesmo secret: o advisory lock
+do `prisma migrate` não é garantido no pooler em modo transação). CLI da Vercel pinado em
+66.6.0. Node 24 no CI/CD, igual à função. A partir daqui o Railway para de receber código: o
+plano de volta passa a ser o Instant Rollback da Vercel, não o Railway. Falta só a fatia 8
+(desligar o serviço no painel e tirar as referências restantes, como o
+`RAILWAY_GIT_COMMIT_SHA` do Sentry).
+
 ---
 
 ## Convenções que não se rediscute
