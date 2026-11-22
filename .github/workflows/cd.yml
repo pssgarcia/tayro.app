@@ -7,10 +7,21 @@ on:
     types: [completed]
     branches: [main]
 
+# Dois releases seguidos não podem rodar migration/deploy em paralelo.
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
 jobs:
-  # ─── API → Railway ────────────────────────────────────────────────────────────
-  deploy-api:
-    name: Deploy API → Railway
+  # ─── Produção: migrations → Vercel (web + API) → smoke test ─────────────────
+  # Desde 2026-11-21 (D-24) a API é uma função no MESMO deploy da Vercel que o
+  # web. Por isso é um job só, em sequência: com dois jobs em paralelo (como era
+  # com o Railway), o código novo podia entrar no ar antes da migration.
+  #
+  # Ordem segura pra migration ADITIVA. Migration destrutiva continua exigindo
+  # dois releases (expand/contract), ver CLAUDE.md → Convenções de trabalho.
+  deploy:
+    name: Deploy → Vercel (migrations + web + API)
     runs-on: ubuntu-latest
     # Só faz deploy se o CI passou
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -18,213 +29,48 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Mesma major do runtime da função na Vercel (projeto em Node 24.x).
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      # Roda a migration no banco de produção ANTES de subir o novo código.
-      # Garante que o schema está atualizado quando o novo código entrar no ar.
-      # Requer secret DATABASE_URL configurado em Settings → Secrets do repo.
+      # Migration pelo endpoint DIRETO do Neon, não pelo pooler que a app usa:
+      # o `prisma migrate` depende de advisory lock, que o pooler em modo
+      # transação não garante. A URL direta é derivada do mesmo secret.
       - name: Run DB migrations
-        run: npm run prisma:deploy --workspace=apps/api
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      # Deploy explícito via CLI: "railway up" sobe o código já checado neste
-      # runner (que acabou de passar no CI) e builda no Railway. Rodamos da RAIZ
-      # do repo para o lockfile de workspace estar presente; o Railway usa o
-      # Root Directory = apps/api configurado no serviço para buildar.
-      #
-      # Por que "up" e não "redeploy": com o auto-deploy nativo do Railway
-      # DESLIGADO (Actions é o único orquestrador), "redeploy" rebuilda o mesmo
-      # commit antigo. "up" envia o commit novo.
-      #
-      # Service ID (não o nome) — imutável e sem ambiguidade. Não é segredo
-      # (aparece na URL do painel); o acesso é protegido pelo RAILWAY_TOKEN.
-      #
-      # VERSÃO PINADA, NÃO TROCAR PARA @latest. O CLI sai várias vezes por dia;
-      # com @latest um release do Railway muda o comportamento do CD sem nenhuma
-      # mudança nossa. Subir de versão = PR próprio, com run verde antes do merge.
-      #
-      # ─── POR QUE NÃO USAMOS MAIS `--ci` ──────────────────────────────────────
-      # `--ci` significa "stream build logs, then exit" (texto do próprio --help).
-      # O problema nunca foi o build: era o STREAMING não detectar o fim e o
-      # processo ficar pendurado até morrer no `timeout`, com o deploy já no ar.
-      # CD vermelho com produção atualizada — falso-negativo que mascarava falha
-      # real do step de migrations, que roda antes.
-      #
-      # Visto em dois cenários distintos, o que descarta "é só a versão do CLI":
-      #   1. build CONCLUÍDO (21/08, v5.42.1): "image push" no log, deploy no ar,
-      #      e mesmo assim o CLI não retornou.
-      #   2. build PULADO (22/08, v5.41.1 pinada): release só de docs, nada em
-      #      apps/api, Railway respondeu "no changes detected in watch paths,
-      #      build will skip" — sem log pra transmitir, o CLI travou igual.
-      # O pin (5.41.1) foi tentado e NÃO resolveu: o cenário 2 aconteceu com ele.
-      # Fica só como proteção contra a roleta do @latest.
-      #
-      # O retry de 2 tentativas foi REMOVIDO: além de não cobrir nenhum dos dois
-      # cenários, garantia 5 min extras de espera em toda falha (a 2ª tentativa
-      # re-subia o mesmo snapshot, o Railway pulava o build e o CLI travava de
-      # novo). Era o que fazia o job dar sempre ~10m30s cravado.
-      #
-      # ─── O QUE FAZEMOS AGORA ─────────────────────────────────────────────────
-      # `--detach` sobe e volta na hora, sem streaming nenhum. Depois consultamos
-      # o status REAL do deployment via `deployment list --json`, que é uma
-      # consulta pontual à API — não uma conexão longa que pode pendurar.
-      # Continuamos falhando o job quando o build falha (que era o ponto do --ci),
-      # só que sem depender do log-streaming pra descobrir isso.
-      - name: Deploy API to Railway
-        timeout-minutes: 20
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE: f0afafae-1cd2-41e2-b462-8c413dd53209
-          RAILWAY_CLI: '@railway/cli@5.41.1'
-          # Teto do poll. Builds normais levam 2-5min; 15min dá folga larga sem
-          # deixar o job pendurado por horas se a API parar de responder.
-          POLL_TIMEOUT_SECONDS: '900'
-          POLL_INTERVAL_SECONDS: '15'
         run: |
-          # `set +e` explícito: o GitHub roda `run:` com `bash -e`, e `set -uo`
-          # NÃO desliga o -e. Este script checa cada exit code na mão; com -e
-          # ligado, uma falha do `railway up` matava o step dentro do `$(...)`,
-          # antes de imprimir a saída do CLI e o ::error:: (2026-11-16, release
-          # #210: exit 1 mudo em 3s). Teste: .github/workflows/test/deploy-step.test.sh
-          set +e -uo pipefail
+          DIRECT_URL="$(bash .github/scripts/direct-database-url.sh)" || exit 1
+          echo "::add-mask::$DIRECT_URL"
+          DATABASE_URL="$DIRECT_URL" npm run prisma:deploy --workspace=apps/api
 
-          # 1) Sobe sem attachar no log. `timeout` porque mesmo o upload pode
-          #    pendurar — o que não pode é ficar esperando log.
-          echo "::group::railway up --detach"
-          UP_OUT=$(timeout 300 npx "$RAILWAY_CLI" up --detach --service "$RAILWAY_SERVICE" 2>&1)
-          UP_EXIT=$?
-          echo "$UP_OUT"
-          echo "::endgroup::"
-
-          if [ $UP_EXIT -ne 0 ]; then
-            echo "::error::Falha ao enviar o deploy (exit $UP_EXIT). Nada foi publicado."
-            exit 1
-          fi
-
-          # 2) O id do deployment vem na URL de Build Logs que o `up` imprime
-          #    (…/service/<svc>?id=<deployment-id>&). Sem ele não dá pra saber
-          #    QUAL deployment observar — pegar "o mais recente" da lista abriria
-          #    corrida com deploy concorrente e poderia reportar o status errado.
-          DEPLOY_ID=$(printf '%s' "$UP_OUT" | grep -oE '[?&]id=[0-9a-f-]{36}' | head -1 | cut -d= -f2)
-
-          if [ -z "$DEPLOY_ID" ]; then
-            echo "::error::Deploy enviado, mas não consegui extrair o id do deployment da saída do CLI."
-            echo "O deploy PODE estar rodando — confira no painel do Railway antes de re-rodar."
-            echo "Se o formato da saída do CLI mudou, é aqui que precisa ajustar."
-            exit 1
-          fi
-          echo "Deployment: $DEPLOY_ID"
-
-          # 3) Poll até status terminal.
-          #    Fail-safe de propósito: só SUCCESS/SKIPPED encerram como sucesso.
-          #    Status desconhecido NÃO passa — continua o poll e, no limite,
-          #    estoura o timeout e falha alto. É o oposto do que tínhamos, onde
-          #    a incerteza virava vermelho com deploy no ar.
-          #    SKIPPED é sucesso legítimo: o Railway pula o build quando nada
-          #    mudou nos watch paths (release só de docs, por exemplo).
-          DEADLINE=$(( $(date +%s) + POLL_TIMEOUT_SECONDS ))
-          LAST_STATUS=""
-          FIRST_POLL=1
-
-          while [ "$(date +%s)" -lt "$DEADLINE" ]; do
-            RAW=$(npx "$RAILWAY_CLI" deployment list \
-                    --service "$RAILWAY_SERVICE" --limit 20 --json 2>/dev/null)
-
-            # Busca recursiva pelo objeto com o nosso id, em vez de assumir o
-            # formato exato do JSON — assim uma mudança de wrapper no CLI não
-            # quebra o passo silenciosamente. Node e não jq de propósito: o job
-            # já roda setup-node, então é uma dependência a menos, e dá pra
-            # testar este mesmo trecho localmente (jq não vem no Git Bash).
-            STATUS=$(printf '%s' "$RAW" | node -e '
-              let buf = "";
-              process.stdin.on("data", (d) => (buf += d)).on("end", () => {
-                const target = process.argv[1];
-                let found = "";
-                const walk = (v) => {
-                  if (found || !v || typeof v !== "object") return;
-                  if (Array.isArray(v)) return v.forEach(walk);
-                  if (v.id === target && typeof v.status === "string") {
-                    found = v.status;
-                    return;
-                  }
-                  Object.values(v).forEach(walk);
-                };
-                try { walk(JSON.parse(buf)); } catch { /* JSON inválido → sem status → segue o poll */ }
-                process.stdout.write(found);
-              });
-            ' "$DEPLOY_ID" 2>/dev/null)
-
-            # Na 1ª volta, se não achamos o status, mostra o JSON cru: sem isso
-            # uma mudança de contrato vira 15 min de silêncio e um timeout mudo.
-            if [ $FIRST_POLL -eq 1 ] && [ -z "$STATUS" ]; then
-              echo "::warning::Não achei o status do deployment na 1ª consulta. JSON recebido:"
-              printf '%s\n' "$RAW" | head -40
-            fi
-            FIRST_POLL=0
-
-            if [ -n "$STATUS" ] && [ "$STATUS" != "$LAST_STATUS" ]; then
-              echo "status: $STATUS"
-              LAST_STATUS="$STATUS"
-            fi
-
-            case "$STATUS" in
-              SUCCESS)
-                echo "Deploy concluído."
-                exit 0
-                ;;
-              SKIPPED)
-                echo "Build pulado pelo Railway (nada mudou nos watch paths). Nada a publicar."
-                exit 0
-                ;;
-              FAILED|CRASHED|REMOVED|REMOVING)
-                echo "::error::Deploy terminou em $STATUS. Log: https://railway.com/project/fd9c2278-cfea-485c-a129-a5b33c895b54/service/$RAILWAY_SERVICE?id=$DEPLOY_ID"
-                exit 1
-                ;;
-            esac
-
-            sleep "$POLL_INTERVAL_SECONDS"
-          done
-
-          echo "::error::Timeout de ${POLL_TIMEOUT_SECONDS}s esperando o deployment $DEPLOY_ID. Último status: ${LAST_STATUS:-desconhecido}."
-          echo "O deploy pode ainda estar rodando — confira no painel antes de re-rodar."
-          exit 1
-
-  # ─── Web → Vercel ─────────────────────────────────────────────────────────────
-  deploy-web:
-    name: Deploy Web → Vercel
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Deploy via Vercel CLI a partir da RAIZ do repo.
-      # O projeto na Vercel já tem "Root Directory = apps/web" configurado,
-      # então a CLI aplica esse subdiretório uma única vez. Rodar de dentro de
-      # apps/web duplicaria o caminho (apps/web/apps/web) e quebraria o deploy.
-      # Para configurar:
-      #   1. Crie um projeto na Vercel (vercel.com) com Root Directory = apps/web
-      #   2. Gere um token em Settings → Tokens
-      #   3. Pegue VERCEL_ORG_ID e VERCEL_PROJECT_ID rodando `vercel link` localmente
-      #   4. Adicione os 3 secrets em Settings → Secrets do repositório
+      # Deploy via Vercel CLI a partir da RAIZ do repo. O projeto na Vercel tem
+      # "Root Directory = apps/web"; rodar de dentro de apps/web duplicaria o
+      # caminho (apps/web/apps/web). O build remoto compila a API também
+      # (buildCommand do apps/web/vercel.json).
+      #
+      # VERSÃO PINADA, NÃO TROCAR PARA @latest: foi o @latest do CLI do Railway
+      # que quebrou o CD por semanas sem nenhuma mudança nossa. 66.6.0 é a que
+      # fez o deploy da virada (v0.69.0). Subir de versão = PR próprio.
+      #
+      # Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
       - name: Deploy to Vercel
-        run: npx vercel@latest --prod --yes
+        timeout-minutes: 20
+        run: npx vercel@66.6.0 --prod --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      # O deploy terminar não prova que a API sobe: já foi ao ar uma função
+      # que caía no boot por variável faltando (D-24). O /health faz SELECT 1,
+      # então valida função + env + banco. Falhou = produção provavelmente
+      # quebrada: Instant Rollback no painel da Vercel.
+      # Teste: .github/workflows/test/smoke-health.test.sh
+      - name: Smoke test da API em produção
+        run: bash .github/scripts/smoke-health.sh https://tayro.app.br/api/v1/health
