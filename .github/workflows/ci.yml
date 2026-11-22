@@ -48,11 +48,18 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      # Scripts que o CD roda em produção (smoke test, URL direta do Neon).
+      # Só eram exercitados no merge da main; aqui quebram no PR.
+      - name: Test CD scripts
+        run: |
+          bash .github/workflows/test/smoke-health.test.sh
+          bash .github/workflows/test/direct-database-url.test.sh
 
       # Gera os tipos TypeScript do Prisma Client a partir do schema
       - name: Generate Prisma Client
@@ -84,7 +91,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
