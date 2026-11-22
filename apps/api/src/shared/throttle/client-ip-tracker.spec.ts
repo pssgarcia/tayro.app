@@ -39,7 +39,7 @@ describe('clientIpTracker', () => {
     });
   });
 
-  describe('fora da Vercel (Railway, dev, testes)', () => {
+  describe('fora da Vercel (dev, testes)', () => {
     beforeEach(() => delete process.env.VERCEL);
 
     // Fora da Vercel ninguém sobrescreve o x-real-ip/x-forwarded-for antes de

@@ -11,7 +11,7 @@ import { assertRequiredEnv } from './shared/config/required-env';
  * Tudo que o app precisa ANTES de atender a 1ª requisição, num lugar só (D-24).
  *
  * Quem sobe a API são dois pontos de entrada: `main.ts` (servidor com `listen`,
- * Railway/Docker/dev local) e, a partir da migração, a função serverless. Se
+ * dev local/Docker) e a função serverless da Vercel (produção). Se
  * cada um montasse o app à mão, uma proteção (CORS, helmet, whitelist do DTO)
  * poderia existir num e faltar no outro. `env` é parâmetro pra ser testável.
  */

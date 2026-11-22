@@ -582,6 +582,12 @@ plano de volta passa a ser o Instant Rollback da Vercel, não o Railway. Falta s
 (desligar o serviço no painel e tirar as referências restantes, como o
 `RAILWAY_GIT_COMMIT_SHA` do Sentry).
 
+**Railway desligado (fatia 8), 2026-11-21:** serviço desligado no painel e secret
+`RAILWAY_TOKEN` apagado pelo Pedro; o endereço antigo responde 404. O Sentry da API deixou de
+ler `RAILWAY_GIT_COMMIT_SHA` (teste trava que ele é ignorado), comentários e docs que
+descreviam o Railway como presente foram atualizados, e a história do CD do Railway foi
+arquivada no `changelog.md`. **D-24 concluída.**
+
 ---
 
 ## Convenções que não se rediscute

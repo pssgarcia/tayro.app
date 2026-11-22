@@ -3,8 +3,8 @@ import viteConfig, { pwaOptions } from './vite.config';
 
 /**
  * Regra inviolável (CLAUDE.md): o service worker NUNCA pode cachear /auth/*
- * nem qualquer outro endpoint sob /api/ — em produção /api/* é rewrite
- * same-origin pro Railway, então cache por URL ignorando header de auth
+ * nem qualquer outro endpoint sob /api/ — em produção /api/* é a função
+ * same-origin da Vercel, então cache por URL ignorando header de auth
  * pode vazar resposta de um usuário pro próximo num dispositivo compartilhado.
  * Estes testes travam a config, não o comportamento do Workbox em si.
  */

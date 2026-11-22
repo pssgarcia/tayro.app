@@ -10,13 +10,11 @@ interface TrackableRequest {
  * da Vercel diz que ele traz o IP público do cliente e que a Vercel sobrescreve
  * os cabeçalhos de IP mandados pelo cliente pra impedir spoofing.
  *
- * Fora da Vercel: `req.ip`, sem ler cabeçalho nenhum. No Railway, atrás do
- * rewrite da Vercel, isso dá o IP de um proxy, compartilhado por todo mundo
- * (Known Gap em specs/creator-discovery-and-apply). Não há conserto confiável
- * lá: o Railway não documenta quais cabeçalhos sobrescreve, e com a Vercel na
- * frente o x-real-ip dele é o IP da Vercel. Ler cabeçalho ali só trocaria o
- * limite compartilhado por um limite que qualquer um burla. O conserto é a
- * API passar a rodar na Vercel.
+ * Fora da Vercel (dev local, testes): `req.ip`, sem ler cabeçalho nenhum.
+ * Ler `x-forwarded-for` sem um proxy confiável na frente trocaria o limite por
+ * um que qualquer um burla mandando o cabeçalho. Histórico: no Railway, atrás
+ * do rewrite da Vercel, isso dava o IP de um proxy compartilhado por todo
+ * mundo; foi o que levou a API pra Vercel (D-24).
  */
 export function clientIpTracker(req: TrackableRequest): string {
   if (process.env.VERCEL === '1') {
