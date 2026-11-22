@@ -47,26 +47,9 @@ describe('resolveSentryConfig', () => {
     );
   });
 
-  it('release: SENTRY_RELEASE tem precedência sobre RAILWAY_GIT_COMMIT_SHA', () => {
-    expect(
-      resolveSentryConfig({
-        SENTRY_DSN: DSN,
-        SENTRY_RELEASE: 'v1.2.3',
-        RAILWAY_GIT_COMMIT_SHA: 'deadbeef',
-      }).release,
-    ).toBe('v1.2.3');
-    expect(
-      resolveSentryConfig({
-        SENTRY_DSN: DSN,
-        RAILWAY_GIT_COMMIT_SHA: 'deadbeef',
-      }).release,
-    ).toBe('deadbeef');
-    expect(resolveSentryConfig({ SENTRY_DSN: DSN }).release).toBeUndefined();
-  });
-
-  // D-24: na Vercel quem injeta o commit é VERCEL_GIT_COMMIT_SHA. Sem isto,
-  // todo evento da API serverless chegaria sem release.
-  it('release: na Vercel usa VERCEL_GIT_COMMIT_SHA', () => {
+  // D-24: a API roda na Vercel, que injeta o commit em VERCEL_GIT_COMMIT_SHA.
+  // Sem isto, todo evento da API chegaria sem release.
+  it('release: usa VERCEL_GIT_COMMIT_SHA, e SENTRY_RELEASE tem precedência', () => {
     expect(
       resolveSentryConfig({ SENTRY_DSN: DSN, VERCEL_GIT_COMMIT_SHA: 'cafe01' })
         .release,
@@ -78,6 +61,18 @@ describe('resolveSentryConfig', () => {
         VERCEL_GIT_COMMIT_SHA: 'cafe01',
       }).release,
     ).toBe('v1.2.3');
+    expect(resolveSentryConfig({ SENTRY_DSN: DSN }).release).toBeUndefined();
+  });
+
+  // O Railway foi desligado (D-24, fatia 8). Uma variável dele esquecida num
+  // ambiente não pode rotular eventos com o commit de um serviço morto.
+  it('release: ignora RAILWAY_GIT_COMMIT_SHA', () => {
+    expect(
+      resolveSentryConfig({
+        SENTRY_DSN: DSN,
+        RAILWAY_GIT_COMMIT_SHA: 'deadbeef',
+      }).release,
+    ).toBeUndefined();
   });
 
   it('tracesSampleRate: default 0.1 quando ausente, vazio, inválido, negativo ou > 1', () => {

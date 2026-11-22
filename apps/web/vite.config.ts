@@ -41,7 +41,7 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     ],
   },
   workbox: {
-    // /api/* é rewrite same-origin pro Railway em produção (vercel.json) — cobre
+    // /api/* é a função same-origin da Vercel em produção (vercel.json) — cobre
     // login/refresh E qualquer dado autenticado ou público. Nunca servir do cache.
     navigateFallbackDenylist: [/^\/api\//],
     runtimeCaching: [
