@@ -2,8 +2,8 @@
  * Reduz um e-mail à forma mínima que ainda serve pra diagnóstico.
  *
  * Por que existe: os caminhos de FALHA de envio de e-mail logavam o endereço
- * inteiro, e log de aplicação vai pro Railway, onde fica retido e acessível a
- * quem tem o painel. O endereço completo não é necessário pra investigar
+ * inteiro, e log de aplicação vai pros logs de runtime da hospedagem (hoje a
+ * Vercel), acessíveis a quem tem o painel. O endereço completo não é necessário pra investigar
  * "por que este envio falhou" — o domínio (provedor recusou? domínio
  * inexistente?) e um discriminador pra casar com o relato de quem reclamou
  * são. Ver especificação em specs/email-notifications.

@@ -188,8 +188,8 @@ export class EmailService {
   // Best-effort: falha de e-mail nunca deve derrubar a ação de negócio
   // (approve/reject) que a originou. Loga e segue.
   //
-  // O destinatário vai MASCARADO: log de aplicação fica retido no Railway e
-  // acessível a quem tem o painel, e endereço inteiro não é necessário pra
+  // O destinatário vai MASCARADO: log de aplicação fica nos logs da hospedagem
+  // (Vercel), acessível a quem tem o painel, e endereço inteiro não é necessário pra
   // diagnosticar uma falha de envio. O domínio (que o mascaramento preserva) é
   // o que diz se o problema é do provedor de destino; o assunto identifica
   // qual envio falhou. Ver shared/utils/mask-email.ts.

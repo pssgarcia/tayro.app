@@ -5,7 +5,7 @@ Plataforma de marketing de influência fitness, creator-first: creators constroe
 [![CI](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml/badge.svg)](https://github.com/pssgarcia/tayro.app/actions/workflows/ci.yml)
 
 - Web: https://tayro.app.br
-- API: https://api-production-a813.up.railway.app/api/v1
+- API: https://tayro.app.br/api/v1 (função da Vercel)
 
 ## O que já funciona
 
@@ -24,7 +24,7 @@ Plataforma de marketing de influência fitness, creator-first: creators constroe
 | API       | NestJS · Prisma · PostgreSQL (Neon em prod) · JWT (access + refresh com rotação) |
 | Web       | React 19 · Vite · React Router · Zustand · TanStack Query · Tailwind CSS · shadcn/ui |
 | Monorepo  | Turborepo · npm workspaces                                          |
-| CI/CD     | GitHub Actions → Railway (API) + Vercel (Web)                       |
+| CI/CD     | GitHub Actions → Vercel (Web + API como função)                     |
 | Testing   | Jest (API) · Vitest + Testing Library (Web)                         |
 
 ## Arquitetura

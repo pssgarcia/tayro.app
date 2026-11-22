@@ -39,8 +39,8 @@ describe('apps/web/vercel.json × função serverless', () => {
     );
     if (firstOtherApi !== -1) expect(firstFunction).toBeLessThan(firstOtherApi);
   });
-  // Virada de 2026-11-21 (D-24): toda requisição de API vai pra função. Se
-  // precisar voltar pro Railway, é reverter o commit da virada.
+  // Virada de 2026-11-21 (D-24): toda requisição de API vai pra função. Não
+  // existe mais outro destino (o Railway foi desligado).
   it('todo /api/* vai pra função, sem condição', () => {
     const apiRules = vercel.rewrites.filter((r) =>
       r.source.startsWith('/api/'),

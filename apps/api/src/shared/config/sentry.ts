@@ -51,11 +51,10 @@ export function resolveSentryConfig(
       (env.SENTRY_ENVIRONMENT ?? '').trim() ||
       (env.NODE_ENV ?? '').trim() ||
       'development',
-    // Railway e Vercel injetam o SHA do commit em todo build; liga cada evento
-    // ao commit que estava no ar.
+    // A Vercel injeta o SHA do commit em todo build; liga cada evento ao
+    // commit que estava no ar.
     release:
       (env.SENTRY_RELEASE ?? '').trim() ||
-      (env.RAILWAY_GIT_COMMIT_SHA ?? '').trim() ||
       (env.VERCEL_GIT_COMMIT_SHA ?? '').trim() ||
       undefined,
     tracesSampleRate,
